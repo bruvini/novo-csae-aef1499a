@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,6 +7,7 @@ import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
 import { verificarUsuarioExistente, cadastrarUsuario } from "@/services/bancodados";
+import SimpleFooter from '@/components/SimpleFooter';
 
 const estadosBrasileiros = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 
@@ -34,11 +34,9 @@ const Register = () => {
   const { toast } = useToast();
   const { registrar } = useAutenticacao();
   
-  // Estado para campos com erro
   const [camposComErro, setCamposComErro] = useState<Set<string>>(new Set());
   const [carregando, setCarregando] = useState(false);
   
-  // Dados Pessoais
   const [nomeCompleto, setNomeCompleto] = useState('');
   const [rg, setRg] = useState('');
   const [cpf, setCpf] = useState('');
@@ -49,7 +47,6 @@ const Register = () => {
   const [uf, setUf] = useState('');
   const [cep, setCep] = useState('');
   
-  // Dados Profissionais
   const [formacao, setFormacao] = useState('');
   const [numeroCoren, setNumeroCoren] = useState('');
   const [ufCoren, setUfCoren] = useState('');
@@ -61,12 +58,10 @@ const Register = () => {
   const [cidadeTrabalho, setCidadeTrabalho] = useState('');
   const [localCargo, setLocalCargo] = useState('');
   
-  // Dados de Acesso
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   
-  // Reset campos condicionais ao mudar formação
   useEffect(() => {
     if (formacao !== 'Enfermeiro' && formacao !== 'Residente de Enfermagem' && formacao !== 'Técnico de Enfermagem') {
       setNumeroCoren('');
@@ -82,7 +77,6 @@ const Register = () => {
     }
   }, [formacao]);
   
-  // Reset campos condicionais ao mudar se atua na SMS
   useEffect(() => {
     if (atuaSMS) {
       setCidadeTrabalho('');
@@ -96,7 +90,6 @@ const Register = () => {
   const validarFormulario = () => {
     const novosErros = new Set<string>();
     
-    // Validar campos obrigatórios dos dados pessoais
     if (!nomeCompleto) novosErros.add('nomeCompleto');
     if (!rg) novosErros.add('rg');
     if (!cpf) novosErros.add('cpf');
@@ -107,7 +100,6 @@ const Register = () => {
     if (!uf) novosErros.add('uf');
     if (!cep) novosErros.add('cep');
     
-    // Validar campos profissionais
     if (!formacao) novosErros.add('formacao');
     
     if (formacao === 'Enfermeiro' || formacao === 'Residente de Enfermagem' || formacao === 'Técnico de Enfermagem') {
@@ -131,12 +123,10 @@ const Register = () => {
       if (!localCargo) novosErros.add('localCargo');
     }
     
-    // Validar dados de acesso
     if (!email) novosErros.add('email');
     if (!senha) novosErros.add('senha');
     if (!confirmarSenha) novosErros.add('confirmarSenha');
     
-    // Validação de senha
     if (senha !== confirmarSenha) {
       novosErros.add('senha');
       novosErros.add('confirmarSenha');
@@ -166,7 +156,6 @@ const Register = () => {
     setCarregando(true);
     
     try {
-      // Verificar se usuário já existe
       const usuarioExiste = await verificarUsuarioExistente(
         email,
         (formacao === 'Enfermeiro' || formacao === 'Residente de Enfermagem' || formacao === 'Técnico de Enfermagem') ? numeroCoren : undefined,
@@ -183,10 +172,8 @@ const Register = () => {
         return;
       }
       
-      // Criar usuário de autenticação
       const usuarioAuth = await registrar(email, senha);
       
-      // Cadastrar no Firestore
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
         email,
@@ -235,7 +222,7 @@ const Register = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex flex-col items-center justify-center flex-1 w-full px-4 py-12">
+      <main className="flex-grow container mx-auto px-4 py-8">
         <div className="container max-w-4xl">
           <div className="mb-6 text-center">
             <h1 className="text-3xl font-bold tracking-tight text-csae-green-800 mb-2">
@@ -248,7 +235,6 @@ const Register = () => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-8 bg-white p-8 rounded-lg shadow-lg">
-            {/* Dados Pessoais */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
                 Informações Pessoais
@@ -366,7 +352,6 @@ const Register = () => {
               </div>
             </div>
             
-            {/* Dados Profissionais */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
                 Informações Profissionais
@@ -391,7 +376,6 @@ const Register = () => {
                   </select>
                 </div>
                 
-                {/* Campos condicionais baseados na formação */}
                 {(formacao === 'Enfermeiro' || formacao === 'Residente de Enfermagem' || formacao === 'Técnico de Enfermagem') && (
                   <>
                     <div>
@@ -467,7 +451,6 @@ const Register = () => {
                   </label>
                 </div>
                 
-                {/* Campos condicionais baseados se atua na SMS */}
                 {atuaSMS ? (
                   <>
                     <div>
@@ -528,7 +511,6 @@ const Register = () => {
               </div>
             </div>
             
-            {/* Dados de Acesso */}
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
                 Informações de Acesso
@@ -570,7 +552,6 @@ const Register = () => {
               </div>
             </div>
             
-            {/* Botões */}
             <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
               <Button
                 type="button"
@@ -602,13 +583,7 @@ const Register = () => {
         </div>
       </main>
       
-      <footer className="py-6 text-center text-sm text-gray-500">
-        <p className="flex items-center justify-center gap-1.5">
-          Desenvolvido com 
-          <Heart className="w-4 h-4 fill-csae-green-500 text-csae-green-500" /> 
-          por Bruno Vinícius, em colaboração com a Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) de Florianópolis
-        </p>
-      </footer>
+      <SimpleFooter />
     </div>
   );
 };
