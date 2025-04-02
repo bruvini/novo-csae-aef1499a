@@ -39,10 +39,11 @@ export function useAutenticacao() {
     return resultado.user;
   };
 
-  const entrar = async (email: string, senha: string) => {
-    const resultado = await signInWithEmailAndPassword(auth, email, senha);
-    return resultado.user;
-  };
+  const entrar = async (email: string, password: string) => {
+    const usuario = await signInWithEmailAndPassword(auth, email, password);
+    return usuario;
+};
+
 
   const sair = async () => {
     await signOut(auth);
