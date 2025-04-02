@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, CheckCircle, UserPlus } from "lucide-react";
+import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
 import { verificarUsuarioExistente, cadastrarUsuario } from "@/services/bancodados";
