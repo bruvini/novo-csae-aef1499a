@@ -11,7 +11,7 @@ import {
   Bandage, 
   BookOpen, 
   Newspaper, 
-  LightBulb, 
+  Lightbulb,  // Corrected from LightBulb to Lightbulb
   Info, 
   HelpCircle, 
   Users, 
@@ -63,7 +63,7 @@ const Dashboard = () => {
       id: 6,
       title: 'Sugestões',
       description: 'Compartilhe suas ideias conosco',
-      icon: LightBulb,
+      icon: Lightbulb,  // Corrected from LightBulb
       href: '/sugestoes'
     },
     {
