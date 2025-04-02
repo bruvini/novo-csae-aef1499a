@@ -20,6 +20,7 @@ import {
   Lightbulb,
   Info,
   HelpCircle,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -85,6 +86,12 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
       title: 'F.A.Q.',
       icon: HelpCircle,
       href: '/faq'
+    },
+    {
+      id: 'gestao-usuarios',
+      title: 'Gestão de Usuários',
+      icon: Users,
+      href: '/gestao-usuarios'
     },
   ];
 
