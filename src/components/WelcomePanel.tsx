@@ -17,9 +17,6 @@ const WelcomePanel = () => {
           <span className="block">Portal CSAE Floripa</span>
           <span className="relative inline-block mt-1 text-5xl font-black text-white">
             2.0
-            <span className="absolute top-0 right-0 -mt-3 -mr-4 text-xs font-bold tracking-wider bg-csae-green-300 text-csae-green-800 px-2 py-0.5 rounded-full">
-              NOVO
-            </span>
           </span>
         </h2>
         
