@@ -31,7 +31,7 @@ const WelcomePanel = () => {
             essencial da enfermagem.
           </p>
           
-          <p className="text-csae-green-50">
+          <p className="text-csae-green-50 mb-12">
             Agradecemos seu apoio contínuo e contribuições que tornaram esta evolução possível.
             Juntos, estamos fortalecendo a enfermagem de Florianópolis!
           </p>

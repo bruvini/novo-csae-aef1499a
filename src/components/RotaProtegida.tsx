@@ -18,51 +18,84 @@ const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) =>
   useEffect(() => {
     const verificarAcesso = async () => {
       try {
-        // Logar para depuração
-        console.log("Verificando autenticação...");
+        console.log("RotaProtegida: Iniciando verificação de acesso");
+        console.log("RotaProtegida: É rota admin?", apenasAdmin ? "Sim" : "Não");
+        
+        // Verificar autenticação
         const autenticado = await verificarAutenticacao();
-        console.log("Resultado autenticação:", autenticado);
+        console.log("RotaProtegida: Resultado da autenticação:", autenticado);
         
         if (!autenticado) {
+          console.log("RotaProtegida: Acesso negado - usuário não autenticado");
           toast({
             title: "Acesso negado",
             description: "Você precisa estar autenticado para acessar esta página.",
             variant: "destructive"
           });
           setAutorizado(false);
+          setCarregando(false);
           return;
         }
         
+        // Verificar sessão
         const sessao = obterSessao();
-        console.log("Sessão encontrada:", sessao);
+        console.log("RotaProtegida: Sessão do usuário:", sessao);
         
-        // Verificar se o status de acesso é "Aprovado"
-        if (sessao && sessao.statusAcesso !== "Aprovado") {
+        if (!sessao) {
+          console.log("RotaProtegida: Acesso negado - sessão não encontrada");
+          toast({
+            title: "Sessão expirada",
+            description: "Sua sessão expirou. Por favor, faça login novamente.",
+            variant: "destructive"
+          });
+          setAutorizado(false);
+          setCarregando(false);
+          return;
+        }
+        
+        // Verificar status de acesso
+        if (sessao.statusAcesso !== "Aprovado") {
+          console.log("RotaProtegida: Acesso negado - status não aprovado:", sessao.statusAcesso);
           toast({
             title: "Acesso bloqueado",
             description: "Seu acesso ao sistema está indisponível no momento.",
             variant: "destructive"
           });
           setAutorizado(false);
+          setCarregando(false);
           return;
         }
         
         // Verificar permissão de administrador se necessário
-        if (apenasAdmin && !verificarAdmin()) {
-          toast({
-            title: "Acesso restrito",
-            description: "Esta página é restrita a administradores.",
-            variant: "destructive"
-          });
-          setAutorizado(false);
-          return;
+        if (apenasAdmin) {
+          const ehAdmin = verificarAdmin();
+          console.log("RotaProtegida: Verificação de admin:", ehAdmin);
+          
+          if (!ehAdmin) {
+            console.log("RotaProtegida: Acesso negado - usuário não é admin");
+            toast({
+              title: "Acesso restrito",
+              description: "Esta página é restrita a administradores.",
+              variant: "destructive"
+            });
+            setAutorizado(false);
+            setCarregando(false);
+            return;
+          }
         }
         
+        // Se chegou até aqui, está autorizado
+        console.log("RotaProtegida: Acesso autorizado");
         setAutorizado(true);
+        setCarregando(false);
       } catch (error) {
-        console.error("Erro ao verificar autenticação:", error);
+        console.error("RotaProtegida: Erro ao verificar autenticação:", error);
+        toast({
+          title: "Erro de autenticação",
+          description: "Ocorreu um erro ao verificar suas credenciais.",
+          variant: "destructive"
+        });
         setAutorizado(false);
-      } finally {
         setCarregando(false);
       }
     };

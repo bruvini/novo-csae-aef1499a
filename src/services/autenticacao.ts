@@ -28,7 +28,10 @@ export function useAutenticacao() {
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
+    console.log("Inicializando listener de autenticação");
     const unsubscribe = onAuthStateChanged(auth, (usuarioFirebase: User | null) => {
+      console.log("Estado de autenticação alterado:", usuarioFirebase ? "Autenticado" : "Não autenticado");
+      
       if (usuarioFirebase) {
         setUsuario({
           uid: usuarioFirebase.uid,
@@ -37,24 +40,40 @@ export function useAutenticacao() {
         
         // Verificar se existe sessão no localStorage quando o usuário já está autenticado
         const sessaoExistente = obterSessao();
+        console.log("Sessão existente:", sessaoExistente);
+        
         if (!sessaoExistente) {
           // Se não existir sessão mas o usuário está autenticado, buscar dados e criar sessão
+          console.log("Usuário autenticado sem sessão, buscando dados do Firestore");
           buscarUsuarioPorUid(usuarioFirebase.uid).then(usuarioFirestore => {
             if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
               // Criar sessão se não existir
-              salvarSessao({
+              console.log("Usuário aprovado, criando sessão automaticamente");
+              const dadosSessao = {
                 uid: usuarioFirestore.uid,
                 email: usuarioFirestore.email,
                 nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
                 tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
                 statusAcesso: usuarioFirestore.statusAcesso
-              });
+              };
+              
+              salvarSessao(dadosSessao);
+              console.log("Sessão criada automaticamente:", dadosSessao);
+              
+              // Também salvar na localStorage para compatibilidade
+              localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
+            } else {
+              console.log("Usuário não aprovado ou não encontrado no Firestore, não criando sessão");
+              if (usuarioFirestore) {
+                console.log("Status de acesso:", usuarioFirestore.statusAcesso);
+              }
             }
           }).catch(erro => {
             console.error("Erro ao buscar dados do usuário:", erro);
           });
         }
       } else {
+        console.log("Usuário não autenticado, limpando estado e sessão");
         setUsuario(null);
         // Limpar sessão se o usuário não estiver autenticado
         limparSessao();
@@ -62,69 +81,60 @@ export function useAutenticacao() {
       setCarregando(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log("Desativando listener de autenticação");
+      unsubscribe();
+    };
   }, []);
 
   const registrar = async (email: string, senha: string) => {
+    console.log("Iniciando processo de registro para:", email);
     const resultado = await createUserWithEmailAndPassword(auth, email, senha);
+    console.log("Registro bem-sucedido:", resultado.user.uid);
     return resultado.user;
   };
 
   const entrar = async (email: string, password: string) => {
     try {
+      console.log("Iniciando processo de login para:", email);
       const resultado = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Login bem-sucedido. UID:", resultado.user.uid);
       
-      // Buscar dados adicionais do usuário no Firestore
-      const usuarioFirestore = await buscarUsuarioPorUid(resultado.user.uid);
-      
-      // Verificar se o usuário existe e está aprovado
-      if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-        // Salvar sessão com os dados do usuário
-        salvarSessao({
-          uid: usuarioFirestore.uid,
-          email: usuarioFirestore.email,
-          nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-          tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-          statusAcesso: usuarioFirestore.statusAcesso
-        });
-        
-        console.log("Sessão criada com sucesso:", obterSessao());
-        return resultado.user;
-      }
-      
-      // Se o status não for aprovado, fazer logout e retornar erro
-      await signOut(auth);
-      throw new Error(`Acesso não aprovado: ${usuarioFirestore?.statusAcesso || 'Status desconhecido'}`);
+      return resultado.user;
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
+      console.error("Erro no processo de login:", error);
       throw error;
     }
   };
 
   const sair = async () => {
+    console.log("Iniciando processo de logout");
     await signOut(auth);
     setUsuario(null);
     limparSessao();
+    console.log("Logout completo, sessão removida");
   };
 
   const salvarSessao = (dados: SessaoUsuario) => {
+    console.log("Salvando sessão do usuário:", dados);
     localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
-    console.log("Sessão salva:", dados);
   };
 
   const obterSessao = (): SessaoUsuario | null => {
     const sessao = localStorage.getItem('sessaoUsuario');
-    return sessao ? JSON.parse(sessao) : null;
+    const resultado = sessao ? JSON.parse(sessao) : null;
+    console.log("Sessão obtida do localStorage:", resultado);
+    return resultado;
   };
 
   const limparSessao = () => {
+    console.log("Limpando dados de sessão do localStorage");
     localStorage.removeItem('sessaoUsuario');
     localStorage.removeItem('usuario');
-    console.log("Sessão removida");
   };
 
   const verificarAutenticacao = async () => {
-    console.log("Verificando autenticação. Usuário:", usuario);
+    console.log("Verificando autenticação. Estado atual:", usuario ? "Autenticado" : "Não autenticado");
     
     // Verificar se o usuário está autenticado no Firebase
     if (!usuario) {
@@ -137,21 +147,36 @@ export function useAutenticacao() {
     console.log("Sessão encontrada:", sessao);
     
     if (!sessao) {
-      console.log("Sessão não encontrada no localStorage");
+      console.log("Sessão não encontrada no localStorage, tentando criar");
       
       // Tentar buscar dados do usuário e criar sessão
       try {
+        console.log("Buscando usuário no Firestore. UID:", usuario.uid);
         const usuarioFirestore = await buscarUsuarioPorUid(usuario.uid);
+        console.log("Resposta do Firestore:", usuarioFirestore);
+        
         if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-          salvarSessao({
+          console.log("Usuário aprovado, criando sessão");
+          const dadosSessao = {
             uid: usuarioFirestore.uid,
             email: usuarioFirestore.email,
             nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
             tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
             statusAcesso: usuarioFirestore.statusAcesso
-          });
-          console.log("Sessão criada dinamicamente durante verificação");
+          };
+          
+          salvarSessao(dadosSessao);
+          
+          // Também salvar para compatibilidade
+          localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
+          
+          console.log("Sessão criada durante verificação");
           return true;
+        } else {
+          console.log("Usuário não aprovado ou não encontrado");
+          if (usuarioFirestore) {
+            console.log("Status:", usuarioFirestore.statusAcesso);
+          }
         }
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
@@ -166,14 +191,14 @@ export function useAutenticacao() {
       return false;
     }
 
-    console.log("Usuário autenticado e com acesso aprovado");
+    console.log("Verificação completa: usuário autenticado e com acesso aprovado");
     return true;
   };
 
   const verificarAdmin = () => {
     const sessao = obterSessao();
     const resultado = sessao?.tipoUsuario === 'Administrador';
-    console.log("Verificação de admin:", resultado);
+    console.log("Verificação de permissão admin:", resultado);
     return resultado;
   };
 
