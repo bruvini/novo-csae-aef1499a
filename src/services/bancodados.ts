@@ -7,7 +7,9 @@ import {
   where, 
   serverTimestamp,
   DocumentData,
-  QuerySnapshot
+  QuerySnapshot,
+  doc,
+  getDoc
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -42,7 +44,7 @@ export interface Usuario {
   email: string;
   uid: string;
   dataCadastro: any;
-  statusAcesso: 'Aguardando' | 'Aprovado' | 'Negado';
+  statusAcesso: 'Aguardando' | 'Aprovado' | 'Negado' | 'Revogado' | 'Cancelado';
   tipoUsuario?: 'Administrador' | 'Comum';
   dataAprovacao?: any;
   dataRevogacao?: any;
@@ -100,3 +102,23 @@ export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | '
   const docRef = await addDoc(collection(db, 'usuarios'), usuarioCompleto);
   return docRef.id;
 }
+
+export async function buscarUsuarioPorUid(uid: string): Promise<Usuario | null> {
+  try {
+    // Buscar pelo uid nos documentos da coleção usuarios
+    const q = query(collection(db, 'usuarios'), where('uid', '==', uid));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    // Retornar o primeiro documento encontrado (deve ser único)
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Usuario;
+  } catch (error) {
+    console.error("Erro ao buscar usuário por uid:", error);
+    return null;
+  }
+}
+

@@ -1,18 +1,39 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
+import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
-  const { usuario, sair } = useAutenticacao();
+  const { usuario, sair, obterSessao } = useAutenticacao();
+  const [nomeUsuario, setNomeUsuario] = useState<string>('Usuário');
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
+  useEffect(() => {
+    const sessao = obterSessao();
+    if (sessao) {
+      setNomeUsuario(sessao.nomeUsuario.split(' ')[0] || 'Usuário');
+    }
+  }, [obterSessao]);
+
   const handleSair = async () => {
     try {
       await sair();
+      toast({
+        title: "Sessão encerrada",
+        description: "Você saiu do sistema com sucesso.",
+      });
+      navigate('/');
     } catch (erro) {
       console.error("Erro ao sair:", erro);
+      toast({
+        title: "Erro ao sair",
+        description: "Ocorreu um erro ao tentar encerrar sua sessão.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -35,7 +56,7 @@ const Header = () => {
           
           <div className="flex items-center gap-4">
             <p className="text-csae-green-600 font-medium hidden sm:block">
-              Bem-vindo(a), <span className="font-semibold">{usuario?.email?.split('@')[0] || 'Usuário'}</span>
+              Bem-vindo(a), <span className="font-semibold">{nomeUsuario}</span>
             </p>
             <Button 
               variant="ghost" 

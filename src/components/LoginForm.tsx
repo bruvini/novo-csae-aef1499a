@@ -1,19 +1,37 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
-import { getDoc, doc } from "firebase/firestore";
-import { db } from "@/services/firebase";
+import { buscarUsuarioPorUid } from "@/services/bancodados";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registrarAtivo, setRegistrarAtivo] = useState(false);
   const { toast } = useToast();
-  const { entrar } = useAutenticacao();
+  const { entrar, salvarSessao } = useAutenticacao();
+  const navigate = useNavigate();
+  const registrarBtnRef = React.useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (registrarAtivo && registrarBtnRef.current) {
+      registrarBtnRef.current.focus();
+      registrarBtnRef.current.classList.add('animate-pulse');
+      
+      const timer = setTimeout(() => {
+        if (registrarBtnRef.current) {
+          registrarBtnRef.current.classList.remove('animate-pulse');
+        }
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [registrarAtivo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,18 +47,21 @@ const LoginForm = () => {
 
     try {
       setLoading(true);
+      setRegistrarAtivo(false);
 
+      // 1. Autenticar no Firebase Authentication
       const usuarioAuth = await entrar(email, password);
 
       if (!usuarioAuth || !usuarioAuth.user) {
         throw new Error("Credenciais inválidas.");
       }
 
-      // Buscando o documento no Firestore
-      const userRef = doc(db, "usuarios", usuarioAuth.user.uid);
-      const userSnap = await getDoc(userRef);
+      // 2. Buscar o usuário no Firestore
+      const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.user.uid);
 
-      if (!userSnap.exists()) {
+      if (!usuarioFirestore) {
+        // Usuário autenticado mas sem cadastro no Firestore
+        setRegistrarAtivo(true);
         toast({
           title: "Cadastro não encontrado",
           description: "Usuário autenticado mas sem cadastro no sistema. Clique em 'Registrar' para se cadastrar.",
@@ -49,75 +70,85 @@ const LoginForm = () => {
         return;
       }
 
-      const userData = userSnap.data();
-
-      if (userData.statusAcesso === "Aguardando") {
+      // 3. Verificar o status de acesso
+      if (usuarioFirestore.statusAcesso === "Aguardando") {
         toast({
-          title: "Acesso em análise",
-          description: "Seu acesso ainda está em avaliação pela equipe CSAE.",
+          title: "Cadastro em análise",
+          description: "Recebemos seu cadastro e ele está em análise pela equipe CSAE. Tente novamente mais tarde.",
           variant: "default"
         });
         return;
       }
 
-      if (userData.statusAcesso === "Negado" || userData.statusAcesso === "Revogado") {
-        const ultimaRevogacao = userData.dataRevogacao?.toDate();
-        const dataFormatada = ultimaRevogacao
-          ? `em ${ultimaRevogacao.toLocaleDateString('pt-BR')}`
-          : "";
-
+      if (usuarioFirestore.statusAcesso === "Negado" || 
+          usuarioFirestore.statusAcesso === "Revogado" || 
+          usuarioFirestore.statusAcesso === "Cancelado") {
         toast({
-          title: "Acesso revogado",
-          description: `Seu acesso foi revogado ${dataFormatada}. Em caso de dúvidas, envie um e-mail para gerenf.sms.pmf@gmail.com.`,
+          title: "Acesso bloqueado",
+          description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
           variant: "destructive"
         });
         return;
       }
 
-      if (userData.statusAcesso === "Aprovado") {
-        localStorage.setItem("usuario", JSON.stringify(userData));
+      if (usuarioFirestore.statusAcesso === "Aprovado") {
+        // 4. Salvar a sessão do usuário
+        salvarSessao({
+          uid: usuarioFirestore.uid,
+          email: usuarioFirestore.email,
+          nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
+          tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
+          statusAcesso: usuarioFirestore.statusAcesso
+        });
+
+        // Manter compatibilidade com o código existente
+        localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
 
         toast({
           title: "Acesso liberado",
           description: "Bem-vindo de volta!",
         });
 
-        window.location.href = "/dashboard";
+        // 5. Redirecionar para o dashboard
+        navigate("/dashboard");
       }
 
     } catch (error: any) {
-
-      if (error.code === "auth/user-not-found") {
-        toast({
-          title: "Usuário não encontrado",
-          description: "Não encontramos uma conta com esse e-mail. Que tal se registrar?",
-          variant: "destructive"
-        });
-      } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
-        toast({
-          title: "Senha incorreta",
-          description: "A senha que você inseriu está errada. Tente novamente.",
-          variant: "destructive"
-        });
-      } else if (error.code === "auth/invalid-email") {
-        toast({
-          title: "E-mail inválido",
-          description: "O e-mail inserido não é válido.",
-          variant: "destructive"
-        });
-      } else {
-        console.error("Erro inesperado:", error);
-        toast({
-          title: "Erro ao acessar",
-          description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
-          variant: "destructive"
-        });
-      }
-
+      handleAuthError(error);
     } finally {
       setLoading(false);
     }
-};
+  };
+
+  const handleAuthError = (error: any) => {
+    if (error.code === "auth/user-not-found") {
+      toast({
+        title: "Usuário não encontrado",
+        description: "Não encontramos uma conta com esse e-mail. Que tal se registrar?",
+        variant: "destructive"
+      });
+      setRegistrarAtivo(true);
+    } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+      toast({
+        title: "Senha incorreta",
+        description: "A senha que você inseriu está errada. Tente novamente.",
+        variant: "destructive"
+      });
+    } else if (error.code === "auth/invalid-email") {
+      toast({
+        title: "E-mail inválido",
+        description: "O e-mail inserido não é válido.",
+        variant: "destructive"
+      });
+    } else {
+      console.error("Erro inesperado:", error);
+      toast({
+        title: "Erro ao acessar",
+        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg animate-fade-in h-full flex flex-col">
@@ -173,9 +204,10 @@ const LoginForm = () => {
           </Button>
 
           <Button
+            ref={registrarBtnRef}
             type="button"
-            className="csae-btn-secondary"
-            onClick={() => (window.location.href = "/registrar")}
+            className={`csae-btn-secondary ${registrarAtivo ? 'ring-2 ring-csae-green-500 ring-offset-2' : ''}`}
+            onClick={() => navigate("/registrar")}
             disabled={loading}
             asChild
           >

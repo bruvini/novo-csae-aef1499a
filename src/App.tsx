@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import NotFound from "./pages/NotFound";
+import RotaProtegida from "./components/RotaProtegida";
 
 const queryClient = new QueryClient();
 
@@ -22,10 +23,27 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/registrar" element={<Register />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/sugestoes" element={<Sugestoes />} />
-          <Route path="/gestao-usuarios" element={<GestaoUsuarios />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          
+          {/* Rotas protegidas - exigem autenticação */}
+          <Route path="/dashboard" element={
+            <RotaProtegida>
+              <Dashboard />
+            </RotaProtegida>
+          } />
+          <Route path="/sugestoes" element={
+            <RotaProtegida>
+              <Sugestoes />
+            </RotaProtegida>
+          } />
+          
+          {/* Rotas protegidas apenas para administradores */}
+          <Route path="/gestao-usuarios" element={
+            <RotaProtegida apenasAdmin>
+              <GestaoUsuarios />
+            </RotaProtegida>
+          } />
+          
+          {/* Rota 404 */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

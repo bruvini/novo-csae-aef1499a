@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   NavigationMenu,
@@ -23,6 +23,7 @@ import {
   Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAutenticacao } from '@/services/autenticacao';
 
 interface NavigationMenuComponentProps {
   activeItem?: string;
@@ -31,76 +32,95 @@ interface NavigationMenuComponentProps {
 const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activeItem }) => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { verificarAdmin } = useAutenticacao();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(verificarAdmin());
+  }, [verificarAdmin]);
 
   const menuItems = [
     {
       id: 'home',
       title: 'Página Inicial',
       icon: Home,
-      href: '/dashboard'
+      href: '/dashboard',
+      adminOnly: false
     },
     {
       id: 'processo-enfermagem',
       title: 'Processo de Enfermagem',
       icon: ClipboardCheck,
-      href: '/processo-enfermagem'
+      href: '/processo-enfermagem',
+      adminOnly: false
     },
     {
       id: 'pops',
       title: 'POPs',
       icon: FileText,
-      href: '/pops'
+      href: '/pops',
+      adminOnly: false
     },
     {
       id: 'feridas',
       title: 'Matriciamento de Feridas',
       icon: Bandage,
-      href: '/feridas'
+      href: '/feridas',
+      adminOnly: false
     },
     {
       id: 'protocolos',
       title: 'Protocolos de Enfermagem',
       icon: BookOpen,
-      href: '/protocolos'
+      href: '/protocolos',
+      adminOnly: false
     },
     {
       id: 'noticias',
       title: 'Notícias',
       icon: Newspaper,
-      href: '/noticias'
+      href: '/noticias',
+      adminOnly: false
     },
     {
       id: 'sugestoes',
       title: 'Sugestões',
       icon: Lightbulb,
-      href: '/sugestoes'
+      href: '/sugestoes',
+      adminOnly: false
     },
     {
       id: 'sobre',
       title: 'Sobre a CSAE',
       icon: Info,
-      href: '/sobre'
+      href: '/sobre',
+      adminOnly: false
     },
     {
       id: 'faq',
       title: 'F.A.Q.',
       icon: HelpCircle,
-      href: '/faq'
+      href: '/faq',
+      adminOnly: false
     },
     {
       id: 'gestao-usuarios',
       title: 'Gestão de Usuários',
       icon: Users,
-      href: '/gestao-usuarios'
+      href: '/gestao-usuarios',
+      adminOnly: true
     },
   ];
+
+  // Filtrar os itens do menu com base no perfil do usuário
+  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || (item.adminOnly && isAdmin));
 
   return (
     <div className="sticky top-0 z-10 w-full bg-white border-b border-csae-green-100 shadow-sm">
       <div className="container mx-auto overflow-x-auto">
         <NavigationMenu className="py-1 max-w-full justify-start">
           <NavigationMenuList className="flex-nowrap">
-            {menuItems.map((item) => (
+            {filteredMenuItems.map((item) => (
               <NavigationMenuItem key={item.id}>
                 <Link to={item.href}>
                   <NavigationMenuLink
