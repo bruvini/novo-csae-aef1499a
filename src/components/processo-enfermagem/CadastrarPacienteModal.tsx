@@ -1,42 +1,45 @@
-
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Paciente, cadastrarPaciente } from '@/services/bancodados';
-import { useAutenticacao } from '@/services/autenticacao';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { Timestamp } from 'firebase/firestore';
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Paciente, cadastrarPaciente } from "@/services/bancodados";
+import { useAutenticacao } from "@/services/autenticacao";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { Timestamp } from "firebase/firestore";
 
 const formSchema = z.object({
   nomeCompleto: z.string().min(3, "O nome deve ter no mínimo 3 caracteres"),
@@ -54,11 +57,15 @@ interface CadastrarPacienteModalProps {
   onCadastrar: (paciente: Paciente) => void;
 }
 
-export function CadastrarPacienteModal({ isOpen, onClose, onCadastrar }: CadastrarPacienteModalProps) {
+export function CadastrarPacienteModal({
+  isOpen,
+  onClose,
+  onCadastrar,
+}: CadastrarPacienteModalProps) {
   const { obterSessao } = useAutenticacao();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,56 +77,56 @@ export function CadastrarPacienteModal({ isOpen, onClose, onCadastrar }: Cadastr
     const hoje = new Date();
     let idade = hoje.getFullYear() - dataNascimento.getFullYear();
     const m = hoje.getMonth() - dataNascimento.getMonth();
-    
+
     if (m < 0 || (m === 0 && hoje.getDate() < dataNascimento.getDate())) {
       idade--;
     }
-    
+
     return idade;
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
     const sessao = obterSessao();
-    
+
     if (!sessao) {
       toast({
         title: "Erro ao cadastrar",
         description: "Sessão não encontrada. Faça login novamente.",
-        variant: "destructive"
+        variant: "destructive",
       });
       setLoading(false);
       return;
     }
-    
+
     try {
       const idade = calcularIdade(values.dataNascimento);
-      
-      const novoPaciente: Omit<Paciente, 'dataCadastro'> = {
+
+      const novoPaciente: Omit<Paciente, "dataCadastro"> = {
         nomeCompleto: values.nomeCompleto.toUpperCase(),
         dataNascimento: Timestamp.fromDate(values.dataNascimento),
         idade,
         sexo: values.sexo,
         profissionalUid: sessao.uid,
         profissionalNome: sessao.nomeUsuario,
-        evolucoes: []
+        evolucoes: [],
       };
-      
+
       const id = await cadastrarPaciente(novoPaciente);
-      
+
       onCadastrar({
         ...novoPaciente,
         id,
-        dataCadastro: Timestamp.now()
+        dataCadastro: Timestamp.now(),
       });
-      
+
       form.reset();
     } catch (error) {
       console.error("Erro ao cadastrar paciente:", error);
       toast({
         title: "Erro ao cadastrar",
         description: "Não foi possível cadastrar o paciente. Tente novamente.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -135,7 +142,7 @@ export function CadastrarPacienteModal({ isOpen, onClose, onCadastrar }: Cadastr
             Preencha os dados do paciente para iniciar o processo de enfermagem.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -151,55 +158,57 @@ export function CadastrarPacienteModal({ isOpen, onClose, onCadastrar }: Cadastr
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="dataNascimento"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Data de Nascimento</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "dd/MM/yyyy")
-                          ) : (
-                            <span>Selecione a data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
-                        initialFocus
+              render={({ field }) => {
+                const [dateInput, setDateInput] = useState(
+                  field.value ? format(field.value, "dd/MM/aaaa") : ""
+                );
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder="dd/mm/aaaa"
+                        value={dateInput}
+                        onChange={(e) => {
+                          setDateInput(e.target.value);
+                        }}
+                        onBlur={() => {
+                          // Tenta converter a string digitada para Date
+                          const dateParts = dateInput.split("/");
+                          if (dateParts.length === 3) {
+                            const day = Number(dateParts[0]);
+                            const month = Number(dateParts[1]) - 1;
+                            const year = Number(dateParts[2]);
+                            const parsedDate = new Date(year, month, day);
+                            if (!isNaN(parsedDate.getTime())) {
+                              field.onChange(parsedDate);
+                            } else {
+                              field.onChange(null);
+                            }
+                          }
+                        }}
                       />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
-            
+
             <FormField
               control={form.control}
               name="sexo"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sexo</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <Select
+                    onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -217,13 +226,13 @@ export function CadastrarPacienteModal({ isOpen, onClose, onCadastrar }: Cadastr
                 </FormItem>
               )}
             />
-            
+
             <DialogFooter>
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="bg-csae-green-600 hover:bg-csae-green-700"
                 disabled={loading}
               >

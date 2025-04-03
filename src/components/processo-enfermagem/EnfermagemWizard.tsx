@@ -215,7 +215,8 @@ export function EnfermageWizard({
         planejamento,
         implementacao,
         evolucaoFinal,
-      };
+        dataAtualizacao: Timestamp.now(),
+      };         
       
       const sucesso = await salvarProgressoEvolucao(
         paciente.id,
@@ -262,7 +263,10 @@ export function EnfermageWizard({
         planejamento,
         implementacao,
         evolucaoFinal,
-      };
+        statusConclusao: "Concluído",
+        dataAtualizacao: Timestamp.now(),
+        dataConclusao: Timestamp.now(),
+      };            
       
       const sucesso = await finalizarEvolucao(
         paciente.id,
