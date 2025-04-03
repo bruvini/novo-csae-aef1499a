@@ -1,6 +1,6 @@
 
-import { useEffect, useState } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAutenticacao } from '@/services/autenticacao';
 import { useToast } from '@/hooks/use-toast';
 
@@ -10,49 +10,71 @@ interface RotaProtegidaProps {
 }
 
 const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) => {
-  const { verificarAutenticacao, verificarAdmin } = useAutenticacao();
-  const [autenticado, setAutenticado] = useState<boolean | null>(null);
+  const { verificarAutenticacao, verificarAdmin, obterSessao } = useAutenticacao();
   const { toast } = useToast();
-  const location = useLocation();
+  const [carregando, setCarregando] = useState(true);
+  const [autorizado, setAutorizado] = useState(false);
 
   useEffect(() => {
     const verificarAcesso = async () => {
-      const autenticado = await verificarAutenticacao();
-      
-      if (!autenticado) {
-        toast({
-          title: "Acesso negado",
-          description: "Você precisa estar autenticado para acessar esta página.",
-          variant: "destructive",
-        });
-      } else if (apenasAdmin && !verificarAdmin()) {
-        toast({
-          title: "Acesso restrito",
-          description: "Esta página é exclusiva para administradores.",
-          variant: "destructive",
-        });
-        setAutenticado(false);
-        return;
+      try {
+        const autenticado = await verificarAutenticacao();
+        
+        if (!autenticado) {
+          toast({
+            title: "Acesso negado",
+            description: "Você precisa estar autenticado para acessar esta página.",
+            variant: "destructive"
+          });
+          setAutorizado(false);
+          return;
+        }
+        
+        const sessao = obterSessao();
+        
+        // Verificar se o status de acesso é "Aprovado"
+        if (sessao && sessao.statusAcesso !== "Aprovado") {
+          toast({
+            title: "Acesso bloqueado",
+            description: "Seu acesso ao sistema está indisponível no momento.",
+            variant: "destructive"
+          });
+          setAutorizado(false);
+          return;
+        }
+        
+        // Verificar permissão de administrador se necessário
+        if (apenasAdmin && !verificarAdmin()) {
+          toast({
+            title: "Acesso restrito",
+            description: "Esta página é restrita a administradores.",
+            variant: "destructive"
+          });
+          setAutorizado(false);
+          return;
+        }
+        
+        setAutorizado(true);
+      } catch (error) {
+        console.error("Erro ao verificar autenticação:", error);
+        setAutorizado(false);
+      } finally {
+        setCarregando(false);
       }
-      
-      setAutenticado(autenticado);
     };
-
+    
     verificarAcesso();
-  }, [apenasAdmin, verificarAdmin, verificarAutenticacao, toast]);
+  }, [verificarAutenticacao, verificarAdmin, toast, apenasAdmin, obterSessao]);
 
-  if (autenticado === null) {
-    // Estado ainda não determinado, mostrar loading
-    return <div className="flex items-center justify-center h-screen">Verificando...</div>;
+  if (carregando) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
+      </div>
+    );
   }
 
-  if (!autenticado) {
-    // Não autenticado ou não tem permissão, redirecionar para login
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  // Autenticado e com permissões corretas
-  return <>{children}</>;
+  return autorizado ? <>{children}</> : <Navigate to="/" replace />;
 };
 
 export default RotaProtegida;

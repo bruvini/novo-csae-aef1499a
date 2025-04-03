@@ -116,12 +116,12 @@ export function EnfermageWizard({
             
             if (sucesso) {
               // Buscar o paciente atualizado para obter o ID da evolução criada
-              const evolucaosCriadas = paciente.evolucoes || [];
-              const novaEvolucaoCriada = evolucaosCriadas[evolucaosCriadas.length - 1];
+              const evolucoesCriadas = paciente.evolucoes || [];
+              const novaEvolucaoCriada = evolucoesCriadas[evolucoesCriadas.length - 1];
               
               if (novaEvolucaoCriada) {
                 setEvolucaoAtual(novaEvolucaoCriada);
-                setEvolucaoId(novaEvolucaoCriada.id!);
+                // Removida a linha que causava o erro, pois evolucaoId é somente leitura na props
               }
             }
           }

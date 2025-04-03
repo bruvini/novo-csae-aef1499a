@@ -8,6 +8,7 @@ interface DiagnosticoEnfermagem {
   id: string;
   descricao: string;
   selecionado: boolean;
+  subconjunto?: string;
 }
 
 interface Planejamento {
@@ -21,6 +22,9 @@ interface Implementacao {
   responsavel: string;
   status: 'Pendente' | 'Em andamento' | 'Concluído';
   observacoes?: string;
+  selecionada?: boolean;
+  tempoReavaliacao?: string;
+  unidadeTempo?: string;
 }
 
 interface EvolucaoEnfermagemProps {
@@ -42,55 +46,128 @@ export function EvolucaoEnfermagem({
   const estatisticas = {
     diagnosticos: diagnosticos.length,
     intervencoes: planejamento.reduce((acc, p) => acc + p.intervencoes.length, 0),
-    implementacoesCompletas: implementacao.filter(i => i.status === 'Concluído').length,
+    implementacoesCompletas: implementacao.filter(i => i.selecionada && i.responsavel).length,
     implementacoesEmAndamento: implementacao.filter(i => i.status === 'Em andamento').length,
     implementacoesPendentes: implementacao.filter(i => i.status === 'Pendente').length,
   };
 
-  // Gerar texto de sugestão com base nas informações anteriores
-  const gerarSugestaoTexto = () => {
-    let texto = `EVOLUÇÃO DE ENFERMAGEM\n\n`;
-    texto += `Paciente com ${estatisticas.diagnosticos} diagnósticos de enfermagem identificados, `;
-    texto += `para os quais foram planejadas ${estatisticas.intervencoes} intervenções. `;
+  // Encontrar implementações para cada intervenção
+  const encontrarImplementacao = (diagnosticoId: string, indiceIntervencao: number) => {
+    const intervencaoId = `${diagnosticoId}-${indiceIntervencao}`;
+    return implementacao.find(i => i.intervencaoId === intervencaoId);
+  };
+
+  // Agrupar intervenções por subconjunto (Protocolos/NHBs)
+  const diagnosticosPorSubconjunto = diagnosticos.reduce<Record<string, DiagnosticoEnfermagem[]>>((acc, d) => {
+    const subconjunto = d.subconjunto || 'Outros';
+    if (!acc[subconjunto]) {
+      acc[subconjunto] = [];
+    }
+    acc[subconjunto].push(d);
+    return acc;
+  }, {});
+
+  // Gerar texto de evolução com base nas informações anteriores
+  const gerarEvolucaoTexto = () => {
+    let texto = `# Evolução de Enfermagem:\n\n`;
     
-    texto += `Das intervenções implementadas, ${estatisticas.implementacoesCompletas} foram concluídas, `;
-    texto += `${estatisticas.implementacoesEmAndamento} estão em andamento e `;
-    texto += `${estatisticas.implementacoesPendentes} estão pendentes.\n\n`;
+    // Seção de Avaliação
+    texto += `# Avaliação de enfermagem:\n`;
     
-    texto += `DIAGNÓSTICOS DE ENFERMAGEM:\n`;
-    diagnosticos.forEach((d, idx) => {
-      texto += `${idx + 1}) ${d.descricao}\n`;
-      
-      // Adicionar resultado esperado se existir
-      const plano = planejamento.find(p => p.diagnosticoId === d.id);
-      if (plano && plano.resultadoEsperado) {
-        texto += `   Resultado esperado: ${plano.resultadoEsperado}\n`;
-      }
-      
-      // Calcular status das intervenções para este diagnóstico
-      if (plano) {
-        const idIntervencoes = plano.intervencoes.map((_, index) => `${d.id}-${index}`);
-        const implsRelacionadas = implementacao.filter(i => idIntervencoes.includes(i.intervencaoId));
-        
-        const concluidas = implsRelacionadas.filter(i => i.status === 'Concluído').length;
-        const total = implsRelacionadas.length;
-        
-        if (total > 0) {
-          texto += `   Status: ${concluidas} de ${total} intervenções concluídas\n`;
-        }
-      }
-      
-      texto += `\n`;
+    // Parte da Entrevista - Assumindo que o valor é o texto de entrevista
+    texto += `- Entrevista: ${valor || "[Não preenchido]"}\n\n`;
+    
+    // Exame Físico - Simulação para esta versão
+    texto += `- Exame Físico:\n\n`;
+    
+    // Simulação de Sinais Vitais para esta versão
+    const sinaisVitais = [
+      { nome: "Temperatura", valor: "36.5°C" },
+      { nome: "Frequência Cardíaca", valor: "78 bpm" },
+      { nome: "Pressão Arterial", valor: "120/80 mmHg" }
+    ];
+    
+    if (sinaisVitais.length > 0) {
+      texto += `Sinais Vitais:\n`;
+      texto += sinaisVitais.map(sv => `${sv.nome}: ${sv.valor}`).join(' / ') + '\n\n';
+    }
+    
+    // Diagnósticos de Enfermagem
+    texto += `# Diagnósticos de Enfermagem:\n`;
+    
+    Object.entries(diagnosticosPorSubconjunto).forEach(([subconjunto, diagsNoSubconjunto]) => {
+      texto += `${subconjunto}:\n`;
+      diagsNoSubconjunto.forEach(d => {
+        texto += `- ${d.descricao}\n`;
+      });
+      texto += '\n';
     });
     
-    texto += `OBSERVAÇÕES ADICIONAIS:\n`;
-    texto += `[Adicione aqui suas observações finais sobre a evolução do paciente, incluindo orientações fornecidas, resposta do paciente ao tratamento, e próximos passos.]\n`;
+    // Planejamento de Enfermagem
+    texto += `# Planejamento de Enfermagem:\n`;
+    
+    diagnosticos.forEach(d => {
+      const plano = planejamento.find(p => p.diagnosticoId === d.id);
+      
+      if (plano && plano.resultadoEsperado) {
+        texto += `${plano.resultadoEsperado}:\n`;
+        
+        plano.intervencoes.forEach(intervencao => {
+          texto += `- ${intervencao}\n`;
+        });
+        
+        texto += '\n';
+      }
+    });
+    
+    // Implementação de Enfermagem
+    texto += `# Implementação de Enfermagem:\n`;
+    
+    diagnosticos.forEach(d => {
+      const plano = planejamento.find(p => p.diagnosticoId === d.id);
+      
+      if (plano && plano.resultadoEsperado) {
+        texto += `${plano.resultadoEsperado}:\n`;
+        
+        plano.intervencoes.forEach((intervencao, idx) => {
+          const impl = encontrarImplementacao(d.id, idx);
+          
+          if (impl && impl.selecionada) {
+            let textoIntervencao = `- ${intervencao}`;
+            
+            if (impl.responsavel) {
+              if (impl.responsavel === 'Enfermeiro') {
+                // Verbo no infinitivo para o enfermeiro
+                textoIntervencao = `- ${intervencao}`;
+              } else {
+                // Ajuste verbal para outros responsáveis
+                textoIntervencao = `- Orientar ${impl.responsavel.toLowerCase()} a ${intervencao.toLowerCase()}`;
+              }
+            }
+            
+            if (impl.tempoReavaliacao && impl.unidadeTempo) {
+              textoIntervencao += ` em ${impl.tempoReavaliacao} ${impl.unidadeTempo}`;
+            }
+            
+            if (impl.observacoes) {
+              textoIntervencao += ` (Obs: ${impl.observacoes})`;
+            }
+            
+            texto += `${textoIntervencao}\n`;
+          }
+        });
+        
+        texto += '\n';
+      }
+    });
+    
+    texto += `# Portal CSAE Floripa`;
     
     return texto;
   };
 
   const usarSugestao = () => {
-    onChange(gerarSugestaoTexto());
+    onChange(gerarEvolucaoTexto());
   };
 
   return (
@@ -105,7 +182,7 @@ export function EvolucaoEnfermagem({
         <CardContent className="space-y-4">
           <Textarea
             placeholder="Registre aqui sua evolução final..."
-            className="min-h-[300px]"
+            className="min-h-[300px] font-mono"
             value={valor}
             onChange={(e) => onChange(e.target.value)}
           />
@@ -138,7 +215,7 @@ export function EvolucaoEnfermagem({
             </div>
             
             <div className="bg-csae-green-50 p-4 rounded-md">
-              <h3 className="font-medium text-csae-green-700">Concluídas</h3>
+              <h3 className="font-medium text-csae-green-700">Implementadas</h3>
               <p className="text-2xl font-semibold text-csae-green-800 mt-1">
                 {estatisticas.implementacoesCompletas}/{estatisticas.intervencoes}
               </p>

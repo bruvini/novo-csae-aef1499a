@@ -11,7 +11,11 @@ import {
   doc,
   getDoc,
   DocumentSnapshot,
-  Timestamp
+  Timestamp,
+  FieldValue,
+  updateDoc, 
+  deleteDoc, 
+  arrayUnion
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -61,7 +65,7 @@ export interface Usuario {
   motivoRevogacao?: string;
   dataUltimoAcesso?: Timestamp;
   historico_logs?: Log[];
-  id?: string; // Adicionado o campo id como opcional
+  id?: string;
 }
 
 export interface Paciente {
@@ -80,8 +84,8 @@ export interface Paciente {
 export interface Evolucao {
   id?: string;
   dataInicio: Timestamp;
-  dataAtualizacao: Timestamp;
-  dataConclusao?: Timestamp;
+  dataAtualizacao: Timestamp | FieldValue;
+  dataConclusao?: Timestamp | FieldValue;
   statusConclusao: 'Em andamento' | 'Interrompido' | 'Concluído';
   avaliacao?: string;
   diagnosticos?: DiagnosticoEnfermagem[];
@@ -263,11 +267,13 @@ export async function iniciarEvolucao(pacienteId: string, evolucao: Omit<Evoluca
       return false;
     }
     
+    const timestamp = serverTimestamp();
+    
     const novaEvolucao: Evolucao = {
       ...evolucao,
       id: crypto.randomUUID(),
-      dataInicio: serverTimestamp(),
-      dataAtualizacao: serverTimestamp(),
+      dataInicio: Timestamp.now(), // Usar Timestamp.now() em vez de serverTimestamp()
+      dataAtualizacao: timestamp, // serverTimestamp() é aceitável pois Evolucao.dataAtualizacao pode ser Timestamp | FieldValue
       statusConclusao: 'Em andamento'
     };
     
@@ -304,11 +310,11 @@ export async function salvarProgressoEvolucao(pacienteId: string, evolucaoId: st
     const evolucaoAtualizada = {
       ...evolucoes[evolucaoIndex],
       ...dadosAtualizados,
-      dataAtualizacao: serverTimestamp(),
-      statusConclusao: 'Interrompido' as const
+      dataAtualizacao: serverTimestamp(), // É aceitável pois Evolucao.dataAtualizacao pode ser Timestamp | FieldValue
+      statusConclusao: dadosAtualizados.statusConclusao || 'Interrompido' as const
     };
     
-    evolucoes[evolucaoIndex] = evolucaoAtualizada;
+    evolucoes[evolucaoIndex] = evolucaoAtualizada as Evolucao; // Cast para garantir que é do tipo Evolucao
     
     await updateDoc(pacienteRef, {
       evolucoes: evolucoes
@@ -343,12 +349,12 @@ export async function finalizarEvolucao(pacienteId: string, evolucaoId: string, 
     const evolucaoFinalizada = {
       ...evolucoes[evolucaoIndex],
       ...dadosFinais,
-      dataConclusao: serverTimestamp(),
-      dataAtualizacao: serverTimestamp(),
+      dataConclusao: serverTimestamp(), // É aceitável pois Evolucao.dataConclusao pode ser Timestamp | FieldValue
+      dataAtualizacao: serverTimestamp(), // É aceitável pois Evolucao.dataAtualizacao pode ser Timestamp | FieldValue
       statusConclusao: 'Concluído' as const
     };
     
-    evolucoes[evolucaoIndex] = evolucaoFinalizada;
+    evolucoes[evolucaoIndex] = evolucaoFinalizada as Evolucao; // Cast para garantir que é do tipo Evolucao
     
     await updateDoc(pacienteRef, {
       evolucoes: evolucoes
@@ -360,6 +366,3 @@ export async function finalizarEvolucao(pacienteId: string, evolucaoId: string, 
     return false;
   }
 }
-
-// Importação das funções necessárias que estavam faltando
-import { updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';

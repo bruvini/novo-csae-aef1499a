@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, LogIn, UserPlus } from "lucide-react";
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -13,6 +13,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [registrarAtivo, setRegistrarAtivo] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const { entrar, salvarSessao } = useAutenticacao();
   const navigate = useNavigate();
@@ -32,6 +33,10 @@ const LoginForm = () => {
       return () => clearTimeout(timer);
     }
   }, [registrarAtivo]);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,14 +186,25 @@ const LoginForm = () => {
           <div className="relative">
             <Lock className="absolute left-3 top-2.5 h-5 w-5 text-csae-green-500" />
             <Input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Sua senha"
-              className="csae-input pl-10"
+              className="csae-input pl-10 pr-10"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
             />
+            <button
+              type="button"
+              className="absolute right-3 top-2.5 text-csae-green-500"
+              onClick={togglePasswordVisibility}
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
           </div>
           <div className="text-right">
             <a href="#" className="text-xs csae-link">

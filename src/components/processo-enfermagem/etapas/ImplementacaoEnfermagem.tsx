@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { 
@@ -19,6 +19,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface Planejamento {
   diagnosticoId: string;
@@ -31,6 +33,9 @@ interface Implementacao {
   responsavel: string;
   status: 'Pendente' | 'Em andamento' | 'Concluído';
   observacoes?: string;
+  selecionada?: boolean;
+  tempoReavaliacao?: string;
+  unidadeTempo?: string;
 }
 
 interface ImplementacaoEnfermagemProps {
@@ -44,32 +49,79 @@ export function ImplementacaoEnfermagem({
   implementacao, 
   setImplementacao 
 }: ImplementacaoEnfermagemProps) {
-  // Listar todas as intervenções de todos os planejamentos
-  const todasIntervencoes = planejamento.flatMap(p => 
-    p.intervencoes.map((intervencao, index) => ({
-      id: `${p.diagnosticoId}-${index}`,
-      texto: intervencao,
-      diagnosticoId: p.diagnosticoId
-    }))
-  );
+  // Agrupar intervenções por resultado esperado para exibição organizada
+  const resultadosEIntervencoesAgrupados: Record<string, {
+    resultadoEsperado: string,
+    intervencoes: { id: string, texto: string }[]
+  }> = {};
+  
+  planejamento.forEach(p => {
+    if (p.resultadoEsperado && p.intervencoes.length > 0) {
+      if (!resultadosEIntervencoesAgrupados[p.diagnosticoId]) {
+        resultadosEIntervencoesAgrupados[p.diagnosticoId] = {
+          resultadoEsperado: p.resultadoEsperado,
+          intervencoes: []
+        };
+      }
+      
+      p.intervencoes.forEach((intervencao, index) => {
+        resultadosEIntervencoesAgrupados[p.diagnosticoId].intervencoes.push({
+          id: `${p.diagnosticoId}-${index}`,
+          texto: intervencao
+        });
+      });
+    }
+  });
+  
+  // Opções para unidade de tempo
+  const unidadesTempo = [
+    'segundo(s)',
+    'minuto(s)',
+    'hora(s)',
+    'dia(s)',
+    'semana(s)',
+    'mes(es)',
+    'semestre(s)',
+    'ano(s)'
+  ];
   
   // Inicializar implementação para cada intervenção que ainda não tenha
   useEffect(() => {
-    const intervencoesComImplementacao = implementacao.map(i => i.intervencaoId);
+    const novasImplementacoes: Implementacao[] = [];
     
-    const novasImplementacoes = todasIntervencoes
-      .filter(i => !intervencoesComImplementacao.includes(i.id))
-      .map(i => ({
-        intervencaoId: i.id,
-        responsavel: '',
-        status: 'Pendente' as const,
-        observacoes: ''
-      }));
+    Object.values(resultadosEIntervencoesAgrupados).forEach(grupo => {
+      grupo.intervencoes.forEach(intervencao => {
+        const implementacaoExistente = implementacao.find(i => i.intervencaoId === intervencao.id);
+        
+        if (!implementacaoExistente) {
+          novasImplementacoes.push({
+            intervencaoId: intervencao.id,
+            responsavel: '',
+            status: 'Pendente',
+            observacoes: '',
+            selecionada: false,
+            tempoReavaliacao: '',
+            unidadeTempo: 'dia(s)'
+          });
+        }
+      });
+    });
     
     if (novasImplementacoes.length > 0) {
       setImplementacao(prev => [...prev, ...novasImplementacoes]);
     }
-  }, [todasIntervencoes, implementacao, setImplementacao]);
+  }, [planejamento, implementacao, setImplementacao, resultadosEIntervencoesAgrupados]);
+
+  // Métodos para atualizar a implementação
+  const toggleSelecionada = (intervencaoId: string) => {
+    setImplementacao(prev => 
+      prev.map(i => 
+        i.intervencaoId === intervencaoId 
+          ? { ...i, selecionada: !i.selecionada } 
+          : i
+      )
+    );
+  };
 
   const atualizarResponsavel = (intervencaoId: string, valor: string) => {
     setImplementacao(prev => 
@@ -100,9 +152,30 @@ export function ImplementacaoEnfermagem({
       )
     );
   };
+  
+  const atualizarTempoReavaliacao = (intervencaoId: string, valor: string) => {
+    setImplementacao(prev => 
+      prev.map(i => 
+        i.intervencaoId === intervencaoId 
+          ? { ...i, tempoReavaliacao: valor } 
+          : i
+      )
+    );
+  };
+  
+  const atualizarUnidadeTempo = (intervencaoId: string, valor: string) => {
+    setImplementacao(prev => 
+      prev.map(i => 
+        i.intervencaoId === intervencaoId 
+          ? { ...i, unidadeTempo: valor } 
+          : i
+      )
+    );
+  };
 
-  const verificarPeloMenosUmResponsavel = () => {
-    return implementacao.some(i => i.responsavel.trim());
+  // Verificar se pelo menos uma intervenção foi selecionada e tem responsável
+  const verificarPeloMenosUmaImplementacao = () => {
+    return implementacao.some(i => i.selecionada && i.responsavel.trim());
   };
 
   return (
@@ -111,76 +184,118 @@ export function ImplementacaoEnfermagem({
         <CardHeader>
           <CardTitle>Implementação de Enfermagem</CardTitle>
           <CardDescription>
-            Defina os responsáveis e o status de cada intervenção planejada
+            Selecione as intervenções que serão implementadas e defina os responsáveis
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Intervenção</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Observações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {todasIntervencoes.map((intervencao) => {
-                const impl = implementacao.find(i => i.intervencaoId === intervencao.id);
-                
-                if (!impl) return null;
-                
-                return (
-                  <TableRow key={intervencao.id}>
-                    <TableCell className="align-top py-4">
-                      {intervencao.texto}
-                    </TableCell>
-                    <TableCell className="align-top py-4">
-                      <Input
-                        placeholder="Nome do responsável"
-                        value={impl.responsavel}
-                        onChange={(e) => atualizarResponsavel(intervencao.id, e.target.value)}
-                        className="w-full"
-                      />
-                    </TableCell>
-                    <TableCell className="align-top py-4">
-                      <Select
-                        value={impl.status}
-                        onValueChange={(valor: 'Pendente' | 'Em andamento' | 'Concluído') => 
-                          atualizarStatus(intervencao.id, valor)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Pendente">Pendente</SelectItem>
-                          <SelectItem value="Em andamento">Em andamento</SelectItem>
-                          <SelectItem value="Concluído">Concluído</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="align-top py-4">
-                      <Textarea
-                        placeholder="Observações (opcional)"
-                        value={impl.observacoes || ''}
-                        onChange={(e) => atualizarObservacoes(intervencao.id, e.target.value)}
-                        className="w-full h-20 min-h-0"
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              
-              {todasIntervencoes.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-6 text-gray-500">
-                    Nenhuma intervenção foi definida na etapa de planejamento.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        <CardContent className="space-y-4">
+          {Object.entries(resultadosEIntervencoesAgrupados).length > 0 ? (
+            Object.entries(resultadosEIntervencoesAgrupados).map(([diagnosticoId, dados]) => (
+              <Card key={diagnosticoId} className="overflow-hidden mb-6">
+                <CardHeader className="bg-gray-50 py-3 px-4">
+                  <CardTitle className="text-base">Resultado Esperado</CardTitle>
+                  <CardDescription className="text-sm mt-1 font-medium text-gray-700">
+                    {dados.resultadoEsperado}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-12 text-center">Imp.</TableHead>
+                        <TableHead>Intervenção</TableHead>
+                        <TableHead className="w-[180px]">Responsável</TableHead>
+                        <TableHead className="w-[180px]">Reavaliação</TableHead>
+                        <TableHead className="w-[200px]">Observações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dados.intervencoes.map((intervencao) => {
+                        const impl = implementacao.find(i => i.intervencaoId === intervencao.id);
+                        
+                        if (!impl) return null;
+                        
+                        return (
+                          <TableRow key={intervencao.id}>
+                            <TableCell className="text-center">
+                              <Checkbox
+                                checked={impl.selecionada}
+                                onCheckedChange={() => toggleSelecionada(intervencao.id)}
+                                id={`check-${intervencao.id}`}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Label
+                                htmlFor={`check-${intervencao.id}`}
+                                className="cursor-pointer"
+                              >
+                                {intervencao.texto}
+                              </Label>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={impl.responsavel}
+                                onValueChange={(valor) => atualizarResponsavel(intervencao.id, valor)}
+                                disabled={!impl.selecionada}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Selecione" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Enfermeiro">Enfermeiro</SelectItem>
+                                  <SelectItem value="Outra Pessoa">Outra Pessoa</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Input
+                                  type="number"
+                                  placeholder="Tempo"
+                                  value={impl.tempoReavaliacao}
+                                  onChange={(e) => atualizarTempoReavaliacao(intervencao.id, e.target.value)}
+                                  className="w-16"
+                                  disabled={!impl.selecionada}
+                                  min="0"
+                                />
+                                <Select
+                                  value={impl.unidadeTempo}
+                                  onValueChange={(valor) => atualizarUnidadeTempo(intervencao.id, valor)}
+                                  disabled={!impl.selecionada}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Unidade" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {unidadesTempo.map(unidade => (
+                                      <SelectItem key={unidade} value={unidade}>{unidade}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Textarea
+                                placeholder="Observações (opcional)"
+                                value={impl.observacoes || ''}
+                                onChange={(e) => atualizarObservacoes(intervencao.id, e.target.value)}
+                                className="w-full h-16 min-h-0 text-sm"
+                                disabled={!impl.selecionada}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="text-center py-10 text-gray-500 border border-dashed rounded-md">
+              <p>Nenhuma intervenção foi definida na etapa de planejamento.</p>
+              <p className="mt-2">Volte à etapa anterior e adicione pelo menos um resultado e intervenção.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -188,16 +303,16 @@ export function ImplementacaoEnfermagem({
         <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
         <div>
           <h4 className="font-medium text-blue-700">
-            Status da Implementação: {verificarPeloMenosUmResponsavel() ? 'Válido' : 'Incompleto'}
+            Status da Implementação: {verificarPeloMenosUmaImplementacao() ? 'Válido' : 'Incompleto'}
           </h4>
           <p className="mt-1 text-sm text-blue-700">
-            {verificarPeloMenosUmResponsavel() 
-              ? 'Pelo menos um responsável foi definido para as intervenções.' 
-              : 'Para continuar, defina pelo menos um responsável para qualquer uma das intervenções.'}
+            {verificarPeloMenosUmaImplementacao() 
+              ? 'Pelo menos uma intervenção foi selecionada e tem responsável definido.' 
+              : 'Para continuar, selecione pelo menos uma intervenção e defina um responsável.'}
           </p>
-          {!verificarPeloMenosUmResponsavel() && (
+          {!verificarPeloMenosUmaImplementacao() && (
             <p className="mt-2 text-sm text-blue-700 font-medium">
-              Preencha o campo "Responsável" para pelo menos uma intervenção.
+              Marque a caixa "Imp." para selecionar uma intervenção e escolha um responsável.
             </p>
           )}
         </div>
