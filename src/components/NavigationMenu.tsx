@@ -21,6 +21,7 @@ import {
   Info,
   HelpCircle,
   Users,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAutenticacao } from '@/services/autenticacao';
@@ -53,6 +54,13 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
       icon: ClipboardCheck,
       href: '/processo-enfermagem',
       adminOnly: false
+    },
+    {
+      id: 'gerenciamento-enfermagem',
+      title: 'Gerenciamento de Conteúdos',
+      icon: Settings,
+      href: '/gerenciamento-enfermagem',
+      adminOnly: true
     },
     {
       id: 'pops',

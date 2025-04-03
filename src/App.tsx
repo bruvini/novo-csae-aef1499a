@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
+import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem"; // Nova página
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -46,6 +47,11 @@ const App = () => (
           <Route path="/gestao-usuarios" element={
             <RotaProtegida apenasAdmin>
               <GestaoUsuarios />
+            </RotaProtegida>
+          } />
+          <Route path="/gerenciamento-enfermagem" element={
+            <RotaProtegida apenasAdmin>
+              <GerenciamentoEnfermagem />
             </RotaProtegida>
           } />
           

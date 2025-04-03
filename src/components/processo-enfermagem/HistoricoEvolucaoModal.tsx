@@ -26,6 +26,7 @@ import {
 import { ClipboardCheck, Eye, Copy } from 'lucide-react';
 import { Paciente, Evolucao } from '@/services/bancodados';
 import { useToast } from '@/hooks/use-toast';
+import { Timestamp } from 'firebase/firestore';
 
 interface HistoricoEvolucaoModalProps {
   isOpen: boolean;
@@ -42,8 +43,9 @@ export function HistoricoEvolucaoModal({ isOpen, onClose, paciente }: HistoricoE
     ? paciente.evolucoes
         .filter(e => e.statusConclusao === 'Concluído')
         .sort((a, b) => {
-          const dataA = a.dataConclusao?.toMillis() || 0;
-          const dataB = b.dataConclusao?.toMillis() || 0;
+          // Corrigido: Verificar se é Timestamp antes de chamar toMillis
+          const dataA = a.dataConclusao && 'toMillis' in a.dataConclusao ? a.dataConclusao.toMillis() : 0;
+          const dataB = b.dataConclusao && 'toMillis' in b.dataConclusao ? b.dataConclusao.toMillis() : 0;
           return dataB - dataA;
         })
     : [];

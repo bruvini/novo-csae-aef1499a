@@ -18,7 +18,10 @@ const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) =>
   useEffect(() => {
     const verificarAcesso = async () => {
       try {
+        // Logar para depuração
+        console.log("Verificando autenticação...");
         const autenticado = await verificarAutenticacao();
+        console.log("Resultado autenticação:", autenticado);
         
         if (!autenticado) {
           toast({
@@ -31,6 +34,7 @@ const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) =>
         }
         
         const sessao = obterSessao();
+        console.log("Sessão encontrada:", sessao);
         
         // Verificar se o status de acesso é "Aprovado"
         if (sessao && sessao.statusAcesso !== "Aprovado") {
