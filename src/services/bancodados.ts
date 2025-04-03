@@ -43,6 +43,18 @@ export interface Usuario {
   uid: string;
   dataCadastro: any;
   statusAcesso: 'Aguardando' | 'Aprovado' | 'Negado';
+  tipoUsuario?: 'Administrador' | 'Comum';
+  dataAprovacao?: any;
+  dataRevogacao?: any;
+  motivoRevogacao?: string;
+  dataUltimoAcesso?: any;
+  historico_logs?: Array<{
+    usuario_afetado: string;
+    acao: "aprovado" | "recusado" | "revogado" | "reativado" | "excluído";
+    quem_realizou: string;
+    data_hora: any;
+    justificativa?: string;
+  }>;
 }
 
 export async function verificarUsuarioExistente(email: string, numeroCoren?: string, ufCoren?: string, matricula?: string): Promise<boolean> {
@@ -82,7 +94,7 @@ export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | '
   const usuarioCompleto = {
     ...usuario,
     dataCadastro: serverTimestamp(),
-    statusAcesso: 'Aguardando'
+    statusAcesso: 'Aguardando' as const
   };
 
   const docRef = await addDoc(collection(db, 'usuarios'), usuarioCompleto);

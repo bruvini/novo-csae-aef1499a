@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -98,6 +99,7 @@ interface Usuario {
   motivoRevogacao?: string;
   dataUltimoAcesso?: Timestamp;
   historico_logs?: Log[];
+  tipoUsuario?: "Administrador" | "Comum";
 }
 
 const GestaoUsuarios = () => {
@@ -271,13 +273,14 @@ const GestaoUsuarios = () => {
         historico_logs: arrayUnion(logEntry)
       });
 
-      // Atualizar estado local
+      // Atualizar estado local com tipagem correta
       const updatedUsuarios = usuarios.map((user) => {
         if (user.id === selectedUser.id) {
           return {
             ...user,
-            statusAcesso: "Aprovado",
+            statusAcesso: "Aprovado" as const,
             dataAprovacao: Timestamp.now(),
+            tipoUsuario,
             historico_logs: [...(user.historico_logs || []), logEntry],
           };
         }
@@ -317,12 +320,12 @@ const GestaoUsuarios = () => {
         historico_logs: arrayUnion(logEntry),
       });
 
-      // Atualizar estado local
+      // Atualizar estado local com tipagem correta
       const updatedUsuarios = usuarios.map((user) => {
         if (user.id === selectedUser.id) {
           return {
             ...user,
-            statusAcesso: "Negado",
+            statusAcesso: "Negado" as const,
             dataRevogacao: Timestamp.now(),
             motivoRevogacao: justification,
             historico_logs: [...(user.historico_logs || []), logEntry],
@@ -365,12 +368,12 @@ const GestaoUsuarios = () => {
         historico_logs: arrayUnion(logEntry),
       });
 
-      // Atualizar estado local
+      // Atualizar estado local com tipagem correta
       const updatedUsuarios = usuarios.map((user) => {
         if (user.id === selectedUser.id) {
           return {
             ...user,
-            statusAcesso: "Negado",
+            statusAcesso: "Negado" as const,
             dataRevogacao: Timestamp.now(),
             motivoRevogacao: justification,
             historico_logs: [...(user.historico_logs || []), logEntry],
@@ -414,12 +417,12 @@ const GestaoUsuarios = () => {
         historico_logs: arrayUnion(logEntry),
       });
 
-      // Atualizar estado local
+      // Atualizar estado local com tipagem correta
       const updatedUsuarios = usuarios.map((user) => {
         if (user.id === selectedUser.id) {
           return {
             ...user,
-            statusAcesso: "Aprovado",
+            statusAcesso: "Aprovado" as const,
             dataAprovacao: Timestamp.now(),
             dataRevogacao: undefined,
             motivoRevogacao: undefined,
