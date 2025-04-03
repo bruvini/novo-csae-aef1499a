@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
+import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -33,6 +34,11 @@ const App = () => (
           <Route path="/sugestoes" element={
             <RotaProtegida>
               <Sugestoes />
+            </RotaProtegida>
+          } />
+          <Route path="/processo-enfermagem" element={
+            <RotaProtegida>
+              <ProcessoEnfermagem />
             </RotaProtegida>
           } />
           
