@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
@@ -20,8 +19,10 @@ import {
 import { useAutenticacao } from '@/services/autenticacao';
 
 const Dashboard = () => {
-  const { usuario } = useAutenticacao();
-  
+  // Obtemos a sessão salva que contém os dados do usuário autenticado.
+  const { obterSessao } = useAutenticacao();
+  const sessao = obterSessao();
+
   // Dados dos cards de menu
   const menuItems = [
     {
@@ -63,7 +64,7 @@ const Dashboard = () => {
       id: 6,
       title: 'Sugestões',
       description: 'Compartilhe suas ideias conosco',
-      icon: Lightbulb,  // Corrected from LightBulb
+      icon: Lightbulb,
       href: '/sugestoes'
     },
     {
@@ -97,29 +98,31 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
         
-        {/* Seção para Administradores */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-csae-green-700">Ferramentas Exclusivas para Administradores</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
-            <Button 
-              className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2"
-              onClick={() => window.location.href = '/gestao-usuarios'}
-            >
-              <Users className="h-4 w-4" />
-              Gestão de Usuários
-            </Button>
-            <Button 
-              variant="outline"
-              className="text-csae-green-700 border-csae-green-300 hover:bg-csae-green-50 flex items-center gap-2"
-              onClick={() => window.location.href = '/relatorios'}
-            >
-              <BarChart className="h-4 w-4" />
-              Relatórios de Uso
-            </Button>
-          </CardContent>
-        </Card>
+        {/* Seção para Administradores - exibida somente se o tipoUsuario for 'Administrador' */}
+        {sessao && sessao.tipoUsuario === 'Administrador' && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-csae-green-700">Ferramentas Exclusivas para Administradores</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-4">
+              <Button 
+                className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2"
+                onClick={() => window.location.href = '/gestao-usuarios'}
+              >
+                <Users className="h-4 w-4" />
+                Gestão de Usuários
+              </Button>
+              <Button 
+                variant="outline"
+                className="text-csae-green-700 border-csae-green-300 hover:bg-csae-green-50 flex items-center gap-2"
+                onClick={() => window.location.href = '/relatorios'}
+              >
+                <BarChart className="h-4 w-4" />
+                Relatórios de Uso
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Cards de Menu */}
         <h2 className="text-2xl font-semibold text-csae-green-700 mb-6">Ferramentas disponíveis</h2>
