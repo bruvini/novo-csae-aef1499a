@@ -57,12 +57,12 @@ const LoginForm = () => {
       // 1. Autenticar no Firebase Authentication
       const usuarioAuth = await entrar(email, password);
 
-      if (!usuarioAuth || !usuarioAuth.user) {
+      if (!usuarioAuth) {
         throw new Error("Credenciais inválidas.");
       }
 
       // 2. Buscar o usuário no Firestore
-      const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.user.uid);
+      const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.uid);
 
       if (!usuarioFirestore) {
         // Usuário autenticado mas sem cadastro no Firestore
