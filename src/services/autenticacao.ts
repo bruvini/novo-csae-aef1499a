@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { 
   createUserWithEmailAndPassword, 
@@ -25,7 +24,26 @@ export interface SessaoUsuario {
 
 export function useAutenticacao() {
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Função para obter a sessão do localStorage
+  const obterSessao = (): SessaoUsuario | null => {
+    const sessao = localStorage.getItem('sessaoUsuario');
+    const resultado = sessao ? JSON.parse(sessao) : null;
+    console.log("Sessão obtida do localStorage:", resultado);
+    return resultado;
+  };
+
+  const salvarSessao = (dados: SessaoUsuario) => {
+    console.log("Salvando sessão do usuário:", dados);
+    localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
+  };
+
+  const limparSessao = () => {
+    console.log("Limpando dados de sessão do localStorage");
+    localStorage.removeItem('sessaoUsuario');
+    localStorage.removeItem('usuario');
+  };
 
   useEffect(() => {
     console.log("Inicializando listener de autenticação");
@@ -38,47 +56,47 @@ export function useAutenticacao() {
           email: usuarioFirebase.email
         });
         
-        // Verificar se existe sessão no localStorage quando o usuário já está autenticado
+        // Verificar se já existe sessão no localStorage
         const sessaoExistente = obterSessao();
         console.log("Sessão existente:", sessaoExistente);
         
         if (!sessaoExistente) {
-          // Se não existir sessão mas o usuário está autenticado, buscar dados e criar sessão
+          // Se não existir sessão, buscar os dados no Firestore para criar a sessão automaticamente
           console.log("Usuário autenticado sem sessão, buscando dados do Firestore");
-          buscarUsuarioPorUid(usuarioFirebase.uid).then(usuarioFirestore => {
-            if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-              // Criar sessão se não existir
-              console.log("Usuário aprovado, criando sessão automaticamente");
-              const dadosSessao = {
-                uid: usuarioFirestore.uid,
-                email: usuarioFirestore.email,
-                nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-                tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-                statusAcesso: usuarioFirestore.statusAcesso
-              };
-              
-              salvarSessao(dadosSessao);
-              console.log("Sessão criada automaticamente:", dadosSessao);
-              
-              // Também salvar na localStorage para compatibilidade
-              localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-            } else {
-              console.log("Usuário não aprovado ou não encontrado no Firestore, não criando sessão");
-              if (usuarioFirestore) {
-                console.log("Status de acesso:", usuarioFirestore.statusAcesso);
+          buscarUsuarioPorUid(usuarioFirebase.uid)
+            .then(usuarioFirestore => {
+              if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
+                console.log("Usuário aprovado, criando sessão automaticamente");
+                const dadosSessao: SessaoUsuario = {
+                  uid: usuarioFirestore.uid,
+                  email: usuarioFirestore.email,
+                  nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
+                  tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
+                  statusAcesso: usuarioFirestore.statusAcesso
+                };
+                
+                salvarSessao(dadosSessao);
+                console.log("Sessão criada automaticamente:", dadosSessao);
+                
+                // Também salvar na localStorage para compatibilidade
+                localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
+              } else {
+                console.log("Usuário não aprovado ou não encontrado no Firestore, não criando sessão");
+                if (usuarioFirestore) {
+                  console.log("Status de acesso:", usuarioFirestore.statusAcesso);
+                }
               }
-            }
-          }).catch(erro => {
-            console.error("Erro ao buscar dados do usuário:", erro);
-          });
+            })
+            .catch(erro => {
+              console.error("Erro ao buscar dados do usuário:", erro);
+            });
         }
       } else {
         console.log("Usuário não autenticado, limpando estado e sessão");
         setUsuario(null);
-        // Limpar sessão se o usuário não estiver autenticado
         limparSessao();
       }
-      setCarregando(false);
+      setAuthLoading(false);
     });
 
     return () => {
@@ -99,7 +117,6 @@ export function useAutenticacao() {
       console.log("Iniciando processo de login para:", email);
       const resultado = await signInWithEmailAndPassword(auth, email, password);
       console.log("Login bem-sucedido. UID:", resultado.user.uid);
-      
       return resultado.user;
     } catch (error) {
       console.error("Erro no processo de login:", error);
@@ -115,41 +132,24 @@ export function useAutenticacao() {
     console.log("Logout completo, sessão removida");
   };
 
-  const salvarSessao = (dados: SessaoUsuario) => {
-    console.log("Salvando sessão do usuário:", dados);
-    localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
-  };
-
-  const obterSessao = (): SessaoUsuario | null => {
-    const sessao = localStorage.getItem('sessaoUsuario');
-    const resultado = sessao ? JSON.parse(sessao) : null;
-    console.log("Sessão obtida do localStorage:", resultado);
-    return resultado;
-  };
-
-  const limparSessao = () => {
-    console.log("Limpando dados de sessão do localStorage");
-    localStorage.removeItem('sessaoUsuario');
-    localStorage.removeItem('usuario');
-  };
-
   const verificarAutenticacao = async () => {
     console.log("Verificando autenticação. Estado atual:", usuario ? "Autenticado" : "Não autenticado");
     
-    // Verificar se o usuário está autenticado no Firebase
+    if (authLoading) {
+      console.log("Ainda carregando o estado de autenticação...");
+      return false;
+    }
+    
     if (!usuario) {
       console.log("Usuário não autenticado no Firebase");
       return false;
     }
 
-    // Verificar se existe sessão no localStorage
     const sessao = obterSessao();
     console.log("Sessão encontrada:", sessao);
     
     if (!sessao) {
       console.log("Sessão não encontrada no localStorage, tentando criar");
-      
-      // Tentar buscar dados do usuário e criar sessão
       try {
         console.log("Buscando usuário no Firestore. UID:", usuario.uid);
         const usuarioFirestore = await buscarUsuarioPorUid(usuario.uid);
@@ -157,7 +157,7 @@ export function useAutenticacao() {
         
         if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
           console.log("Usuário aprovado, criando sessão");
-          const dadosSessao = {
+          const dadosSessao: SessaoUsuario = {
             uid: usuarioFirestore.uid,
             email: usuarioFirestore.email,
             nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
@@ -166,10 +166,7 @@ export function useAutenticacao() {
           };
           
           salvarSessao(dadosSessao);
-          
-          // Também salvar para compatibilidade
           localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-          
           console.log("Sessão criada durante verificação");
           return true;
         } else {
@@ -181,11 +178,9 @@ export function useAutenticacao() {
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
       }
-      
       return false;
     }
 
-    // Verificar se o status de acesso é válido
     if (sessao.statusAcesso !== 'Aprovado') {
       console.log("Status de acesso inválido:", sessao.statusAcesso);
       return false;
@@ -204,7 +199,7 @@ export function useAutenticacao() {
 
   return {
     usuario,
-    carregando,
+    authLoading,
     registrar,
     entrar,
     sair,

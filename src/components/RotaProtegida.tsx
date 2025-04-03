@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAutenticacao } from '@/services/autenticacao';
@@ -10,12 +9,18 @@ interface RotaProtegidaProps {
 }
 
 const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) => {
-  const { verificarAutenticacao, verificarAdmin, obterSessao } = useAutenticacao();
+  const { verificarAutenticacao, verificarAdmin, obterSessao, authLoading } = useAutenticacao();
   const { toast } = useToast();
   const [carregando, setCarregando] = useState(true);
   const [autorizado, setAutorizado] = useState(false);
 
   useEffect(() => {
+    // Se ainda estiver carregando o estado do Firebase, aguarda
+    if (authLoading) {
+      console.log("RotaProtegida: authLoading true, aguardando...");
+      return;
+    }
+
     const verificarAcesso = async () => {
       try {
         console.log("RotaProtegida: Iniciando verificação de acesso");
@@ -101,9 +106,9 @@ const RotaProtegida = ({ children, apenasAdmin = false }: RotaProtegidaProps) =>
     };
     
     verificarAcesso();
-  }, [verificarAutenticacao, verificarAdmin, toast, apenasAdmin, obterSessao]);
+  }, [verificarAutenticacao, verificarAdmin, toast, apenasAdmin, obterSessao, authLoading]);
 
-  if (carregando) {
+  if (carregando || authLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
