@@ -56,11 +56,11 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
       adminOnly: false
     },
     {
-      id: 'gerenciamento-enfermagem',
-      title: 'Gerenciamento de Conteúdos',
-      icon: Settings,
-      href: '/gerenciamento-enfermagem',
-      adminOnly: true
+      id: 'protocolos',
+      title: 'Protocolos de Enfermagem',
+      icon: BookOpen,
+      href: '/protocolos',
+      adminOnly: false
     },
     {
       id: 'pops',
@@ -77,11 +77,11 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
       adminOnly: false
     },
     {
-      id: 'protocolos',
-      title: 'Protocolos de Enfermagem',
-      icon: BookOpen,
-      href: '/protocolos',
-      adminOnly: false
+      id: 'gerenciamento-enfermagem',
+      title: 'Gerenciamento de Conteúdos',
+      icon: Settings,
+      href: '/gerenciamento-enfermagem',
+      adminOnly: true
     },
     {
       id: 'noticias',

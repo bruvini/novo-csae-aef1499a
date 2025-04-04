@@ -136,6 +136,12 @@ export interface RevisaoSistema {
   updatedAt?: Timestamp;
 }
 
+export interface Intervencao {
+  id: string;
+  descricao: string;
+  linkArquivo?: string;
+}
+
 export interface DiagnosticoCompleto {
   id?: string;
   descricao: string;
@@ -146,12 +152,6 @@ export interface DiagnosticoCompleto {
   intervencoes: Intervencao[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-}
-
-export interface Intervencao {
-  id: string;
-  descricao: string;
-  linkArquivo?: string;
 }
 
 export interface NHB {

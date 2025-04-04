@@ -29,7 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Edit, Trash2, ExternalLink, Calendar, FileText, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { ProtocoloEnfermagem } from '@/services/bancodados/tipos';
 import { format } from 'date-fns';
@@ -46,7 +46,7 @@ const GerenciadorProtocolos = () => {
   const [formProtocolo, setFormProtocolo] = useState<ProtocoloEnfermagem>({
     volume: '',
     nome: '',
-    dataPublicacao: new Date() as any,
+    dataPublicacao: Timestamp.now(),
     descricao: '',
     linkPdf: ''
   });
@@ -92,7 +92,7 @@ const GerenciadorProtocolos = () => {
     setFormProtocolo({
       volume: '',
       nome: '',
-      dataPublicacao: new Date() as any,
+      dataPublicacao: Timestamp.now(),
       descricao: '',
       linkPdf: ''
     });
@@ -154,7 +154,7 @@ const GerenciadorProtocolos = () => {
         
         // Atualizar lista
         setProtocolos(prev => 
-          prev.map(p => p.id === editandoId ? {...formProtocolo, id: editandoId, updatedAt: new Date() as any} : p)
+          prev.map(p => p.id === editandoId ? {...formProtocolo, id: editandoId, updatedAt: Timestamp.now()} : p)
         );
       } else {
         // Criar novo
@@ -175,8 +175,8 @@ const GerenciadorProtocolos = () => {
         setProtocolos(prev => [...prev, {
           ...novoProtocolo, 
           id: docRef.id, 
-          createdAt: new Date() as any, 
-          updatedAt: new Date() as any
+          createdAt: Timestamp.now(), 
+          updatedAt: Timestamp.now()
         }]);
       }
       
@@ -239,7 +239,7 @@ const GerenciadorProtocolos = () => {
         // Para dataPublicacao, defina para a data atual
         setFormProtocolo({
           ...formProtocolo,
-          [field]: new Date()
+          [field]: Timestamp.now()
         });
       }
       return;
@@ -254,9 +254,10 @@ const GerenciadorProtocolos = () => {
         throw new Error("Data inválida");
       }
       
+      // Converte Date para Timestamp
       setFormProtocolo({
         ...formProtocolo,
-        [field]: data
+        [field]: Timestamp.fromDate(data)
       });
     } catch (error) {
       console.error("Erro ao processar data:", error);

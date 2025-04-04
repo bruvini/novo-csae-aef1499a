@@ -11,6 +11,7 @@ import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
+import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -40,6 +41,11 @@ const App = () => (
           <Route path="/processo-enfermagem" element={
             <RotaProtegida>
               <ProcessoEnfermagem />
+            </RotaProtegida>
+          } />
+          <Route path="/protocolos" element={
+            <RotaProtegida>
+              <ProtocolosEnfermagem />
             </RotaProtegida>
           } />
           
