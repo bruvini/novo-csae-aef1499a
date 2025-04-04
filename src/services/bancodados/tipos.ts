@@ -94,3 +94,83 @@ export interface Implementacao {
   status: 'Pendente' | 'Em andamento' | 'Concluído';
   observacoes?: string;
 }
+
+export interface ValorReferencia {
+  idadeMinima?: number;
+  idadeMaxima?: number;
+  sexo?: 'Masculino' | 'Feminino' | 'Todos';
+  valorMinimo?: number;
+  valorMaximo?: number;
+  unidade: string;
+  nhbId?: string;
+  diagnosticoId?: string;
+  representaAlteracao: boolean;
+  tituloAlteracao?: string;
+  variacaoPor: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
+}
+
+export interface SinalVital {
+  id?: string;
+  nome: string;
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ExameLaboratorial {
+  id?: string;
+  nome: string;
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface RevisaoSistema {
+  id?: string;
+  nome: string;
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface DiagnosticoCompleto {
+  id?: string;
+  descricao: string;
+  subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
+  subitemId: string;
+  subitemNome: string;
+  explicacao?: string;
+  intervencoes: Intervencao[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface Intervencao {
+  id: string;
+  descricao: string;
+  linkArquivo?: string;
+}
+
+export interface NHB {
+  id?: string;
+  nome: string;
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ProtocoloEnfermagem {
+  id?: string;
+  volume: string;
+  nome: string;
+  dataPublicacao: Timestamp;
+  dataAtualizacao?: Timestamp;
+  linkImagem?: string;
+  descricao: string;
+  linkPdf: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}

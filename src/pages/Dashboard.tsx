@@ -16,7 +16,6 @@ import {
   HelpCircle, 
   Users, 
   BarChart,
-  Database,
   Settings
 } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
@@ -125,10 +124,10 @@ const Dashboard = () => {
               </Button>
               <Button 
                 className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2"
-                onClick={() => window.location.href = '/gerenciamento-conteudo'}
+                onClick={() => window.location.href = '/gerenciamento-enfermagem'}
               >
-                <Database className="h-4 w-4" />
-                Gerenciamento de Conteúdo
+                <Settings className="h-4 w-4" />
+                Gerenciamento de Conteúdos
               </Button>
             </CardContent>
           </Card>

@@ -10,8 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
-import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem"; 
-import GerenciamentoConteudo from "./pages/GerenciamentoConteudo";
+import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -53,11 +52,6 @@ const App = () => (
           <Route path="/gerenciamento-enfermagem" element={
             <RotaProtegida apenasAdmin>
               <GerenciamentoEnfermagem />
-            </RotaProtegida>
-          } />
-          <Route path="/gerenciamento-conteudo" element={
-            <RotaProtegida apenasAdmin>
-              <GerenciamentoConteudo />
             </RotaProtegida>
           } />
           

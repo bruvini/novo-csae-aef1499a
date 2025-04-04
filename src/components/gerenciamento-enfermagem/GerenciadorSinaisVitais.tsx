@@ -28,20 +28,36 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { 
+  collection, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp, 
+  query, 
+  where 
+} from 'firebase/firestore';
 import { db } from '@/services/firebase';
-
-interface ValorReferencia {
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  sexo?: 'Masculino' | 'Feminino' | 'Todos';
-  valorMinimo?: number;
-  valorMaximo?: number;
-  unidade: string;
-  nhbVinculada?: string;
-}
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
+import { ValorReferencia, NHB, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { useForm } from 'react-hook-form';
 
 interface SinalVital {
   id?: string;
@@ -52,24 +68,26 @@ interface SinalVital {
   updatedAt?: any;
 }
 
-interface NHB {
-  id: string;
-  nome: string;
-}
-
 const GerenciadorSinaisVitais = () => {
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
   const [nhbs, setNhbs] = useState<NHB[]>([]);
+  const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
+  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
   
   // Estado para o formulário
   const [formSinal, setFormSinal] = useState<SinalVital>({
     nome: '',
     diferencaSexoIdade: false,
-    valoresReferencia: [{ unidade: '' }]
+    valoresReferencia: [{ 
+      unidade: '',
+      representaAlteracao: false,
+      variacaoPor: 'Nenhum'
+    }]
   });
   
   // Carregar os dados iniciais
@@ -90,9 +108,19 @@ const GerenciadorSinaisVitais = () => {
         const nhbsSnapshot = await getDocs(nhbsRef);
         const nhbsData = nhbsSnapshot.docs.map(doc => ({
           id: doc.id,
-          nome: doc.data().nome
+          nome: doc.data().nome,
+          descricao: doc.data().descricao
         })) as NHB[];
         setNhbs(nhbsData);
+
+        // Carregar Diagnósticos
+        const diagnosticosRef = collection(db, 'diagnosticos');
+        const diagnosticosSnapshot = await getDocs(diagnosticosRef);
+        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as DiagnosticoCompleto[];
+        setDiagnosticos(diagnosticosData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
@@ -107,13 +135,30 @@ const GerenciadorSinaisVitais = () => {
     
     carregarDados();
   }, [toast]);
+
+  // Filtrar diagnósticos quando uma NHB é selecionada
+  useEffect(() => {
+    if (nhbSelecionada) {
+      const filtrados = diagnosticos.filter(d => 
+        d.subconjunto === 'Necessidades Humanas Básicas' && 
+        d.subitemId === nhbSelecionada
+      );
+      setDiagnosticosFiltrados(filtrados);
+    } else {
+      setDiagnosticosFiltrados([]);
+    }
+  }, [nhbSelecionada, diagnosticos]);
   
   // Abrir modal para criar novo sinal vital
   const abrirModalCriar = () => {
     setFormSinal({
       nome: '',
       diferencaSexoIdade: false,
-      valoresReferencia: [{ unidade: '' }]
+      valoresReferencia: [{ 
+        unidade: '', 
+        representaAlteracao: false,
+        variacaoPor: 'Nenhum'
+      }]
     });
     setEditandoId(null);
     setModalAberto(true);
@@ -121,9 +166,26 @@ const GerenciadorSinaisVitais = () => {
   
   // Abrir modal para editar sinal vital existente
   const abrirModalEditar = (sinal: SinalVital) => {
-    setFormSinal({...sinal});
+    // Garantir que todos os valores de referência tenham os novos campos
+    const valoresAtualizados = sinal.valoresReferencia.map(valor => ({
+      ...valor,
+      representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
+      variacaoPor: valor.variacaoPor || 'Nenhum'
+    }));
+
+    setFormSinal({
+      ...sinal,
+      valoresReferencia: valoresAtualizados
+    });
     setEditandoId(sinal.id || null);
     setModalAberto(true);
+
+    // Restaurar a NHB selecionada se houver
+    if (sinal.valoresReferencia.length > 0 && sinal.valoresReferencia[0].nhbId) {
+      setNhbSelecionada(sinal.valoresReferencia[0].nhbId);
+    } else {
+      setNhbSelecionada(null);
+    }
   };
   
   // Adicionar valor de referência
@@ -132,7 +194,11 @@ const GerenciadorSinaisVitais = () => {
       ...formSinal,
       valoresReferencia: [
         ...formSinal.valoresReferencia,
-        { unidade: '' }
+        { 
+          unidade: '', 
+          representaAlteracao: false,
+          variacaoPor: 'Nenhum'
+        }
       ]
     });
   };
@@ -154,10 +220,55 @@ const GerenciadorSinaisVitais = () => {
       ...novosValores[index],
       [campo]: valor
     };
+
+    // Quando a variação muda, ajustamos os campos necessários
+    if (campo === 'variacaoPor') {
+      if (valor === 'Nenhum') {
+        // Remover campos desnecessários para variação única
+        delete novosValores[index].idadeMinima;
+        delete novosValores[index].idadeMaxima;
+        delete novosValores[index].sexo;
+      } else if (valor === 'Sexo') {
+        // Adicionar campo de sexo e remover idade
+        novosValores[index].sexo = 'Todos';
+        delete novosValores[index].idadeMinima;
+        delete novosValores[index].idadeMaxima;
+      } else if (valor === 'Idade') {
+        // Adicionar campos de idade e remover sexo
+        novosValores[index].idadeMinima = 0;
+        novosValores[index].idadeMaxima = 100;
+        delete novosValores[index].sexo;
+      }
+      // 'Ambos' mantém todos os campos
+    }
+
     setFormSinal({
       ...formSinal,
       valoresReferencia: novosValores
     });
+  };
+
+  // Atualizar NHB selecionada
+  const handleNhbChange = (nhbId: string) => {
+    setNhbSelecionada(nhbId);
+  };
+
+  // Atualizar diagnóstico selecionado
+  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
+    const diagnosticoSelecionado = diagnosticos.find(d => d.id === diagnosticoId);
+    
+    if (diagnosticoSelecionado) {
+      const novosValores = [...formSinal.valoresReferencia];
+      novosValores[index] = {
+        ...novosValores[index],
+        diagnosticoId: diagnosticoId
+      };
+      
+      setFormSinal({
+        ...formSinal,
+        valoresReferencia: novosValores
+      });
+    }
   };
   
   // Salvar sinal vital (criar novo ou atualizar existente)
@@ -179,6 +290,40 @@ const GerenciadorSinaisVitais = () => {
           variant: "destructive"
         });
         return;
+      }
+
+      // Validar campos específicos de acordo com a variação
+      for (const valor of formSinal.valoresReferencia) {
+        if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
+          if (!valor.sexo) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Sexo é obrigatório quando a variação inclui sexo.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+        
+        if (valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') {
+          if (valor.idadeMinima === undefined || valor.idadeMaxima === undefined) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Idade mínima e máxima são obrigatórias quando a variação inclui idade.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        if (valor.representaAlteracao && !valor.tituloAlteracao?.trim()) {
+          toast({
+            title: "Campo obrigatório",
+            description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
+            variant: "destructive"
+          });
+          return;
+        }
       }
       
       if (editandoId) {
@@ -279,8 +424,8 @@ const GerenciadorSinaisVitais = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome do Sinal Vital</TableHead>
-                <TableHead>Diferencia por Sexo/Idade</TableHead>
                 <TableHead>Valores de Referência</TableHead>
+                <TableHead>Valores com Alteração</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -288,14 +433,10 @@ const GerenciadorSinaisVitais = () => {
               {sinaisVitais.map((sinal) => (
                 <TableRow key={sinal.id}>
                   <TableCell className="font-medium">{sinal.nome}</TableCell>
-                  <TableCell>
-                    {sinal.diferencaSexoIdade ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <X className="h-5 w-5 text-gray-400" />
-                    )}
-                  </TableCell>
                   <TableCell>{sinal.valoresReferencia.length} valores configurados</TableCell>
+                  <TableCell>
+                    {sinal.valoresReferencia.filter(v => v.representaAlteracao).length} valores
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditar(sinal)}>
                       <Edit className="h-4 w-4" />
@@ -332,15 +473,6 @@ const GerenciadorSinaisVitais = () => {
               />
             </div>
             
-            <div className="flex items-center gap-2">
-              <Label htmlFor="diferencaSexoIdade">Diferencia por Sexo/Idade</Label>
-              <Switch
-                id="diferencaSexoIdade"
-                checked={formSinal.diferencaSexoIdade}
-                onCheckedChange={(checked) => setFormSinal({...formSinal, diferencaSexoIdade: checked})}
-              />
-            </div>
-            
             <div className="grid gap-2">
               <div className="flex justify-between items-center">
                 <Label>Valores de Referência</Label>
@@ -367,46 +499,64 @@ const GerenciadorSinaisVitais = () => {
                       )}
                     </div>
                     
-                    {formSinal.diferencaSexoIdade && (
-                      <>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="grid gap-2">
-                            <Label>Idade Mínima (anos)</Label>
-                            <Input
-                              type="number"
-                              value={valor.idadeMinima || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
-                              placeholder="Ex: 18"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label>Idade Máxima (anos)</Label>
-                            <Input
-                              type="number"
-                              value={valor.idadeMaxima || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
-                              placeholder="Ex: 65"
-                            />
-                          </div>
-                        </div>
-                        
+                    <div className="grid gap-2">
+                      <Label>Varia por</Label>
+                      <Select
+                        value={valor.variacaoPor}
+                        onValueChange={(v) => atualizarValorReferencia(index, 'variacaoPor', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione como o valor varia" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Nenhum">Nenhum (valor único)</SelectItem>
+                          <SelectItem value="Sexo">Sexo</SelectItem>
+                          <SelectItem value="Idade">Idade</SelectItem>
+                          <SelectItem value="Ambos">Ambos (Sexo e Idade)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    {(valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') && (
+                      <div className="grid gap-2">
+                        <Label>Sexo</Label>
+                        <Select
+                          value={valor.sexo || 'Todos'}
+                          onValueChange={(v) => atualizarValorReferencia(index, 'sexo', v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Todos">Todos</SelectItem>
+                            <SelectItem value="Masculino">Masculino</SelectItem>
+                            <SelectItem value="Feminino">Feminino</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {(valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') && (
+                      <div className="grid grid-cols-2 gap-3">
                         <div className="grid gap-2">
-                          <Label>Sexo</Label>
-                          <Select
-                            value={valor.sexo || 'Todos'}
-                            onValueChange={(v) => atualizarValorReferencia(index, 'sexo', v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Todos">Todos</SelectItem>
-                              <SelectItem value="Masculino">Masculino</SelectItem>
-                              <SelectItem value="Feminino">Feminino</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Label>Idade Mínima (anos)</Label>
+                          <Input
+                            type="number"
+                            value={valor.idadeMinima !== undefined ? valor.idadeMinima : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
+                            placeholder="Ex: 18"
+                          />
                         </div>
-                      </>
+                        <div className="grid gap-2">
+                          <Label>Idade Máxima (anos)</Label>
+                          <Input
+                            type="number"
+                            value={valor.idadeMaxima !== undefined ? valor.idadeMaxima : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
+                            placeholder="Ex: 65"
+                          />
+                        </div>
+                      </div>
                     )}
                     
                     <div className="grid grid-cols-2 gap-3">
@@ -414,7 +564,7 @@ const GerenciadorSinaisVitais = () => {
                         <Label>Valor Mínimo</Label>
                         <Input
                           type="number"
-                          value={valor.valorMinimo || ''}
+                          value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
                           onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', Number(e.target.value))}
                           placeholder="Ex: 120"
                         />
@@ -423,7 +573,7 @@ const GerenciadorSinaisVitais = () => {
                         <Label>Valor Máximo</Label>
                         <Input
                           type="number"
-                          value={valor.valorMaximo || ''}
+                          value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
                           onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', Number(e.target.value))}
                           placeholder="Ex: 139"
                         />
@@ -440,23 +590,97 @@ const GerenciadorSinaisVitais = () => {
                       />
                     </div>
                     
-                    <div className="grid gap-2">
-                      <Label>NHB Vinculada</Label>
-                      <Select
-                        value={valor.nhbVinculada || ''}
-                        onValueChange={(v) => atualizarValorReferencia(index, 'nhbVinculada', v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma NHB" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {nhbs.map((nhb) => (
-                            <SelectItem key={nhb.id} value={nhb.id}>
-                              {nhb.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="flex items-center gap-2 pt-2">
+                      <Switch 
+                        checked={valor.representaAlteracao || false}
+                        onCheckedChange={(checked) => 
+                          atualizarValorReferencia(index, 'representaAlteracao', checked)
+                        }
+                        id={`alteracao-${index}`}
+                      />
+                      <Label htmlFor={`alteracao-${index}`}>Este valor representa uma alteração</Label>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
+                              <HelpCircle className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Marque se este valor representa uma condição alterada (ex: hipertensão, hipotensão).
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    
+                    {valor.representaAlteracao && (
+                      <div className="grid gap-2">
+                        <Label>Título da Alteração</Label>
+                        <Input
+                          value={valor.tituloAlteracao || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
+                          placeholder="Ex: Hipertensão, Hipotensão, etc."
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="grid gap-2 border-t pt-3 mt-2">
+                      <Label>Vínculo com Diagnóstico</Label>
+                      
+                      <div className="grid gap-3">
+                        <div>
+                          <Label className="text-sm text-muted-foreground mb-1 block">
+                            1. Selecione uma NHB
+                          </Label>
+                          <Select
+                            value={nhbSelecionada || ''}
+                            onValueChange={handleNhbChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma NHB" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {nhbs.map((nhb) => (
+                                <SelectItem key={nhb.id} value={nhb.id!}>
+                                  {nhb.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {nhbSelecionada && (
+                          <div>
+                            <Label className="text-sm text-muted-foreground mb-1 block">
+                              2. Selecione um Diagnóstico
+                            </Label>
+                            <Select
+                              value={valor.diagnosticoId || ''}
+                              onValueChange={(v) => handleDiagnosticoChange(index, v)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione um diagnóstico" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {diagnosticosFiltrados.length > 0 ? (
+                                  diagnosticosFiltrados.map((diag) => (
+                                    <SelectItem key={diag.id} value={diag.id!}>
+                                      {diag.descricao}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="" disabled>
+                                    Nenhum diagnóstico disponível para esta NHB
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </Card>
