@@ -57,7 +57,7 @@ export function EvolucaoEnfermagem({
     return implementacao.find(i => i.intervencaoId === intervencaoId);
   };
 
-  // Agrupar intervenções por subconjunto (Protocolos/NHBs)
+  // Agrupar diagnósticos por subconjunto
   const diagnosticosPorSubconjunto = diagnosticos.reduce<Record<string, DiagnosticoEnfermagem[]>>((acc, d) => {
     const subconjunto = d.subconjunto || 'Outros';
     if (!acc[subconjunto]) {
@@ -77,20 +77,8 @@ export function EvolucaoEnfermagem({
     // Parte da Entrevista - Assumindo que o valor é o texto de entrevista
     texto += `- Entrevista: ${valor || "[Não preenchido]"}\n\n`;
     
-    // Exame Físico - Simulação para esta versão
+    // Exame Físico - Preenchido pelo usuário
     texto += `- Exame Físico:\n\n`;
-    
-    // Simulação de Sinais Vitais para esta versão
-    const sinaisVitais = [
-      { nome: "Temperatura", valor: "36.5°C" },
-      { nome: "Frequência Cardíaca", valor: "78 bpm" },
-      { nome: "Pressão Arterial", valor: "120/80 mmHg" }
-    ];
-    
-    if (sinaisVitais.length > 0) {
-      texto += `Sinais Vitais:\n`;
-      texto += sinaisVitais.map(sv => `${sv.nome}: ${sv.valor}`).join(' / ') + '\n\n';
-    }
     
     // Diagnósticos de Enfermagem
     texto += `# Diagnósticos de Enfermagem:\n`;

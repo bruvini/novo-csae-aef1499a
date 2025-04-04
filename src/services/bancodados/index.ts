@@ -11,6 +11,10 @@ import {
   salvarProgressoEvolucao,
   finalizarEvolucao
 } from './evolucoesDB';
+import {
+  registrarAcesso,
+  obterHistoricoAcessos
+} from './logAcessosDB';
 
 // Re-exportar todos os tipos e funções
 export * from './tipos';
@@ -29,5 +33,9 @@ export {
   // Evoluções
   iniciarEvolucao,
   salvarProgressoEvolucao,
-  finalizarEvolucao
+  finalizarEvolucao,
+  
+  // Log de acessos
+  registrarAcesso,
+  obterHistoricoAcessos
 };

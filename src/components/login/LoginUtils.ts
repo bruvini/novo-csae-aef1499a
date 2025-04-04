@@ -1,9 +1,10 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { SessaoUsuario, useAutenticacao } from "@/services/autenticacao";
-import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { buscarUsuarioPorUid, registrarAcesso } from "@/services/bancodados";
 import { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { isResidenteExpirado } from "./ResidenteUtils";
 
 export interface LoginError {
   code?: string;
@@ -65,6 +66,20 @@ export const useLoginHandler = () => {
       return { sucesso: false, registrarAtivo: true };
     }
 
+    // Verificar se é um residente com acesso expirado
+    if (usuarioFirestore.dadosProfissionais.formacao === "Residente de Enfermagem") {
+      const expirado = isResidenteExpirado(usuarioFirestore.dadosProfissionais.dataInicioResidencia);
+      
+      if (expirado) {
+        toast({
+          title: "Acesso suspenso",
+          description: "Os acessos para residentes são bloqueados após o término da residência, conforme previsto no Termo de Uso. Caso ainda esteja atuando, solicite liberação para gerenf.sms.pmf@gmail.com.",
+          variant: "destructive"
+        });
+        return { sucesso: false, registrarAtivo: false };
+      }
+    }
+
     // Verificar o status de acesso
     console.log("Status do usuário:", usuarioFirestore.statusAcesso);
     if (usuarioFirestore.statusAcesso === "Aguardando") {
@@ -88,6 +103,9 @@ export const useLoginHandler = () => {
     }
 
     if (usuarioFirestore.statusAcesso === "Aprovado") {
+      // Registrar o acesso do usuário
+      await registrarAcesso(usuarioFirestore.id);
+      
       // Salvar a sessão do usuário
       const dadosSessao: SessaoUsuario = {
         uid: usuarioFirestore.uid,
