@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Sugestoes from "./pages/Sugestoes";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
-import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem"; // Nova página
+import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem"; 
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
