@@ -1,7 +1,8 @@
 
 import { useToast } from "@/hooks/use-toast";
 import { SessaoUsuario, useAutenticacao } from "@/services/autenticacao";
-import { buscarUsuarioPorUid, registrarAcesso } from "@/services/bancodados";
+import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
 import { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { isResidenteExpirado } from "./ResidenteUtils";
