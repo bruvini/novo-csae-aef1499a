@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, ChevronRight, Edit2, Save, Loader2, X, ChevronDown, Package, PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -203,7 +202,7 @@ const GerenciadorSinaisVitais = () => {
           nome,
           diferencaSexoIdade,
           valoresReferencia: valoresReferenciaAtuais,
-          updatedAt: serverTimestamp()
+          updatedAt: Timestamp.now()
         });
         
         toast({
@@ -217,7 +216,7 @@ const GerenciadorSinaisVitais = () => {
           diferencaSexoIdade,
           valoresReferencia: valoresReferenciaAtuais,
           createdAt: Timestamp.now(),
-          updatedAt: serverTimestamp()
+          updatedAt: Timestamp.now()
         };
         
         const docRef = await addDoc(collection(db, 'sinaisVitais'), novoSinalVital);
@@ -352,10 +351,10 @@ const GerenciadorSinaisVitais = () => {
   
   const handleSalvarValorRef = () => {
     // Validações básicas
-    if (valorRefModal.valorMinimo === undefined && valorRefModal.valorMaximo === undefined) {
+    if (valorRefModal.valorMinimo === undefined && valorRefModal.valorMaximo === undefined && !valorRefModal.valorTexto) {
       toast({
         title: "Campos obrigatórios",
-        description: "Informe pelo menos um dos valores: mínimo ou máximo.",
+        description: "Informe pelo menos um valor: mínimo, máximo ou texto.",
         variant: "destructive"
       });
       return;
@@ -391,10 +390,15 @@ const GerenciadorSinaisVitais = () => {
       }
     }
     
+    // Determinar o tipo de valor (Numérico ou Texto)
+    const tipoValor = valorRefModal.valorTexto ? 'Texto' : 'Numérico';
+    
     // Preparar o objeto completo
     const valorRef: ValorReferencia = {
       valorMinimo: valorRefModal.valorMinimo,
       valorMaximo: valorRefModal.valorMaximo,
+      valorTexto: valorRefModal.valorTexto,
+      tipoValor: tipoValor as 'Numérico' | 'Texto',
       unidade: valorRefModal.unidade,
       representaAlteracao: valorRefModal.representaAlteracao || false,
       tituloAlteracao: valorRefModal.tituloAlteracao,
@@ -671,35 +675,84 @@ const GerenciadorSinaisVitais = () => {
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="valorMinimo">Valor Mínimo</Label>
-                <Input 
-                  id="valorMinimo"
-                  type="number"
-                  value={valorRefModal.valorMinimo || ''}
-                  onChange={(e) => setValorRefModal({
-                    ...valorRefModal,
-                    valorMinimo: e.target.value === '' ? undefined : parseFloat(e.target.value)
-                  })}
-                  placeholder="Valor mínimo"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="valorMaximo">Valor Máximo</Label>
-                <Input 
-                  id="valorMaximo"
-                  type="number"
-                  value={valorRefModal.valorMaximo || ''}
-                  onChange={(e) => setValorRefModal({
-                    ...valorRefModal,
-                    valorMaximo: e.target.value === '' ? undefined : parseFloat(e.target.value)
-                  })}
-                  placeholder="Valor máximo"
-                />
-              </div>
+            {/* Tipo de valor (numérico ou texto) */}
+            <div className="space-y-2">
+              <Label>Tipo de valor</Label>
+              <RadioGroup
+                value={valorRefModal.valorTexto ? 'Texto' : 'Numérico'}
+                onValueChange={(value) => {
+                  if (value === 'Texto') {
+                    setValorRefModal({
+                      ...valorRefModal,
+                      valorTexto: '',
+                      valorMinimo: undefined,
+                      valorMaximo: undefined
+                    });
+                  } else {
+                    setValorRefModal({
+                      ...valorRefModal,
+                      valorTexto: undefined
+                    });
+                  }
+                }}
+                className="grid grid-cols-2 gap-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Numérico" id="numerico" />
+                  <Label htmlFor="numerico">Numérico (faixa de valores)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Texto" id="texto" />
+                  <Label htmlFor="texto">Texto (valor literal)</Label>
+                </div>
+              </RadioGroup>
             </div>
+            
+            {/* Valores condicionais baseados no tipo selecionado */}
+            {!valorRefModal.valorTexto ? (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="valorMinimo">Valor Mínimo</Label>
+                  <Input 
+                    id="valorMinimo"
+                    type="number"
+                    value={valorRefModal.valorMinimo || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      valorMinimo: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                    })}
+                    placeholder="Valor mínimo"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="valorMaximo">Valor Máximo</Label>
+                  <Input 
+                    id="valorMaximo"
+                    type="number"
+                    value={valorRefModal.valorMaximo || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      valorMaximo: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                    })}
+                    placeholder="Valor máximo"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="valorTexto">Descrição do Valor</Label>
+                <Input 
+                  id="valorTexto"
+                  value={valorRefModal.valorTexto || ''}
+                  onChange={(e) => setValorRefModal({
+                    ...valorRefModal,
+                    valorTexto: e.target.value
+                  })}
+                  placeholder="Ex: Presente, Ausente, Normal, etc."
+                />
+              </div>
+            )}
             
             <div>
               <Label htmlFor="unidade">Unidade de Medida</Label>
@@ -815,90 +868,4 @@ const GerenciadorSinaisVitais = () => {
                 <Label htmlFor="representaAlteracao">Este valor representa uma alteração</Label>
               </div>
               
-              {valorRefModal.representaAlteracao && (
-                <div className="mb-4">
-                  <Label htmlFor="tituloAlteracao">Título da Alteração</Label>
-                  <Input 
-                    id="tituloAlteracao"
-                    value={valorRefModal.tituloAlteracao || ''}
-                    onChange={(e) => setValorRefModal({
-                      ...valorRefModal,
-                      tituloAlteracao: e.target.value
-                    })}
-                    placeholder="Ex: Hipertensão, Hipotermia, etc."
-                  />
-                </div>
-              )}
-              
-              {valorRefModal.representaAlteracao && (
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Vínculo com Diagnóstico</h4>
-                  
-                  <div>
-                    <Label htmlFor="nhb">1. Selecione uma NHB</Label>
-                    <Select 
-                      value={nhbSelecionada} 
-                      onValueChange={handleNhbChange}
-                    >
-                      <SelectTrigger id="nhb" className="w-full">
-                        <SelectValue placeholder="Selecione uma NHB" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {nhbs.map((nhb) => (
-                            <SelectItem key={nhb.id} value={nhb.id!}>
-                              {nhb.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  {nhbSelecionada && (
-                    <div>
-                      <Label htmlFor="diagnostico">2. Selecione um diagnóstico de enfermagem</Label>
-                      <Select 
-                        value={diagnosticoSelecionado}
-                        onValueChange={(value) => setDiagnosticoSelecionado(value)}
-                        disabled={!nhbSelecionada || diagnosticosSelecionados.length === 0}
-                      >
-                        <SelectTrigger id="diagnostico" className="w-full">
-                          <SelectValue placeholder={
-                            diagnosticosSelecionados.length > 0 
-                              ? "Selecione um diagnóstico" 
-                              : "Nenhum diagnóstico disponível para esta NHB"
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {diagnosticosSelecionados.map((diagnostico) => (
-                              <SelectItem key={diagnostico.id} value={diagnostico.id!}>
-                                {diagnostico.descricao}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={handleFecharModalValorRef}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSalvarValorRef}>
-              {editandoValorRef ? 'Atualizar' : 'Adicionar'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default GerenciadorSinaisVitais;
+              {valorRefModal.representa
