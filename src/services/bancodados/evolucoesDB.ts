@@ -14,9 +14,10 @@ import { Evolucao } from './tipos';
 /**
  * Inicia uma nova evolução para o paciente
  * @param pacienteId ID do paciente
+ * @param evolucaoData Dados opcionais para inicialização da evolução
  * @returns Objeto contendo o ID da evolução e sucesso da operação
  */
-export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: string, sucesso: boolean}> {
+export async function iniciarEvolucao(pacienteId: string, evolucaoData: Partial<Evolucao> = {}): Promise<{evolucaoId: string, sucesso: boolean}> {
   try {
     console.log("Iniciando evolução para paciente ID:", pacienteId);
     const pacienteRef = doc(db, 'pacientes', pacienteId);
@@ -43,7 +44,8 @@ export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: 
       diagnosticos: [],
       planejamento: [],
       implementacao: [],
-      evolucaoFinal: ''
+      evolucaoFinal: '',
+      ...evolucaoData
     };
     
     // Adicionar evolução ao array de evoluções do paciente

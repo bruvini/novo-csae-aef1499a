@@ -118,7 +118,7 @@ export function EnfermageWizard({
             return;
           }
           
-          const resultado = await iniciarEvolucao(paciente.id);
+          const resultado = await iniciarEvolucao(paciente.id, {});
           
           if (resultado.sucesso && resultado.evolucaoId) {
             console.log("Nova evolução criada com ID:", resultado.evolucaoId);

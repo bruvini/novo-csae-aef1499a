@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Play, User, Edit2, Trash2, Clock, ArrowRight, UserPlus, ArrowLeft, Copy, Save, Home } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
@@ -11,7 +10,8 @@ import { EnfermageWizard } from '@/components/processo-enfermagem/EnfermagemWiza
 import { ListaPacientes } from '@/components/processo-enfermagem/ListaPacientes';
 import { CadastrarPacienteModal } from '@/components/processo-enfermagem/CadastrarPacienteModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Paciente, buscarPacientesPorProfissional } from '@/services/bancodados';
+import { buscarPacientesPorProfissional } from '@/services/bancodados';
+import { Paciente } from '@/services/bancodados/tipos';
 
 const ProcessoEnfermagem = () => {
   const { usuario, obterSessao } = useAutenticacao();
@@ -25,7 +25,6 @@ const ProcessoEnfermagem = () => {
   const [evolucaoId, setEvolucaoId] = useState<string | null>(null);
   const [isModoRetomar, setIsModoRetomar] = useState(false);
 
-  // Buscar pacientes do usuário logado
   useEffect(() => {
     const carregarPacientes = async () => {
       setLoading(true);
