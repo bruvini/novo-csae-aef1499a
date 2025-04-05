@@ -1,704 +1,903 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription,
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
+import { PlusCircle, Trash2, ChevronRight, Edit2, Save, Loader2, X, ChevronDown, Package, PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, Check, X, HelpCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  serverTimestamp, 
-  query, 
-  where 
-} from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { 
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
-} from '@/components/ui/form';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
-import { ValorReferencia, NHB, DiagnosticoCompleto } from '@/services/bancodados/tipos';
-import { useForm } from 'react-hook-form';
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-interface SinalVital {
-  id?: string;
-  nome: string;
-  diferencaSexoIdade: boolean;
-  valoresReferencia: ValorReferencia[];
-  createdAt?: any;
-  updatedAt?: any;
-}
+import { useToast } from "@/hooks/use-toast";
+import { db } from '@/services/firebase';
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  updateDoc, 
+  addDoc, 
+  getDoc, 
+  query, 
+  where, 
+  Timestamp, 
+  serverTimestamp, 
+  DocumentData 
+} from 'firebase/firestore';
+import { SinalVital, ValorReferencia, NHB, DiagnosticoCompleto } from '@/services/bancodados/tipos';
 
 const GerenciadorSinaisVitais = () => {
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
   const [nhbs, setNhbs] = useState<NHB[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editando, setEditando] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
-  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
-  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
+  const [sinalVitalAtual, setSinalVitalAtual] = useState<SinalVital | null>(null);
+  const [valoresReferenciaAtuais, setValoresReferenciaAtuais] = useState<ValorReferencia[]>([]);
+  const [selecionando, setSelecionando] = useState(false);
   
-  // Estado para o formulário
-  const [formSinal, setFormSinal] = useState<SinalVital>({
-    nome: '',
-    diferencaSexoIdade: false,
-    valoresReferencia: [{ 
-      unidade: '',
-      representaAlteracao: false,
-      variacaoPor: 'Nenhum'
-    }]
+  // Dados temporários do formulário
+  const [nome, setNome] = useState('');
+  const [diferencaSexoIdade, setDiferencaSexoIdade] = useState(false);
+  
+  // Dados do modal de valor de referência
+  const [valorRefModal, setValorRefModal] = useState<Partial<ValorReferencia>>({
+    valorMinimo: undefined,
+    valorMaximo: undefined,
+    unidade: '',
+    representaAlteracao: false,
+    tituloAlteracao: '',
+    variacaoPor: 'Nenhum'
   });
+  const [showIdade, setShowIdade] = useState(false);
+  const [showSexo, setShowSexo] = useState(false);
+  const [modalValorRefAberto, setModalValorRefAberto] = useState(false);
+  const [editandoValorRef, setEditandoValorRef] = useState(false);
+  const [indexValorRef, setIndexValorRef] = useState(-1);
   
-  // Carregar os dados iniciais
+  // NHB e diagnóstico selecionados
+  const [nhbSelecionada, setNhbSelecionada] = useState<string | undefined>(undefined);
+  const [diagnosticosSelecionados, setDiagnosticosSelecionados] = useState<DiagnosticoCompleto[]>([]);
+  const [diagnosticoSelecionado, setDiagnosticoSelecionado] = useState<string | undefined>(undefined);
+
   useEffect(() => {
     const carregarDados = async () => {
+      setLoading(true);
       try {
-        // Carregar sinais vitais
-        const sinaisRef = collection(db, 'sinaisVitais');
-        const sinaisSnapshot = await getDocs(sinaisRef);
-        const sinaisData = sinaisSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+        // Buscar sinais vitais
+        const sinaisVitaisSnapshot = await getDocs(collection(db, 'sinaisVitais'));
+        const sinaisVitaisData = sinaisVitaisSnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id
         })) as SinalVital[];
-        setSinaisVitais(sinaisData);
+        setSinaisVitais(sinaisVitaisData);
         
-        // Carregar NHBs
-        const nhbsRef = collection(db, 'nhbs');
-        const nhbsSnapshot = await getDocs(nhbsRef);
-        const nhbsData = nhbsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          nome: doc.data().nome,
-          descricao: doc.data().descricao
+        // Buscar NHBs
+        const nhbsSnapshot = await getDocs(collection(db, 'nhbs'));
+        const nhbsData = nhbsSnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id
         })) as NHB[];
         setNhbs(nhbsData);
-
-        // Carregar Diagnósticos
-        const diagnosticosRef = collection(db, 'diagnosticos');
-        const diagnosticosSnapshot = await getDocs(diagnosticosRef);
-        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
+        
+        // Buscar diagnósticos
+        const diagnosticosSnapshot = await getDocs(collection(db, 'diagnosticos'));
+        const diagnosticosData = diagnosticosSnapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id
         })) as DiagnosticoCompleto[];
         setDiagnosticos(diagnosticosData);
+        
+        setLoading(false);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
           title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os sinais vitais.",
+          description: "Não foi possível obter os sinais vitais cadastrados.",
           variant: "destructive"
         });
-      } finally {
-        setCarregando(false);
+        setLoading(false);
       }
     };
     
     carregarDados();
   }, [toast]);
 
-  // Filtrar diagnósticos quando uma NHB é selecionada
-  useEffect(() => {
-    if (nhbSelecionada) {
-      const filtrados = diagnosticos.filter(d => 
-        d.subconjunto === 'Necessidades Humanas Básicas' && 
-        d.subitemId === nhbSelecionada
-      );
-      setDiagnosticosFiltrados(filtrados);
+  const handleExibirModal = (editar = false, sinalVital: SinalVital | null = null) => {
+    setEditando(editar);
+    if (editar && sinalVital) {
+      setSinalVitalAtual(sinalVital);
+      setNome(sinalVital.nome);
+      setDiferencaSexoIdade(sinalVital.diferencaSexoIdade || false);
+      setValoresReferenciaAtuais([...sinalVital.valoresReferencia]);
     } else {
-      setDiagnosticosFiltrados([]);
+      setSinalVitalAtual(null);
+      setNome('');
+      setDiferencaSexoIdade(false);
+      setValoresReferenciaAtuais([]);
     }
-  }, [nhbSelecionada, diagnosticos]);
-  
-  // Abrir modal para criar novo sinal vital
-  const abrirModalCriar = () => {
-    setFormSinal({
-      nome: '',
-      diferencaSexoIdade: false,
-      valoresReferencia: [{ 
-        unidade: '', 
-        representaAlteracao: false,
-        variacaoPor: 'Nenhum'
-      }]
-    });
-    setEditandoId(null);
     setModalAberto(true);
   };
   
-  // Abrir modal para editar sinal vital existente
-  const abrirModalEditar = (sinal: SinalVital) => {
-    // Garantir que todos os valores de referência tenham os novos campos
-    const valoresAtualizados = sinal.valoresReferencia.map(valor => ({
-      ...valor,
-      representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
-      variacaoPor: valor.variacaoPor || 'Nenhum'
-    }));
-
-    setFormSinal({
-      ...sinal,
-      valoresReferencia: valoresAtualizados
-    });
-    setEditandoId(sinal.id || null);
-    setModalAberto(true);
-
-    // Restaurar a NHB selecionada se houver
-    if (sinal.valoresReferencia.length > 0 && sinal.valoresReferencia[0].nhbId) {
-      setNhbSelecionada(sinal.valoresReferencia[0].nhbId);
-    } else {
-      setNhbSelecionada(null);
-    }
+  const handleFecharModal = () => {
+    setModalAberto(false);
+    setSinalVitalAtual(null);
+    setNome('');
+    setDiferencaSexoIdade(false);
+    setValoresReferenciaAtuais([]);
+    setNhbSelecionada(undefined);
+    setDiagnosticoSelecionado(undefined);
+    setDiagnosticosSelecionados([]);
   };
   
-  // Adicionar valor de referência
-  const adicionarValorReferencia = () => {
-    setFormSinal({
-      ...formSinal,
-      valoresReferencia: [
-        ...formSinal.valoresReferencia,
-        { 
-          unidade: '', 
-          representaAlteracao: false,
-          variacaoPor: 'Nenhum'
-        }
-      ]
-    });
-  };
-  
-  // Remover valor de referência
-  const removerValorReferencia = (index: number) => {
-    const novosValores = [...formSinal.valoresReferencia];
-    novosValores.splice(index, 1);
-    setFormSinal({
-      ...formSinal,
-      valoresReferencia: novosValores
-    });
-  };
-  
-  // Atualizar valor de referência
-  const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
-    const novosValores = [...formSinal.valoresReferencia];
-    novosValores[index] = {
-      ...novosValores[index],
-      [campo]: valor
-    };
-
-    // Quando a variação muda, ajustamos os campos necessários
-    if (campo === 'variacaoPor') {
-      if (valor === 'Nenhum') {
-        // Remover campos desnecessários para variação única
-        delete novosValores[index].idadeMinima;
-        delete novosValores[index].idadeMaxima;
-        delete novosValores[index].sexo;
-      } else if (valor === 'Sexo') {
-        // Adicionar campo de sexo e remover idade
-        novosValores[index].sexo = 'Todos';
-        delete novosValores[index].idadeMinima;
-        delete novosValores[index].idadeMaxima;
-      } else if (valor === 'Idade') {
-        // Adicionar campos de idade e remover sexo
-        novosValores[index].idadeMinima = 0;
-        novosValores[index].idadeMaxima = 100;
-        delete novosValores[index].sexo;
-      }
-      // 'Ambos' mantém todos os campos
-    }
-
-    setFormSinal({
-      ...formSinal,
-      valoresReferencia: novosValores
-    });
-  };
-
-  // Atualizar NHB selecionada
-  const handleNhbChange = (nhbId: string) => {
-    setNhbSelecionada(nhbId);
-  };
-
-  // Atualizar diagnóstico selecionado
-  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
-    const diagnosticoSelecionado = diagnosticos.find(d => d.id === diagnosticoId);
-    
-    if (diagnosticoSelecionado) {
-      const novosValores = [...formSinal.valoresReferencia];
-      novosValores[index] = {
-        ...novosValores[index],
-        diagnosticoId: diagnosticoId
-      };
-      
-      setFormSinal({
-        ...formSinal,
-        valoresReferencia: novosValores
+  const handleSalvar = async () => {
+    if (!nome) {
+      toast({
+        title: "Campo obrigatório",
+        description: "O nome do sinal vital é obrigatório.",
+        variant: "destructive"
       });
+      return;
     }
-  };
-  
-  // Salvar sinal vital (criar novo ou atualizar existente)
-  const salvarSinalVital = async () => {
+    
+    setSelecionando(true);
+    
     try {
-      if (!formSinal.nome.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Nome do sinal vital é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (formSinal.valoresReferencia.some(vr => !vr.unidade.trim())) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Unidade é obrigatória para todos os valores de referência.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Validar campos específicos de acordo com a variação
-      for (const valor of formSinal.valoresReferencia) {
-        if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
-          if (!valor.sexo) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Sexo é obrigatório quando a variação inclui sexo.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-        
-        if (valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') {
-          if (valor.idadeMinima === undefined || valor.idadeMaxima === undefined) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Idade mínima e máxima são obrigatórias quando a variação inclui idade.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-
-        if (valor.representaAlteracao && !valor.tituloAlteracao?.trim()) {
-          toast({
-            title: "Campo obrigatório",
-            description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
-            variant: "destructive"
-          });
-          return;
-        }
-      }
-      
-      if (editandoId) {
-        // Atualizar existente
-        const sinalRef = doc(db, 'sinaisVitais', editandoId);
-        await updateDoc(sinalRef, {
-          ...formSinal,
+      if (editando && sinalVitalAtual?.id) {
+        // Atualizar sinal vital existente
+        const sinalVitalRef = doc(db, 'sinaisVitais', sinalVitalAtual.id);
+        await updateDoc(sinalVitalRef, {
+          nome,
+          diferencaSexoIdade,
+          valoresReferencia: valoresReferenciaAtuais,
           updatedAt: serverTimestamp()
         });
         
         toast({
           title: "Sinal vital atualizado",
-          description: `${formSinal.nome} foi atualizado com sucesso.`
+          description: `${nome} foi atualizado com sucesso.`
         });
-        
-        // Atualizar lista
-        setSinaisVitais(prev => 
-          prev.map(s => s.id === editandoId ? {...formSinal, id: editandoId, updatedAt: new Date()} : s)
-        );
       } else {
-        // Criar novo
-        const novoSinal = {
-          ...formSinal,
-          createdAt: serverTimestamp(),
+        // Criar novo sinal vital
+        const novoSinalVital: Omit<SinalVital, 'id'> = {
+          nome,
+          diferencaSexoIdade,
+          valoresReferencia: valoresReferenciaAtuais,
+          createdAt: Timestamp.now(),
           updatedAt: serverTimestamp()
         };
         
-        const docRef = await addDoc(collection(db, 'sinaisVitais'), novoSinal);
+        const docRef = await addDoc(collection(db, 'sinaisVitais'), novoSinalVital);
         
         toast({
-          title: "Sinal vital criado",
-          description: `${formSinal.nome} foi criado com sucesso.`
+          title: "Sinal vital cadastrado",
+          description: `${nome} foi cadastrado com sucesso.`
         });
-        
-        // Adicionar à lista
-        setSinaisVitais(prev => [...prev, {...novoSinal, id: docRef.id, createdAt: new Date(), updatedAt: new Date()}]);
       }
       
-      setModalAberto(false);
+      // Recarregar lista
+      const sinaisVitaisSnapshot = await getDocs(collection(db, 'sinaisVitais'));
+      const sinaisVitaisData = sinaisVitaisSnapshot.docs.map((doc) => ({
+        ...doc.data(),
+        id: doc.id
+      })) as SinalVital[];
+      setSinaisVitais(sinaisVitaisData);
+      
+      handleFecharModal();
     } catch (error) {
       console.error("Erro ao salvar sinal vital:", error);
       toast({
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o sinal vital.",
+        description: "Não foi possível salvar o sinal vital. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setSelecionando(false);
+    }
+  };
+  
+  const handleExcluir = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'sinaisVitais', id));
+      setSinaisVitais(sinaisVitais.filter((sinal) => sinal.id !== id));
+      
+      toast({
+        title: "Sinal vital excluído",
+        description: "O sinal vital foi excluído com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao excluir sinal vital:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o sinal vital. Tente novamente.",
         variant: "destructive"
       });
     }
   };
   
-  // Excluir sinal vital
-  const excluirSinalVital = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este sinal vital? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'sinaisVitais', id));
-        
-        toast({
-          title: "Sinal vital excluído",
-          description: "O sinal vital foi excluído com sucesso."
-        });
-        
-        // Remover da lista
-        setSinaisVitais(prev => prev.filter(s => s.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir sinal vital:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o sinal vital.",
-          variant: "destructive"
-        });
+  // Funções para manipular valores de referência
+  const handleExibirModalValorRef = (editar = false, index = -1) => {
+    setEditandoValorRef(editar);
+    
+    if (editar && index >= 0) {
+      const valorRef = valoresReferenciaAtuais[index];
+      setValorRefModal({...valorRef});
+      setIndexValorRef(index);
+      
+      // Configurar visualização de campos condicionais
+      if (valorRef.variacaoPor === 'Idade' || valorRef.variacaoPor === 'Ambos') {
+        setShowIdade(true);
+      } else {
+        setShowIdade(false);
       }
+      
+      if (valorRef.variacaoPor === 'Sexo' || valorRef.variacaoPor === 'Ambos') {
+        setShowSexo(true);
+      } else {
+        setShowSexo(false);
+      }
+    } else {
+      setValorRefModal({
+        valorMinimo: undefined,
+        valorMaximo: undefined,
+        unidade: '',
+        representaAlteracao: false,
+        tituloAlteracao: '',
+        variacaoPor: 'Nenhum'
+      });
+      setIndexValorRef(-1);
+      setShowIdade(false);
+      setShowSexo(false);
+    }
+    
+    setModalValorRefAberto(true);
+  };
+  
+  const handleFecharModalValorRef = () => {
+    setModalValorRefAberto(false);
+    setValorRefModal({
+      valorMinimo: undefined,
+      valorMaximo: undefined,
+      unidade: '',
+      representaAlteracao: false,
+      tituloAlteracao: '',
+      variacaoPor: 'Nenhum'
+    });
+    setIndexValorRef(-1);
+    setShowIdade(false);
+    setShowSexo(false);
+  };
+  
+  const handleVariacaoPorChange = (value: string) => {
+    setValorRefModal({
+      ...valorRefModal,
+      variacaoPor: value as 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum'
+    });
+    
+    // Mostrar/esconder campos condicionalmente
+    if (value === 'Idade' || value === 'Ambos') {
+      setShowIdade(true);
+    } else {
+      setShowIdade(false);
+      setValorRefModal(prev => ({
+        ...prev,
+        idadeMinima: undefined,
+        idadeMaxima: undefined
+      }));
+    }
+    
+    if (value === 'Sexo' || value === 'Ambos') {
+      setShowSexo(true);
+    } else {
+      setShowSexo(false);
+      setValorRefModal(prev => ({
+        ...prev,
+        sexo: 'Todos'
+      }));
     }
   };
   
+  const handleSalvarValorRef = () => {
+    // Validações básicas
+    if (valorRefModal.valorMinimo === undefined && valorRefModal.valorMaximo === undefined) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Informe pelo menos um dos valores: mínimo ou máximo.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!valorRefModal.unidade) {
+      toast({
+        title: "Campo obrigatório",
+        description: "A unidade de medida é obrigatória.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (valorRefModal.representaAlteracao && !valorRefModal.tituloAlteracao) {
+      toast({
+        title: "Campo obrigatório",
+        description: "O título da alteração é obrigatório quando representa uma alteração.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Validações condicionais
+    if (showIdade) {
+      if (valorRefModal.idadeMinima === undefined && valorRefModal.idadeMaxima === undefined) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Informe pelo menos um dos valores: idade mínima ou máxima.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    // Preparar o objeto completo
+    const valorRef: ValorReferencia = {
+      valorMinimo: valorRefModal.valorMinimo,
+      valorMaximo: valorRefModal.valorMaximo,
+      unidade: valorRefModal.unidade,
+      representaAlteracao: valorRefModal.representaAlteracao || false,
+      tituloAlteracao: valorRefModal.tituloAlteracao,
+      variacaoPor: valorRefModal.variacaoPor as 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum',
+      nhbId: nhbSelecionada,
+      diagnosticoId: diagnosticoSelecionado
+    };
+    
+    // Se é diferenciado por idade, incluir as idades
+    if (showIdade) {
+      valorRef.idadeMinima = valorRefModal.idadeMinima;
+      valorRef.idadeMaxima = valorRefModal.idadeMaxima;
+    }
+    
+    // Se é diferenciado por sexo, incluir o sexo
+    if (showSexo) {
+      valorRef.sexo = valorRefModal.sexo as 'Masculino' | 'Feminino' | 'Todos';
+    } else {
+      valorRef.sexo = 'Todos';
+    }
+    
+    // Atualizar ou adicionar à lista
+    if (editandoValorRef && indexValorRef >= 0) {
+      const novosValoresRef = [...valoresReferenciaAtuais];
+      novosValoresRef[indexValorRef] = valorRef;
+      setValoresReferenciaAtuais(novosValoresRef);
+    } else {
+      setValoresReferenciaAtuais([...valoresReferenciaAtuais, valorRef]);
+    }
+    
+    handleFecharModalValorRef();
+  };
+  
+  const handleExcluirValorRef = (index: number) => {
+    const novosValores = [...valoresReferenciaAtuais];
+    novosValores.splice(index, 1);
+    setValoresReferenciaAtuais(novosValores);
+  };
+  
+  // Função para filtrar diagnósticos quando uma NHB é selecionada
+  const handleNhbChange = (id: string) => {
+    setNhbSelecionada(id);
+    setDiagnosticoSelecionado(undefined);
+    
+    // Filtrar diagnósticos pela NHB selecionada
+    const diagnosticosFiltrados = diagnosticos.filter(diag => 
+      diag.subconjunto === 'Necessidades Humanas Básicas' && 
+      diag.subitemId === id
+    );
+    setDiagnosticosSelecionados(diagnosticosFiltrados);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>Gerenciamento de Sinais Vitais</span>
-          <Button onClick={abrirModalCriar} className="bg-csae-green-600 hover:bg-csae-green-700">
-            <Plus className="mr-2 h-4 w-4" /> Novo Sinal Vital
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold text-csae-green-700">Sinais Vitais</h2>
+        <Button 
+          onClick={() => handleExibirModal(false)} 
+          className="bg-csae-green-600 hover:bg-csae-green-700"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Novo Sinal Vital
+        </Button>
+      </div>
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 animate-spin text-csae-green-600" />
+        </div>
+      ) : sinaisVitais.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-40 border rounded-lg">
+          <p className="text-gray-500 mb-4">Nenhum sinal vital cadastrado</p>
+          <Button 
+            onClick={() => handleExibirModal(false)}
+            className="bg-csae-green-600 hover:bg-csae-green-700"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Cadastrar Sinal Vital
           </Button>
-        </CardTitle>
-        <CardDescription>
-          Cadastre e gerencie os sinais vitais utilizados no processo de enfermagem.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {carregando ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
-          </div>
-        ) : sinaisVitais.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            Nenhum sinal vital cadastrado. Clique em "Novo Sinal Vital" para começar.
-          </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nome do Sinal Vital</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Diferenciação</TableHead>
                 <TableHead>Valores de Referência</TableHead>
-                <TableHead>Valores com Alteração</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+                <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sinaisVitais.map((sinal) => (
-                <TableRow key={sinal.id}>
-                  <TableCell className="font-medium">{sinal.nome}</TableCell>
-                  <TableCell>{sinal.valoresReferencia.length} valores configurados</TableCell>
+              {sinaisVitais.map((sinalVital) => (
+                <TableRow key={sinalVital.id}>
+                  <TableCell className="font-medium">{sinalVital.nome}</TableCell>
+                  <TableCell>{sinalVital.diferencaSexoIdade ? 'Sim' : 'Não'}</TableCell>
+                  <TableCell>{sinalVital.valoresReferencia.length} valores cadastrados</TableCell>
                   <TableCell>
-                    {sinal.valoresReferencia.filter(v => v.representaAlteracao).length} valores
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditar(sinal)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => excluirSinalVital(sinal.id!)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleExibirModal(true, sinalVital)}>
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-red-500" 
+                        onClick={() => handleExcluir(sinalVital.id!)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        )}
-      </CardContent>
+        </div>
+      )}
       
-      {/* Modal para criar/editar sinal vital */}
+      {/* Modal para adicionar/editar sinal vital */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editandoId ? 'Editar' : 'Novo'} Sinal Vital</DialogTitle>
+            <DialogTitle>{editando ? `Editar ${nome}` : 'Cadastrar Novo Sinal Vital'}</DialogTitle>
             <DialogDescription>
-              Preencha os campos abaixo para {editandoId ? 'atualizar o' : 'cadastrar um novo'} sinal vital.
+              {editando 
+                ? 'Atualize as informações do sinal vital selecionado.' 
+                : 'Preencha as informações para cadastrar um novo sinal vital.'}
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="nome">Nome do Sinal Vital</Label>
-              <Input
-                id="nome"
-                value={formSinal.nome}
-                onChange={(e) => setFormSinal({...formSinal, nome: e.target.value})}
-                placeholder="Ex: Pressão Arterial"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <div className="flex justify-between items-center">
-                <Label>Valores de Referência</Label>
-                <Button type="button" variant="outline" size="sm" onClick={adicionarValorReferencia}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Valor
-                </Button>
+            <div className="space-y-6">
+              {/* Dados básicos */}
+              <div>
+                <Label htmlFor="nome">Nome do Sinal Vital</Label>
+                <Input 
+                  id="nome"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex: Pressão Arterial, Temperatura"
+                  className="mt-1"
+                />
               </div>
               
-              {formSinal.valoresReferencia.map((valor, index) => (
-                <Card key={index} className="p-4">
-                  <div className="grid gap-3">
-                    <div className="flex justify-between">
-                      <h4 className="font-medium">Valor de Referência #{index + 1}</h4>
-                      {formSinal.valoresReferencia.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removerValorReferencia(index)}
-                          className="h-7 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label>Varia por</Label>
-                      <Select
-                        value={valor.variacaoPor}
-                        onValueChange={(v) => atualizarValorReferencia(index, 'variacaoPor', v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione como o valor varia" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Nenhum">Nenhum (valor único)</SelectItem>
-                          <SelectItem value="Sexo">Sexo</SelectItem>
-                          <SelectItem value="Idade">Idade</SelectItem>
-                          <SelectItem value="Ambos">Ambos (Sexo e Idade)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {(valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') && (
-                      <div className="grid gap-2">
-                        <Label>Sexo</Label>
-                        <Select
-                          value={valor.sexo || 'Todos'}
-                          onValueChange={(v) => atualizarValorReferencia(index, 'sexo', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Todos">Todos</SelectItem>
-                            <SelectItem value="Masculino">Masculino</SelectItem>
-                            <SelectItem value="Feminino">Feminino</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {(valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>Idade Mínima (anos)</Label>
-                          <Input
-                            type="number"
-                            value={valor.idadeMinima !== undefined ? valor.idadeMinima : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
-                            placeholder="Ex: 18"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Idade Máxima (anos)</Label>
-                          <Input
-                            type="number"
-                            value={valor.idadeMaxima !== undefined ? valor.idadeMaxima : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
-                            placeholder="Ex: 65"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-2">
-                        <Label>Valor Mínimo</Label>
-                        <Input
-                          type="number"
-                          value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', Number(e.target.value))}
-                          placeholder="Ex: 120"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Valor Máximo</Label>
-                        <Input
-                          type="number"
-                          value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', Number(e.target.value))}
-                          placeholder="Ex: 139"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="grid gap-2">
-                      <Label>Unidade</Label>
-                      <Input
-                        value={valor.unidade}
-                        onChange={(e) => atualizarValorReferencia(index, 'unidade', e.target.value)}
-                        placeholder="Ex: mmHg"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2 pt-2">
-                      <Switch 
-                        checked={valor.representaAlteracao || false}
-                        onCheckedChange={(checked) => 
-                          atualizarValorReferencia(index, 'representaAlteracao', checked)
-                        }
-                        id={`alteracao-${index}`}
-                      />
-                      <Label htmlFor={`alteracao-${index}`}>Este valor representa uma alteração</Label>
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
-                              <HelpCircle className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Marque se este valor representa uma condição alterada (ex: hipertensão, hipotensão).
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    
-                    {valor.representaAlteracao && (
-                      <div className="grid gap-2">
-                        <Label>Título da Alteração</Label>
-                        <Input
-                          value={valor.tituloAlteracao || ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
-                          placeholder="Ex: Hipertensão, Hipotensão, etc."
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-2 border-t pt-3 mt-2">
-                      <Label>Vínculo com Diagnóstico</Label>
-                      
-                      <div className="grid gap-3">
-                        <div>
-                          <Label className="text-sm text-muted-foreground mb-1 block">
-                            1. Selecione uma NHB
-                          </Label>
-                          <Select
-                            value={nhbSelecionada || ''}
-                            onValueChange={handleNhbChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma NHB" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {nhbs.map((nhb) => (
-                                <SelectItem key={nhb.id} value={nhb.id!}>
-                                  {nhb.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        {nhbSelecionada && (
-                          <div>
-                            <Label className="text-sm text-muted-foreground mb-1 block">
-                              2. Selecione um Diagnóstico
-                            </Label>
-                            <Select
-                              value={valor.diagnosticoId || ''}
-                              onValueChange={(v) => handleDiagnosticoChange(index, v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um diagnóstico" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {diagnosticosFiltrados.length > 0 ? (
-                                  diagnosticosFiltrados.map((diag) => (
-                                    <SelectItem key={diag.id} value={diag.id!}>
-                                      {diag.descricao}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="" disabled>
-                                    Nenhum diagnóstico disponível para esta NHB
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="diferencaSexoIdade"
+                  checked={diferencaSexoIdade}
+                  onCheckedChange={setDiferencaSexoIdade}
+                />
+                <Label htmlFor="diferencaSexoIdade">Este parâmetro tem valores de referência que variam conforme idade/sexo</Label>
+              </div>
+              
+              {/* Valores de referência */}
+              <div className="pt-4 border-t">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Valores de Referência</h3>
+                  <Button type="button" variant="outline" onClick={() => handleExibirModalValorRef(false)}>
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Adicionar Valor
+                  </Button>
+                </div>
+                
+                {valoresReferenciaAtuais.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed rounded-md">
+                    <p className="text-gray-500">Nenhum valor de referência cadastrado</p>
+                    <p className="text-gray-500 text-sm mt-2">Clique em "Adicionar Valor" para cadastrar</p>
                   </div>
-                </Card>
-              ))}
+                ) : (
+                  <div className="space-y-2">
+                    {valoresReferenciaAtuais.map((valorRef, index) => (
+                      <div key={index} className="border p-3 rounded-md bg-gray-50">
+                        <div className="flex justify-between">
+                          <div>
+                            <p className="font-medium">
+                              {valorRef.valorMinimo !== undefined && valorRef.valorMaximo !== undefined
+                                ? `${valorRef.valorMinimo} - ${valorRef.valorMaximo} ${valorRef.unidade}`
+                                : valorRef.valorMinimo !== undefined
+                                  ? `Mínimo: ${valorRef.valorMinimo} ${valorRef.unidade}`
+                                  : `Máximo: ${valorRef.valorMaximo} ${valorRef.unidade}`}
+                            </p>
+                            
+                            <div className="mt-1 text-sm text-gray-500">
+                              {valorRef.variacaoPor === 'Nenhum' ? (
+                                <span>Valor único para todos</span>
+                              ) : (
+                                <>
+                                  <span>Variação por: {valorRef.variacaoPor}</span>
+                                  
+                                  {valorRef.variacaoPor === 'Idade' || valorRef.variacaoPor === 'Ambos' ? (
+                                    <span className="ml-2">
+                                      {valorRef.idadeMinima !== undefined && valorRef.idadeMaxima !== undefined
+                                        ? `Idade: ${valorRef.idadeMinima} - ${valorRef.idadeMaxima} anos`
+                                        : valorRef.idadeMinima !== undefined
+                                          ? `Idade: a partir de ${valorRef.idadeMinima} anos`
+                                          : `Idade: até ${valorRef.idadeMaxima} anos`}
+                                    </span>
+                                  ) : null}
+                                  
+                                  {valorRef.variacaoPor === 'Sexo' || valorRef.variacaoPor === 'Ambos' ? (
+                                    <span className="ml-2">
+                                      Sexo: {valorRef.sexo}
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </div>
+                            
+                            {valorRef.representaAlteracao && (
+                              <div className="mt-1">
+                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                                  Alteração: {valorRef.tituloAlteracao}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {valorRef.nhbId && valorRef.diagnosticoId && (
+                              <div className="mt-1 text-xs text-gray-500">
+                                <span>Vinculado a: {nhbs.find(n => n.id === valorRef.nhbId)?.nome} - </span>
+                                <span>{diagnosticos.find(d => d.id === valorRef.diagnosticoId)?.descricao}</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex space-x-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleExibirModalValorRef(true, index)}>
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleExcluirValorRef(index)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalAberto(false)}>
+            <Button variant="outline" onClick={handleFecharModal}>
               Cancelar
             </Button>
-            <Button onClick={salvarSinalVital} className="bg-csae-green-600 hover:bg-csae-green-700">
-              {editandoId ? 'Atualizar' : 'Cadastrar'} Sinal Vital
+            <Button 
+              className="bg-csae-green-600 hover:bg-csae-green-700"
+              onClick={handleSalvar}
+              disabled={selecionando}
+            >
+              {selecionando ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Salvar
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+      
+      {/* Modal para adicionar/editar valor de referência */}
+      <Dialog open={modalValorRefAberto} onOpenChange={setModalValorRefAberto}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {editandoValorRef ? 'Editar Valor de Referência' : 'Adicionar Valor de Referência'}
+            </DialogTitle>
+            <DialogDescription>
+              Defina os valores de referência para este sinal vital
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="valorMinimo">Valor Mínimo</Label>
+                <Input 
+                  id="valorMinimo"
+                  type="number"
+                  value={valorRefModal.valorMinimo || ''}
+                  onChange={(e) => setValorRefModal({
+                    ...valorRefModal,
+                    valorMinimo: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                  })}
+                  placeholder="Valor mínimo"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="valorMaximo">Valor Máximo</Label>
+                <Input 
+                  id="valorMaximo"
+                  type="number"
+                  value={valorRefModal.valorMaximo || ''}
+                  onChange={(e) => setValorRefModal({
+                    ...valorRefModal,
+                    valorMaximo: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                  })}
+                  placeholder="Valor máximo"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="unidade">Unidade de Medida</Label>
+              <Input 
+                id="unidade"
+                value={valorRefModal.unidade || ''}
+                onChange={(e) => setValorRefModal({
+                  ...valorRefModal,
+                  unidade: e.target.value
+                })}
+                placeholder="Ex: mmHg, °C, bpm"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Este valor varia conforme:</Label>
+              <RadioGroup
+                value={valorRefModal.variacaoPor || 'Nenhum'}
+                onValueChange={handleVariacaoPorChange}
+                className="grid grid-cols-2 gap-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Nenhum" id="nenhum" />
+                  <Label htmlFor="nenhum">Nenhum (valor único)</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Sexo" id="sexo" />
+                  <Label htmlFor="sexo">Sexo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Idade" id="idade" />
+                  <Label htmlFor="idade">Idade</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Ambos" id="ambos" />
+                  <Label htmlFor="ambos">Ambos (sexo e idade)</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            
+            {/* Campos condicionais para sexo */}
+            {showSexo && (
+              <div className="space-y-2">
+                <Label>Sexo</Label>
+                <RadioGroup
+                  value={valorRefModal.sexo || 'Todos'}
+                  onValueChange={(value) => setValorRefModal({
+                    ...valorRefModal,
+                    sexo: value as 'Masculino' | 'Feminino' | 'Todos'
+                  })}
+                  className="grid grid-cols-3 gap-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Masculino" id="masculino" />
+                    <Label htmlFor="masculino">Masculino</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Feminino" id="feminino" />
+                    <Label htmlFor="feminino">Feminino</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="Todos" id="todos" />
+                    <Label htmlFor="todos">Todos</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+            
+            {/* Campos condicionais para idade */}
+            {showIdade && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="idadeMinima">Idade Mínima (anos)</Label>
+                  <Input 
+                    id="idadeMinima"
+                    type="number"
+                    value={valorRefModal.idadeMinima || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      idadeMinima: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                    })}
+                    placeholder="Idade mínima"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="idadeMaxima">Idade Máxima (anos)</Label>
+                  <Input 
+                    id="idadeMaxima"
+                    type="number"
+                    value={valorRefModal.idadeMaxima || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      idadeMaxima: e.target.value === '' ? undefined : parseFloat(e.target.value)
+                    })}
+                    placeholder="Idade máxima"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Campos para alteração e diagnóstico */}
+            <div className="pt-4 border-t">
+              <div className="flex items-center space-x-2 mb-4">
+                <Switch 
+                  id="representaAlteracao"
+                  checked={valorRefModal.representaAlteracao || false}
+                  onCheckedChange={(checked) => setValorRefModal({
+                    ...valorRefModal,
+                    representaAlteracao: checked
+                  })}
+                />
+                <Label htmlFor="representaAlteracao">Este valor representa uma alteração</Label>
+              </div>
+              
+              {valorRefModal.representaAlteracao && (
+                <div className="mb-4">
+                  <Label htmlFor="tituloAlteracao">Título da Alteração</Label>
+                  <Input 
+                    id="tituloAlteracao"
+                    value={valorRefModal.tituloAlteracao || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      tituloAlteracao: e.target.value
+                    })}
+                    placeholder="Ex: Hipertensão, Hipotermia, etc."
+                  />
+                </div>
+              )}
+              
+              {valorRefModal.representaAlteracao && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h4 className="font-medium">Vínculo com Diagnóstico</h4>
+                  
+                  <div>
+                    <Label htmlFor="nhb">1. Selecione uma NHB</Label>
+                    <Select 
+                      value={nhbSelecionada} 
+                      onValueChange={handleNhbChange}
+                    >
+                      <SelectTrigger id="nhb" className="w-full">
+                        <SelectValue placeholder="Selecione uma NHB" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {nhbs.map((nhb) => (
+                            <SelectItem key={nhb.id} value={nhb.id!}>
+                              {nhb.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {nhbSelecionada && (
+                    <div>
+                      <Label htmlFor="diagnostico">2. Selecione um diagnóstico de enfermagem</Label>
+                      <Select 
+                        value={diagnosticoSelecionado}
+                        onValueChange={(value) => setDiagnosticoSelecionado(value)}
+                        disabled={!nhbSelecionada || diagnosticosSelecionados.length === 0}
+                      >
+                        <SelectTrigger id="diagnostico" className="w-full">
+                          <SelectValue placeholder={
+                            diagnosticosSelecionados.length > 0 
+                              ? "Selecione um diagnóstico" 
+                              : "Nenhum diagnóstico disponível para esta NHB"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {diagnosticosSelecionados.map((diagnostico) => (
+                              <SelectItem key={diagnostico.id} value={diagnostico.id!}>
+                                {diagnostico.descricao}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleFecharModalValorRef}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSalvarValorRef}>
+              {editandoValorRef ? 'Atualizar' : 'Adicionar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 
