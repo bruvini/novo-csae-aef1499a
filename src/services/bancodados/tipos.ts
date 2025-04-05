@@ -59,15 +59,15 @@ export interface Paciente {
   profissionalUid: string;
   profissionalNome: string;
   dataCadastro: Timestamp;
-  dataAtualizacao?: Timestamp | FieldValue;
+  dataAtualizacao?: Timestamp;
   evolucoes?: Evolucao[];
 }
 
 export interface Evolucao {
   id?: string;
   dataInicio: Timestamp;
-  dataAtualizacao: Timestamp | FieldValue;
-  dataConclusao?: Timestamp | FieldValue;
+  dataAtualizacao: Timestamp;
+  dataConclusao?: Timestamp;
   statusConclusao: 'Em andamento' | 'Interrompido' | 'Concluído';
   avaliacao?: string;
   diagnosticos?: DiagnosticoEnfermagem[];
@@ -117,7 +117,7 @@ export interface SinalVital {
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }
 
 export interface ExameLaboratorial {
@@ -126,7 +126,7 @@ export interface ExameLaboratorial {
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }
 
 export interface RevisaoSistema {
@@ -135,7 +135,7 @@ export interface RevisaoSistema {
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }
 
 export interface Intervencao {
@@ -153,7 +153,7 @@ export interface DiagnosticoCompleto {
   explicacao?: string;
   intervencoes: Intervencao[];
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }
 
 export interface NHB {
@@ -161,7 +161,7 @@ export interface NHB {
   nome: string;
   descricao?: string;
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }
 
 export interface ProtocoloEnfermagem {
@@ -174,5 +174,5 @@ export interface ProtocoloEnfermagem {
   descricao: string;
   linkPdf: string;
   createdAt?: Timestamp;
-  updatedAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp;
 }

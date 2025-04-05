@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Trash2, ChevronRight, Edit2, Save, Loader2, X, ChevronDown, Package, PlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -868,4 +869,89 @@ const GerenciadorSinaisVitais = () => {
                 <Label htmlFor="representaAlteracao">Este valor representa uma alteração</Label>
               </div>
               
-              {valorRefModal.representa
+              {valorRefModal.representaAlteracao && (
+                <div className="mb-4">
+                  <Label htmlFor="tituloAlteracao">Título da Alteração</Label>
+                  <Input 
+                    id="tituloAlteracao"
+                    value={valorRefModal.tituloAlteracao || ''}
+                    onChange={(e) => setValorRefModal({
+                      ...valorRefModal,
+                      tituloAlteracao: e.target.value
+                    })}
+                    placeholder="Ex: Hipertensão, Hipotermia, etc."
+                  />
+                </div>
+              )}
+              
+              {/* Vínculo com diagnóstico */}
+              <div className="mt-4 border-t pt-4">
+                <h4 className="text-base font-semibold mb-2">Vínculo com Diagnóstico</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="nhb">1. Selecione uma NHB</Label>
+                    <Select
+                      value={nhbSelecionada}
+                      onValueChange={handleNhbChange}
+                    >
+                      <SelectTrigger className="w-full mt-1">
+                        <SelectValue placeholder="Selecione uma NHB" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {nhbs.map((nhb) => (
+                          <SelectItem key={nhb.id} value={nhb.id}>{nhb.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {nhbSelecionada && (
+                    <div>
+                      <Label htmlFor="diagnostico">2. Selecione um diagnóstico de enfermagem</Label>
+                      <Select
+                        value={diagnosticoSelecionado}
+                        onValueChange={setDiagnosticoSelecionado}
+                        disabled={!nhbSelecionada}
+                      >
+                        <SelectTrigger className="w-full mt-1">
+                          <SelectValue placeholder="Selecione um diagnóstico" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {diagnosticosSelecionados.length > 0 ? (
+                            diagnosticosSelecionados.map((diag) => (
+                              <SelectItem key={diag.id} value={diag.id}>{diag.descricao}</SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="sem-diagnosticos" disabled>
+                              Nenhum diagnóstico disponível para esta NHB
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={handleFecharModalValorRef}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-csae-green-600 hover:bg-csae-green-700"
+              onClick={handleSalvarValorRef}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default GerenciadorSinaisVitais;
