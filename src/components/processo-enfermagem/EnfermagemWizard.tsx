@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Paciente, Evolucao, iniciarEvolucao, salvarProgressoEvolucao, finalizarEvolucao, buscarPacientesPorProfissional } from '@/services/bancodados';
+import { Paciente, Evolucao } from '@/services/bancodados/tipos';
+import { iniciarEvolucao, salvarProgressoEvolucao, finalizarEvolucao, buscarPacientesPorProfissional } from '@/services/bancodados';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
@@ -116,17 +118,17 @@ export function EnfermageWizard({
             return;
           }
           
-          const { evolucaoId: novoEvolucaoId, sucesso } = await iniciarEvolucao(paciente.id);
+          const resultado = await iniciarEvolucao(paciente.id);
           
-          if (sucesso && novoEvolucaoId) {
-            console.log("Nova evolução criada com ID:", novoEvolucaoId);
+          if (resultado.sucesso && resultado.evolucaoId) {
+            console.log("Nova evolução criada com ID:", resultado.evolucaoId);
             
             // Buscar o paciente atualizado para obter a evolução criada
             const pacientesAtualizados = await buscarPacientesPorProfissional(paciente.profissionalUid);
             const pacienteAtualizado = pacientesAtualizados.find(p => p.id === paciente.id);
             
             if (pacienteAtualizado && pacienteAtualizado.evolucoes) {
-              const evolucaoCriada = pacienteAtualizado.evolucoes.find(e => e.id === novoEvolucaoId);
+              const evolucaoCriada = pacienteAtualizado.evolucoes.find(e => e.id === resultado.evolucaoId);
               
               if (evolucaoCriada) {
                 setEvolucaoAtual(evolucaoCriada);

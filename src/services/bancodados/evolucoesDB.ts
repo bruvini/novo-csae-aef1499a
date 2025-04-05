@@ -37,7 +37,7 @@ export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: 
     const novaEvolucao: Evolucao = {
       id: evolucaoId,
       dataInicio: Timestamp.now(),
-      dataAtualizacao: Timestamp.now(), // Usar Timestamp diretamente para garantir que o valor esteja presente
+      dataAtualizacao: Timestamp.now(),
       statusConclusao: 'Em andamento',
       avaliacao: '',
       diagnosticos: [],
@@ -109,7 +109,7 @@ export async function salvarProgressoEvolucao(
     const evolucaoAtualizada = {
       ...evolucaoAntiga,
       ...dadosAtualizados,
-      dataAtualizacao: Timestamp.now() // Usar Timestamp.now() em vez de serverTimestamp
+      dataAtualizacao: Timestamp.now()
     };
     
     // Adicionar evolução atualizada
@@ -178,8 +178,8 @@ export async function finalizarEvolucao(
       ...evolucaoAntiga,
       ...dadosFinais,
       statusConclusao: statusFinal,
-      dataConclusao: Timestamp.now(), // Usar Timestamp.now() em vez de serverTimestamp
-      dataAtualizacao: Timestamp.now() // Usar Timestamp.now() em vez de serverTimestamp
+      dataConclusao: Timestamp.now(),
+      dataAtualizacao: Timestamp.now()
     };
     
     // Adicionar evolução finalizada

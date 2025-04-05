@@ -66,8 +66,8 @@ export interface Paciente {
 export interface Evolucao {
   id?: string;
   dataInicio: Timestamp;
-  dataAtualizacao: Timestamp | FieldValue;
-  dataConclusao?: Timestamp | FieldValue;
+  dataAtualizacao: Timestamp;
+  dataConclusao?: Timestamp;
   statusConclusao: 'Em andamento' | 'Interrompido' | 'Concluído';
   avaliacao?: string;
   diagnosticos?: DiagnosticoEnfermagem[];
@@ -101,6 +101,8 @@ export interface ValorReferencia {
   sexo?: 'Masculino' | 'Feminino' | 'Todos';
   valorMinimo?: number;
   valorMaximo?: number;
+  valorTexto?: string;
+  tipoValor: 'Numérico' | 'Texto';
   unidade: string;
   nhbId?: string;
   diagnosticoId?: string;
