@@ -141,6 +141,9 @@ export interface RevisaoSistema {
 export interface Intervencao {
   id: string;
   descricao: string;
+  verboPresentePrimeiraPessoa: string;
+  verboInfinitivo: string;
+  complementoIntervencao?: string;
   linkArquivo?: string;
 }
 

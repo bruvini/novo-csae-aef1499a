@@ -24,6 +24,12 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,7 +41,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { X, Plus, Pencil, Trash2, FileText, Info, Save, Loader2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, FileText, Info, Save, Loader2, FilePlus2, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Firebase
@@ -56,8 +62,12 @@ import {
 // Tipos
 import { DiagnosticoCompleto, Intervencao, NHB, ProtocoloEnfermagem } from '@/services/bancodados/tipos';
 
+// Componentes
+import GerenciadorSubconjuntos from './GerenciadorSubconjuntos';
+
 const GerenciadorDiagnosticos = () => {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('diagnosticos');
   
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [nhbs, setNHBs] = useState<NHB[]>([]);
@@ -80,7 +90,10 @@ const GerenciadorDiagnosticos = () => {
   // Estado para nova intervenção
   const [novaIntervencao, setNovaIntervencao] = useState({
     descricao: '',
-    linkArquivo: ''
+    linkArquivo: '',
+    verboPresentePrimeiraPessoa: '',
+    verboInfinitivo: '',
+    complementoIntervencao: ''
   });
   
   // Estado para as opções de subitem
@@ -196,6 +209,24 @@ const GerenciadorDiagnosticos = () => {
       });
       return;
     }
+
+    if (!novaIntervencao.verboPresentePrimeiraPessoa.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "O verbo no presente do indicativo (1ª pessoa) é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!novaIntervencao.verboInfinitivo.trim()) {
+      toast({
+        title: "Campo obrigatório",
+        description: "O verbo no infinitivo é obrigatório.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Validar URL do link se foi preenchido
     if (novaIntervencao.linkArquivo && !isValidURL(novaIntervencao.linkArquivo)) {
@@ -210,6 +241,9 @@ const GerenciadorDiagnosticos = () => {
     const novaIntervencaoObj: Intervencao = {
       id: `interv_${Date.now()}`,
       descricao: novaIntervencao.descricao,
+      verboPresentePrimeiraPessoa: novaIntervencao.verboPresentePrimeiraPessoa,
+      verboInfinitivo: novaIntervencao.verboInfinitivo,
+      complementoIntervencao: novaIntervencao.complementoIntervencao,
       linkArquivo: novaIntervencao.linkArquivo || undefined
     };
 
@@ -220,7 +254,10 @@ const GerenciadorDiagnosticos = () => {
 
     setNovaIntervencao({
       descricao: '',
-      linkArquivo: ''
+      linkArquivo: '',
+      verboPresentePrimeiraPessoa: '',
+      verboInfinitivo: '',
+      complementoIntervencao: ''
     });
   };
 
@@ -344,68 +381,65 @@ const GerenciadorDiagnosticos = () => {
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Diagnósticos de Enfermagem</CardTitle>
-          <Button onClick={abrirModalCriar} className="bg-csae-green-600 hover:bg-csae-green-700">
-            <Plus className="mr-2 h-4 w-4" /> Novo Diagnóstico
-          </Button>
+  const DiagnosticosContent = () => (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-semibold text-csae-green-700">Diagnósticos</h3>
+          <p className="text-sm text-gray-500">Lista de diagnósticos de enfermagem cadastrados</p>
         </div>
-        <CardDescription>
-          Cadastre e gerencie os diagnósticos de enfermagem utilizados no processo de enfermagem.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {carregando ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="h-12 w-12 animate-spin text-csae-green-600" />
-          </div>
-        ) : diagnosticos.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Nenhum diagnóstico de enfermagem cadastrado.</p>
-            <p className="text-gray-500 mt-2">Clique em "Novo Diagnóstico" para começar.</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Diagnóstico</TableHead>
-                <TableHead>Subconjunto</TableHead>
-                <TableHead>Subitem</TableHead>
-                <TableHead>Intervenções</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+        <Button onClick={abrirModalCriar} className="bg-csae-green-600 hover:bg-csae-green-700">
+          <Plus className="mr-2 h-4 w-4" /> Novo Diagnóstico
+        </Button>
+      </div>
+      
+      {carregando ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-12 w-12 animate-spin text-csae-green-600" />
+        </div>
+      ) : diagnosticos.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Nenhum diagnóstico de enfermagem cadastrado.</p>
+          <p className="text-gray-500 mt-2">Clique em "Novo Diagnóstico" para começar.</p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Diagnóstico</TableHead>
+              <TableHead>Subconjunto</TableHead>
+              <TableHead>Subitem</TableHead>
+              <TableHead>Intervenções</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {diagnosticos.map((diagnostico) => (
+              <TableRow key={diagnostico.id}>
+                <TableCell className="font-medium">{diagnostico.descricao}</TableCell>
+                <TableCell>{diagnostico.subconjunto}</TableCell>
+                <TableCell>{diagnostico.subitemNome}</TableCell>
+                <TableCell>{diagnostico.intervencoes?.length || 0} intervenções</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => abrirModalEditar(diagnostico)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-500"
+                      onClick={() => excluirDiagnostico(diagnostico.id!)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {diagnosticos.map((diagnostico) => (
-                <TableRow key={diagnostico.id}>
-                  <TableCell className="font-medium">{diagnostico.descricao}</TableCell>
-                  <TableCell>{diagnostico.subconjunto}</TableCell>
-                  <TableCell>{diagnostico.subitemNome}</TableCell>
-                  <TableCell>{diagnostico.intervencoes?.length || 0} intervenções</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => abrirModalEditar(diagnostico)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-red-500"
-                        onClick={() => excluirDiagnostico(diagnostico.id!)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Modal para criar/editar diagnóstico */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
@@ -499,9 +533,16 @@ const GerenciadorDiagnosticos = () => {
                   {formDiagnostico.intervencoes.map((intervencao) => (
                     <div key={intervencao.id} className="flex items-start justify-between border p-3 rounded-md">
                       <div className="space-y-1">
-                        <p>{intervencao.descricao}</p>
+                        <p className="font-medium">{intervencao.descricao}</p>
+                        <div className="text-sm text-gray-600">
+                          <p>Presente (1ª pessoa): <span className="font-medium">{intervencao.verboPresentePrimeiraPessoa}</span></p>
+                          <p>Infinitivo: <span className="font-medium">{intervencao.verboInfinitivo}</span></p>
+                          {intervencao.complementoIntervencao && (
+                            <p>Complemento: <span className="font-medium">{intervencao.complementoIntervencao}</span></p>
+                          )}
+                        </div>
                         {intervencao.linkArquivo && (
-                          <div className="flex items-center text-sm text-blue-600">
+                          <div className="flex items-center text-sm text-blue-600 mt-2">
                             <FileText className="h-4 w-4 mr-1" />
                             <a href={intervencao.linkArquivo} target="_blank" rel="noopener noreferrer">
                               Material de apoio
@@ -532,7 +573,39 @@ const GerenciadorDiagnosticos = () => {
                     id="intervencao"
                     value={novaIntervencao.descricao}
                     onChange={(e) => setNovaIntervencao({...novaIntervencao, descricao: e.target.value})}
-                    placeholder="Descreva a intervenção"
+                    placeholder="Descrição completa da intervenção"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="verboPresentePrimeiraPessoa">Verbo no presente (1ª pessoa)</Label>
+                    <Input
+                      id="verboPresentePrimeiraPessoa"
+                      value={novaIntervencao.verboPresentePrimeiraPessoa}
+                      onChange={(e) => setNovaIntervencao({...novaIntervencao, verboPresentePrimeiraPessoa: e.target.value})}
+                      placeholder="Ex: administro, avalio, verifico"
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2">
+                    <Label htmlFor="verboInfinitivo">Verbo no infinitivo</Label>
+                    <Input
+                      id="verboInfinitivo"
+                      value={novaIntervencao.verboInfinitivo}
+                      onChange={(e) => setNovaIntervencao({...novaIntervencao, verboInfinitivo: e.target.value})}
+                      placeholder="Ex: administrar, avaliar, verificar"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="complementoIntervencao">Complemento da intervenção</Label>
+                  <Input
+                    id="complementoIntervencao"
+                    value={novaIntervencao.complementoIntervencao}
+                    onChange={(e) => setNovaIntervencao({...novaIntervencao, complementoIntervencao: e.target.value})}
+                    placeholder="Complemento da intervenção (opcional)"
                   />
                 </div>
                 
@@ -586,6 +659,39 @@ const GerenciadorDiagnosticos = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Diagnósticos de Enfermagem</CardTitle>
+        <CardDescription>
+          Gerencie subconjuntos, subitens e diagnósticos utilizados no processo de enfermagem.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="subconjuntos">
+              <FilePlus2 className="mr-2 h-4 w-4" />
+              Subconjuntos e Subitens
+            </TabsTrigger>
+            <TabsTrigger value="diagnosticos">
+              <ClipboardList className="mr-2 h-4 w-4" />
+              Diagnósticos
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="subconjuntos">
+            <GerenciadorSubconjuntos />
+          </TabsContent>
+          
+          <TabsContent value="diagnosticos">
+            <DiagnosticosContent />
+          </TabsContent>
+        </Tabs>
+      </CardContent>
     </Card>
   );
 };
