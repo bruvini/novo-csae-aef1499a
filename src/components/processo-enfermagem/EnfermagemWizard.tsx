@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Paciente, Evolucao } from '@/services/bancodados/tipos';
-import { iniciarEvolucao, salvarProgressoEvolucao, finalizarEvolucao, buscarPacientesPorProfissional } from '@/services/bancodados';
+import { Paciente, Evolucao, iniciarEvolucao, salvarProgressoEvolucao, finalizarEvolucao } from '@/services/bancodados';
 import { Button } from '@/components/ui/button';
 import { 
   Card, 
@@ -71,14 +70,10 @@ export function EnfermageWizard({
   const [planejamento, setPlanejamento] = useState<any[]>([]);
   const [implementacao, setImplementacao] = useState<any[]>([]);
   const [evolucaoFinal, setEvolucaoFinal] = useState('');
-  
-  // Estado para armazenar NHBs afetadas e diagnósticos pré-selecionados
-  const [nhbsAfetadas, setNhbsAfetadas] = useState<string[]>([]);
-  const [diagnosticosPreSelecionados, setDiagnosticosPreSelecionados] = useState<any[]>([]);
 
-  // Verificar se existe evolução para retomar ou criar nova
+  // Verificar se existe evolução para retomar
   useEffect(() => {
-    const iniciarOuRetomarEvolucao = async () => {
+    const buscarEvolucao = async () => {
       if (isRetomando && evolucaoId && paciente.evolucoes) {
         const evolucao = paciente.evolucoes.find(e => e.id === evolucaoId);
         
@@ -105,42 +100,30 @@ export function EnfermageWizard({
             }
           }
         }
-      } else {
+      } else if (!isRetomando) {
         // Iniciar nova evolução
         try {
-          console.log("Iniciando nova evolução para paciente ID:", paciente.id);
-          if (!paciente.id) {
-            toast({
-              title: "Erro ao iniciar evolução",
-              description: "ID do paciente não encontrado",
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          const resultado = await iniciarEvolucao(paciente.id, {});
-          
-          if (resultado.sucesso && resultado.evolucaoId) {
-            console.log("Nova evolução criada com ID:", resultado.evolucaoId);
+          if (paciente.id) {
+            const novaEvolucao: Omit<Evolucao, 'dataInicio' | 'dataAtualizacao' | 'statusConclusao'> = {
+              avaliacao: '',
+              diagnosticos: [],
+              planejamento: [],
+              implementacao: [],
+              evolucaoFinal: '',
+            };
             
-            // Buscar o paciente atualizado para obter a evolução criada
-            const pacientesAtualizados = await buscarPacientesPorProfissional(paciente.profissionalUid);
-            const pacienteAtualizado = pacientesAtualizados.find(p => p.id === paciente.id);
+            const sucesso = await iniciarEvolucao(paciente.id, novaEvolucao);
             
-            if (pacienteAtualizado && pacienteAtualizado.evolucoes) {
-              const evolucaoCriada = pacienteAtualizado.evolucoes.find(e => e.id === resultado.evolucaoId);
+            if (sucesso) {
+              // Buscar o paciente atualizado para obter o ID da evolução criada
+              const evolucoesCriadas = paciente.evolucoes || [];
+              const novaEvolucaoCriada = evolucoesCriadas[evolucoesCriadas.length - 1];
               
-              if (evolucaoCriada) {
-                setEvolucaoAtual(evolucaoCriada);
-                console.log("Evolução atual definida:", evolucaoCriada);
+              if (novaEvolucaoCriada) {
+                setEvolucaoAtual(novaEvolucaoCriada);
+                // Removida a linha que causava o erro, pois evolucaoId é somente leitura na props
               }
             }
-          } else {
-            toast({
-              title: "Erro ao iniciar evolução",
-              description: "Não foi possível iniciar uma nova evolução. Tente novamente.",
-              variant: "destructive"
-            });
           }
         } catch (error) {
           console.error("Erro ao iniciar evolução:", error);
@@ -153,15 +136,8 @@ export function EnfermageWizard({
       }
     };
     
-    iniciarOuRetomarEvolucao();
-  }, [isRetomando, evolucaoId, paciente, toast]);
-
-  // Atualizar diagnósticos quando houver pré-seleção da etapa de avaliação
-  useEffect(() => {
-    if (diagnosticosPreSelecionados.length > 0 && diagnosticos.length === 0) {
-      setDiagnosticos(diagnosticosPreSelecionados);
-    }
-  }, [diagnosticosPreSelecionados, diagnosticos]);
+    buscarEvolucao();
+  }, [isRetomando, evolucaoId, paciente.evolucoes, paciente.id, toast]);
 
   const handleAvancarEtapa = () => {
     let proximaEtapa = '';
@@ -216,32 +192,18 @@ export function EnfermageWizard({
         return;
     }
     
-    // Salvar progresso antes de avançar
-    handleSalvarProgresso().then(sucesso => {
-      if (sucesso) {
-        // Atualizar etapa atual
-        setEtapaAtual(proximaEtapa);
-      }
-    });
+    // Atualizar etapa atual
+    setEtapaAtual(proximaEtapa);
   };
 
   const handleSalvarProgresso = async () => {
-    if (!paciente.id) {
+    if (!paciente.id || !evolucaoAtual?.id) {
       toast({
         title: "Erro ao salvar",
-        description: "ID do paciente não encontrado.",
+        description: "Não foi possível identificar a evolução atual.",
         variant: "destructive"
       });
-      return false;
-    }
-    
-    if (!evolucaoAtual?.id) {
-      toast({
-        title: "Erro ao salvar",
-        description: "ID da evolução não encontrado. Tente reiniciar o processo.",
-        variant: "destructive"
-      });
-      return false;
+      return;
     }
     
     setSalvando(true);
@@ -256,12 +218,6 @@ export function EnfermageWizard({
         dataAtualizacao: Timestamp.now(),
       };         
       
-      console.log("Salvando progresso da evolução:", {
-        pacienteId: paciente.id,
-        evolucaoId: evolucaoAtual.id,
-        dados: dadosAtualizados
-      });
-      
       const sucesso = await salvarProgressoEvolucao(
         paciente.id,
         evolucaoAtual.id,
@@ -273,7 +229,6 @@ export function EnfermageWizard({
           title: "Progresso salvo",
           description: "O progresso da evolução foi salvo com sucesso.",
         });
-        return true;
       } else {
         throw new Error("Falha ao salvar progresso");
       }
@@ -284,26 +239,16 @@ export function EnfermageWizard({
         description: "Não foi possível salvar o progresso. Tente novamente.",
         variant: "destructive"
       });
-      return false;
     } finally {
       setSalvando(false);
     }
   };
 
   const handleFinalizar = async () => {
-    if (!paciente.id) {
+    if (!paciente.id || !evolucaoAtual?.id) {
       toast({
         title: "Erro ao finalizar",
-        description: "ID do paciente não encontrado.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!evolucaoAtual?.id) {
-      toast({
-        title: "Erro ao finalizar",
-        description: "ID da evolução não encontrado. Tente reiniciar o processo.",
+        description: "Não foi possível identificar a evolução atual.",
         variant: "destructive"
       });
       return;
@@ -423,16 +368,6 @@ export function EnfermageWizard({
     evolucao: "Compreende a avaliação dos resultados alcançados de enfermagem e saúde da pessoa, família, coletividade e grupos especiais. Esta etapa permite a análise e a revisão de todo o Processo de Enfermagem."
   };
 
-  // Handler para receber NHBs afetadas da etapa de avaliação
-  const handleNhbsAfetadasChange = (nhbs: string[]) => {
-    setNhbsAfetadas(nhbs);
-  };
-  
-  // Handler para receber diagnósticos pré-selecionados da etapa de avaliação
-  const handleDiagnosticosPreSelecionadosChange = (diagnosticos: any[]) => {
-    setDiagnosticosPreSelecionados(diagnosticos);
-  };
-
   return (
     <>
       <div className="bg-white rounded-lg border shadow-sm">
@@ -486,9 +421,7 @@ export function EnfermageWizard({
           <TabsContent value="avaliacao" className="p-6">
             <AvaliacaoEnfermagem 
               valor={avaliacao} 
-              onChange={setAvaliacao}
-              onNhbsAfetadasChange={handleNhbsAfetadasChange}
-              onDiagnosticosPreSelecionadosChange={handleDiagnosticosPreSelecionadosChange}
+              onChange={setAvaliacao} 
             />
           </TabsContent>
           

@@ -59,7 +59,7 @@ export interface Paciente {
   profissionalUid: string;
   profissionalNome: string;
   dataCadastro: Timestamp;
-  dataAtualizacao?: Timestamp | FieldValue;
+  dataAtualizacao?: Timestamp;
   evolucoes?: Evolucao[];
 }
 
@@ -101,8 +101,6 @@ export interface ValorReferencia {
   sexo?: 'Masculino' | 'Feminino' | 'Todos';
   valorMinimo?: number;
   valorMaximo?: number;
-  valorTexto?: string;
-  tipoValor: 'Numérico' | 'Texto';
   unidade: string;
   nhbId?: string;
   diagnosticoId?: string;
@@ -116,8 +114,8 @@ export interface SinalVital {
   nome: string;
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface ExameLaboratorial {
@@ -125,8 +123,8 @@ export interface ExameLaboratorial {
   nome: string;
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface RevisaoSistema {
@@ -134,16 +132,13 @@ export interface RevisaoSistema {
   nome: string;
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface Intervencao {
   id: string;
   descricao: string;
-  verboPresentePrimeiraPessoa: string;
-  verboInfinitivo: string;
-  complementoIntervencao?: string;
   linkArquivo?: string;
 }
 
@@ -155,16 +150,16 @@ export interface DiagnosticoCompleto {
   subitemNome: string;
   explicacao?: string;
   intervencoes: Intervencao[];
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface NHB {
   id?: string;
   nome: string;
   descricao?: string;
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface ProtocoloEnfermagem {
@@ -172,10 +167,10 @@ export interface ProtocoloEnfermagem {
   volume: string;
   nome: string;
   dataPublicacao: Timestamp;
-  dataAtualizacao?: Timestamp | FieldValue;
+  dataAtualizacao?: Timestamp;
   linkImagem?: string;
   descricao: string;
   linkPdf: string;
-  createdAt?: Timestamp | FieldValue;
-  updatedAt?: Timestamp | FieldValue;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

@@ -1,454 +1,96 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, FileText, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { AlertCircle, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { SinalVital, ExameLaboratorial, RevisaoSistema, NHB, DiagnosticoCompleto } from '@/services/bancodados/tipos';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/services/firebase';
 
 interface AvaliacaoEnfermagemProps {
   valor: string;
   onChange: (valor: string) => void;
-  onNhbsAfetadasChange?: (nhbs: string[]) => void;
-  onDiagnosticosPreSelecionadosChange?: (diagnosticos: any[]) => void;
 }
 
-export function AvaliacaoEnfermagem({ 
-  valor, 
-  onChange, 
-  onNhbsAfetadasChange,
-  onDiagnosticosPreSelecionadosChange
-}: AvaliacaoEnfermagemProps) {
+export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProps) {
   const [activeTab, setActiveTab] = useState('entrevista');
   const [entrevista, setEntrevista] = useState('');
   
-  // Estado para os dados do Firestore
-  const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
-  const [examesLaboratoriais, setExamesLaboratoriais] = useState<ExameLaboratorial[]>([]);
-  const [sistemasRevisao, setSistemasRevisao] = useState<RevisaoSistema[]>([]);
-  const [nhbs, setNhbs] = useState<NHB[]>([]);
-  const [diagnosticosEnfermagem, setDiagnosticosEnfermagem] = useState<DiagnosticoCompleto[]>([]);
-  
-  // Estado para armazenar valores dos campos
-  const [valoresSinaisVitais, setValoresSinaisVitais] = useState<Record<string, string>>({});
-  const [valoresExames, setValoresExames] = useState<Record<string, string>>({});
-  const [valoresSistemas, setValoresSistemas] = useState<Record<string, string>>({});
-  
-  // Estado para NHBs afetadas e diagnósticos selecionados
-  const [nhbsAfetadas, setNhbsAfetadas] = useState<string[]>([]);
-  const [diagnosticosSelecionados, setDiagnosticosSelecionados] = useState<string[]>([]);
-  
+  // Estado para os outros campos
+  const [sinaisVitais, setSinaisVitais] = useState<Record<string, string>>({
+    'Temperatura': '',
+    'Frequência Cardíaca': '', 
+    'Pressão Arterial': '',
+    'Frequência Respiratória': '',
+    'Saturação de O2': '',
+    'Glicemia Capilar': '',
+  });
+
+  const [exames, setExames] = useState<Record<string, string>>({});
+  const [sistemas, setSistemas] = useState<Record<string, string>>({});
+
   // Estado para controle dos collapsibles
   const [openSections, setOpenSections] = useState({
     sinaisVitais: true,
     exames: false,
     sistemas: false
   });
-  
-  // Estado para loading dos dados
-  const [loading, setLoading] = useState({
-    sinaisVitais: true,
-    exames: true,
-    sistemas: true,
-    nhbs: true,
-    diagnosticos: true
-  });
-  
-  // Função para buscar dados do Firestore
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Buscar sinais vitais
-        const sinaisVitaisSnapshot = await getDocs(collection(db, 'sinaisVitais'));
-        const sinaisVitaisData = sinaisVitaisSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as SinalVital[];
-        setSinaisVitais(sinaisVitaisData);
-        setLoading(prev => ({ ...prev, sinaisVitais: false }));
-        
-        // Inicializar objeto de valores para sinais vitais
-        const initialSinaisVitais: Record<string, string> = {};
-        sinaisVitaisData.forEach(sinal => {
-          initialSinaisVitais[sinal.id!] = '';
-        });
-        setValoresSinaisVitais(initialSinaisVitais);
-        
-        // Buscar exames laboratoriais
-        const examesSnapshot = await getDocs(collection(db, 'examesLaboratoriais'));
-        const examesData = examesSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as ExameLaboratorial[];
-        setExamesLaboratoriais(examesData);
-        setLoading(prev => ({ ...prev, exames: false }));
-        
-        // Inicializar objeto de valores para exames
-        const initialExames: Record<string, string> = {};
-        examesData.forEach(exame => {
-          initialExames[exame.id!] = '';
-        });
-        setValoresExames(initialExames);
-        
-        // Buscar sistemas
-        const sistemasSnapshot = await getDocs(collection(db, 'sistemasRevisao'));
-        const sistemasData = sistemasSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as RevisaoSistema[];
-        setSistemasRevisao(sistemasData);
-        setLoading(prev => ({ ...prev, sistemas: false }));
-        
-        // Inicializar objeto de valores para sistemas
-        const initialSistemas: Record<string, string> = {};
-        sistemasData.forEach(sistema => {
-          initialSistemas[sistema.id!] = '';
-        });
-        setValoresSistemas(initialSistemas);
-        
-        // Buscar NHBs
-        const nhbsSnapshot = await getDocs(collection(db, 'nhbs'));
-        const nhbsData = nhbsSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as NHB[];
-        setNhbs(nhbsData);
-        setLoading(prev => ({ ...prev, nhbs: false }));
-        
-        // Buscar diagnósticos
-        const diagnosticosSnapshot = await getDocs(collection(db, 'diagnosticos'));
-        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id
-        })) as DiagnosticoCompleto[];
-        setDiagnosticosEnfermagem(diagnosticosData);
-        setLoading(prev => ({ ...prev, diagnosticos: false }));
-        
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-      }
-    };
-    
-    fetchData();
-  }, []);
-  
+
+  // NHBs sugeridas com base nos campos preenchidos
+  const [nhbsSelecionadas, setNhbsSelecionadas] = useState<string[]>([]);
+
+  // Lista de possíveis NHBs
+  const nhbs = [
+    'Oxigenação',
+    'Hidratação',
+    'Nutrição',
+    'Eliminação',
+    'Sono e Repouso',
+    'Exercício e Atividade Física',
+    'Sexualidade',
+    'Segurança Física',
+    'Comunicação',
+    'Gregária e Lazer',
+    'Espiritualidade',
+    'Espaço',
+    'Regulação'
+  ];
+
   // Preenche o valor do textarea quando o componente monta ou quando o valor é alterado externamente
-  useEffect(() => {
+  React.useEffect(() => {
     if (valor && entrevista === '') {
       setEntrevista(valor);
     }
   }, [valor]);
-  
+
   // Atualiza o valor externo quando a entrevista é alterada
-  useEffect(() => {
+  React.useEffect(() => {
     onChange(entrevista);
   }, [entrevista, onChange]);
-  
-  // Verificar alterações nos sinais vitais
-  useEffect(() => {
-    const nhbsAfetadasTemp = new Set<string>();
-    const diagnosticosAfetados = new Set<string>();
-    
-    // Verificar sinais vitais alterados
-    Object.entries(valoresSinaisVitais).forEach(([id, valor]) => {
-      if (!valor) return;
-      
-      const sinalVital = sinaisVitais.find(s => s.id === id);
-      if (!sinalVital) return;
-      
-      // Verificar se o valor está fora da faixa de referência
-      const numericValue = parseFloat(valor);
-      if (isNaN(numericValue)) return;
-      
-      sinalVital.valoresReferencia.forEach(ref => {
-        // Verificar se o valor está fora da faixa
-        const foraFaixa = (ref.valorMinimo !== undefined && numericValue < ref.valorMinimo) || 
-                          (ref.valorMaximo !== undefined && numericValue > ref.valorMaximo);
-        
-        if (foraFaixa && ref.representaAlteracao && ref.diagnosticoId && ref.nhbId) {
-          nhbsAfetadasTemp.add(ref.nhbId);
-          diagnosticosAfetados.add(ref.diagnosticoId);
-        }
-      });
-    });
-    
-    // Similar para exames laboratoriais
-    Object.entries(valoresExames).forEach(([id, valor]) => {
-      if (!valor) return;
-      
-      const exame = examesLaboratoriais.find(e => e.id === id);
-      if (!exame) return;
-      
-      const numericValue = parseFloat(valor);
-      if (isNaN(numericValue)) return;
-      
-      exame.valoresReferencia.forEach(ref => {
-        const foraFaixa = (ref.valorMinimo !== undefined && numericValue < ref.valorMinimo) || 
-                          (ref.valorMaximo !== undefined && numericValue > ref.valorMaximo);
-        
-        if (foraFaixa && ref.representaAlteracao && ref.diagnosticoId && ref.nhbId) {
-          nhbsAfetadasTemp.add(ref.nhbId);
-          diagnosticosAfetados.add(ref.diagnosticoId);
-        }
-      });
-    });
-    
-    // Similar para sistemas
-    Object.entries(valoresSistemas).forEach(([id, valor]) => {
-      if (!valor) return;
-      
-      const sistema = sistemasRevisao.find(s => s.id === id);
-      if (!sistema) return;
-      
-      const numericValue = parseFloat(valor);
-      if (isNaN(numericValue)) return;
-      
-      sistema.valoresReferencia.forEach(ref => {
-        const foraFaixa = (ref.valorMinimo !== undefined && numericValue < ref.valorMinimo) || 
-                          (ref.valorMaximo !== undefined && numericValue > ref.valorMaximo);
-        
-        if (foraFaixa && ref.representaAlteracao && ref.diagnosticoId && ref.nhbId) {
-          nhbsAfetadasTemp.add(ref.nhbId);
-          diagnosticosAfetados.add(ref.diagnosticoId);
-        }
-      });
-    });
-    
-    // Atualizar NHBs afetadas
-    const nhbsAfetadasArray = Array.from(nhbsAfetadasTemp);
-    setNhbsAfetadas(nhbsAfetadasArray);
-    if (onNhbsAfetadasChange) {
-      onNhbsAfetadasChange(nhbsAfetadasArray);
-    }
-    
-    // Atualizar diagnósticos pré-selecionados
-    const diagnosticosArray = Array.from(diagnosticosAfetados);
-    setDiagnosticosSelecionados(diagnosticosArray);
-    if (onDiagnosticosPreSelecionadosChange) {
-      // Formatar diagnósticos para a próxima etapa
-      const diagsFormatados = diagnosticosEnfermagem
-        .filter(d => diagnosticosArray.includes(d.id!))
-        .map(d => ({
-          id: d.id!,
-          descricao: d.descricao,
-          selecionado: true
-        }));
-      
-      onDiagnosticosPreSelecionadosChange(diagsFormatados);
-    }
-    
-  }, [valoresSinaisVitais, valoresExames, valoresSistemas, sinaisVitais, examesLaboratoriais, sistemasRevisao, diagnosticosEnfermagem]);
-  
-  // Função para atualizar valores dos campos
-  const handleSinalVitalChange = (id: string, valor: string) => {
-    setValoresSinaisVitais(prev => ({
+
+  // Função para atualizar os sinais vitais
+  const handleSinalVitalChange = (nome: string, valor: string) => {
+    setSinaisVitais(prev => ({
       ...prev,
-      [id]: valor
+      [nome]: valor
     }));
   };
-  
-  const handleExameChange = (id: string, valor: string) => {
-    setValoresExames(prev => ({
-      ...prev,
-      [id]: valor
-    }));
+
+  // Função para adicionar/remover NHBs da lista de selecionadas
+  const toggleNHB = (nhb: string) => {
+    setNhbsSelecionadas(prev => 
+      prev.includes(nhb) 
+        ? prev.filter(item => item !== nhb)
+        : [...prev, nhb]
+    );
   };
-  
-  const handleSistemaChange = (id: string, valor: string) => {
-    setValoresSistemas(prev => ({
-      ...prev,
-      [id]: valor
-    }));
-  };
-  
+
   // Abre o PDF do roteiro de exame físico em uma nova janela
   const abrirRoteiroPDF = () => {
     // URL do PDF será fornecida posteriormente
     window.open("#", "_blank");
-  };
-  
-  // Renderizar cada sinal vital com seus campos adequados
-  const renderSinaisVitais = () => {
-    if (loading.sinaisVitais) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-csae-green-600" />
-          <span className="ml-2">Carregando sinais vitais...</span>
-        </div>
-      );
-    }
-    
-    if (sinaisVitais.length === 0) {
-      return (
-        <div className="text-center py-4 text-gray-500">
-          Não há sinais vitais cadastrados no sistema.
-        </div>
-      );
-    }
-    
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sinaisVitais.map(sinal => (
-          <div key={sinal.id} className="space-y-2">
-            <label className="text-sm font-medium">{sinal.nome}:</label>
-            <Input
-              value={valoresSinaisVitais[sinal.id!] || ''}
-              onChange={(e) => handleSinalVitalChange(sinal.id!, e.target.value)}
-              placeholder={`Digite o valor de ${sinal.nome}`}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  // Renderizar exames laboratoriais
-  const renderExamesLaboratoriais = () => {
-    if (loading.exames) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-csae-green-600" />
-          <span className="ml-2">Carregando exames laboratoriais...</span>
-        </div>
-      );
-    }
-    
-    if (examesLaboratoriais.length === 0) {
-      return (
-        <div className="text-center py-4 text-gray-500">
-          Não há exames laboratoriais cadastrados no sistema.
-        </div>
-      );
-    }
-    
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {examesLaboratoriais.map(exame => (
-          <div key={exame.id} className="space-y-2">
-            <label className="text-sm font-medium">{exame.nome}:</label>
-            <Input
-              value={valoresExames[exame.id!] || ''}
-              onChange={(e) => handleExameChange(exame.id!, e.target.value)}
-              placeholder={`Digite o valor de ${exame.nome}`}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  // Renderizar sistemas
-  const renderSistemas = () => {
-    if (loading.sistemas) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-csae-green-600" />
-          <span className="ml-2">Carregando dados dos sistemas...</span>
-        </div>
-      );
-    }
-    
-    if (sistemasRevisao.length === 0) {
-      return (
-        <div className="text-center py-4 text-gray-500">
-          Não há sistemas cadastrados para revisão.
-        </div>
-      );
-    }
-    
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sistemasRevisao.map(sistema => (
-          <div key={sistema.id} className="space-y-2">
-            <label className="text-sm font-medium">{sistema.nome}:</label>
-            <Input
-              value={valoresSistemas[sistema.id!] || ''}
-              onChange={(e) => handleSistemaChange(sistema.id!, e.target.value)}
-              placeholder={`Digite o valor para ${sistema.nome}`}
-            />
-          </div>
-        ))}
-      </div>
-    );
-  };
-  
-  // Renderizar NHBs afetadas e diagnósticos relacionados
-  const renderNhbsAfetadas = () => {
-    if (loading.nhbs || loading.diagnosticos) {
-      return (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-csae-green-600" />
-          <span className="ml-2">Carregando necessidades humanas básicas...</span>
-        </div>
-      );
-    }
-    
-    if (nhbsAfetadas.length === 0) {
-      return (
-        <div className="text-center py-6 border border-dashed rounded-md">
-          <p className="text-gray-500">Nenhuma NHB afetada identificada.</p>
-          <p className="text-gray-500 text-sm mt-2">
-            As NHBs serão automaticamente identificadas com base nos valores alterados 
-            do exame físico e exames laboratoriais.
-          </p>
-        </div>
-      );
-    }
-    
-    // Filtrar NHBs afetadas
-    const nhbsAfetadasData = nhbs.filter(nhb => nhbsAfetadas.includes(nhb.id!));
-    
-    // Buscar diagnósticos relacionados às NHBs afetadas
-    const diagnosticosRelacionados = diagnosticosEnfermagem.filter(d => 
-      d.subconjunto === 'Necessidades Humanas Básicas' && 
-      nhbsAfetadas.includes(d.subitemId) &&
-      diagnosticosSelecionados.includes(d.id!)
-    );
-    
-    return (
-      <div className="space-y-6">
-        <div>
-          <h4 className="font-medium mb-3">NHBs afetadas identificadas:</h4>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {nhbsAfetadasData.map((nhb) => (
-              <Badge 
-                key={nhb.id} 
-                className="bg-csae-green-100 text-csae-green-800 hover:bg-csae-green-200"
-              >
-                {nhb.nome}
-              </Badge>
-            ))}
-          </div>
-        </div>
-        
-        {diagnosticosRelacionados.length > 0 && (
-          <div>
-            <h4 className="font-medium mb-3">Diagnósticos de enfermagem sugeridos:</h4>
-            <div className="space-y-2">
-              {diagnosticosRelacionados.map((diagnostico) => (
-                <div 
-                  key={diagnostico.id} 
-                  className="flex items-center p-3 border rounded-md bg-csae-green-50"
-                >
-                  <div>
-                    <p className="font-medium">{diagnostico.descricao}</p>
-                    <p className="text-sm text-gray-500">
-                      {nhbs.find(n => n.id === diagnostico.subitemId)?.nome}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   return (
@@ -535,7 +177,18 @@ export function AvaliacaoEnfermagem({
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="p-4 border-t">
-                  {renderSinaisVitais()}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Object.keys(sinaisVitais).map(nome => (
+                      <div key={nome} className="space-y-2">
+                        <label className="text-sm font-medium">{nome}:</label>
+                        <Input
+                          value={sinaisVitais[nome]}
+                          onChange={(e) => handleSinalVitalChange(nome, e.target.value)}
+                          placeholder={`Digite o valor de ${nome}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
               
@@ -554,7 +207,10 @@ export function AvaliacaoEnfermagem({
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="p-4 border-t">
-                  {renderExamesLaboratoriais()}
+                  <div className="text-center py-4 text-gray-500">
+                    Não há campos cadastrados para esta seção. 
+                    Os exames serão configurados pelo administrador posteriormente.
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
               
@@ -573,7 +229,10 @@ export function AvaliacaoEnfermagem({
                   )}
                 </CollapsibleTrigger>
                 <CollapsibleContent className="p-4 border-t">
-                  {renderSistemas()}
+                  <div className="text-center py-4 text-gray-500">
+                    Não há campos cadastrados para esta seção. 
+                    Os sistemas serão configurados pelo administrador posteriormente.
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
             </CardContent>
@@ -585,19 +244,50 @@ export function AvaliacaoEnfermagem({
             <CardHeader>
               <CardTitle>Necessidades Humanas Básicas (NHB) Afetadas</CardTitle>
               <CardDescription>
-                Aqui são exibidas as NHBs afetadas com base nos valores alterados do exame físico
+                Selecione as necessidades afetadas que serão abordadas no diagnóstico
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {renderNhbsAfetadas()}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {nhbs.map(nhb => (
+                  <Badge
+                    key={nhb}
+                    variant={nhbsSelecionadas.includes(nhb) ? "default" : "outline"}
+                    className={`cursor-pointer px-3 py-1.5 text-sm ${
+                      nhbsSelecionadas.includes(nhb) 
+                        ? 'bg-csae-green-600 hover:bg-csae-green-700' 
+                        : 'hover:bg-gray-100'
+                    }`}
+                    onClick={() => toggleNHB(nhb)}
+                  >
+                    {nhb}
+                  </Badge>
+                ))}
+              </div>
+              
+              {nhbsSelecionadas.length > 0 ? (
+                <div className="mt-6">
+                  <h4 className="font-medium mb-2">NHBs selecionadas ({nhbsSelecionadas.length}):</h4>
+                  <ul className="list-disc pl-6 space-y-1">
+                    {nhbsSelecionadas.map(nhb => (
+                      <li key={nhb}>{nhb}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="text-center py-4 text-gray-500 border border-dashed rounded-md">
+                  Nenhuma NHB selecionada. As NHBs selecionadas aqui aparecerão automaticamente 
+                  nos diagnósticos de enfermagem da próxima etapa.
+                </div>
+              )}
             </CardContent>
           </Card>
           
           <div className="flex items-start p-4 bg-blue-50 rounded-md border border-blue-100 mt-4">
             <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0" />
             <div className="text-sm text-blue-700">
-              <p>As Necessidades Humanas Básicas (NHB) afetadas foram identificadas automaticamente com base nos valores alterados no exame físico.</p>
-              <p className="mt-2">Na próxima etapa, os diagnósticos relacionados a estas NHBs já estarão pré-selecionados para facilitar seu planejamento.</p>
+              <p>As Necessidades Humanas Básicas (NHB) constituem a base para o diagnóstico de enfermagem. Ao identificar as NHBs afetadas, você poderá direcionar melhor seu planejamento de cuidados.</p>
+              <p className="mt-2">Na próxima etapa, estas NHBs já estarão pré-selecionadas para facilitar a escolha dos diagnósticos relacionados.</p>
             </div>
           </div>
         </TabsContent>
