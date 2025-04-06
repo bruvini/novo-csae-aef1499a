@@ -150,22 +150,30 @@ export interface SistemaCorporal {
 }
 
 export interface Intervencao {
-  id: string;
+  verboPrimeiraEnfermeiro: string;
+  verboOutraPessoa: string;
+  descricaoRestante: string;
+  intervencaoEnfermeiro?: string;
+  intervencaoInfinitivo?: string;
+  nomeDocumento?: string;
+  linkDocumento?: string;
+  id?: string;
+}
+
+export interface ResultadoEsperado {
   descricao: string;
-  verboPresente: string;
-  verboInfinitivo: string;
-  complemento: string;
-  linkArquivo?: string;
+  intervencoes: Intervencao[];
+  id?: string;
 }
 
 export interface DiagnosticoCompleto {
   id?: string;
-  descricao: string;
+  nome: string;
   subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
-  subitemId: string;
+  subconjuntoId: string;
   subitemNome: string;
   explicacao?: string;
-  intervencoes: Intervencao[];
+  resultadosEsperados: ResultadoEsperado[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -191,10 +199,10 @@ export interface ProtocoloEnfermagem {
   updatedAt?: Timestamp;
 }
 
-export interface SubconjuntoDiagnostico {
+export interface Subconjunto {
   id?: string;
-  tipo: 'NHB' | 'Protocolo';
   nome: string;
+  tipo: 'Protocolo' | 'NHB';
   descricao?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;

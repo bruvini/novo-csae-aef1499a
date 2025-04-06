@@ -40,23 +40,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, Check, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, Eye, Search, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-
-interface Intervencao {
-  verboPrimeiraEnfermeiro: string;
-  verboOutraPessoa: string;
-  descricaoRestante: string;
-  id?: string;
-}
-
-interface ResultadoEsperado {
-  descricao: string;
-  intervencoes: Intervencao[];
-  id?: string;
-}
+import { Intervencao, ResultadoEsperado, Subconjunto } from '@/services/bancodados/tipos';
 
 interface DiagnosticoEnfermagem {
   id?: string;
@@ -68,21 +56,18 @@ interface DiagnosticoEnfermagem {
   updatedAt?: any;
 }
 
-interface Subconjunto {
-  id?: string;
-  nome: string;
-  tipo: 'Protocolo' | 'NHB';
-  descricao?: string;
-  createdAt?: any;
-  updatedAt?: any;
-}
-
 const GerenciadorDiagnosticos = () => {
   const { toast } = useToast();
   const [subconjuntos, setSubconjuntos] = useState<Subconjunto[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoEnfermagem[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [activeTab, setActiveTab] = useState("subconjuntos");
+  
+  // Filtros
+  const [filtroTipoSubconjunto, setFiltroTipoSubconjunto] = useState<'todos' | 'Protocolo' | 'NHB'>('todos');
+  const [filtroSubconjunto, setFiltroSubconjunto] = useState<string>('');
+  const [filtroDiagnostico, setFiltroDiagnostico] = useState<string>('');
+  const [termoBusca, setTermoBusca] = useState('');
   
   // Modais e estados de edição
   const [modalSubconjunto, setModalSubconjunto] = useState(false);
@@ -104,7 +89,9 @@ const GerenciadorDiagnosticos = () => {
     intervencoes: [{
       verboPrimeiraEnfermeiro: '',
       verboOutraPessoa: '',
-      descricaoRestante: ''
+      descricaoRestante: '',
+      nomeDocumento: '',
+      linkDocumento: ''
     }]
   };
   
@@ -114,6 +101,9 @@ const GerenciadorDiagnosticos = () => {
     subconjuntoId: '',
     resultadosEsperados: [{ ...emptyResultado }]
   });
+  
+  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'Protocolo' | 'NHB'>('Protocolo');
+  const [subconjuntosFiltrados, setSubconjuntosFiltrados] = useState<Subconjunto[]>([]);
   
   // Carregar dados iniciais
   useEffect(() => {
@@ -150,6 +140,18 @@ const GerenciadorDiagnosticos = () => {
     
     carregarDados();
   }, [toast]);
+  
+  // Filtrar subconjuntos baseado no tipo selecionado
+  useEffect(() => {
+    if (tipoSubconjuntoSelecionado) {
+      const filtrados = subconjuntos.filter(s => s.tipo === tipoSubconjuntoSelecionado);
+      // Ordenar em ordem alfabética pelo nome
+      filtrados.sort((a, b) => a.nome.localeCompare(b.nome));
+      setSubconjuntosFiltrados(filtrados);
+    } else {
+      setSubconjuntosFiltrados([]);
+    }
+  }, [tipoSubconjuntoSelecionado, subconjuntos]);
   
   // === Funções para gerenciar Subconjuntos ===
   
@@ -270,18 +272,27 @@ const GerenciadorDiagnosticos = () => {
   
   // Abrir modal para criar novo diagnóstico
   const abrirModalCriarDiagnostico = () => {
+    setTipoSubconjuntoSelecionado('Protocolo');
+    
     setFormDiagnostico({
       nome: '',
       explicacao: '',
-      subconjuntoId: subconjuntos.length > 0 ? subconjuntos[0].id! : '',
+      subconjuntoId: '',
       resultadosEsperados: [{ ...emptyResultado }]
     });
+    
     setEditandoDiagnosticoId(null);
     setModalDiagnostico(true);
   };
   
   // Abrir modal para editar diagnóstico existente
   const abrirModalEditarDiagnostico = (diagnostico: DiagnosticoEnfermagem) => {
+    // Determinar o tipo do subconjunto selecionado
+    const subconjunto = subconjuntos.find(s => s.id === diagnostico.subconjuntoId);
+    if (subconjunto) {
+      setTipoSubconjuntoSelecionado(subconjunto.tipo);
+    }
+    
     setFormDiagnostico({...diagnostico});
     setEditandoDiagnosticoId(diagnostico.id || null);
     setModalDiagnostico(true);
@@ -333,7 +344,9 @@ const GerenciadorDiagnosticos = () => {
     novosResultados[resultadoIndex].intervencoes.push({
       verboPrimeiraEnfermeiro: '',
       verboOutraPessoa: '',
-      descricaoRestante: ''
+      descricaoRestante: '',
+      nomeDocumento: '',
+      linkDocumento: ''
     });
     setFormDiagnostico({
       ...formDiagnostico,
@@ -409,6 +422,18 @@ const GerenciadorDiagnosticos = () => {
               variant: "destructive"
             });
             return;
+          }
+          
+          // Adicionar os campos concatenados
+          intervencao.intervencaoEnfermeiro = `${intervencao.verboPrimeiraEnfermeiro} ${intervencao.descricaoRestante}`;
+          intervencao.intervencaoInfinitivo = `${intervencao.verboOutraPessoa} ${intervencao.descricaoRestante}`;
+          
+          // Remover campos vazios para não salvar no Firestore
+          if (!intervencao.nomeDocumento?.trim()) {
+            delete intervencao.nomeDocumento;
+          }
+          if (!intervencao.linkDocumento?.trim()) {
+            delete intervencao.linkDocumento;
           }
         }
       }
@@ -496,6 +521,38 @@ const GerenciadorDiagnosticos = () => {
     return subconjunto ? subconjunto.tipo : 'Desconhecido';
   };
   
+  // Filtrar subconjuntos baseado no tipo selecionado (para exibição na lista)
+  const getSubconjuntosFiltrados = () => {
+    if (filtroTipoSubconjunto === 'todos') {
+      return subconjuntos;
+    } else {
+      return subconjuntos.filter(s => s.tipo === filtroTipoSubconjunto);
+    }
+  };
+  
+  // Filtrar diagnósticos baseado nos filtros selecionados
+  const getDiagnosticosFiltrados = () => {
+    let filtrados = [...diagnosticos];
+    
+    // Filtrar por subconjunto
+    if (filtroSubconjunto) {
+      filtrados = filtrados.filter(d => d.subconjuntoId === filtroSubconjunto);
+    }
+    
+    // Filtrar por ID específico
+    if (filtroDiagnostico) {
+      filtrados = filtrados.filter(d => d.id === filtroDiagnostico);
+    }
+    
+    // Filtrar por termo de busca
+    if (termoBusca.trim()) {
+      const termo = termoBusca.toLowerCase().trim();
+      filtrados = filtrados.filter(d => d.nome.toLowerCase().includes(termo));
+    }
+    
+    return filtrados;
+  };
+  
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="mb-4">
@@ -517,13 +574,30 @@ const GerenciadorDiagnosticos = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <Label>Filtrar por tipo:</Label>
+              <Select value={filtroTipoSubconjunto} onValueChange={(v) => setFiltroTipoSubconjunto(v as 'todos' | 'Protocolo' | 'NHB')}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecione um tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos</SelectItem>
+                  <SelectItem value="Protocolo">Protocolo</SelectItem>
+                  <SelectItem value="NHB">NHB</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
             {carregando ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
               </div>
-            ) : subconjuntos.length === 0 ? (
+            ) : getSubconjuntosFiltrados().length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                Nenhum subconjunto cadastrado. Clique em "Novo Subconjunto" para começar.
+                {filtroTipoSubconjunto !== 'todos' 
+                  ? `Nenhum subconjunto do tipo ${filtroTipoSubconjunto} cadastrado.` 
+                  : 'Nenhum subconjunto cadastrado. Clique em "Novo Subconjunto" para começar.'}
               </div>
             ) : (
               <Table>
@@ -537,7 +611,7 @@ const GerenciadorDiagnosticos = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subconjuntos.map((subconjunto) => {
+                  {getSubconjuntosFiltrados().map((subconjunto) => {
                     const diagnosticosDoSubconjunto = diagnosticos.filter(d => d.subconjuntoId === subconjunto.id);
                     return (
                       <TableRow key={subconjunto.id}>
@@ -595,6 +669,56 @@ const GerenciadorDiagnosticos = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="mb-4 space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <Label htmlFor="filtroSubconjunto" className="mb-2 block">Filtrar por Subconjunto</Label>
+                  <Select value={filtroSubconjunto} onValueChange={setFiltroSubconjunto}>
+                    <SelectTrigger id="filtroSubconjunto">
+                      <SelectValue placeholder="Todos os subconjuntos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os subconjuntos</SelectItem>
+                      {subconjuntos.map((subconjunto) => (
+                        <SelectItem key={subconjunto.id} value={subconjunto.id!}>
+                          {subconjunto.nome} ({subconjunto.tipo})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex-1">
+                  <Label htmlFor="filtroDiagnostico" className="mb-2 block">Filtrar por Diagnóstico</Label>
+                  <Select value={filtroDiagnostico} onValueChange={setFiltroDiagnostico} disabled={filtroSubconjunto === ''}>
+                    <SelectTrigger id="filtroDiagnostico">
+                      <SelectValue placeholder="Todos os diagnósticos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Todos os diagnósticos</SelectItem>
+                      {diagnosticos
+                        .filter(d => filtroSubconjunto === '' || d.subconjuntoId === filtroSubconjunto)
+                        .map((diagnostico) => (
+                          <SelectItem key={diagnostico.id} value={diagnostico.id!}>
+                            {diagnostico.nome}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  placeholder="Buscar diagnósticos..."
+                  value={termoBusca}
+                  onChange={(e) => setTermoBusca(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            
             {carregando ? (
               <div className="flex justify-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
@@ -603,9 +727,11 @@ const GerenciadorDiagnosticos = () => {
               <div className="text-center py-6 text-gray-500">
                 Nenhum subconjunto cadastrado. Cadastre subconjuntos primeiro antes de adicionar diagnósticos.
               </div>
-            ) : diagnosticos.length === 0 ? (
+            ) : getDiagnosticosFiltrados().length === 0 ? (
               <div className="text-center py-6 text-gray-500">
-                Nenhum diagnóstico cadastrado. Clique em "Novo Diagnóstico" para começar.
+                {(filtroSubconjunto || filtroDiagnostico || termoBusca) 
+                  ? 'Nenhum diagnóstico encontrado com os filtros aplicados.' 
+                  : 'Nenhum diagnóstico cadastrado. Clique em "Novo Diagnóstico" para começar.'}
               </div>
             ) : (
               <Table>
@@ -619,7 +745,7 @@ const GerenciadorDiagnosticos = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {diagnosticos.map((diagnostico) => {
+                  {getDiagnosticosFiltrados().map((diagnostico) => {
                     const totalIntervencoes = diagnostico.resultadosEsperados.reduce(
                       (total, resultado) => total + resultado.intervencoes.length, 0
                     );
@@ -730,36 +856,52 @@ const GerenciadorDiagnosticos = () => {
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
+                <Label htmlFor="tipoSubconjunto">Tipo de Subconjunto</Label>
+                <Select
+                  value={tipoSubconjuntoSelecionado}
+                  onValueChange={(v) => setTipoSubconjuntoSelecionado(v as 'Protocolo' | 'NHB')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Protocolo">Protocolo</SelectItem>
+                    <SelectItem value="NHB">Necessidade Humana Básica (NHB)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2 md:col-span-2">
                 <Label htmlFor="subconjunto">Subconjunto</Label>
                 <Select
                   value={formDiagnostico.subconjuntoId}
                   onValueChange={(v) => setFormDiagnostico({...formDiagnostico, subconjuntoId: v})}
-                  disabled={subconjuntos.length === 0}
+                  disabled={subconjuntosFiltrados.length === 0}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um subconjunto" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subconjuntos.map((subconjunto) => (
+                    {subconjuntosFiltrados.map((subconjunto) => (
                       <SelectItem key={subconjunto.id} value={subconjunto.id!}>
-                        {subconjunto.nome} ({subconjunto.tipo})
+                        {subconjunto.nome}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="grid gap-2">
-                <Label htmlFor="nome">Nome do Diagnóstico</Label>
-                <Input
-                  id="nome"
-                  value={formDiagnostico.nome}
-                  onChange={(e) => setFormDiagnostico({...formDiagnostico, nome: e.target.value})}
-                  placeholder="Ex: Dor aguda"
-                />
-              </div>
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="nome">Nome do Diagnóstico</Label>
+              <Input
+                id="nome"
+                value={formDiagnostico.nome}
+                onChange={(e) => setFormDiagnostico({...formDiagnostico, nome: e.target.value})}
+                placeholder="Ex: Dor aguda"
+              />
             </div>
             
             <div className="grid gap-2">
@@ -851,7 +993,7 @@ const GerenciadorDiagnosticos = () => {
                                 />
                               </div>
                               <div className="grid gap-1">
-                                <Label className="text-xs">Verbo infinitivo (Outra pessoa)</Label>
+                                <Label className="text-xs">Verbo infinitivo (3ª pessoa)</Label>
                                 <Input
                                   value={intervencao.verboOutraPessoa}
                                   onChange={(e) => atualizarIntervencao(resultadoIndex, intervencaoIndex, 'verboOutraPessoa', e.target.value)}
@@ -869,6 +1011,25 @@ const GerenciadorDiagnosticos = () => {
                                 placeholder="Ex: a intensidade da dor periodicamente"
                                 required
                               />
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 pt-2 border-t border-dashed">
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Documento de apoio (opcional)</Label>
+                                <Input
+                                  value={intervencao.nomeDocumento || ''}
+                                  onChange={(e) => atualizarIntervencao(resultadoIndex, intervencaoIndex, 'nomeDocumento', e.target.value)}
+                                  placeholder="Ex: Protocolo de avaliação da dor"
+                                />
+                              </div>
+                              <div className="grid gap-1">
+                                <Label className="text-xs">Link do documento (opcional)</Label>
+                                <Input
+                                  value={intervencao.linkDocumento || ''}
+                                  onChange={(e) => atualizarIntervencao(resultadoIndex, intervencaoIndex, 'linkDocumento', e.target.value)}
+                                  placeholder="Ex: https://exemplo.com/documento.pdf"
+                                />
+                              </div>
                             </div>
                             
                             <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
@@ -950,6 +1111,23 @@ const GerenciadorDiagnosticos = () => {
                                   <span className="font-medium">Outra pessoa:</span> 
                                   <span className="text-blue-700"> {intervencao.verboOutraPessoa}</span> {intervencao.descricaoRestante}
                                 </div>
+                                {(intervencao.nomeDocumento || intervencao.linkDocumento) && (
+                                  <div className="text-sm mt-1 pt-1 border-t border-gray-200">
+                                    <span className="font-medium">Documento de apoio:</span> 
+                                    {intervencao.linkDocumento ? (
+                                      <a 
+                                        href={intervencao.linkDocumento} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {intervencao.nomeDocumento || intervencao.linkDocumento}
+                                      </a>
+                                    ) : (
+                                      <span> {intervencao.nomeDocumento}</span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
