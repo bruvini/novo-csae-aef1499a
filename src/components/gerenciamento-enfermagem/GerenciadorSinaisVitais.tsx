@@ -151,7 +151,7 @@ const GerenciadorSinaisVitais = () => {
   useEffect(() => {
     if (nhbSelecionada) {
       const filtrados = diagnosticos.filter(
-        (d) => d.subitemId === nhbSelecionada
+        (d) => d.subconjuntoId === nhbSelecionada
       );
       setDiagnosticosFiltrados(filtrados);
     } else {
@@ -929,19 +929,25 @@ const GerenciadorSinaisVitais = () => {
                                     <SelectValue placeholder="Selecione um diagnóstico" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {diagnosticosFiltrados.map((diag) => (
-                                      <SelectItem
-                                        key={diag.id}
-                                        value={diag.id!}
-                                      >
-                                        {diag.descricao}
-                                      </SelectItem>
-                                    ))}
-                                    {diagnosticosFiltrados.length === 0 && (
-                                      <p className="text-sm text-muted-foreground mt-1">
+                                    {diagnosticos
+                                      .filter(
+                                        (d) => d.subconjuntoId === valor.nhbId
+                                      )
+                                      .map((diag) => (
+                                        <SelectItem
+                                          key={diag.id}
+                                          value={diag.id!}
+                                        >
+                                          {diag.descricao}
+                                        </SelectItem>
+                                      ))}
+                                    {diagnosticos.filter(
+                                      (d) => d.subconjuntoId === valor.nhbId
+                                    ).length === 0 && (
+                                      <div className="text-sm text-muted-foreground px-2 py-1">
                                         Nenhum diagnóstico disponível para esta
                                         NHB
-                                      </p>
+                                      </div>
                                     )}
                                   </SelectContent>
                                 </Select>
