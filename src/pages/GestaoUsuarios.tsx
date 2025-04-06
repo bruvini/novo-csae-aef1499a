@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -39,8 +38,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Search,
   Filter,
@@ -60,11 +65,20 @@ import {
 import NavigationMenu from "@/components/NavigationMenu";
 import Header from "@/components/Header";
 import MainFooter from "@/components/MainFooter";
-import { isResidenteExpirado, calcularDataProrrogacao } from "@/components/login/ResidenteUtils";
+import {
+  isResidenteExpirado,
+  calcularDataProrrogacao,
+} from "@/components/login/ResidenteUtils";
 
 interface Log {
   usuario_afetado: string;
-  acao: "aprovado" | "recusado" | "revogado" | "reativado" | "excluído" | "prorrogado";
+  acao:
+    | "aprovado"
+    | "recusado"
+    | "revogado"
+    | "reativado"
+    | "excluído"
+    | "prorrogado";
   quem_realizou: string;
   data_hora: Timestamp;
   justificativa?: string;
@@ -111,10 +125,10 @@ interface Usuario {
 
 // Opções para os filtros
 const opcoesFormacao = [
-  "Enfermeiro", 
-  "Residente de Enfermagem", 
-  "Técnico de Enfermagem", 
-  "Acadêmico de Enfermagem"
+  "Enfermeiro",
+  "Residente de Enfermagem",
+  "Técnico de Enfermagem",
+  "Acadêmico de Enfermagem",
 ];
 
 // Simulação das opções de lotação
@@ -127,7 +141,7 @@ const opcoesLotacao = [
   "Centro de Saúde Pantanal",
   "Secretaria Municipal de Saúde",
   "CAPS",
-  "Outra"
+  "Outra",
 ];
 
 const GestaoUsuarios = () => {
@@ -139,12 +153,12 @@ const GestaoUsuarios = () => {
   const [tipoUsuario, setTipoUsuario] = useState<
     "Administrador" | "Comum" | ""
   >("");
-  
+
   // Estados para filtros avançados
   const [filtroFormacao, setFiltroFormacao] = useState("");
   const [filtroAtuaSMS, setFiltroAtuaSMS] = useState("");
   const [filtroLotacao, setFiltroLotacao] = useState("");
-  
+
   // Novo estado para residentes com acesso vencido
   const [residentesVencidos, setResidentesVencidos] = useState<Usuario[]>([]);
 
@@ -155,7 +169,8 @@ const GestaoUsuarios = () => {
   const [isReactivateDialogOpen, setIsReactivateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isProrrogarDialogOpen, setIsProrrogarDialogOpen] = useState(false);
-  const [isAlterarFormacaoDialogOpen, setIsAlterarFormacaoDialogOpen] = useState(false);
+  const [isAlterarFormacaoDialogOpen, setIsAlterarFormacaoDialogOpen] =
+    useState(false);
   const [selectedUser, setSelectedUser] = useState<Usuario | null>(null);
   const [justification, setJustification] = useState("");
   const [novaFormacao, setNovaFormacao] = useState("");
@@ -177,16 +192,17 @@ const GestaoUsuarios = () => {
         })) as Usuario[];
 
         setUsuarios(fetchedUsuarios);
-        
+
         // Identificar residentes com acesso vencido
-        const residentes = fetchedUsuarios.filter(usuario => 
-          usuario.dadosProfissionais.formacao === "Residente de Enfermagem" && 
-          usuario.statusAcesso === "Aprovado" && 
-          isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
+        const residentes = fetchedUsuarios.filter(
+          (usuario) =>
+            usuario.dadosProfissionais.formacao === "Residente de Enfermagem" &&
+            usuario.statusAcesso === "Aprovado" &&
+            isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
         );
-        
+
         setResidentesVencidos(residentes);
-        
+
         // Aplicar filtros iniciais
         filterUsuarios(fetchedUsuarios, currentTab, searchTerm);
         setLoading(false);
@@ -205,8 +221,8 @@ const GestaoUsuarios = () => {
   }, []);
 
   const filterUsuarios = (
-    users: Usuario[], 
-    tab: string, 
+    users: Usuario[],
+    tab: string,
     term: string = "",
     formacao: string = filtroFormacao,
     atuaSMS: string = filtroAtuaSMS,
@@ -232,26 +248,30 @@ const GestaoUsuarios = () => {
       filtered = filtered.filter(
         (user) =>
           user.dadosPessoais.nomeCompleto.toLowerCase().includes(lowerTerm) ||
-          (user.dadosProfissionais.matricula && 
-           user.dadosProfissionais.matricula.toLowerCase().includes(lowerTerm))
+          (user.dadosProfissionais.matricula &&
+            user.dadosProfissionais.matricula.toLowerCase().includes(lowerTerm))
       );
     }
 
     // Filtrar por formação
     if (formacao) {
-      filtered = filtered.filter(user => user.dadosProfissionais.formacao === formacao);
+      filtered = filtered.filter(
+        (user) => user.dadosProfissionais.formacao === formacao
+      );
     }
-    
+
     // Filtrar por atuação na SMS
     if (atuaSMS) {
       const atuaSMSBool = atuaSMS === "Sim";
-      filtered = filtered.filter(user => user.dadosProfissionais.atuaSMS === atuaSMSBool);
+      filtered = filtered.filter(
+        (user) => user.dadosProfissionais.atuaSMS === atuaSMSBool
+      );
     }
-    
+
     // Filtrar por lotação
     if (lotacao) {
       filtered = filtered.filter(
-        user => user.dadosProfissionais.lotacao === lotacao
+        (user) => user.dadosProfissionais.lotacao === lotacao
       );
     }
 
@@ -260,28 +280,63 @@ const GestaoUsuarios = () => {
 
   const handleTabChange = (value: string) => {
     setCurrentTab(value);
-    filterUsuarios(usuarios, value, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+    filterUsuarios(
+      usuarios,
+      value,
+      searchTerm,
+      filtroFormacao,
+      filtroAtuaSMS,
+      filtroLotacao
+    );
   };
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const term = event.target.value;
     setSearchTerm(term);
-    filterUsuarios(usuarios, currentTab, term, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+    filterUsuarios(
+      usuarios,
+      currentTab,
+      term,
+      filtroFormacao,
+      filtroAtuaSMS,
+      filtroLotacao
+    );
   };
-  
+
   const handleFormacaoChange = (value: string) => {
     setFiltroFormacao(value);
-    filterUsuarios(usuarios, currentTab, searchTerm, value, filtroAtuaSMS, filtroLotacao);
+    filterUsuarios(
+      usuarios,
+      currentTab,
+      searchTerm,
+      value,
+      filtroAtuaSMS,
+      filtroLotacao
+    );
   };
-  
+
   const handleAtuaSMSChange = (value: string) => {
     setFiltroAtuaSMS(value);
-    filterUsuarios(usuarios, currentTab, searchTerm, filtroFormacao, value, filtroLotacao);
+    filterUsuarios(
+      usuarios,
+      currentTab,
+      searchTerm,
+      filtroFormacao,
+      value,
+      filtroLotacao
+    );
   };
-  
+
   const handleLotacaoChange = (value: string) => {
     setFiltroLotacao(value);
-    filterUsuarios(usuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, value);
+    filterUsuarios(
+      usuarios,
+      currentTab,
+      searchTerm,
+      filtroFormacao,
+      filtroAtuaSMS,
+      value
+    );
   };
 
   const handleResetFilters = () => {
@@ -298,15 +353,15 @@ const GestaoUsuarios = () => {
       locale: ptBR,
     });
   };
-  
+
   const formatUltimoAcesso = (acessos: Timestamp[] | undefined) => {
     if (!acessos || acessos.length === 0) return "Nunca acessou";
-    
+
     // Ordenar acessos do mais recente para o mais antigo
-    const acessosOrdenados = [...acessos].sort((a, b) => 
-      b.toDate().getTime() - a.toDate().getTime()
+    const acessosOrdenados = [...acessos].sort(
+      (a, b) => b.toDate().getTime() - a.toDate().getTime()
     );
-    
+
     const ultimoAcesso = acessosOrdenados[0];
     return format(ultimoAcesso.toDate(), "dd/MM/yyyy 'às' HH:mm", {
       locale: ptBR,
@@ -315,16 +370,16 @@ const GestaoUsuarios = () => {
 
   const getTempoDesdeUltimoAcesso = (acessos: Timestamp[] | undefined) => {
     if (!acessos || acessos.length === 0) return "Nunca acessou";
-    
+
     // Ordenar acessos do mais recente para o mais antigo
-    const acessosOrdenados = [...acessos].sort((a, b) => 
-      b.toDate().getTime() - a.toDate().getTime()
+    const acessosOrdenados = [...acessos].sort(
+      (a, b) => b.toDate().getTime() - a.toDate().getTime()
     );
-    
+
     const ultimoAcesso = acessosOrdenados[0];
-    return formatDistance(ultimoAcesso.toDate(), new Date(), { 
+    return formatDistance(ultimoAcesso.toDate(), new Date(), {
       addSuffix: true,
-      locale: ptBR
+      locale: ptBR,
     });
   };
 
@@ -355,12 +410,12 @@ const GestaoUsuarios = () => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
-  
+
   const openProrrogarDialog = (user: Usuario) => {
     setSelectedUser(user);
     setIsProrrogarDialogOpen(true);
   };
-  
+
   const openAlterarFormacaoDialog = (user: Usuario) => {
     setSelectedUser(user);
     setNovaFormacao(user.dadosProfissionais.formacao);
@@ -378,20 +433,21 @@ const GestaoUsuarios = () => {
       quem_realizou: adminUser.uid,
       data_hora: Timestamp.now(),
     };
-  
+
     if (justificativa) {
       log.justificativa = justificativa;
     }
-  
+
     return log;
-  };  
+  };
 
   const approveUser = async () => {
     if (!selectedUser || !tipoUsuario) {
       toast({
         variant: "destructive",
         title: "Tipo de usuário não selecionado",
-        description: "Selecione se o usuário será Administrador ou Comum antes de aprovar.",
+        description:
+          "Selecione se o usuário será Administrador ou Comum antes de aprovar.",
       });
       return;
     }
@@ -401,10 +457,10 @@ const GestaoUsuarios = () => {
       const logEntry = createLogEntry(selectedUser, "aprovado");
 
       await updateDoc(userRef, {
-        statusAcesso: 'Aprovado',
+        statusAcesso: "Aprovado",
         dataAprovacao: Timestamp.now(),
         tipoUsuario: tipoUsuario,
-        historico_logs: arrayUnion(logEntry)
+        historico_logs: arrayUnion(logEntry),
       });
 
       // Atualizar estado local com tipagem correta
@@ -422,7 +478,14 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Usuário aprovado",
@@ -469,7 +532,14 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Acesso recusado",
@@ -517,7 +587,14 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Acesso revogado",
@@ -567,7 +644,14 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Usuário reativado",
@@ -584,21 +668,25 @@ const GestaoUsuarios = () => {
       });
     }
   };
-  
+
   const prorrogarResidente = async () => {
     if (!selectedUser) return;
 
     try {
       const userRef = doc(db, "usuarios", selectedUser.id);
-      const logEntry = createLogEntry(selectedUser, "prorrogado", "Prorrogação de 30 dias concedida");
-      
+      const logEntry = createLogEntry(
+        selectedUser,
+        "prorrogado",
+        "Prorrogação de 30 dias concedida"
+      );
+
       // Calcular nova data de prorrogação (baseada na data de início + 2 anos + 30 dias)
       const dataProrrogacao = calcularDataProrrogacao(
         selectedUser.dadosProfissionais.dataInicioResidencia || ""
       );
-      
+
       await updateDoc(userRef, {
-        'dadosProfissionais.dataProrrogacaoResidencia': dataProrrogacao,
+        "dadosProfissionais.dataProrrogacaoResidencia": dataProrrogacao,
         historico_logs: arrayUnion(logEntry),
       });
 
@@ -609,7 +697,7 @@ const GestaoUsuarios = () => {
             ...user,
             dadosProfissionais: {
               ...user.dadosProfissionais,
-              dataProrrogacaoResidencia: dataProrrogacao
+              dataProrrogacaoResidencia: dataProrrogacao,
             },
             historico_logs: [...(user.historico_logs || []), logEntry],
           };
@@ -618,18 +706,29 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      
+
       // Atualizar a lista de residentes vencidos
-      const novoResidentesVencidos = updatedUsuarios.filter(usuario => 
-        usuario.dadosProfissionais.formacao === "Residente de Enfermagem" && 
-        usuario.statusAcesso === "Aprovado" && 
-        isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia) &&
-        (!usuario.dadosProfissionais.dataProrrogacaoResidencia || 
-         new Date(usuario.dadosProfissionais.dataProrrogacaoResidencia) < new Date())
+      const novoResidentesVencidos = updatedUsuarios.filter(
+        (usuario) =>
+          usuario.dadosProfissionais.formacao === "Residente de Enfermagem" &&
+          usuario.statusAcesso === "Aprovado" &&
+          isResidenteExpirado(
+            usuario.dadosProfissionais.dataInicioResidencia
+          ) &&
+          (!usuario.dadosProfissionais.dataProrrogacaoResidencia ||
+            new Date(usuario.dadosProfissionais.dataProrrogacaoResidencia) <
+              new Date())
       );
-      
+
       setResidentesVencidos(novoResidentesVencidos);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Acesso prorrogado",
@@ -646,20 +745,20 @@ const GestaoUsuarios = () => {
       });
     }
   };
-  
+
   const alterarFormacaoResidente = async () => {
     if (!selectedUser || !novaFormacao) return;
 
     try {
       const userRef = doc(db, "usuarios", selectedUser.id);
       const logEntry = createLogEntry(
-        selectedUser, 
-        "reativado", 
+        selectedUser,
+        "reativado",
         `Alteração de formação de "${selectedUser.dadosProfissionais.formacao}" para "${novaFormacao}"`
       );
 
       await updateDoc(userRef, {
-        'dadosProfissionais.formacao': novaFormacao,
+        "dadosProfissionais.formacao": novaFormacao,
         historico_logs: arrayUnion(logEntry),
       });
 
@@ -670,7 +769,7 @@ const GestaoUsuarios = () => {
             ...user,
             dadosProfissionais: {
               ...user.dadosProfissionais,
-              formacao: novaFormacao
+              formacao: novaFormacao,
             },
             historico_logs: [...(user.historico_logs || []), logEntry],
           };
@@ -679,16 +778,24 @@ const GestaoUsuarios = () => {
       });
 
       setUsuarios(updatedUsuarios);
-      
+
       // Atualizar a lista de residentes vencidos
-      const novoResidentesVencidos = updatedUsuarios.filter(usuario => 
-        usuario.dadosProfissionais.formacao === "Residente de Enfermagem" && 
-        usuario.statusAcesso === "Aprovado" && 
-        isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
+      const novoResidentesVencidos = updatedUsuarios.filter(
+        (usuario) =>
+          usuario.dadosProfissionais.formacao === "Residente de Enfermagem" &&
+          usuario.statusAcesso === "Aprovado" &&
+          isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
       );
-      
+
       setResidentesVencidos(novoResidentesVencidos);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Formação alterada",
@@ -723,7 +830,14 @@ const GestaoUsuarios = () => {
       );
 
       setUsuarios(updatedUsuarios);
-      filterUsuarios(updatedUsuarios, currentTab, searchTerm, filtroFormacao, filtroAtuaSMS, filtroLotacao);
+      filterUsuarios(
+        updatedUsuarios,
+        currentTab,
+        searchTerm,
+        filtroFormacao,
+        filtroAtuaSMS,
+        filtroLotacao
+      );
 
       toast({
         title: "Usuário excluído",
@@ -820,54 +934,74 @@ const GestaoUsuarios = () => {
               Exportar dados
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="formacao">Formação</Label>
-              <Select value={filtroFormacao} onValueChange={handleFormacaoChange}>
+              <Select
+                value={filtroFormacao}
+                onValueChange={handleFormacaoChange}
+              >
                 <SelectTrigger id="formacao">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
-                  {opcoesFormacao.map(opcao => (
-                    <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                  {opcoesFormacao.map((opcao) => (
+                    <SelectItem key={opcao} value={opcao}>
+                      {opcao}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="atuaSMS">Atua na SMS</Label>
-              <Select value={filtroAtuaSMS} onValueChange={handleAtuaSMSChange}>
+              <Select
+                value={filtroAtuaSMS || "placeholder"}
+                onValueChange={(v) =>
+                  handleAtuaSMSChange(v === "placeholder" ? "" : v)
+                }
+              >
                 <SelectTrigger id="atuaSMS">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="placeholder" disabled>
+                    Todos
+                  </SelectItem>
                   <SelectItem value="Sim">Sim</SelectItem>
                   <SelectItem value="Não">Não</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div>
               <Label htmlFor="lotacao">Lotação</Label>
-              <Select value={filtroLotacao} onValueChange={handleLotacaoChange}>
+              <Select
+                value={filtroLotacao || "placeholder"}
+                onValueChange={(v) =>
+                  handleLotacaoChange(v === "placeholder" ? "" : v)
+                }
+              >
                 <SelectTrigger id="lotacao">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
-                  {opcoesLotacao.map(opcao => (
-                    <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                  <SelectItem value="placeholder" disabled>
+                    Todas
+                  </SelectItem>
+                  {opcoesLotacao.map((opcao) => (
+                    <SelectItem key={opcao} value={opcao}>
+                      {opcao}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
         </div>
-        
+
         <Tabs defaultValue="pendentes" onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="pendentes" className="flex items-center gap-2">
@@ -1104,7 +1238,7 @@ const GestaoUsuarios = () => {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="residentes" className="animate-fade-in">
             <Card>
               <CardContent className="p-6">
@@ -1137,10 +1271,12 @@ const GestaoUsuarios = () => {
                             {usuario.dadosPessoais.nomeCompleto}
                           </TableCell>
                           <TableCell>
-                            {usuario.dadosProfissionais.dataInicioResidencia || "Não informada"}
+                            {usuario.dadosProfissionais.dataInicioResidencia ||
+                              "Não informada"}
                           </TableCell>
                           <TableCell>
-                            {usuario.dadosProfissionais.iesEnfermagem || "Não informada"}
+                            {usuario.dadosProfissionais.iesEnfermagem ||
+                              "Não informada"}
                           </TableCell>
                           <TableCell>
                             {formatUltimoAcesso(usuario.logAcessos)}
@@ -1151,7 +1287,9 @@ const GestaoUsuarios = () => {
                                 size="sm"
                                 variant="outline"
                                 className="h-8 gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                onClick={() => openAlterarFormacaoDialog(usuario)}
+                                onClick={() =>
+                                  openAlterarFormacaoDialog(usuario)
+                                }
                               >
                                 <RefreshCw className="h-4 w-4" />
                                 Alterar Formação
@@ -1191,27 +1329,29 @@ const GestaoUsuarios = () => {
           </DialogHeader>
           <div className="space-y-4 py-2 max-h-[400px] overflow-y-auto">
             <h4 className="font-semibold">Dados Pessoais</h4>
-            {selectedUser && Object.entries(selectedUser.dadosPessoais || {}).map(
-              ([key, value]) => (
-                <p key={key}>
-                  <strong>{key}:</strong> {value || "N/A"}
-                </p>
-              )
-            )}
+            {selectedUser &&
+              Object.entries(selectedUser.dadosPessoais || {}).map(
+                ([key, value]) => (
+                  <p key={key}>
+                    <strong>{key}:</strong> {value || "N/A"}
+                  </p>
+                )
+              )}
 
             <h4 className="font-semibold mt-4">Dados Profissionais</h4>
-            {selectedUser && Object.entries(selectedUser.dadosProfissionais || {}).map(
-              ([key, value]) => (
-                <p key={key}>
-                  <strong>{key}:</strong>{" "}
-                  {value === true
-                    ? "Sim"
-                    : value === false
-                    ? "Não"
-                    : value || "N/A"}
-                </p>
-              )
-            )}
+            {selectedUser &&
+              Object.entries(selectedUser.dadosProfissionais || {}).map(
+                ([key, value]) => (
+                  <p key={key}>
+                    <strong>{key}:</strong>{" "}
+                    {value === true
+                      ? "Sim"
+                      : value === false
+                      ? "Não"
+                      : value || "N/A"}
+                  </p>
+                )
+              )}
 
             <h4 className="font-semibold mt-4">Tipo de Usuário</h4>
             <select
@@ -1401,35 +1541,44 @@ const GestaoUsuarios = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Modal de prorrogar acesso de residente */}
-      <Dialog open={isProrrogarDialogOpen} onOpenChange={setIsProrrogarDialogOpen}>
+      <Dialog
+        open={isProrrogarDialogOpen}
+        onOpenChange={setIsProrrogarDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Prorrogar acesso de residente</DialogTitle>
             <DialogDescription>
               Você está prorrogando o acesso de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto} por 30 dias. Esta ação será
-              registrada no sistema.
+              {selectedUser?.dadosPessoais.nomeCompleto} por 30 dias. Esta ação
+              será registrada no sistema.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
             <div className="space-y-1">
-              <p className="text-sm font-medium">Data de início da residência:</p>
+              <p className="text-sm font-medium">
+                Data de início da residência:
+              </p>
               <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.dataInicioResidencia || "Não informada"}
+                {selectedUser?.dadosProfissionais.dataInicioResidencia ||
+                  "Não informada"}
               </p>
             </div>
             <div className="space-y-1 mt-2">
               <p className="text-sm font-medium">Instituição:</p>
               <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.iesEnfermagem || "Não informada"}
+                {selectedUser?.dadosProfissionais.iesEnfermagem ||
+                  "Não informada"}
               </p>
             </div>
-            
+
             <div className="bg-amber-50 p-4 rounded-md border border-amber-200 my-4">
               <p className="text-amber-700 text-sm">
-                <strong>Atenção:</strong> A prorrogação é válida por 30 dias. Após este período, o acesso será automaticamente bloqueado novamente.
+                <strong>Atenção:</strong> A prorrogação é válida por 30 dias.
+                Após este período, o acesso será automaticamente bloqueado
+                novamente.
               </p>
             </div>
           </div>
@@ -1449,9 +1598,12 @@ const GestaoUsuarios = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Modal de alterar formação do residente */}
-      <Dialog open={isAlterarFormacaoDialogOpen} onOpenChange={setIsAlterarFormacaoDialogOpen}>
+      <Dialog
+        open={isAlterarFormacaoDialogOpen}
+        onOpenChange={setIsAlterarFormacaoDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Alterar formação do usuário</DialogTitle>
@@ -1468,24 +1620,36 @@ const GestaoUsuarios = () => {
                 {selectedUser?.dadosProfissionais.formacao}
               </p>
             </div>
-            
+
             <div className="mt-4">
               <Label htmlFor="novaFormacao">Nova formação</Label>
-              <Select value={novaFormacao} onValueChange={setNovaFormacao}>
+              <Select
+                value={novaFormacao || "placeholder"}
+                onValueChange={(v) =>
+                  setNovaFormacao(v === "placeholder" ? "" : v)
+                }
+              >
                 <SelectTrigger id="novaFormacao">
                   <SelectValue placeholder="Selecione a nova formação" />
                 </SelectTrigger>
                 <SelectContent>
-                  {opcoesFormacao.map(opcao => (
-                    <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                  <SelectItem value="placeholder" disabled>
+                    Selecione a nova formação
+                  </SelectItem>
+                  {opcoesFormacao.map((opcao) => (
+                    <SelectItem key={opcao} value={opcao}>
+                      {opcao}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="bg-blue-50 p-4 rounded-md border border-blue-200 my-4">
               <p className="text-blue-700 text-sm">
-                <strong>Informação:</strong> Alterar a formação do usuário permitirá que ele continue com acesso ao sistema sem as restrições aplicadas a residentes.
+                <strong>Informação:</strong> Alterar a formação do usuário
+                permitirá que ele continue com acesso ao sistema sem as
+                restrições aplicadas a residentes.
               </p>
             </div>
           </div>

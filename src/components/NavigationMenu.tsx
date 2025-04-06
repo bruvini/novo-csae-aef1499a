@@ -1,6 +1,5 @@
-
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -22,15 +21,17 @@ import {
   HelpCircle,
   Users,
   Settings,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useAutenticacao } from '@/services/autenticacao';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAutenticacao } from "@/services/autenticacao";
 
 interface NavigationMenuComponentProps {
   activeItem?: string;
 }
 
-const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activeItem }) => {
+const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
+  activeItem,
+}) => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { verificarAdmin } = useAutenticacao();
@@ -42,86 +43,88 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
 
   const menuItems = [
     {
-      id: 'home',
-      title: 'Página Inicial',
+      id: "home",
+      title: "Página Inicial",
       icon: Home,
-      href: '/dashboard',
-      adminOnly: false
+      href: "/dashboard",
+      adminOnly: false,
     },
     {
-      id: 'processo-enfermagem',
-      title: 'Processo de Enfermagem',
+      id: "processo-enfermagem",
+      title: "Processo de Enfermagem",
       icon: ClipboardCheck,
-      href: '/processo-enfermagem',
-      adminOnly: false
+      href: "/processo-enfermagem",
+      adminOnly: false,
     },
     {
-      id: 'protocolos',
-      title: 'Protocolos de Enfermagem',
+      id: "protocolos",
+      title: "Protocolos de Enfermagem",
       icon: BookOpen,
-      href: '/protocolos',
-      adminOnly: false
+      href: "/protocolos",
+      adminOnly: false,
     },
     {
-      id: 'pops',
-      title: 'POPs',
+      id: "pops",
+      title: "POPs",
       icon: FileText,
-      href: '/pops',
-      adminOnly: false
+      href: "/pops",
+      adminOnly: false,
     },
     {
-      id: 'feridas',
-      title: 'Matriciamento de Feridas',
+      id: "feridas",
+      title: "Matriciamento de Feridas",
       icon: Bandage,
-      href: '/feridas',
-      adminOnly: false
+      href: "/feridas",
+      adminOnly: false,
     },
     {
-      id: 'gerenciamento-enfermagem',
-      title: 'Gerenciamento de Conteúdos',
+      id: "gerenciamento-enfermagem",
+      title: "Gerenciamento de Conteúdos",
       icon: Settings,
-      href: '/gerenciamento-enfermagem',
-      adminOnly: true
+      href: "/gerenciamento-enfermagem",
+      adminOnly: true,
     },
     {
-      id: 'noticias',
-      title: 'Notícias',
+      id: "noticias",
+      title: "Notícias",
       icon: Newspaper,
-      href: '/noticias',
-      adminOnly: false
+      href: "/noticias",
+      adminOnly: false,
     },
     {
-      id: 'sugestoes',
-      title: 'Sugestões',
+      id: "sugestoes",
+      title: "Sugestões",
       icon: Lightbulb,
-      href: '/sugestoes',
-      adminOnly: false
+      href: "/sugestoes",
+      adminOnly: false,
     },
     {
-      id: 'sobre',
-      title: 'Sobre a CSAE',
+      id: "sobre",
+      title: "Sobre a CSAE",
       icon: Info,
-      href: '/sobre',
-      adminOnly: false
+      href: "/sobre",
+      adminOnly: false,
     },
     {
-      id: 'faq',
-      title: 'F.A.Q.',
+      id: "faq",
+      title: "F.A.Q.",
       icon: HelpCircle,
-      href: '/faq',
-      adminOnly: false
+      href: "/faq",
+      adminOnly: false,
     },
     {
-      id: 'gestao-usuarios',
-      title: 'Gestão de Usuários',
+      id: "gestao-usuarios",
+      title: "Gestão de Usuários",
       icon: Users,
-      href: '/gestao-usuarios',
-      adminOnly: true
+      href: "/gestao-usuarios",
+      adminOnly: true,
     },
   ];
 
   // Filtrar os itens do menu com base no perfil do usuário
-  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || (item.adminOnly && isAdmin));
+  const filteredMenuItems = menuItems.filter(
+    (item) => !item.adminOnly || (item.adminOnly && isAdmin)
+  );
 
   return (
     <div className="sticky top-0 z-10 w-full bg-white border-b border-csae-green-100 shadow-sm">
@@ -130,20 +133,21 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({ activ
           <NavigationMenuList className="flex-nowrap">
             {filteredMenuItems.map((item) => (
               <NavigationMenuItem key={item.id}>
-                <Link to={item.href}>
-                  <NavigationMenuLink
+                <NavigationMenuLink asChild>
+                  <Link
+                    to={item.href}
                     className={cn(
                       navigationMenuTriggerStyle(),
                       "px-3 py-1.5 h-auto whitespace-nowrap",
-                      (activeItem === item.id || currentPath === item.href) 
-                        ? "bg-csae-green-50 text-csae-green-700 font-medium" 
+                      activeItem === item.id || currentPath === item.href
+                        ? "bg-csae-green-50 text-csae-green-700 font-medium"
                         : "text-gray-700"
                     )}
                   >
                     <item.icon className="mr-2 h-4 w-4" />
                     <span className="text-sm">{item.title}</span>
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
             ))}
           </NavigationMenuList>
