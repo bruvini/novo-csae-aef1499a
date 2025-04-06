@@ -172,7 +172,9 @@ export interface DiagnosticoCompleto {
   subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
   subconjuntoId: string;
   subitemNome: string;
+  subitemId?: string;  // Adicionado campo que estava faltando
   explicacao?: string;
+  descricao?: string;  // Adicionado campo que estava faltando
   resultadosEsperados: ResultadoEsperado[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;

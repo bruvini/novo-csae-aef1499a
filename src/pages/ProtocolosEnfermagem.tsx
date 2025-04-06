@@ -27,7 +27,16 @@ const ProtocolosEnfermagemPage = () => {
           id: doc.id,
           ...doc.data()
         })) as ProtocoloEnfermagem[];
-        setProtocolos(protocolosData);
+        
+        // Ordenar protocolos por volume em ordem crescente
+        const protocolosOrdenados = protocolosData.sort((a, b) => {
+          // Converter os volumes para números (removendo possíveis caracteres não numéricos)
+          const volA = parseInt(a.volume.replace(/\D/g, '')) || 0;
+          const volB = parseInt(b.volume.replace(/\D/g, '')) || 0;
+          return volA - volB;
+        });
+        
+        setProtocolos(protocolosOrdenados);
       } catch (error) {
         console.error("Erro ao carregar protocolos:", error);
       } finally {
@@ -47,14 +56,14 @@ const ProtocolosEnfermagemPage = () => {
   };
 
   const formatarData = (timestamp: any) => {
-    if (!timestamp) return 'Data não definida';
+    if (!timestamp) return 'Não definida';
     
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return format(date, 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
       console.error("Erro ao formatar data:", error);
-      return 'Data inválida';
+      return 'Não definida';
     }
   };
 
@@ -98,7 +107,7 @@ const ProtocolosEnfermagemPage = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtrarProtocolos().map((protocolo) => (
-              <Card key={protocolo.id} className="transition-all hover:shadow-md">
+              <Card key={protocolo.id} className="transition-all hover:shadow-md flex flex-col h-full">
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-start">
                     <div>
@@ -108,8 +117,8 @@ const ProtocolosEnfermagemPage = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="pb-4">
-                  <div className="aspect-video bg-gray-100 rounded-md mb-4 flex items-center justify-center overflow-hidden">
+                <CardContent className="pb-4 flex-grow">
+                  <div className="aspect-video bg-gray-100 rounded-md mb-4 flex items-center justify-center overflow-hidden h-[180px]">
                     {protocolo.linkImagem ? (
                       <img 
                         src={protocolo.linkImagem} 
@@ -129,7 +138,7 @@ const ProtocolosEnfermagemPage = () => {
                   </CardDescription>
                 </CardContent>
                 
-                <CardFooter className="flex flex-col items-start pt-0">
+                <CardFooter className="flex flex-col items-start pt-0 mt-auto">
                   <div className="flex items-center text-sm text-gray-500 mb-3 w-full">
                     <Calendar className="h-4 w-4 mr-1" />
                     <span className="mr-2">Publicado:</span>
