@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -51,10 +50,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { 
-  ValorReferencia, 
-  RevisaoSistema, 
-  SistemaCorporal, 
-  SubconjuntoDiagnostico, 
+  Subconjunto, 
   DiagnosticoCompleto 
 } from '@/services/bancodados/tipos';
 
@@ -65,7 +61,7 @@ const GerenciadorRevisaoSistemas = () => {
   // Estado para os dados
   const [sistemas, setSistemas] = useState<SistemaCorporal[]>([]);
   const [parametros, setParametros] = useState<RevisaoSistema[]>([]);
-  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
+  const [subconjuntos, setSubconjuntos] = useState<Subconjunto[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
   const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
@@ -129,7 +125,7 @@ const GerenciadorRevisaoSistemas = () => {
         const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as SubconjuntoDiagnostico[];
+        })) as Subconjunto[];
         setSubconjuntos(subconjuntosData);
 
         // Carregar Diagnósticos

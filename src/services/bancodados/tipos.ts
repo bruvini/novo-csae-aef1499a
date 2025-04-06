@@ -1,4 +1,3 @@
-
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface DadosPessoais {
@@ -172,20 +171,20 @@ export interface DiagnosticoCompleto {
   subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
   subconjuntoId: string;
   subitemNome: string;
-  subitemId?: string;  // Adicionado campo que estava faltando
+  subitemId?: string;
   explicacao?: string;
-  descricao?: string;  // Adicionado campo que estava faltando
+  descricao?: string;
   resultadosEsperados: ResultadoEsperado[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
 }
 
 export interface NHB {
   id?: string;
   nome: string;
   descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
 }
 
 export interface ProtocoloEnfermagem {
@@ -197,8 +196,8 @@ export interface ProtocoloEnfermagem {
   linkImagem?: string;
   descricao: string;
   linkPdf: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
 }
 
 export interface Subconjunto {
@@ -206,6 +205,8 @@ export interface Subconjunto {
   nome: string;
   tipo: 'Protocolo' | 'NHB';
   descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Timestamp | FieldValue;
+  updatedAt?: Timestamp | FieldValue;
 }
+
+export type SubconjuntoDiagnostico = Subconjunto;
