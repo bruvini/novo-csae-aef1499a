@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -27,7 +28,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, HelpCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Plus, Edit, Trash2, Check, X, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   collection, 
@@ -36,28 +38,41 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  serverTimestamp,
-  query,
+  serverTimestamp, 
+  query, 
   where 
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ValorReferencia, SinalVital, Subconjunto, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { ValorReferencia, SinalVital, SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { useForm } from 'react-hook-form';
 
 const GerenciadorSinaisVitais = () => {
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
+  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
+  const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
+  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
   
   // Estado para o formulário
-  const [formSinalVital, setFormSinalVital] = useState<SinalVital>({
+  const [formSinal, setFormSinal] = useState<SinalVital>({
     nome: '',
     diferencaSexoIdade: false,
     valoresReferencia: [{ 
@@ -72,13 +87,35 @@ const GerenciadorSinaisVitais = () => {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const sinaisVitaisRef = collection(db, 'sinaisVitais');
-        const sinaisVitaisSnapshot = await getDocs(sinaisVitaisRef);
-        const sinaisVitaisData = sinaisVitaisSnapshot.docs.map(doc => ({
+        // Carregar sinais vitais
+        const sinaisRef = collection(db, 'sinaisVitais');
+        const sinaisSnapshot = await getDocs(sinaisRef);
+        const sinaisData = sinaisSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as SinalVital[];
-        setSinaisVitais(sinaisVitaisData);
+        setSinaisVitais(sinaisData);
+        
+        // Carregar subconjuntos (NHBs)
+        const subconjuntosRef = query(
+          collection(db, 'subconjuntosDiagnosticos'), 
+          where('tipo', '==', 'NHB')
+        );
+        const subconjuntosSnapshot = await getDocs(subconjuntosRef);
+        const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as SubconjuntoDiagnostico[];
+        setSubconjuntos(subconjuntosData);
+
+        // Carregar Diagnósticos
+        const diagnosticosRef = collection(db, 'diagnosticosEnfermagem');
+        const diagnosticosSnapshot = await getDocs(diagnosticosRef);
+        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as DiagnosticoCompleto[];
+        setDiagnosticos(diagnosticosData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
@@ -93,14 +130,24 @@ const GerenciadorSinaisVitais = () => {
     
     carregarDados();
   }, [toast]);
+
+  // Filtrar diagnósticos quando uma NHB é selecionada
+  useEffect(() => {
+    if (nhbSelecionada) {
+      const filtrados = diagnosticos.filter(d => d.subitemId === nhbSelecionada);
+      setDiagnosticosFiltrados(filtrados);
+    } else {
+      setDiagnosticosFiltrados([]);
+    }
+  }, [nhbSelecionada, diagnosticos]);
   
   // Abrir modal para criar novo sinal vital
   const abrirModalCriar = () => {
-    setFormSinalVital({
+    setFormSinal({
       nome: '',
       diferencaSexoIdade: false,
       valoresReferencia: [{ 
-        unidade: '',
+        unidade: '', 
         representaAlteracao: false,
         variacaoPor: 'Nenhum',
         tipoValor: 'Numérico'
@@ -111,20 +158,31 @@ const GerenciadorSinaisVitais = () => {
   };
   
   // Abrir modal para editar sinal vital existente
-  const abrirModalEditar = (sinalVital: SinalVital) => {
-    setFormSinalVital({...sinalVital});
-    setEditandoId(sinalVital.id || null);
+  const abrirModalEditar = (sinal: SinalVital) => {
+    // Garantir que todos os valores de referência tenham os novos campos
+    const valoresAtualizados = sinal.valoresReferencia.map(valor => ({
+      ...valor,
+      representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
+      variacaoPor: valor.variacaoPor || 'Nenhum',
+      tipoValor: valor.tipoValor || 'Numérico'
+    }));
+
+    setFormSinal({
+      ...sinal,
+      valoresReferencia: valoresAtualizados
+    });
+    setEditandoId(sinal.id || null);
     setModalAberto(true);
   };
   
   // Adicionar valor de referência
   const adicionarValorReferencia = () => {
-    setFormSinalVital({
-      ...formSinalVital,
+    setFormSinal({
+      ...formSinal,
       valoresReferencia: [
-        ...formSinalVital.valoresReferencia,
+        ...formSinal.valoresReferencia,
         { 
-          unidade: '',
+          unidade: '', 
           representaAlteracao: false,
           variacaoPor: 'Nenhum',
           tipoValor: 'Numérico'
@@ -135,23 +193,94 @@ const GerenciadorSinaisVitais = () => {
   
   // Remover valor de referência
   const removerValorReferencia = (index: number) => {
-    const novosValores = [...formSinalVital.valoresReferencia];
+    const novosValores = [...formSinal.valoresReferencia];
     novosValores.splice(index, 1);
-    setFormSinalVital({
-      ...formSinalVital,
+    setFormSinal({
+      ...formSinal,
       valoresReferencia: novosValores
     });
   };
   
   // Atualizar valor de referência
   const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
-    const novosValores = [...formSinalVital.valoresReferencia];
+    const novosValores = [...formSinal.valoresReferencia];
     novosValores[index] = {
       ...novosValores[index],
       [campo]: valor
     };
-    setFormSinalVital({
-      ...formSinalVital,
+
+    // Quando o tipo de valor muda, ajustar os campos correspondentes
+    if (campo === 'tipoValor') {
+      if (valor === 'Texto') {
+        novosValores[index].valorTexto = '';
+        novosValores[index].valorMinimo = undefined;
+        novosValores[index].valorMaximo = undefined;
+      } else {
+        novosValores[index].valorTexto = undefined;
+      }
+    }
+
+    // Quando a variação muda, ajustamos os campos necessários
+    if (campo === 'variacaoPor') {
+      if (valor === 'Nenhum') {
+        // Remover campos desnecessários para variação única
+        delete novosValores[index].idadeMinima;
+        delete novosValores[index].idadeMaxima;
+        delete novosValores[index].sexo;
+      } else if (valor === 'Sexo') {
+        // Adicionar campo de sexo e remover idade
+        novosValores[index].sexo = 'Todos';
+        delete novosValores[index].idadeMinima;
+        delete novosValores[index].idadeMaxima;
+      } else if (valor === 'Idade') {
+        // Adicionar campos de idade e remover sexo
+        novosValores[index].idadeMinima = 0;
+        novosValores[index].idadeMaxima = 100;
+        delete novosValores[index].sexo;
+      }
+      // 'Ambos' mantém todos os campos
+    }
+
+    // Se desmarcar "representa alteração", limpar os campos relacionados
+    if (campo === 'representaAlteracao' && valor === false) {
+      delete novosValores[index].tituloAlteracao;
+      delete novosValores[index].nhbId;
+      delete novosValores[index].diagnosticoId;
+    }
+
+    setFormSinal({
+      ...formSinal,
+      valoresReferencia: novosValores
+    });
+  };
+
+  // Atualizar NHB selecionada
+  const handleNhbChange = (index: number, nhbId: string) => {
+    setNhbSelecionada(nhbId);
+    
+    const novosValores = [...formSinal.valoresReferencia];
+    novosValores[index] = {
+      ...novosValores[index],
+      nhbId: nhbId,
+      diagnosticoId: undefined // Limpar diagnóstico quando mudar a NHB
+    };
+    
+    setFormSinal({
+      ...formSinal,
+      valoresReferencia: novosValores
+    });
+  };
+
+  // Atualizar diagnóstico selecionado
+  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
+    const novosValores = [...formSinal.valoresReferencia];
+    novosValores[index] = {
+      ...novosValores[index],
+      diagnosticoId: diagnosticoId
+    };
+    
+    setFormSinal({
+      ...formSinal,
       valoresReferencia: novosValores
     });
   };
@@ -159,7 +288,7 @@ const GerenciadorSinaisVitais = () => {
   // Salvar sinal vital (criar novo ou atualizar existente)
   const salvarSinalVital = async () => {
     try {
-      if (!formSinalVital.nome.trim()) {
+      if (!formSinal.nome.trim()) {
         toast({
           title: "Campo obrigatório",
           description: "Nome do sinal vital é obrigatório.",
@@ -168,7 +297,7 @@ const GerenciadorSinaisVitais = () => {
         return;
       }
       
-      if (formSinalVital.valoresReferencia.some(vr => !vr.unidade.trim())) {
+      if (formSinal.valoresReferencia.some(vr => !vr.unidade.trim())) {
         toast({
           title: "Campo obrigatório",
           description: "Unidade é obrigatória para todos os valores de referência.",
@@ -176,41 +305,116 @@ const GerenciadorSinaisVitais = () => {
         });
         return;
       }
+
+      // Validar campos específicos de acordo com a variação
+      for (const valor of formSinal.valoresReferencia) {
+        if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
+          if (!valor.sexo) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Sexo é obrigatório quando a variação inclui sexo.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+        
+        if (valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') {
+          if (valor.idadeMinima === undefined || valor.idadeMaxima === undefined) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Idade mínima e máxima são obrigatórias quando a variação inclui idade.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        // Validar campos do tipo de valor
+        if (valor.tipoValor === 'Numérico') {
+          if (valor.valorMinimo === undefined && valor.valorMaximo === undefined) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Pelo menos um valor (mínimo ou máximo) é obrigatório para valores numéricos.",
+              variant: "destructive"
+            });
+            return;
+          }
+        } else if (valor.tipoValor === 'Texto') {
+          if (!valor.valorTexto?.trim()) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Valor textual é obrigatório quando o tipo é texto.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        if (valor.representaAlteracao) {
+          if (!valor.tituloAlteracao?.trim()) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!valor.nhbId) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!valor.diagnosticoId) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+      }
       
       if (editandoId) {
         // Atualizar existente
-        const sinalVitalRef = doc(db, 'sinaisVitais', editandoId);
-        await updateDoc(sinalVitalRef, {
-          ...formSinalVital,
+        const sinalRef = doc(db, 'sinaisVitais', editandoId);
+        await updateDoc(sinalRef, {
+          ...formSinal,
           updatedAt: serverTimestamp()
         });
         
         toast({
           title: "Sinal vital atualizado",
-          description: `${formSinalVital.nome} foi atualizado com sucesso.`
+          description: `${formSinal.nome} foi atualizado com sucesso.`
         });
         
         // Atualizar lista
         setSinaisVitais(prev => 
-          prev.map(sv => sv.id === editandoId ? {...formSinalVital, id: editandoId, updatedAt: new Date() as any} : sv)
+          prev.map(s => s.id === editandoId ? {...formSinal, id: editandoId, updatedAt: new Date() as any} : s)
         );
       } else {
         // Criar novo
-        const novoSinalVital = {
-          ...formSinalVital,
+        const novoSinal = {
+          ...formSinal,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
         
-        const docRef = await addDoc(collection(db, 'sinaisVitais'), novoSinalVital);
+        const docRef = await addDoc(collection(db, 'sinaisVitais'), novoSinal);
         
         toast({
           title: "Sinal vital criado",
-          description: `${formSinalVital.nome} foi criado com sucesso.`
+          description: `${formSinal.nome} foi criado com sucesso.`
         });
         
         // Adicionar à lista
-        setSinaisVitais(prev => [...prev, {...novoSinalVital, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
+        setSinaisVitais(prev => [...prev, {...novoSinal, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
       }
       
       setModalAberto(false);
@@ -236,7 +440,7 @@ const GerenciadorSinaisVitais = () => {
         });
         
         // Remover da lista
-        setSinaisVitais(prev => prev.filter(sv => sv.id !== id));
+        setSinaisVitais(prev => prev.filter(s => s.id !== id));
       } catch (error) {
         console.error("Erro ao excluir sinal vital:", error);
         toast({
@@ -276,27 +480,23 @@ const GerenciadorSinaisVitais = () => {
               <TableRow>
                 <TableHead>Nome do Sinal Vital</TableHead>
                 <TableHead>Valores de Referência</TableHead>
-                <TableHead>Diferença Sexo/Idade</TableHead>
+                <TableHead>Valores com Alteração</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sinaisVitais.map((sinalVital) => (
-                <TableRow key={sinalVital.id}>
-                  <TableCell className="font-medium">{sinalVital.nome}</TableCell>
-                  <TableCell>{sinalVital.valoresReferencia.length} valores configurados</TableCell>
+              {sinaisVitais.map((sinal) => (
+                <TableRow key={sinal.id}>
+                  <TableCell className="font-medium">{sinal.nome}</TableCell>
+                  <TableCell>{sinal.valoresReferencia.length} valores configurados</TableCell>
                   <TableCell>
-                    {sinalVital.diferencaSexoIdade ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <X className="h-4 w-4 text-red-500" />
-                    )}
+                    {sinal.valoresReferencia.filter(v => v.representaAlteracao).length} valores
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditar(sinalVital)}>
+                    <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditar(sinal)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => excluirSinalVital(sinalVital.id!)}>
+                    <Button variant="outline" size="sm" onClick={() => excluirSinalVital(sinal.id!)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </TableCell>
@@ -322,19 +522,10 @@ const GerenciadorSinaisVitais = () => {
               <Label htmlFor="nome">Nome do Sinal Vital</Label>
               <Input
                 id="nome"
-                value={formSinalVital.nome}
-                onChange={(e) => setFormSinalVital({...formSinalVital, nome: e.target.value})}
-                placeholder="Ex: Pressão Arterial Sistólica"
+                value={formSinal.nome}
+                onChange={(e) => setFormSinal({...formSinal, nome: e.target.value})}
+                placeholder="Ex: Pressão Arterial"
               />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch 
-                checked={formSinalVital.diferencaSexoIdade}
-                onCheckedChange={(checked) => setFormSinalVital({...formSinalVital, diferencaSexoIdade: checked})}
-                id="diferencaSexoIdade"
-              />
-              <Label htmlFor="diferencaSexoIdade">Valores de referência diferentes por sexo e idade</Label>
             </div>
             
             <div className="grid gap-2">
@@ -345,12 +536,12 @@ const GerenciadorSinaisVitais = () => {
                 </Button>
               </div>
               
-              {formSinalVital.valoresReferencia.map((valor, index) => (
+              {formSinal.valoresReferencia.map((valor, index) => (
                 <Card key={index} className="p-4">
                   <div className="grid gap-3">
                     <div className="flex justify-between">
                       <h4 className="font-medium">Valor de Referência #{index + 1}</h4>
-                      {formSinalVital.valoresReferencia.length > 1 && (
+                      {formSinal.valoresReferencia.length > 1 && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -363,43 +554,117 @@ const GerenciadorSinaisVitais = () => {
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-2">
-                        <Label>Idade Mínima (anos)</Label>
-                        <Input
-                          type="number"
-                          value={valor.idadeMinima !== undefined ? valor.idadeMinima : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
-                          placeholder="Ex: 18"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Idade Máxima (anos)</Label>
-                        <Input
-                          type="number"
-                          value={valor.idadeMaxima !== undefined ? valor.idadeMaxima : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
-                          placeholder="Ex: 65"
-                        />
-                      </div>
+                    {/* Tipo de valor: Numérico ou Textual */}
+                    <div className="grid gap-2">
+                      <Label>O valor é numérico ou textual?</Label>
+                      <RadioGroup 
+                        value={valor.tipoValor || 'Numérico'} 
+                        onValueChange={(v: 'Numérico' | 'Texto') => atualizarValorReferencia(index, 'tipoValor', v)}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Numérico" id={`numerico-${index}`} />
+                          <Label htmlFor={`numerico-${index}`}>Numérico</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Texto" id={`texto-${index}`} />
+                          <Label htmlFor={`texto-${index}`}>Textual</Label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     
+                    {/* Campos condicionais baseados no tipo de valor */}
+                    {valor.tipoValor === 'Numérico' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-2">
+                          <Label>Valor Mínimo</Label>
+                          <Input
+                            type="number"
+                            value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="Ex: 120"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Valor Máximo</Label>
+                          <Input
+                            type="number"
+                            value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="Ex: 139"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid gap-2">
+                        <Label>Valor Textual</Label>
+                        <Input
+                          value={valor.valorTexto || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'valorTexto', e.target.value)}
+                          placeholder="Ex: Normal, Presente, Ausente, etc."
+                        />
+                      </div>
+                    )}
+                    
                     <div className="grid gap-2">
-                      <Label>Sexo</Label>
+                      <Label>Varia por</Label>
                       <Select
-                        value={valor.sexo || 'Todos'}
-                        onValueChange={(v: 'Masculino' | 'Feminino' | 'Todos') => atualizarValorReferencia(index, 'sexo', v)}
+                        value={valor.variacaoPor}
+                        onValueChange={(v: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum') => atualizarValorReferencia(index, 'variacaoPor', v)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder="Selecione como o valor varia" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Todos">Todos</SelectItem>
-                          <SelectItem value="Masculino">Masculino</SelectItem>
-                          <SelectItem value="Feminino">Feminino</SelectItem>
+                          <SelectItem value="Nenhum">Nenhum (valor único)</SelectItem>
+                          <SelectItem value="Sexo">Sexo</SelectItem>
+                          <SelectItem value="Idade">Idade</SelectItem>
+                          <SelectItem value="Ambos">Ambos (Sexo e Idade)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                    
+                    {(valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') && (
+                      <div className="grid gap-2">
+                        <Label>Sexo</Label>
+                        <Select
+                          value={valor.sexo || 'Todos'}
+                          onValueChange={(v: 'Masculino' | 'Feminino' | 'Todos') => atualizarValorReferencia(index, 'sexo', v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Todos">Todos</SelectItem>
+                            <SelectItem value="Masculino">Masculino</SelectItem>
+                            <SelectItem value="Feminino">Feminino</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {(valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-2">
+                          <Label>Idade Mínima (anos)</Label>
+                          <Input
+                            type="number"
+                            value={valor.idadeMinima !== undefined ? valor.idadeMinima : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
+                            placeholder="Ex: 18"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Idade Máxima (anos)</Label>
+                          <Input
+                            type="number"
+                            value={valor.idadeMaxima !== undefined ? valor.idadeMaxima : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
+                            placeholder="Ex: 65"
+                          />
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="grid gap-2">
                       <Label>Unidade</Label>
@@ -410,6 +675,101 @@ const GerenciadorSinaisVitais = () => {
                         required
                       />
                     </div>
+                    
+                    <div className="flex items-center gap-2 pt-2">
+                      <Switch 
+                        checked={valor.representaAlteracao || false}
+                        onCheckedChange={(checked) => 
+                          atualizarValorReferencia(index, 'representaAlteracao', checked)
+                        }
+                        id={`alteracao-${index}`}
+                      />
+                      <Label htmlFor={`alteracao-${index}`}>Este valor representa uma alteração</Label>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
+                              <HelpCircle className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Marque se este valor representa uma condição alterada (ex: hipertensão, hipotensão).
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    
+                    {valor.representaAlteracao && (
+                      <>
+                        <div className="grid gap-2">
+                          <Label>Título da Alteração</Label>
+                          <Input
+                            value={valor.tituloAlteracao || ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
+                            placeholder="Ex: Hipertensão, Hipotensão, etc."
+                          />
+                        </div>
+                        
+                        <div className="grid gap-2 border-t pt-3 mt-2">
+                          <Label>Vínculo com Diagnóstico</Label>
+                          
+                          <div className="grid gap-3">
+                            <div>
+                              <Label className="text-sm text-muted-foreground mb-1 block">
+                                1. Selecione uma Necessidade Humana Básica (NHB)
+                              </Label>
+                              <Select
+                                value={valor.nhbId || ''}
+                                onValueChange={(v) => handleNhbChange(index, v)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma NHB" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {subconjuntos.map((nhb) => (
+                                    <SelectItem key={nhb.id} value={nhb.id!}>
+                                      {nhb.nome}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {valor.nhbId && (
+                              <div>
+                                <Label className="text-sm text-muted-foreground mb-1 block">
+                                  2. Selecione um Diagnóstico
+                                </Label>
+                                <Select
+                                  value={valor.diagnosticoId || ''}
+                                  onValueChange={(v) => handleDiagnosticoChange(index, v)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um diagnóstico" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {diagnosticosFiltrados.length > 0 ? (
+                                      diagnosticosFiltrados.map((diag) => (
+                                        <SelectItem key={diag.id} value={diag.id!}>
+                                          {diag.descricao}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="no-diagnostics" disabled>
+                                        Nenhum diagnóstico disponível para esta NHB
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </Card>
               ))}

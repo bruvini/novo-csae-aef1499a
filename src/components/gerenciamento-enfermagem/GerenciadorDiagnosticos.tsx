@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
@@ -13,7 +14,7 @@ import {
   DialogTitle 
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { ResultadoEsperado, Intervencao, Subconjunto, DiagnosticoCompleto } from '@/services/bancodados/tipos';
 import SubconjuntoTab from './diagnosticos/SubconjuntoTab';
@@ -176,7 +177,7 @@ const GerenciadorDiagnosticos = () => {
                 ...formSubconjunto, 
                 id: editandoSubconjuntoId,
                 updatedAt: firestoreTimestamp
-              } as Subconjunto;
+              };
             }
             return s;
           });
@@ -203,7 +204,7 @@ const GerenciadorDiagnosticos = () => {
           {
             ...novoSubconjunto, 
             id: docRef.id
-          } as Subconjunto
+          }
         ]);
       }
       
@@ -450,10 +451,10 @@ const GerenciadorDiagnosticos = () => {
           description: `${formDiagnostico.nome} foi atualizado com sucesso.`
         });
         
-        // Atualizar lista com tipagem correta
+        // Atualizar lista
         setDiagnosticos(prev => 
           prev.map(d => d.id === editandoDiagnosticoId ? 
-            {...formDiagnostico, id: editandoDiagnosticoId, updatedAt: firestoreTimestamp} as DiagnosticoCompleto : d)
+            {...formDiagnostico, id: editandoDiagnosticoId, updatedAt: firestoreTimestamp} : d)
         );
       } else {
         // Criar novo
@@ -470,11 +471,11 @@ const GerenciadorDiagnosticos = () => {
           description: `${formDiagnostico.nome} foi criado com sucesso.`
         });
         
-        // Adicionar à lista com tipagem correta
+        // Adicionar à lista
         setDiagnosticos(prev => [...prev, {
           ...novoDiagnostico, 
           id: docRef.id
-        } as DiagnosticoCompleto]);
+        }]);
       }
       
       setModalDiagnostico(false);

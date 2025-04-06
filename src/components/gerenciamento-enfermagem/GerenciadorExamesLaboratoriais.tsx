@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -48,12 +49,12 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ValorReferencia, ExameLaboratorial, Subconjunto, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { ValorReferencia, ExameLaboratorial, SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/services/bancodados/tipos';
 
 const GerenciadorExamesLaboratoriais = () => {
   const { toast } = useToast();
   const [exames, setExames] = useState<ExameLaboratorial[]>([]);
-  const [subconjuntos, setSubconjuntos] = useState<Subconjunto[]>([]);
+  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -61,6 +62,7 @@ const GerenciadorExamesLaboratoriais = () => {
   const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
   const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
   
+  // Estado para o formulário
   const [formExame, setFormExame] = useState<ExameLaboratorial>({
     nome: '',
     tipoExame: 'Laboratorial',
@@ -73,9 +75,11 @@ const GerenciadorExamesLaboratoriais = () => {
     }]
   });
   
+  // Carregar os dados iniciais
   useEffect(() => {
     const carregarDados = async () => {
       try {
+        // Carregar exames
         const examesRef = collection(db, 'examesLaboratoriais');
         const examesSnapshot = await getDocs(examesRef);
         const examesData = examesSnapshot.docs.map(doc => ({
@@ -84,6 +88,7 @@ const GerenciadorExamesLaboratoriais = () => {
         })) as ExameLaboratorial[];
         setExames(examesData);
         
+        // Carregar subconjuntos (NHBs)
         const subconjuntosRef = query(
           collection(db, 'subconjuntosDiagnosticos'), 
           where('tipo', '==', 'NHB')
@@ -92,9 +97,10 @@ const GerenciadorExamesLaboratoriais = () => {
         const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
-        })) as Subconjunto[];
+        })) as SubconjuntoDiagnostico[];
         setSubconjuntos(subconjuntosData);
 
+        // Carregar Diagnósticos
         const diagnosticosRef = collection(db, 'diagnosticosEnfermagem');
         const diagnosticosSnapshot = await getDocs(diagnosticosRef);
         const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
@@ -117,6 +123,7 @@ const GerenciadorExamesLaboratoriais = () => {
     carregarDados();
   }, [toast]);
   
+  // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
     if (nhbSelecionada) {
       const filtrados = diagnosticos.filter(d => d.subitemId === nhbSelecionada);
@@ -126,6 +133,7 @@ const GerenciadorExamesLaboratoriais = () => {
     }
   }, [nhbSelecionada, diagnosticos]);
   
+  // Abrir modal para criar novo exame
   const abrirModalCriar = () => {
     setFormExame({
       nome: '',
@@ -142,7 +150,9 @@ const GerenciadorExamesLaboratoriais = () => {
     setModalAberto(true);
   };
   
+  // Abrir modal para editar exame existente
   const abrirModalEditar = (exame: ExameLaboratorial) => {
+    // Garantir que todos os valores de referência tenham os novos campos
     const valoresAtualizados = exame.valoresReferencia.map(valor => ({
       ...valor,
       representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
@@ -158,6 +168,7 @@ const GerenciadorExamesLaboratoriais = () => {
     setModalAberto(true);
   };
   
+  // Adicionar valor de referência
   const adicionarValorReferencia = () => {
     setFormExame({
       ...formExame,
@@ -173,6 +184,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
   
+  // Remover valor de referência
   const removerValorReferencia = (index: number) => {
     const novosValores = [...formExame.valoresReferencia];
     novosValores.splice(index, 1);
@@ -182,6 +194,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
   
+  // Atualizar valor de referência
   const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
     const novosValores = [...formExame.valoresReferencia];
     novosValores[index] = {
@@ -189,6 +202,7 @@ const GerenciadorExamesLaboratoriais = () => {
       [campo]: valor
     };
 
+    // Quando o tipo de valor muda, ajustar os campos correspondentes
     if (campo === 'tipoValor') {
       if (valor === 'Texto') {
         novosValores[index].valorTexto = '';
@@ -199,22 +213,28 @@ const GerenciadorExamesLaboratoriais = () => {
       }
     }
 
+    // Quando a variação muda, ajustamos os campos necessários
     if (campo === 'variacaoPor') {
       if (valor === 'Nenhum') {
+        // Remover campos desnecessários para variação única
         delete novosValores[index].idadeMinima;
         delete novosValores[index].idadeMaxima;
         delete novosValores[index].sexo;
       } else if (valor === 'Sexo') {
+        // Adicionar campo de sexo e remover idade
         novosValores[index].sexo = 'Todos';
         delete novosValores[index].idadeMinima;
         delete novosValores[index].idadeMaxima;
       } else if (valor === 'Idade') {
+        // Adicionar campos de idade e remover sexo
         novosValores[index].idadeMinima = 0;
         novosValores[index].idadeMaxima = 100;
         delete novosValores[index].sexo;
       }
+      // 'Ambos' mantém todos os campos
     }
 
+    // Se desmarcar "representa alteração", limpar os campos relacionados
     if (campo === 'representaAlteracao' && valor === false) {
       delete novosValores[index].tituloAlteracao;
       delete novosValores[index].nhbId;
@@ -227,6 +247,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
 
+  // Atualizar NHB selecionada
   const handleNhbChange = (index: number, nhbId: string) => {
     setNhbSelecionada(nhbId);
     
@@ -234,7 +255,7 @@ const GerenciadorExamesLaboratoriais = () => {
     novosValores[index] = {
       ...novosValores[index],
       nhbId: nhbId,
-      diagnosticoId: undefined
+      diagnosticoId: undefined // Limpar diagnóstico quando mudar a NHB
     };
     
     setFormExame({
@@ -243,6 +264,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
 
+  // Atualizar diagnóstico selecionado
   const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
     const novosValores = [...formExame.valoresReferencia];
     novosValores[index] = {
@@ -256,6 +278,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
   
+  // Atualizar tipo de exame
   const atualizarTipoExame = (tipo: 'Laboratorial' | 'Imagem') => {
     setFormExame({
       ...formExame,
@@ -263,6 +286,7 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
   
+  // Salvar exame (criar novo ou atualizar existente)
   const salvarExame = async () => {
     try {
       if (!formExame.nome.trim()) {
@@ -283,6 +307,7 @@ const GerenciadorExamesLaboratoriais = () => {
         return;
       }
 
+      // Validar campos específicos de acordo com a variação
       for (const valor of formExame.valoresReferencia) {
         if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
           if (!valor.sexo) {
@@ -306,6 +331,7 @@ const GerenciadorExamesLaboratoriais = () => {
           }
         }
 
+        // Validar campos do tipo de valor
         if (valor.tipoValor === 'Numérico') {
           if (valor.valorMinimo === undefined && valor.valorMaximo === undefined) {
             toast({
@@ -357,6 +383,7 @@ const GerenciadorExamesLaboratoriais = () => {
       }
       
       if (editandoId) {
+        // Atualizar existente
         const exameRef = doc(db, 'examesLaboratoriais', editandoId);
         await updateDoc(exameRef, {
           ...formExame,
@@ -368,10 +395,12 @@ const GerenciadorExamesLaboratoriais = () => {
           description: `${formExame.nome} foi atualizado com sucesso.`
         });
         
+        // Atualizar lista
         setExames(prev => 
           prev.map(e => e.id === editandoId ? {...formExame, id: editandoId, updatedAt: new Date() as any} : e)
         );
       } else {
+        // Criar novo
         const novoExame = {
           ...formExame,
           createdAt: serverTimestamp(),
@@ -385,6 +414,7 @@ const GerenciadorExamesLaboratoriais = () => {
           description: `${formExame.nome} foi criado com sucesso.`
         });
         
+        // Adicionar à lista
         setExames(prev => [...prev, {...novoExame, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
       }
       
@@ -399,6 +429,7 @@ const GerenciadorExamesLaboratoriais = () => {
     }
   };
   
+  // Excluir exame
   const excluirExame = async (id: string) => {
     if (confirm("Tem certeza que deseja excluir este exame? Esta ação não pode ser desfeita.")) {
       try {
@@ -409,6 +440,7 @@ const GerenciadorExamesLaboratoriais = () => {
           description: "O exame foi excluído com sucesso."
         });
         
+        // Remover da lista
         setExames(prev => prev.filter(e => e.id !== id));
       } catch (error) {
         console.error("Erro ao excluir exame:", error);
@@ -478,6 +510,7 @@ const GerenciadorExamesLaboratoriais = () => {
         )}
       </CardContent>
       
+      {/* Modal para criar/editar exame */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -542,6 +575,7 @@ const GerenciadorExamesLaboratoriais = () => {
                       )}
                     </div>
                     
+                    {/* Tipo de valor: Numérico ou Textual */}
                     <div className="grid gap-2">
                       <Label>O valor é numérico ou textual?</Label>
                       <RadioGroup 
@@ -560,6 +594,7 @@ const GerenciadorExamesLaboratoriais = () => {
                       </RadioGroup>
                     </div>
                     
+                    {/* Campos condicionais baseados no tipo de valor */}
                     {valor.tipoValor === 'Numérico' ? (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="grid gap-2">
