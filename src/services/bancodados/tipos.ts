@@ -123,6 +123,7 @@ export interface SinalVital {
 export interface ExameLaboratorial {
   id?: string;
   nome: string;
+  tipoExame: 'Laboratorial' | 'Imagem';
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
@@ -132,8 +133,18 @@ export interface ExameLaboratorial {
 export interface RevisaoSistema {
   id?: string;
   nome: string;
+  sistemaId: string;
+  sistemaNome: string;
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SistemaCorporal {
+  id?: string;
+  nome: string;
+  descricao?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -141,6 +152,9 @@ export interface RevisaoSistema {
 export interface Intervencao {
   id: string;
   descricao: string;
+  verboPresente: string;
+  verboInfinitivo: string;
+  complemento: string;
   linkArquivo?: string;
 }
 

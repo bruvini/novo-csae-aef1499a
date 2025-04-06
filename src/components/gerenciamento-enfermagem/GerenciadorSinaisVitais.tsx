@@ -57,7 +57,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ValorReferencia, NHB, DiagnosticoCompleto, SinalVital, SubconjuntoDiagnostico } from '@/services/bancodados/tipos';
+import { ValorReferencia, SinalVital, SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/services/bancodados/tipos';
 import { useForm } from 'react-hook-form';
 
 const GerenciadorSinaisVitais = () => {
@@ -164,7 +164,7 @@ const GerenciadorSinaisVitais = () => {
       ...valor,
       representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
       variacaoPor: valor.variacaoPor || 'Nenhum',
-      tipoValor: valor.valorTexto ? 'Texto' : 'Numérico'
+      tipoValor: valor.tipoValor || 'Numérico'
     }));
 
     setFormSinal({
@@ -273,20 +273,16 @@ const GerenciadorSinaisVitais = () => {
 
   // Atualizar diagnóstico selecionado
   const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
-    const diagnosticoSelecionado = diagnosticos.find(d => d.id === diagnosticoId);
+    const novosValores = [...formSinal.valoresReferencia];
+    novosValores[index] = {
+      ...novosValores[index],
+      diagnosticoId: diagnosticoId
+    };
     
-    if (diagnosticoSelecionado) {
-      const novosValores = [...formSinal.valoresReferencia];
-      novosValores[index] = {
-        ...novosValores[index],
-        diagnosticoId: diagnosticoId
-      };
-      
-      setFormSinal({
-        ...formSinal,
-        valoresReferencia: novosValores
-      });
-    }
+    setFormSinal({
+      ...formSinal,
+      valoresReferencia: novosValores
+    });
   };
   
   // Salvar sinal vital (criar novo ou atualizar existente)
@@ -563,7 +559,7 @@ const GerenciadorSinaisVitais = () => {
                       <Label>O valor é numérico ou textual?</Label>
                       <RadioGroup 
                         value={valor.tipoValor || 'Numérico'} 
-                        onValueChange={(v) => atualizarValorReferencia(index, 'tipoValor', v)}
+                        onValueChange={(v: 'Numérico' | 'Texto') => atualizarValorReferencia(index, 'tipoValor', v)}
                         className="flex space-x-4"
                       >
                         <div className="flex items-center space-x-2">
@@ -614,7 +610,7 @@ const GerenciadorSinaisVitais = () => {
                       <Label>Varia por</Label>
                       <Select
                         value={valor.variacaoPor}
-                        onValueChange={(v) => atualizarValorReferencia(index, 'variacaoPor', v)}
+                        onValueChange={(v: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum') => atualizarValorReferencia(index, 'variacaoPor', v)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione como o valor varia" />
@@ -633,7 +629,7 @@ const GerenciadorSinaisVitais = () => {
                         <Label>Sexo</Label>
                         <Select
                           value={valor.sexo || 'Todos'}
-                          onValueChange={(v) => atualizarValorReferencia(index, 'sexo', v)}
+                          onValueChange={(v: 'Masculino' | 'Feminino' | 'Todos') => atualizarValorReferencia(index, 'sexo', v)}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione" />
@@ -762,7 +758,7 @@ const GerenciadorSinaisVitais = () => {
                                         </SelectItem>
                                       ))
                                     ) : (
-                                      <SelectItem value="placeholder" disabled>
+                                      <SelectItem value="no-diagnostics" disabled>
                                         Nenhum diagnóstico disponível para esta NHB
                                       </SelectItem>
                                     )}
