@@ -27,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, HelpCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, HelpCircle, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
   collection, 
@@ -56,7 +56,6 @@ const GerenciadorSinaisVitais = () => {
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   
-  // Estado para o formulário
   const [formSinalVital, setFormSinalVital] = useState<SinalVital>({
     nome: '',
     diferencaSexoIdade: false,
@@ -68,7 +67,6 @@ const GerenciadorSinaisVitais = () => {
     }]
   });
   
-  // Carregar os dados iniciais
   useEffect(() => {
     const carregarDados = async () => {
       try {
@@ -94,7 +92,6 @@ const GerenciadorSinaisVitais = () => {
     carregarDados();
   }, [toast]);
   
-  // Abrir modal para criar novo sinal vital
   const abrirModalCriar = () => {
     setFormSinalVital({
       nome: '',
@@ -110,14 +107,12 @@ const GerenciadorSinaisVitais = () => {
     setModalAberto(true);
   };
   
-  // Abrir modal para editar sinal vital existente
   const abrirModalEditar = (sinalVital: SinalVital) => {
     setFormSinalVital({...sinalVital});
     setEditandoId(sinalVital.id || null);
     setModalAberto(true);
   };
   
-  // Adicionar valor de referência
   const adicionarValorReferencia = () => {
     setFormSinalVital({
       ...formSinalVital,
@@ -133,7 +128,6 @@ const GerenciadorSinaisVitais = () => {
     });
   };
   
-  // Remover valor de referência
   const removerValorReferencia = (index: number) => {
     const novosValores = [...formSinalVital.valoresReferencia];
     novosValores.splice(index, 1);
@@ -143,7 +137,6 @@ const GerenciadorSinaisVitais = () => {
     });
   };
   
-  // Atualizar valor de referência
   const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
     const novosValores = [...formSinalVital.valoresReferencia];
     novosValores[index] = {
@@ -156,7 +149,6 @@ const GerenciadorSinaisVitais = () => {
     });
   };
   
-  // Salvar sinal vital (criar novo ou atualizar existente)
   const salvarSinalVital = async () => {
     try {
       if (!formSinalVital.nome.trim()) {
@@ -178,7 +170,6 @@ const GerenciadorSinaisVitais = () => {
       }
       
       if (editandoId) {
-        // Atualizar existente
         const sinalVitalRef = doc(db, 'sinaisVitais', editandoId);
         await updateDoc(sinalVitalRef, {
           ...formSinalVital,
@@ -190,12 +181,10 @@ const GerenciadorSinaisVitais = () => {
           description: `${formSinalVital.nome} foi atualizado com sucesso.`
         });
         
-        // Atualizar lista
         setSinaisVitais(prev => 
           prev.map(sv => sv.id === editandoId ? {...formSinalVital, id: editandoId, updatedAt: new Date() as any} : sv)
         );
       } else {
-        // Criar novo
         const novoSinalVital = {
           ...formSinalVital,
           createdAt: serverTimestamp(),
@@ -209,7 +198,6 @@ const GerenciadorSinaisVitais = () => {
           description: `${formSinalVital.nome} foi criado com sucesso.`
         });
         
-        // Adicionar à lista
         setSinaisVitais(prev => [...prev, {...novoSinalVital, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
       }
       
@@ -224,7 +212,6 @@ const GerenciadorSinaisVitais = () => {
     }
   };
   
-  // Excluir sinal vital
   const excluirSinalVital = async (id: string) => {
     if (confirm("Tem certeza que deseja excluir este sinal vital? Esta ação não pode ser desfeita.")) {
       try {
@@ -235,7 +222,6 @@ const GerenciadorSinaisVitais = () => {
           description: "O sinal vital foi excluído com sucesso."
         });
         
-        // Remover da lista
         setSinaisVitais(prev => prev.filter(sv => sv.id !== id));
       } catch (error) {
         console.error("Erro ao excluir sinal vital:", error);
@@ -307,7 +293,6 @@ const GerenciadorSinaisVitais = () => {
         )}
       </CardContent>
       
-      {/* Modal para criar/editar sinal vital */}
       <Dialog open={modalAberto} onOpenChange={setModalAberto}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
