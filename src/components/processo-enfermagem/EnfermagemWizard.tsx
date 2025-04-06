@@ -287,7 +287,7 @@ export function EnfermageWizard({
       console.error("Erro ao finalizar evolução:", error);
       toast({
         title: "Erro ao finalizar",
-        description: "Não foi possível finalizar a evolução. Tente novamente.",
+        description: "Não foi possível finalizar a evolução! Tente novamente.",
         variant: "destructive"
       });
     } finally {
