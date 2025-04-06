@@ -59,7 +59,7 @@ export interface Paciente {
   profissionalUid: string;
   profissionalNome: string;
   dataCadastro: Timestamp;
-  dataAtualizacao?: Timestamp;
+  dataAtualizacao?: Timestamp | FieldValue;
   evolucoes?: Evolucao[];
 }
 
@@ -101,6 +101,8 @@ export interface ValorReferencia {
   sexo?: 'Masculino' | 'Feminino' | 'Todos';
   valorMinimo?: number;
   valorMaximo?: number;
+  valorTexto?: string;
+  tipoValor?: 'Numérico' | 'Texto';
   unidade: string;
   nhbId?: string;
   diagnosticoId?: string;
@@ -171,6 +173,15 @@ export interface ProtocoloEnfermagem {
   linkImagem?: string;
   descricao: string;
   linkPdf: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SubconjuntoDiagnostico {
+  id?: string;
+  tipo: 'NHB' | 'Protocolo';
+  nome: string;
+  descricao?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Plus, Edit, Trash2, Check, X, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -56,22 +57,13 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ValorReferencia, NHB, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { ValorReferencia, NHB, DiagnosticoCompleto, SinalVital, SubconjuntoDiagnostico } from '@/services/bancodados/tipos';
 import { useForm } from 'react-hook-form';
-
-interface SinalVital {
-  id?: string;
-  nome: string;
-  diferencaSexoIdade: boolean;
-  valoresReferencia: ValorReferencia[];
-  createdAt?: any;
-  updatedAt?: any;
-}
 
 const GerenciadorSinaisVitais = () => {
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
-  const [nhbs, setNhbs] = useState<NHB[]>([]);
+  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -86,7 +78,8 @@ const GerenciadorSinaisVitais = () => {
     valoresReferencia: [{ 
       unidade: '',
       representaAlteracao: false,
-      variacaoPor: 'Nenhum'
+      variacaoPor: 'Nenhum',
+      tipoValor: 'Numérico'
     }]
   });
   
@@ -103,18 +96,20 @@ const GerenciadorSinaisVitais = () => {
         })) as SinalVital[];
         setSinaisVitais(sinaisData);
         
-        // Carregar NHBs
-        const nhbsRef = collection(db, 'nhbs');
-        const nhbsSnapshot = await getDocs(nhbsRef);
-        const nhbsData = nhbsSnapshot.docs.map(doc => ({
+        // Carregar subconjuntos (NHBs)
+        const subconjuntosRef = query(
+          collection(db, 'subconjuntosDiagnosticos'), 
+          where('tipo', '==', 'NHB')
+        );
+        const subconjuntosSnapshot = await getDocs(subconjuntosRef);
+        const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
           id: doc.id,
-          nome: doc.data().nome,
-          descricao: doc.data().descricao
-        })) as NHB[];
-        setNhbs(nhbsData);
+          ...doc.data()
+        })) as SubconjuntoDiagnostico[];
+        setSubconjuntos(subconjuntosData);
 
         // Carregar Diagnósticos
-        const diagnosticosRef = collection(db, 'diagnosticos');
+        const diagnosticosRef = collection(db, 'diagnosticosEnfermagem');
         const diagnosticosSnapshot = await getDocs(diagnosticosRef);
         const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
           id: doc.id,
@@ -139,10 +134,7 @@ const GerenciadorSinaisVitais = () => {
   // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
     if (nhbSelecionada) {
-      const filtrados = diagnosticos.filter(d => 
-        d.subconjunto === 'Necessidades Humanas Básicas' && 
-        d.subitemId === nhbSelecionada
-      );
+      const filtrados = diagnosticos.filter(d => d.subitemId === nhbSelecionada);
       setDiagnosticosFiltrados(filtrados);
     } else {
       setDiagnosticosFiltrados([]);
@@ -157,7 +149,8 @@ const GerenciadorSinaisVitais = () => {
       valoresReferencia: [{ 
         unidade: '', 
         representaAlteracao: false,
-        variacaoPor: 'Nenhum'
+        variacaoPor: 'Nenhum',
+        tipoValor: 'Numérico'
       }]
     });
     setEditandoId(null);
@@ -170,7 +163,8 @@ const GerenciadorSinaisVitais = () => {
     const valoresAtualizados = sinal.valoresReferencia.map(valor => ({
       ...valor,
       representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
-      variacaoPor: valor.variacaoPor || 'Nenhum'
+      variacaoPor: valor.variacaoPor || 'Nenhum',
+      tipoValor: valor.valorTexto ? 'Texto' : 'Numérico'
     }));
 
     setFormSinal({
@@ -179,13 +173,6 @@ const GerenciadorSinaisVitais = () => {
     });
     setEditandoId(sinal.id || null);
     setModalAberto(true);
-
-    // Restaurar a NHB selecionada se houver
-    if (sinal.valoresReferencia.length > 0 && sinal.valoresReferencia[0].nhbId) {
-      setNhbSelecionada(sinal.valoresReferencia[0].nhbId);
-    } else {
-      setNhbSelecionada(null);
-    }
   };
   
   // Adicionar valor de referência
@@ -197,7 +184,8 @@ const GerenciadorSinaisVitais = () => {
         { 
           unidade: '', 
           representaAlteracao: false,
-          variacaoPor: 'Nenhum'
+          variacaoPor: 'Nenhum',
+          tipoValor: 'Numérico'
         }
       ]
     });
@@ -221,6 +209,17 @@ const GerenciadorSinaisVitais = () => {
       [campo]: valor
     };
 
+    // Quando o tipo de valor muda, ajustar os campos correspondentes
+    if (campo === 'tipoValor') {
+      if (valor === 'Texto') {
+        novosValores[index].valorTexto = '';
+        novosValores[index].valorMinimo = undefined;
+        novosValores[index].valorMaximo = undefined;
+      } else {
+        novosValores[index].valorTexto = undefined;
+      }
+    }
+
     // Quando a variação muda, ajustamos os campos necessários
     if (campo === 'variacaoPor') {
       if (valor === 'Nenhum') {
@@ -242,6 +241,13 @@ const GerenciadorSinaisVitais = () => {
       // 'Ambos' mantém todos os campos
     }
 
+    // Se desmarcar "representa alteração", limpar os campos relacionados
+    if (campo === 'representaAlteracao' && valor === false) {
+      delete novosValores[index].tituloAlteracao;
+      delete novosValores[index].nhbId;
+      delete novosValores[index].diagnosticoId;
+    }
+
     setFormSinal({
       ...formSinal,
       valoresReferencia: novosValores
@@ -249,8 +255,20 @@ const GerenciadorSinaisVitais = () => {
   };
 
   // Atualizar NHB selecionada
-  const handleNhbChange = (nhbId: string) => {
+  const handleNhbChange = (index: number, nhbId: string) => {
     setNhbSelecionada(nhbId);
+    
+    const novosValores = [...formSinal.valoresReferencia];
+    novosValores[index] = {
+      ...novosValores[index],
+      nhbId: nhbId,
+      diagnosticoId: undefined // Limpar diagnóstico quando mudar a NHB
+    };
+    
+    setFormSinal({
+      ...formSinal,
+      valoresReferencia: novosValores
+    });
   };
 
   // Atualizar diagnóstico selecionado
@@ -316,13 +334,54 @@ const GerenciadorSinaisVitais = () => {
           }
         }
 
-        if (valor.representaAlteracao && !valor.tituloAlteracao?.trim()) {
-          toast({
-            title: "Campo obrigatório",
-            description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
-            variant: "destructive"
-          });
-          return;
+        // Validar campos do tipo de valor
+        if (valor.tipoValor === 'Numérico') {
+          if (valor.valorMinimo === undefined && valor.valorMaximo === undefined) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Pelo menos um valor (mínimo ou máximo) é obrigatório para valores numéricos.",
+              variant: "destructive"
+            });
+            return;
+          }
+        } else if (valor.tipoValor === 'Texto') {
+          if (!valor.valorTexto?.trim()) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Valor textual é obrigatório quando o tipo é texto.",
+              variant: "destructive"
+            });
+            return;
+          }
+        }
+
+        if (valor.representaAlteracao) {
+          if (!valor.tituloAlteracao?.trim()) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!valor.nhbId) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!valor.diagnosticoId) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
+              variant: "destructive"
+            });
+            return;
+          }
         }
       }
       
@@ -341,7 +400,7 @@ const GerenciadorSinaisVitais = () => {
         
         // Atualizar lista
         setSinaisVitais(prev => 
-          prev.map(s => s.id === editandoId ? {...formSinal, id: editandoId, updatedAt: new Date()} : s)
+          prev.map(s => s.id === editandoId ? {...formSinal, id: editandoId, updatedAt: new Date() as any} : s)
         );
       } else {
         // Criar novo
@@ -359,7 +418,7 @@ const GerenciadorSinaisVitais = () => {
         });
         
         // Adicionar à lista
-        setSinaisVitais(prev => [...prev, {...novoSinal, id: docRef.id, createdAt: new Date(), updatedAt: new Date()}]);
+        setSinaisVitais(prev => [...prev, {...novoSinal, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
       }
       
       setModalAberto(false);
@@ -499,6 +558,58 @@ const GerenciadorSinaisVitais = () => {
                       )}
                     </div>
                     
+                    {/* Tipo de valor: Numérico ou Textual */}
+                    <div className="grid gap-2">
+                      <Label>O valor é numérico ou textual?</Label>
+                      <RadioGroup 
+                        value={valor.tipoValor || 'Numérico'} 
+                        onValueChange={(v) => atualizarValorReferencia(index, 'tipoValor', v)}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Numérico" id={`numerico-${index}`} />
+                          <Label htmlFor={`numerico-${index}`}>Numérico</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Texto" id={`texto-${index}`} />
+                          <Label htmlFor={`texto-${index}`}>Textual</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    {/* Campos condicionais baseados no tipo de valor */}
+                    {valor.tipoValor === 'Numérico' ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-2">
+                          <Label>Valor Mínimo</Label>
+                          <Input
+                            type="number"
+                            value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="Ex: 120"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Valor Máximo</Label>
+                          <Input
+                            type="number"
+                            value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : undefined)}
+                            placeholder="Ex: 139"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid gap-2">
+                        <Label>Valor Textual</Label>
+                        <Input
+                          value={valor.valorTexto || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'valorTexto', e.target.value)}
+                          placeholder="Ex: Normal, Presente, Ausente, etc."
+                        />
+                      </div>
+                    )}
+                    
                     <div className="grid gap-2">
                       <Label>Varia por</Label>
                       <Select
@@ -559,27 +670,6 @@ const GerenciadorSinaisVitais = () => {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="grid gap-2">
-                        <Label>Valor Mínimo</Label>
-                        <Input
-                          type="number"
-                          value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', Number(e.target.value))}
-                          placeholder="Ex: 120"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Valor Máximo</Label>
-                        <Input
-                          type="number"
-                          value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', Number(e.target.value))}
-                          placeholder="Ex: 139"
-                        />
-                      </div>
-                    </div>
-                    
                     <div className="grid gap-2">
                       <Label>Unidade</Label>
                       <Input
@@ -617,71 +707,73 @@ const GerenciadorSinaisVitais = () => {
                     </div>
                     
                     {valor.representaAlteracao && (
-                      <div className="grid gap-2">
-                        <Label>Título da Alteração</Label>
-                        <Input
-                          value={valor.tituloAlteracao || ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
-                          placeholder="Ex: Hipertensão, Hipotensão, etc."
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-2 border-t pt-3 mt-2">
-                      <Label>Vínculo com Diagnóstico</Label>
-                      
-                      <div className="grid gap-3">
-                        <div>
-                          <Label className="text-sm text-muted-foreground mb-1 block">
-                            1. Selecione uma NHB
-                          </Label>
-                          <Select
-                            value={nhbSelecionada || ''}
-                            onValueChange={handleNhbChange}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione uma NHB" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {nhbs.map((nhb) => (
-                                <SelectItem key={nhb.id} value={nhb.id!}>
-                                  {nhb.nome}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                      <>
+                        <div className="grid gap-2">
+                          <Label>Título da Alteração</Label>
+                          <Input
+                            value={valor.tituloAlteracao || ''}
+                            onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
+                            placeholder="Ex: Hipertensão, Hipotensão, etc."
+                          />
                         </div>
                         
-                        {nhbSelecionada && (
-                          <div>
-                            <Label className="text-sm text-muted-foreground mb-1 block">
-                              2. Selecione um Diagnóstico
-                            </Label>
-                            <Select
-                              value={valor.diagnosticoId || ''}
-                              onValueChange={(v) => handleDiagnosticoChange(index, v)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione um diagnóstico" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {diagnosticosFiltrados.length > 0 ? (
-                                  diagnosticosFiltrados.map((diag) => (
-                                    <SelectItem key={diag.id} value={diag.id!}>
-                                      {diag.descricao}
+                        <div className="grid gap-2 border-t pt-3 mt-2">
+                          <Label>Vínculo com Diagnóstico</Label>
+                          
+                          <div className="grid gap-3">
+                            <div>
+                              <Label className="text-sm text-muted-foreground mb-1 block">
+                                1. Selecione uma Necessidade Humana Básica (NHB)
+                              </Label>
+                              <Select
+                                value={valor.nhbId || ''}
+                                onValueChange={(v) => handleNhbChange(index, v)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione uma NHB" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {subconjuntos.map((nhb) => (
+                                    <SelectItem key={nhb.id} value={nhb.id!}>
+                                      {nhb.nome}
                                     </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="" disabled>
-                                    Nenhum diagnóstico disponível para esta NHB
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {valor.nhbId && (
+                              <div>
+                                <Label className="text-sm text-muted-foreground mb-1 block">
+                                  2. Selecione um Diagnóstico
+                                </Label>
+                                <Select
+                                  value={valor.diagnosticoId || ''}
+                                  onValueChange={(v) => handleDiagnosticoChange(index, v)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um diagnóstico" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {diagnosticosFiltrados.length > 0 ? (
+                                      diagnosticosFiltrados.map((diag) => (
+                                        <SelectItem key={diag.id} value={diag.id!}>
+                                          {diag.descricao}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="placeholder" disabled>
+                                        Nenhum diagnóstico disponível para esta NHB
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </Card>
               ))}
