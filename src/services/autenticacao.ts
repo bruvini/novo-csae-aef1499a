@@ -35,8 +35,12 @@ export function useAutenticacao() {
   };
 
   const salvarSessao = (dados: SessaoUsuario) => {
-    console.log("Salvando sessão do usuário:", dados);
+    console.log("Salvando sessão do usuário com tipo:", dados.tipoUsuario);
     localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
+    
+    // Verificar se a sessão foi salva corretamente
+    const sessaoSalva = localStorage.getItem('sessaoUsuario');
+    console.log("Verificação da sessão salva:", sessaoSalva ? JSON.parse(sessaoSalva) : null);
   };
 
   const limparSessao = () => {
@@ -157,6 +161,8 @@ export function useAutenticacao() {
         
         if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
           console.log("Usuário aprovado, criando sessão");
+          console.log("Tipo de usuário:", usuarioFirestore.tipoUsuario || 'Comum');
+          
           const dadosSessao: SessaoUsuario = {
             uid: usuarioFirestore.uid,
             email: usuarioFirestore.email,
@@ -194,6 +200,7 @@ export function useAutenticacao() {
     const sessao = obterSessao();
     const resultado = sessao?.tipoUsuario === 'Administrador';
     console.log("Verificação de permissão admin:", resultado);
+    console.log("Detalhes da sessão para verificação admin:", sessao);
     return resultado;
   };
 

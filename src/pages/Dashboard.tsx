@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
@@ -10,11 +11,12 @@ import {
   Bandage, 
   BookOpen, 
   Newspaper, 
-  Lightbulb,  // Corrected from LightBulb to Lightbulb
+  Lightbulb, 
   Info, 
   HelpCircle, 
   Users, 
-  BarChart
+  BarChart,
+  Settings
 } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
 
@@ -119,6 +121,13 @@ const Dashboard = () => {
               >
                 <BarChart className="h-4 w-4" />
                 Relatórios de Uso
+              </Button>
+              <Button 
+                className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2"
+                onClick={() => window.location.href = '/gerenciamento-enfermagem'}
+              >
+                <Settings className="h-4 w-4" />
+                Gerenciamento de Conteúdos
               </Button>
             </CardContent>
           </Card>
