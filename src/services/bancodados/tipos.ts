@@ -1,4 +1,3 @@
-
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface DadosPessoais {
@@ -130,14 +129,6 @@ export interface ExameLaboratorial {
   updatedAt?: Timestamp;
 }
 
-export interface SistemaCorporal {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
 export interface RevisaoSistema {
   id?: string;
   nome: string;
@@ -145,6 +136,14 @@ export interface RevisaoSistema {
   sistemaNome: string;
   diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SistemaCorporal {
+  id?: string;
+  nome: string;
+  descricao?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -210,4 +209,4 @@ export interface Subconjunto {
   updatedAt?: Timestamp | FieldValue;
 }
 
-// Removido o tipo duplicado SubconjuntoDiagnostico
+export type SubconjuntoDiagnostico = Subconjunto;

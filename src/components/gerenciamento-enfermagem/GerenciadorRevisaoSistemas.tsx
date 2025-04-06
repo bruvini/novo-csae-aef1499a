@@ -50,11 +50,8 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import { 
-  Subconjunto,
-  DiagnosticoCompleto,
-  SistemaCorporal,
-  RevisaoSistema,
-  ValorReferencia
+  Subconjunto, 
+  DiagnosticoCompleto 
 } from '@/services/bancodados/tipos';
 
 const GerenciadorRevisaoSistemas = () => {
