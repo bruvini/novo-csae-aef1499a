@@ -17,7 +17,9 @@ import {
   Users, 
   BarChart,
   Settings,
-  GraduationCap
+  GraduationCap,
+  Clock,
+  Baby
 } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
 import { Link } from 'react-router-dom';
@@ -92,6 +94,13 @@ const Dashboard = () => {
       icon: GraduationCap,
       href: '/minicurso-cipe'
     },
+    {
+      id: 10,
+      title: 'Acompanhamento Perinatal',
+      description: 'Gestão integral do cuidado à gestante, puérpera e criança',
+      icon: Baby,
+      href: '/acompanhamento-perinatal'
+    },
   ];
 
   return (
@@ -108,12 +117,20 @@ const Dashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link to="/minicurso-cipe">
-              <Button className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2">
-                <GraduationCap className="h-4 w-4" />
-                Acessar Minicurso CIPE
-              </Button>
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/minicurso-cipe">
+                <Button className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Acessar Minicurso CIPE
+                </Button>
+              </Link>
+              <Link to="/acompanhamento-perinatal">
+                <Button variant="outline" className="border-csae-green-300 hover:bg-csae-green-50 text-csae-green-700 flex items-center gap-2">
+                  <Baby className="h-4 w-4" />
+                  Acompanhamento Perinatal
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
         

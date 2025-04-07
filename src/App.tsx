@@ -14,6 +14,7 @@ import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
 import MinicursoCipe from "./pages/MinicursoCipe";
 import Timeline from "./pages/Timeline";
+import AcompanhamentoPerinatal from "./pages/AcompanhamentoPerinatal";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -50,6 +51,11 @@ const App = () => (
           <Route path="/protocolos" element={
             <RotaProtegida>
               <ProtocolosEnfermagem />
+            </RotaProtegida>
+          } />
+          <Route path="/acompanhamento-perinatal" element={
+            <RotaProtegida>
+              <AcompanhamentoPerinatal />
             </RotaProtegida>
           } />
           

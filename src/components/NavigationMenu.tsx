@@ -24,6 +24,7 @@ import {
   Settings,
   GraduationCap,
   Clock,
+  Baby
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -64,6 +65,13 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       title: "Protocolos de Enfermagem",
       icon: BookOpen,
       href: "/protocolos",
+      adminOnly: false,
+    },
+    {
+      id: "perinatal",
+      title: "Acompanhamento Perinatal",
+      icon: Baby,
+      href: "/acompanhamento-perinatal",
       adminOnly: false,
     },
     {
