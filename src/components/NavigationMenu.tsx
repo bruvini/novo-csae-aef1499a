@@ -125,9 +125,9 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     },
     {
       id: "sobre",
-      title: "Sobre a CSAE",
+      title: "Sobre Nós",
       icon: Info,
-      href: "/sobre",
+      href: "/timeline",
       adminOnly: false,
     },
     {
