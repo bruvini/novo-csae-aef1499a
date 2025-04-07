@@ -12,6 +12,7 @@ import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
+import MinicursoCipe from "./pages/MinicursoCipe";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/registrar" element={<Register />} />
+          <Route path="/minicurso-cipe" element={<MinicursoCipe />} />
           
           {/* Rotas protegidas - exigem autenticação */}
           <Route path="/dashboard" element={

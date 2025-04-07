@@ -16,9 +16,11 @@ import {
   HelpCircle, 
   Users, 
   BarChart,
-  Settings
+  Settings,
+  GraduationCap
 } from 'lucide-react';
 import { useAutenticacao } from '@/services/autenticacao';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   // Obtemos a sessão salva que contém os dados do usuário autenticado.
@@ -83,6 +85,13 @@ const Dashboard = () => {
       icon: HelpCircle,
       href: '/faq'
     },
+    {
+      id: 9,
+      title: 'Minicurso CIPE',
+      description: 'Aprenda a utilizar o Processo de Enfermagem com CIPE',
+      icon: GraduationCap,
+      href: '/minicurso-cipe'
+    },
   ];
 
   return (
@@ -98,6 +107,14 @@ const Dashboard = () => {
               Obrigado por utilizar o Portal CSAE Floripa 2.0. Ajude-nos a melhorar compartilhando esta ferramenta com seus colegas enfermeiros. Sua opinião é muito importante - não deixe de participar da pesquisa de satisfação quando aparecer o aviso.
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <Link to="/minicurso-cipe">
+              <Button className="bg-csae-green-600 hover:bg-csae-green-700 flex items-center gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Acessar Minicurso CIPE
+              </Button>
+            </Link>
+          </CardContent>
         </Card>
         
         {/* Seção para Administradores - exibida somente se o tipoUsuario for 'Administrador' */}

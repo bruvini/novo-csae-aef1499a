@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -21,6 +22,7 @@ import {
   HelpCircle,
   Users,
   Settings,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -75,6 +77,13 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       title: "Matriciamento de Feridas",
       icon: Bandage,
       href: "/feridas",
+      adminOnly: false,
+    },
+    {
+      id: "minicurso-cipe",
+      title: "Minicurso CIPE",
+      icon: GraduationCap,
+      href: "/minicurso-cipe",
       adminOnly: false,
     },
     {
