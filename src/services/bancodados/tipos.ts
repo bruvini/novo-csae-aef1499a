@@ -172,9 +172,9 @@ export interface DiagnosticoCompleto {
   subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
   subconjuntoId: string;
   subitemNome: string;
-  subitemId?: string;  // Adicionado campo que estava faltando
+  subitemId?: string;
   explicacao?: string;
-  descricao?: string;  // Adicionado campo que estava faltando
+  descricao?: string;
   resultadosEsperados: ResultadoEsperado[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -206,6 +206,32 @@ export interface Subconjunto {
   nome: string;
   tipo: 'Protocolo' | 'NHB';
   descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// Novas interfaces para CIPE
+export interface TermoCipe {
+  id?: string;
+  tipo: string;
+  termo: string;
+  descricao: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface CasoClinico {
+  id?: string;
+  tipoCaso: 'Diagnóstico' | 'Ações' | 'Resultados';
+  casoClinico: string;
+  focoEsperado: string | null;
+  julgamentoEsperado: string | null;
+  meioEsperado: string | null;
+  acaoEsperado: string | null;
+  tempoEsperado: string | null;
+  localizacaoEsperado: string | null;
+  clienteEsperado: string | null;
+  arrayVencedor: string[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
