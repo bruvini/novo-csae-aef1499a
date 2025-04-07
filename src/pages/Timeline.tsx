@@ -62,7 +62,7 @@ const Timeline = () => {
       <Header />
       <NavigationMenu />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 relative z-0">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -96,7 +96,7 @@ const Timeline = () => {
             )}
           </motion.div>
         ) : (
-          <div className="relative">
+          <div className="relative z-10">
             {/* Linha vertical central */}
             <div className="absolute left-1/2 transform -translate-x-1/2 h-full w-1 bg-csae-green-200 z-0 hidden md:block"></div>
             

@@ -28,14 +28,14 @@ import { PacientePerinatal } from '@/services/bancodados/tipos';
 const AcompanhamentoPerinatal: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { usuario, verificarLogado } = useAutenticacao();
-  
+  const { obterSessao } = useAutenticacao();
   const [openGerenciarPacientes, setOpenGerenciarPacientes] = useState(false);
   const [selectedTab, setSelectedTab] = useState('dashboard');
   const [pacienteEmVigilancia, setPacienteEmVigilancia] = useState<PacientePerinatal | null>(null);
 
   useEffect(() => {
-    if (!verificarLogado()) {
+    const sessao = obterSessao();
+    if (!sessao || sessao.statusAcesso !== "Aprovado") {
       toast({
         title: "Acesso restrito",
         description: "É necessário fazer login para acessar esta página.",
@@ -43,7 +43,7 @@ const AcompanhamentoPerinatal: React.FC = () => {
       });
       navigate("/");
     }
-  }, [verificarLogado, navigate, toast]);
+  }, [obterSessao, navigate, toast]);  
 
   const iniciarVigilancia = (paciente: PacientePerinatal) => {
     setPacienteEmVigilancia(paciente);
