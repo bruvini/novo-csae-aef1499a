@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -21,6 +22,9 @@ import {
   HelpCircle,
   Users,
   Settings,
+  GraduationCap,
+  Clock,
+  Baby
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -64,6 +68,13 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       adminOnly: false,
     },
     {
+      id: "perinatal",
+      title: "Acompanhamento Perinatal",
+      icon: Baby,
+      href: "/acompanhamento-perinatal",
+      adminOnly: false,
+    },
+    {
       id: "pops",
       title: "POPs",
       icon: FileText,
@@ -75,6 +86,20 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       title: "Matriciamento de Feridas",
       icon: Bandage,
       href: "/feridas",
+      adminOnly: false,
+    },
+    {
+      id: "minicurso-cipe",
+      title: "Minicurso CIPE",
+      icon: GraduationCap,
+      href: "/minicurso-cipe",
+      adminOnly: false,
+    },
+    {
+      id: "timeline",
+      title: "Nossa História",
+      icon: Clock,
+      href: "/timeline",
       adminOnly: false,
     },
     {
@@ -100,9 +125,9 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     },
     {
       id: "sobre",
-      title: "Sobre a CSAE",
+      title: "Sobre Nós",
       icon: Info,
-      href: "/sobre",
+      href: "/timeline",
       adminOnly: false,
     },
     {
