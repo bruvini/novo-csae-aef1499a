@@ -23,6 +23,7 @@ import {
   Users,
   Settings,
   GraduationCap,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -84,6 +85,13 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       title: "Minicurso CIPE",
       icon: GraduationCap,
       href: "/minicurso-cipe",
+      adminOnly: false,
+    },
+    {
+      id: "timeline",
+      title: "Nossa História",
+      icon: Clock,
+      href: "/timeline",
       adminOnly: false,
     },
     {

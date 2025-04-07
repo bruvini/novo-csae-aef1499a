@@ -13,6 +13,7 @@ import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
 import MinicursoCipe from "./pages/MinicursoCipe";
+import Timeline from "./pages/Timeline";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/registrar" element={<Register />} />
           <Route path="/minicurso-cipe" element={<MinicursoCipe />} />
+          <Route path="/timeline" element={<Timeline />} />
           
           {/* Rotas protegidas - exigem autenticação */}
           <Route path="/dashboard" element={
