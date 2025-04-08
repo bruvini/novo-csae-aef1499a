@@ -1,15 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/services/autenticacao';
 import { buscarTermosCipe } from '@/services/bancodados/cipeDB';
-import { CasoClinico } from '@/services/bancodados/tipos';
-import CursoSidebar, { CursoSidebarProps } from '@/components/minicurso-cipe/CursoSidebar';
+import { CasoClinico } from '@/types/cipe';
+import CursoSidebar from '@/components/minicurso-cipe/CursoSidebar';
 import ModuloIntroducao from '@/components/minicurso-cipe/ModuloIntroducao';
 import ModuloEixo from '@/components/minicurso-cipe/ModuloEixo';
 import ModuloElaboracao from '@/components/minicurso-cipe/ModuloElaboracao';
 import ModuloExercicios from '@/components/minicurso-cipe/ModuloExercicios';
-// Importe adequadamente o componente Header
 import Header from '@/components/Header';
 
 const MinicursoCipe: React.FC = () => {
@@ -35,8 +35,16 @@ const MinicursoCipe: React.FC = () => {
 
   useEffect(() => {
     const carregarTermosCipe = async () => {
-      const termos = await buscarTermosCipe();
-      setTermosCipe(termos);
+      const termos = await buscarTermosCipe("foco");
+      setTermosCipe({
+        eixoFoco: termos,
+        eixoJulgamento: [],
+        eixoMeios: [],
+        eixoAcao: [],
+        eixoTempo: [],
+        eixoLocalizacao: [],
+        eixoCliente: []
+      });
     };
 
     carregarTermosCipe();

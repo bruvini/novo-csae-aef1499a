@@ -1,7 +1,7 @@
 
 import { collection, doc, getDoc, getDocs, updateDoc, arrayUnion, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { TermoCipe, CasoClinico } from '../bancodados/tipos';
+import { TermoCipe, CasoClinico } from '@/types/cipe';
 
 // Implementação para buscar termos CIPE
 export const buscarTermosCipe = async (tipo: string): Promise<TermoCipe[]> => {

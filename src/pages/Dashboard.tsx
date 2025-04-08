@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
+import Header from '@/components/Header';
+import MainFooter from '@/components/MainFooter';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -152,12 +154,7 @@ const Dashboard = () => {
       <Header />
 
       {showFeedback && usuario && (
-        <FeedbackPopup 
-          userName={userName}
-          accessCount={accessCount} 
-          uid={usuario.uid}
-          onClose={() => setShowFeedback(false)} 
-        />
+        <FeedbackPopup />
       )}
 
       <motion.main
