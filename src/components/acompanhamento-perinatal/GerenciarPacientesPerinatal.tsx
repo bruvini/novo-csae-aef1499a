@@ -1,48 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
+  DialogFooter
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
-import { 
-  UserRound, 
-  Baby, 
-  PlusCircle, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  Search, 
-  AlertCircle,
-  X,
-  Calendar
-} from 'lucide-react';
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  serverTimestamp, 
-  deleteDoc,
-  doc,
-  updateDoc,
-  Timestamp
-} from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { useAutenticacao } from '@/services/autenticacao';
-import { PacientePerinatal } from '@/services/bancodados/tipos';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { CardTitle, Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import CadastroPacientePerinatal from './CadastroPacientePerinatal';
+import { useAutenticacao } from '@/services/autenticacao';
+import { PacientePerinatal } from '@/services/bancodados/tipos';
+import {
+  buscarPacientesPerinatalPorProfissional,
+  excluirPacientePerinatal
+} from '@/services/bancodados';
 
 interface GerenciarPacientesPerinatalProps {
   open: boolean;
@@ -74,17 +54,7 @@ const GerenciarPacientesPerinatal: React.FC<GerenciarPacientesPerinatalProps> = 
     try {
       if (!usuario) return;
       
-      const q = query(
-        collection(db, "cuidadoPerinatal"),
-        where("profissionalUid", "==", usuario.uid)
-      );
-      
-      const snapshot = await getDocs(q);
-      const pacientesData: PacientePerinatal[] = [];
-      
-      snapshot.forEach((doc) => {
-        pacientesData.push({ id: doc.id, ...doc.data() } as PacientePerinatal);
-      });
+      const pacientesData = await buscarPacientesPerinatalPorProfissional(usuario.uid);
       
       setPacientes(pacientesData);
     } catch (error) {
@@ -103,7 +73,7 @@ const GerenciarPacientesPerinatal: React.FC<GerenciarPacientesPerinatalProps> = 
         return;
       }
 
-      await deleteDoc(doc(db, "cuidadoPerinatal", id));
+      await excluirPacientePerinatal(id);
       
       setPacientes(pacientes.filter((p) => p.id !== id));
       

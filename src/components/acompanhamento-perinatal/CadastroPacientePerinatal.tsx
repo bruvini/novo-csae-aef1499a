@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
@@ -14,6 +15,40 @@ import { useAutenticacao } from '@/services/autenticacao';
 import { PacientePerinatal } from '@/services/bancodados/tipos';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { 
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage 
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  doc,
+  collection,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
+import { db } from '@/services/firebase';
+import {
+  Baby,
+  Save,
+  ArrowLeft
+} from 'lucide-react';
 
 const formSchemaMulher = z.object({
   nome: z.string().min(3, "Nome completo é obrigatório"),

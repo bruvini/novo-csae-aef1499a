@@ -1,32 +1,43 @@
-import { useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { 
+  User, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User
+  onAuthStateChanged, 
+  signOut,
+  sendPasswordResetEmail,
+  sendEmailVerification,
+  Auth
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { buscarUsuarioPorUid } from './bancodados';
+import { buscarUsuarioPorUid, registrarAcesso } from './bancodados';
 
 export interface UsuarioAutenticado {
   uid: string;
   email: string | null;
+  nome?: string;
+  tipoUsuario?: 'Administrador' | 'Comum';
+  lotacao?: string;
+  matricula?: string;
+  observacoes?: string;
 }
 
 export interface SessaoUsuario {
   uid: string;
-  email: string;
   nomeUsuario: string;
-  tipoUsuario: 'Administrador' | 'Comum';
-  statusAcesso: string;
+  email: string;
+  tipoUsuario?: 'Administrador' | 'Comum';
+  dataExpiracao: number;
+  lotacao?: string;
+  matricula?: string;
+  observacoes?: string;
+  id?: string;
 }
 
 export function useAutenticacao() {
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Função para obter a sessão do localStorage
   const obterSessao = (): SessaoUsuario | null => {
     const sessao = localStorage.getItem('sessaoUsuario');
     const resultado = sessao ? JSON.parse(sessao) : null;
@@ -38,7 +49,6 @@ export function useAutenticacao() {
     console.log("Salvando sessão do usuário com tipo:", dados.tipoUsuario);
     localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
     
-    // Verificar se a sessão foi salva corretamente
     const sessaoSalva = localStorage.getItem('sessaoUsuario');
     console.log("Verificação da sessão salva:", sessaoSalva ? JSON.parse(sessaoSalva) : null);
   };
@@ -60,29 +70,29 @@ export function useAutenticacao() {
           email: usuarioFirebase.email
         });
         
-        // Verificar se já existe sessão no localStorage
         const sessaoExistente = obterSessao();
         console.log("Sessão existente:", sessaoExistente);
         
         if (!sessaoExistente) {
-          // Se não existir sessão, buscar os dados no Firestore para criar a sessão automaticamente
-          console.log("Usuário autenticado sem sessão, buscando dados do Firestore");
           buscarUsuarioPorUid(usuarioFirebase.uid)
             .then(usuarioFirestore => {
               if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-                console.log("Usuário aprovado, criando sessão automaticamente");
                 const dadosSessao: SessaoUsuario = {
                   uid: usuarioFirestore.uid,
                   email: usuarioFirestore.email,
                   nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
                   tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-                  statusAcesso: usuarioFirestore.statusAcesso
+                  statusAcesso: usuarioFirestore.statusAcesso,
+                  dataExpiracao: Date.now(),
+                  lotacao: usuarioFirestore.dadosPessoais.lotacao,
+                  matricula: usuarioFirestore.dadosPessoais.matricula,
+                  observacoes: usuarioFirestore.dadosPessoais.observacoes,
+                  id: usuarioFirestore.id
                 };
                 
                 salvarSessao(dadosSessao);
                 console.log("Sessão criada automaticamente:", dadosSessao);
                 
-                // Também salvar na localStorage para compatibilidade
                 localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
               } else {
                 console.log("Usuário não aprovado ou não encontrado no Firestore, não criando sessão");
@@ -168,7 +178,12 @@ export function useAutenticacao() {
             email: usuarioFirestore.email,
             nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
             tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-            statusAcesso: usuarioFirestore.statusAcesso
+            statusAcesso: usuarioFirestore.statusAcesso,
+            dataExpiracao: Date.now(),
+            lotacao: usuarioFirestore.dadosPessoais.lotacao,
+            matricula: usuarioFirestore.dadosPessoais.matricula,
+            observacoes: usuarioFirestore.dadosPessoais.observacoes,
+            id: usuarioFirestore.id
           };
           
           salvarSessao(dadosSessao);

@@ -4,7 +4,11 @@ import {
   updateDoc, 
   arrayUnion, 
   Timestamp,
-  getDoc
+  getDoc,
+  query,
+  collection,
+  where,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -52,8 +56,8 @@ export async function obterHistoricoAcessos(uid: string): Promise<Timestamp[]> {
       return [];
     }
     
-    const userData = docSnap.data();
-    return (userData.logAcessos || []) as Timestamp[];
+    const dados = docSnap.data();
+    return dados.logAcessos || [];
   } catch (error) {
     console.error("Erro ao obter histórico de acessos:", error);
     return [];
