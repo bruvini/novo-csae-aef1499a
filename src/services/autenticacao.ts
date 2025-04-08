@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { 
   User, 
@@ -10,7 +11,8 @@ import {
   Auth
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { buscarUsuarioPorUid, registrarAcesso } from './bancodados';
+import { buscarUsuarioPorUid } from './bancodados';
+import { registrarAcesso } from './bancodados/logAcessosDB';
 
 export interface UsuarioAutenticado {
   uid: string;
@@ -27,11 +29,12 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   email: string;
   tipoUsuario?: 'Administrador' | 'Comum';
-  dataExpiracao: number;
+  dataExpiracao?: number;
   lotacao?: string;
   matricula?: string;
   observacoes?: string;
   id?: string;
+  statusAcesso?: 'Aguardando' | 'Aprovado' | 'Negado' | 'Revogado' | 'Cancelado';
 }
 
 export function useAutenticacao() {
@@ -47,7 +50,12 @@ export function useAutenticacao() {
 
   const salvarSessao = (dados: SessaoUsuario) => {
     console.log("Salvando sessão do usuário com tipo:", dados.tipoUsuario);
-    localStorage.setItem('sessaoUsuario', JSON.stringify(dados));
+    // Definir um valor padrão para dataExpiracao se não for fornecido
+    const dadosCompletos = {
+      ...dados,
+      dataExpiracao: dados.dataExpiracao || Date.now() + 24 * 60 * 60 * 1000 // 24 horas por padrão
+    };
+    localStorage.setItem('sessaoUsuario', JSON.stringify(dadosCompletos));
     
     const sessaoSalva = localStorage.getItem('sessaoUsuario');
     console.log("Verificação da sessão salva:", sessaoSalva ? JSON.parse(sessaoSalva) : null);
@@ -83,12 +91,21 @@ export function useAutenticacao() {
                   nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
                   tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
                   statusAcesso: usuarioFirestore.statusAcesso,
-                  dataExpiracao: Date.now(),
-                  lotacao: usuarioFirestore.dadosPessoais.lotacao,
-                  matricula: usuarioFirestore.dadosPessoais.matricula,
-                  observacoes: usuarioFirestore.dadosPessoais.observacoes,
+                  dataExpiracao: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
                   id: usuarioFirestore.id
                 };
+                
+                if (usuarioFirestore.dadosPessoais.lotacao) {
+                  dadosSessao.lotacao = usuarioFirestore.dadosPessoais.lotacao;
+                }
+                
+                if (usuarioFirestore.dadosPessoais.matricula) {
+                  dadosSessao.matricula = usuarioFirestore.dadosPessoais.matricula;
+                }
+                
+                if (usuarioFirestore.dadosPessoais.observacoes) {
+                  dadosSessao.observacoes = usuarioFirestore.dadosPessoais.observacoes;
+                }
                 
                 salvarSessao(dadosSessao);
                 console.log("Sessão criada automaticamente:", dadosSessao);
@@ -179,12 +196,21 @@ export function useAutenticacao() {
             nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
             tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
             statusAcesso: usuarioFirestore.statusAcesso,
-            dataExpiracao: Date.now(),
-            lotacao: usuarioFirestore.dadosPessoais.lotacao,
-            matricula: usuarioFirestore.dadosPessoais.matricula,
-            observacoes: usuarioFirestore.dadosPessoais.observacoes,
+            dataExpiracao: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
             id: usuarioFirestore.id
           };
+          
+          if (usuarioFirestore.dadosPessoais.lotacao) {
+            dadosSessao.lotacao = usuarioFirestore.dadosPessoais.lotacao;
+          }
+          
+          if (usuarioFirestore.dadosPessoais.matricula) {
+            dadosSessao.matricula = usuarioFirestore.dadosPessoais.matricula;
+          }
+          
+          if (usuarioFirestore.dadosPessoais.observacoes) {
+            dadosSessao.observacoes = usuarioFirestore.dadosPessoais.observacoes;
+          }
           
           salvarSessao(dadosSessao);
           localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));

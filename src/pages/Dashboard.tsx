@@ -1,46 +1,12 @@
-
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import Header from "@/components/Header";
-import MainFooter from "@/components/MainFooter";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
-  ClipboardCheck,
-  FileText,
-  Bandage,
-  BookOpen,
-  Newspaper,
-  Lightbulb,
-  Info,
-  HelpCircle,
-  Users,
-  BarChart,
-  Settings,
-  GraduationCap,
-  Clock,
-  Baby,
-  ArrowRight,
-  User,
-  MessageSquare,
-} from "lucide-react";
-import { useAutenticacao } from "@/services/autenticacao";
-import { Link } from "react-router-dom";
-import { FeedbackPopup } from "@/components/dashboard/FeedbackPopup";
-import { obterHistoricoAcessos } from "@/services/bancodados";
+import React, { useState, useEffect } from 'react';
+import Header from '@/components/Header';
+import MainFooter from '@/components/MainFooter';
+import MenuCard from '@/components/MenuCard';
+import { useAutenticacao } from '@/services/autenticacao';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 
 // Animation variants
 const containerVariants = {
@@ -148,7 +114,6 @@ const toolsData = [
 ];
 
 const Dashboard = () => {
-  // Obtemos a sessão salva que contém os dados do usuário autenticado.
   const { obterSessao, usuario } = useAutenticacao();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
@@ -162,14 +127,12 @@ const Dashboard = () => {
       setUserName(firstName);
     }
 
-    // Verificar se precisa exibir o feedback popup
     const checkAccessCount = async () => {
       if (usuario?.uid) {
         const acessos = await obterHistoricoAcessos(usuario.uid);
         const count = acessos.length;
         setAccessCount(count);
         
-        // Exibir popup se o número de acessos for múltiplo de 5
         if (count > 0 && count % 5 === 0) {
           setShowFeedback(true);
         }

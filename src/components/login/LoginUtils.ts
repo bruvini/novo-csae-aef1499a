@@ -1,4 +1,3 @@
-
 import { useToast } from "@/hooks/use-toast";
 import { SessaoUsuario, useAutenticacao } from "@/services/autenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
@@ -113,7 +112,8 @@ export const useLoginHandler = () => {
         email: usuarioFirestore.email,
         nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
         tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-        statusAcesso: usuarioFirestore.statusAcesso
+        statusAcesso: usuarioFirestore.statusAcesso,
+        dataExpiracao: Date.now() + 24 * 60 * 60 * 1000 // 24 horas
       };
       
       console.log("Salvando sessão:", dadosSessao);

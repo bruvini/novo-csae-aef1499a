@@ -1,4 +1,3 @@
-
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface DadosPessoais {
@@ -210,7 +209,15 @@ export interface Subconjunto {
   updatedAt?: Timestamp;
 }
 
-// Novas interfaces para CIPE
+export interface SubconjuntoDiagnostico {
+  id?: string;
+  nome: string;
+  tipo: 'Protocolo' | 'NHB';
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 export interface TermoCipe {
   id?: string;
   tipo: string;
@@ -236,7 +243,6 @@ export interface CasoClinico {
   updatedAt?: Timestamp;
 }
 
-// Interfaces para o Acompanhamento Perinatal
 export interface PacientePerinatal {
   id?: string;
   titulo: string;
@@ -249,15 +255,9 @@ export interface PacientePerinatal {
   dataCadastro: Timestamp;
   dataAtualizacao: Timestamp;
   
-  // Campos específicos para mulher
   situacaoObstetrica?: "Gestante" | "Puérpera";
   dataParto?: Timestamp;
-  idadeGestacional?: number; // Em semanas
-  
-  // Campos específicos para bebê
-  nomeMae?: string;
-  idadeGestacionalNascer?: number; // Em semanas
-  prematuro?: boolean;
+  idadeGestacional?: number;
 }
 
 export interface ConsultaPreNatal {
@@ -268,22 +268,20 @@ export interface ConsultaPreNatal {
   profissionalNome: string;
   tipoConsulta: "Primeira" | "Primeiro Trimestre" | "Segundo Trimestre" | "Terceiro Trimestre" | "Encerramento";
   
-  // Dados da consulta
-  idadeGestacional: number; // Em semanas
-  peso: number; // Em kg
-  altura?: number; // Em metros
+  idadeGestacional: number;
+  peso: number;
+  altura?: number;
   imc?: number;
-  pressaoArterial: string; // No formato "120/80"
+  pressaoArterial: string;
   edema?: "ausente" | "MMII" | "MMII e face" | "generalizado";
   movimentosFetais?: "presentes" | "ausentes";
-  batimentoCardiacoFetal?: number; // BPM
-  alturaPelvica?: number; // Em cm
+  batimentoCardiacoFetal?: number;
+  alturaPelvica?: number;
   examesRealizados?: { nome: string, resultado: string, data: Timestamp }[];
   orientacoesRealizadas: string[];
   prescricoes?: { medicamento: string, posologia: string, duracao: string }[];
   condutas: string[];
   
-  // Campos específicos para encerramento
   tipoEncerramento?: "Parto" | "Aborto";
   dataParto?: Timestamp;
   tipoParto?: "Normal" | "Cesárea" | "Fórceps";
@@ -301,9 +299,8 @@ export interface ConsultaPuerperio {
   tipoPuerperio: "Imediato" | "Tardio";
   diasPosParto: number;
   
-  // Dados da consulta
-  peso: number; // Em kg
-  pressaoArterial: string; // No formato "120/80"
+  peso: number;
+  pressaoArterial: string;
   temperatura?: number;
   mamas: "flácidas" | "túrgidas" | "ingurgitadas" | "mastite";
   mamilos: "íntegros" | "fissuras" | "escoriados";
@@ -325,16 +322,14 @@ export interface ConsultaPuericultura {
   dataConsulta: Timestamp;
   profissionalUid: string;
   profissionalNome: string;
-  idadeCrianca: string; // Ex: "5 dias", "1 mês", "2 meses" etc.
+  idadeCrianca: string;
   
-  // Dados antropométricos
-  peso: number; // Em kg
-  comprimento: number; // Em cm
-  perimetroCefalico: number; // Em cm
-  perimetroToracico?: number; // Em cm
+  peso: number;
+  comprimento: number;
+  perimetroCefalico: number;
+  perimetroToracico?: number;
   imc?: number;
   
-  // Avaliação do DNPM
   dnpm: {
     social?: string;
     motor?: string;
@@ -342,7 +337,6 @@ export interface ConsultaPuericultura {
     linguagem?: string;
   };
   
-  // Avaliação física
   avaliacaoFisica: {
     pele?: string;
     cabeca?: string;
@@ -357,7 +351,6 @@ export interface ConsultaPuericultura {
     coluna?: string;
   };
   
-  // Triagem e imunização
   triagem: {
     testeDoOlhinho?: "normal" | "alterado" | "não realizado";
     testeOrelhinha?: "normal" | "alterado" | "não realizado";
@@ -368,19 +361,15 @@ export interface ConsultaPuericultura {
   vacinacaoAtualizada: boolean;
   vacinasPendentes?: string[];
   
-  // Alimentação
   alimentacao: "aleitamento materno exclusivo" | "aleitamento misto" | "fórmula infantil" | "alimentação complementar" | "alimentação da família";
   dificuldadesAlimentacao?: string;
   
-  // Suplementação
   suplementacaoVitaminaA?: boolean;
   suplementacaoFerro?: boolean;
   suplementacaoOutros?: { suplemento: string, dose: string }[];
   
-  // Exames complementares
   examesRealizados?: { nome: string, resultado: string, data: Timestamp }[];
   
-  // Situações especiais
   situacoesEspeciais?: {
     prematuro?: boolean;
     HIV?: boolean;

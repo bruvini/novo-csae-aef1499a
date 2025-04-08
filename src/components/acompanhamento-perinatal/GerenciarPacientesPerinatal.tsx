@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Timestamp } from 'firebase/firestore';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +10,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import {
   Tabs,
@@ -15,14 +18,33 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { 
+  Card, 
+  CardContent, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  AlertCircle, 
+  Baby, 
+  Calendar, 
+  Eye, 
+  Pencil, 
+  PlusCircle, 
+  Search, 
+  Trash2, 
+  UserRound,
+  X
+} from 'lucide-react';
 import CadastroPacientePerinatal from './CadastroPacientePerinatal';
 import { useAutenticacao } from '@/services/autenticacao';
 import { PacientePerinatal } from '@/services/bancodados/tipos';
 import {
   buscarPacientesPerinatalPorProfissional,
   excluirPacientePerinatal
-} from '@/services/bancodados';
+} from '@/services/bancodados/perinatalDB';
 
 interface GerenciarPacientesPerinatalProps {
   open: boolean;
@@ -111,7 +133,6 @@ const GerenciarPacientesPerinatal: React.FC<GerenciarPacientesPerinatalProps> = 
       return true;
     }
 
-    // Verificar se passaram menos de 42 dias do parto
     const dataAtual = new Date();
     const dataParto = paciente.dataParto.toDate();
     const diffTime = Math.abs(dataAtual.getTime() - dataParto.getTime());
