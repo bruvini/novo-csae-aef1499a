@@ -1,12 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from '@/components/ui/tabs';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import Header from '@/components/Header';
+import NavigationMenuComponent from '@/components/NavigationMenu';
 import MainFooter from '@/components/MainFooter';
-import MenuCard from '@/components/MenuCard';
-import { useAutenticacao } from '@/services/autenticacao';
+import FeedbackPopup from '@/components/dashboard/FeedbackPopup';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
+import { useAutenticacao } from '@/services/autenticacao';
+import { 
+  ClipboardCheck, 
+  FileText, 
+  Bandage, 
+  BookOpen, 
+  Newspaper,
+  Lightbulb, 
+  Info, 
+  HelpCircle, 
+  GraduationCap,
+  Baby, 
+  Settings,
+  Users,
+  ArrowRight,
+  MessageSquare,
+  BarChart,
+  User
+} from 'lucide-react';
 
 // Animation variants
 const containerVariants = {

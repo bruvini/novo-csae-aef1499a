@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -29,6 +28,9 @@ export interface DadosPessoais {
   cidade: string;
   uf: string;
   cep: string;
+  lotacao?: string;
+  matricula?: string;
+  observacoes?: string;
 }
 
 export interface DadosProfissionais {

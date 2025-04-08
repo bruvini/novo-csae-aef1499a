@@ -1,23 +1,18 @@
+import React from 'react';
+import { CasoClinico, TermoCipe } from '@/services/bancodados/tipos';
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Check, RefreshCw } from 'lucide-react';
-import { CasoClinico } from '@/types/cipe';
-import ExercicioCasoClinico from './ExercicioCasoClinico';
-
-interface ModuloExerciciosProps {
+export interface ModuloExerciciosProps {
   casos: CasoClinico[];
-  termosFoco: string[];
-  termosJulgamento: string[];
-  termosMeios: string[];
-  termosAcao: string[];
-  termosLocalizacao: string[];
-  termosCliente: string[];
-  termosTempo: string[];
-  nomeUsuario: string;
+  termosFoco: TermoCipe[];
+  termosJulgamento: TermoCipe[];
+  termosMeios: TermoCipe[];
+  termosAcao: TermoCipe[];
+  termosTempo: TermoCipe[];
+  termosLocalizacao: TermoCipe[];
+  termosCliente: TermoCipe[];
   completado: boolean;
   onComplete: () => void;
+  userId: string;
 }
 
 const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({
@@ -29,39 +24,34 @@ const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({
   termosLocalizacao,
   termosCliente,
   termosTempo,
-  nomeUsuario,
   completado,
-  onComplete
+  onComplete,
+  userId
 }) => {
   const [casoAtivo, setCasoAtivo] = useState<CasoClinico | null>(null);
   const [casosVencidos, setCasosVencidos] = useState<string[]>([]);
   
   useEffect(() => {
-    // Inicializar com o primeiro caso disponível ou um caso aleatório
     if (casos.length > 0) {
-      // Filtrar casos ainda não vencidos pelo usuário
       const casosDisponíveis = casos.filter(
-        caso => !caso.arrayVencedor?.includes(nomeUsuario)
+        caso => !caso.arrayVencedor?.includes(userId)
       );
       
-      // Se houver casos ainda não vencidos, escolhe um deles
       if (casosDisponíveis.length > 0) {
         const indexAleatorio = Math.floor(Math.random() * casosDisponíveis.length);
         setCasoAtivo(casosDisponíveis[indexAleatorio]);
       } else if (casos.length > 0) {
-        // Se todos já foram vencidos, mostra um aleatório
         const indexAleatorio = Math.floor(Math.random() * casos.length);
         setCasoAtivo(casos[indexAleatorio]);
       }
       
-      // Inicializar a lista de casos já vencidos
       const vencidos = casos
-        .filter(caso => caso.arrayVencedor?.includes(nomeUsuario))
+        .filter(caso => caso.arrayVencedor?.includes(userId))
         .map(caso => caso.id || '');
       
       setCasosVencidos(vencidos.filter(Boolean));
     }
-  }, [casos, nomeUsuario]);
+  }, [casos, userId]);
 
   const handleCasoCompleto = () => {
     if (casoAtivo && casoAtivo.id) {
@@ -69,7 +59,6 @@ const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({
         setCasosVencidos(prev => [...prev, casoAtivo.id!]);
       }
       
-      // Se o usuário venceu pelo menos um terço dos casos disponíveis, o módulo está concluído
       const minimoParaConcluir = Math.ceil(casos.length / 3);
       if (casosVencidos.length + 1 >= minimoParaConcluir && !completado) {
         onComplete();
@@ -140,7 +129,7 @@ const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({
           termosLocalizacao={termosLocalizacao}
           termosCliente={termosCliente}
           termosTempo={termosTempo}
-          nomeUsuario={nomeUsuario}
+          nomeUsuario={userId}
           onCasoCompleto={handleCasoCompleto}
         />
       )}

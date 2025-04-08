@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -16,11 +15,12 @@ import {
 import { db } from '../firebase';
 import { format } from 'date-fns'; 
 import { 
-  PacientePerinatal, 
+  PacientePerinatal,
   ConsultaPreNatal, 
   ConsultaPuerperio, 
   ConsultaPuericultura 
-} from './tipos';
+} from '../../types/perinatal';
+import { castFieldValueToTimestamp } from '../../utils/firebaseHelpers';
 
 // Função para cadastrar novo paciente perinatal
 export async function cadastrarPacientePerinatal(paciente: Omit<PacientePerinatal, 'dataCadastro' | 'dataAtualizacao'>): Promise<string> {
