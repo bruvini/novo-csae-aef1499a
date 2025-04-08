@@ -16,20 +16,93 @@ import {
 import { db } from "../firebase";
 import { CasoClinico, TermoCipe, ProgressoCursoCipe } from "@/types/cipe";
 
-// Buscar todos os termos CIPE
-export const buscarTermosCipe = async () => {
+// Buscar termos CIPE por eixo
+export const buscarTermosCipePorEixo = async (eixo: string) => {
   try {
-    const docRef = doc(db, "termosCipe", "termos");
-    const docSnap = await getDoc(docRef);
+    const colecao = `eixo${eixo.charAt(0).toUpperCase() + eixo.slice(1)}`;
+    const termosCipeRef = collection(db, colecao);
+    const snapshot = await getDocs(termosCipeRef);
     
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      console.log("Nenhum termo CIPE encontrado!");
-      return null;
-    }
+    const termos: TermoCipe[] = [];
+    snapshot.forEach((doc) => {
+      termos.push({ id: doc.id, ...doc.data() } as TermoCipe);
+    });
+    
+    return termos;
   } catch (error) {
-    console.error("Erro ao buscar termos CIPE:", error);
+    console.error(`Erro ao buscar termos CIPE do eixo ${eixo}:`, error);
+    throw error;
+  }
+};
+
+// Obter todos os termos CIPE organizados por eixo
+export const obterTodosTermosCipe = async () => {
+  try {
+    const eixos = ['Foco', 'Julgamento', 'Meios', 'Acao', 'Tempo', 'Localizacao', 'Cliente'];
+    const resultado: Record<string, TermoCipe[]> = {};
+    
+    for (const eixo of eixos) {
+      const termos = await buscarTermosCipePorEixo(eixo);
+      const chaveEixo = `array${eixo}`;
+      resultado[chaveEixo] = termos;
+    }
+    
+    return resultado;
+  } catch (error) {
+    console.error("Erro ao obter todos os termos CIPE:", error);
+    throw error;
+  }
+};
+
+// Adicionar termo CIPE
+export const adicionarTermoCipe = async (eixo: string, termo: string, descricao: string) => {
+  try {
+    const colecao = `eixo${eixo.charAt(0).toUpperCase() + eixo.slice(1)}`;
+    
+    const docRef = await addDoc(collection(db, colecao), {
+      tipo: eixo,
+      termo: termo,
+      descricao: descricao,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return docRef.id;
+  } catch (error) {
+    console.error(`Erro ao adicionar termo ao eixo ${eixo}:`, error);
+    throw error;
+  }
+};
+
+// Atualizar termo CIPE
+export const atualizarTermoCipe = async (eixo: string, id: string, termo: string, descricao: string) => {
+  try {
+    const colecao = `eixo${eixo.charAt(0).toUpperCase() + eixo.slice(1)}`;
+    const docRef = doc(db, colecao, id);
+    
+    await updateDoc(docRef, {
+      termo: termo,
+      descricao: descricao,
+      updatedAt: serverTimestamp()
+    });
+    
+    return true;
+  } catch (error) {
+    console.error(`Erro ao atualizar termo no eixo ${eixo}:`, error);
+    throw error;
+  }
+};
+
+// Excluir termo CIPE
+export const excluirTermoCipe = async (eixo: string, id: string) => {
+  try {
+    const colecao = `eixo${eixo.charAt(0).toUpperCase() + eixo.slice(1)}`;
+    const docRef = doc(db, colecao, id);
+    
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error(`Erro ao excluir termo do eixo ${eixo}:`, error);
     throw error;
   }
 };

@@ -1,34 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from "@/components/ui/use-toast";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { UserRound, Baby, Calendar, Save, ArrowLeft } from 'lucide-react';
-import { Timestamp, addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { db } from '@/services/firebase';
 import { useAutenticacao } from '@/services/autenticacao';
 import { PacientePerinatal } from '@/services/bancodados/tipos';
 import { Alert, AlertDescription } from '@/components/ui/alert';

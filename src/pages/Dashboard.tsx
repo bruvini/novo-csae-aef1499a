@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
@@ -34,9 +35,12 @@ import {
   Baby,
   ArrowRight,
   User,
+  MessageSquare,
 } from "lucide-react";
 import { useAutenticacao } from "@/services/autenticacao";
 import { Link } from "react-router-dom";
+import { FeedbackPopup } from "@/components/dashboard/FeedbackPopup";
+import { obterHistoricoAcessos } from "@/services/bancodados";
 
 // Animation variants
 const containerVariants = {
@@ -145,9 +149,11 @@ const toolsData = [
 
 const Dashboard = () => {
   // Obtemos a sessão salva que contém os dados do usuário autenticado.
-  const { obterSessao } = useAutenticacao();
+  const { obterSessao, usuario } = useAutenticacao();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [accessCount, setAccessCount] = useState(0);
 
   useEffect(() => {
     const sessao = obterSessao();
@@ -155,11 +161,36 @@ const Dashboard = () => {
       const firstName = sessao.nomeUsuario.split(" ")[0];
       setUserName(firstName);
     }
-  }, [obterSessao]);
+
+    // Verificar se precisa exibir o feedback popup
+    const checkAccessCount = async () => {
+      if (usuario?.uid) {
+        const acessos = await obterHistoricoAcessos(usuario.uid);
+        const count = acessos.length;
+        setAccessCount(count);
+        
+        // Exibir popup se o número de acessos for múltiplo de 5
+        if (count > 0 && count % 5 === 0) {
+          setShowFeedback(true);
+        }
+      }
+    };
+
+    checkAccessCount();
+  }, [obterSessao, usuario]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
+
+      {showFeedback && usuario && (
+        <FeedbackPopup 
+          userName={userName}
+          accessCount={accessCount} 
+          uid={usuario.uid}
+          onClose={() => setShowFeedback(false)} 
+        />
+      )}
 
       <motion.main
         initial={{ opacity: 0 }}
@@ -175,8 +206,8 @@ const Dashboard = () => {
           className="mb-8"
         >
           <Card className="overflow-hidden">
-            <div className="relative">
-              <div className="p-6 md:p-8 md:max-w-[60%] bg-gradient-to-r from-csae-green-50 to-white">
+            <div className="relative flex flex-col md:flex-row">
+              <div className="p-6 md:p-8 md:w-[60%] bg-gradient-to-r from-csae-green-50 to-white">
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
@@ -206,14 +237,23 @@ const Dashboard = () => {
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </Button>
                     </Link>
+                    <Link to="/sugestoes">
+                      <Button
+                        variant="outline"
+                        className="border-csae-green-300 text-csae-green-700 hover:bg-csae-green-50 group"
+                      >
+                        Deixar uma sugestão
+                        <MessageSquare className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-[-2px]" />
+                      </Button>
+                    </Link>
                   </div>
                 </motion.div>
               </div>
-              <div className="absolute right-0 top-0 h-full w-[40%] hidden md:block">
+              <div className="md:w-[40%] p-4 flex items-center justify-center">
                 <img
                   src="/lovable-uploads/a3616818-d7e5-4c43-bcf2-e813b28f2a1e.png"
                   alt="Enfermeira com laptop mostrando o Portal CSAE"
-                  className="h-full w-full object-cover"
+                  className="w-full h-auto object-contain max-h-64"
                 />
               </div>
             </div>
