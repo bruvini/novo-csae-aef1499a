@@ -12,6 +12,7 @@ import GestaoUsuarios from "./pages/GestaoUsuarios";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
+import POPs from "./pages/POPs";
 import MinicursoCipe from "./pages/MinicursoCipe";
 import Timeline from "./pages/Timeline";
 import AcompanhamentoPerinatal from "./pages/AcompanhamentoPerinatal";
@@ -53,9 +54,19 @@ const App = () => (
               <ProtocolosEnfermagem />
             </RotaProtegida>
           } />
+          <Route path="/pops" element={
+            <RotaProtegida moduloNome="pops">
+              <POPs />
+            </RotaProtegida>
+          } />
           <Route path="/acompanhamento-perinatal" element={
-            <RotaProtegida>
+            <RotaProtegida moduloNome="acompanhamento-perinatal">
               <AcompanhamentoPerinatal />
+            </RotaProtegida>
+          } />
+          <Route path="/minicurso-cipe" element={
+            <RotaProtegida moduloNome="minicurso-cipe">
+              <MinicursoCipe />
             </RotaProtegida>
           } />
           

@@ -10,6 +10,8 @@ import GerenciadorRevisaoSistemas from '@/components/gerenciamento-enfermagem/Ge
 import GerenciadorDiagnosticos from '@/components/gerenciamento-enfermagem/GerenciadorDiagnosticos';
 import GerenciadorProtocolos from '@/components/gerenciamento-enfermagem/GerenciadorProtocolos';
 import GerenciadorCIPE from '@/components/gerenciamento-enfermagem/GerenciadorCIPE';
+import GerenciadorModulos from '@/components/gerenciamento-enfermagem/GerenciadorModulos';
+import GerenciadorPOPs from '@/components/gerenciamento-enfermagem/GerenciadorPOPs';
 
 const GerenciamentoEnfermagem = () => {
   const [activeTab, setActiveTab] = useState("sinais-vitais");
@@ -25,13 +27,15 @@ const GerenciamentoEnfermagem = () => {
         </h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-1 md:grid-cols-6 mb-6">
+          <TabsList className="grid grid-cols-1 md:grid-cols-8 mb-6">
             <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
             <TabsTrigger value="exames-laboratoriais">Exames Laboratoriais</TabsTrigger>
             <TabsTrigger value="revisao-sistemas">Revisão de Sistemas</TabsTrigger>
             <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
             <TabsTrigger value="protocolos">Protocolos de Enfermagem</TabsTrigger>
             <TabsTrigger value="cipe">CIPE</TabsTrigger>
+            <TabsTrigger value="pops">POPs</TabsTrigger>
+            <TabsTrigger value="modulos">Módulos</TabsTrigger>
           </TabsList>
           
           <TabsContent value="sinais-vitais">
@@ -56,6 +60,14 @@ const GerenciamentoEnfermagem = () => {
 
           <TabsContent value="cipe">
             <GerenciadorCIPE />
+          </TabsContent>
+
+          <TabsContent value="pops">
+            <GerenciadorPOPs />
+          </TabsContent>
+
+          <TabsContent value="modulos">
+            <GerenciadorModulos />
           </TabsContent>
         </Tabs>
       </main>

@@ -28,9 +28,20 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
+import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
+import { ModuloDisponivel } from "@/types/modulos";
 
 interface NavigationMenuComponentProps {
   activeItem?: string;
+}
+
+interface MenuItem {
+  id: string;
+  title: string;
+  icon: React.ElementType;
+  href: string;
+  adminOnly: boolean;
+  moduloNome?: string;
 }
 
 const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
@@ -40,12 +51,32 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
   const currentPath = location.pathname;
   const { verificarAdmin } = useAutenticacao();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [modulosAtivos, setModulosAtivos] = useState<string[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     setIsAdmin(verificarAdmin());
   }, [verificarAdmin]);
 
-  const menuItems = [
+  // Buscar módulos ativos
+  useEffect(() => {
+    const carregarModulosAtivos = async () => {
+      try {
+        const modulos = await buscarModulosAtivos();
+        setModulosAtivos(modulos.map(m => m.nome));
+      } catch (error) {
+        console.error("Erro ao carregar módulos ativos:", error);
+        setModulosAtivos([]);
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarModulosAtivos();
+  }, []);
+
+  // Lista de itens de menu com suas propriedades
+  const menuItems: MenuItem[] = [
     {
       id: "home",
       title: "Página Inicial",
@@ -73,6 +104,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: Baby,
       href: "/acompanhamento-perinatal",
       adminOnly: false,
+      moduloNome: "acompanhamento-perinatal"
     },
     {
       id: "pops",
@@ -80,6 +112,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: FileText,
       href: "/pops",
       adminOnly: false,
+      moduloNome: "pops"
     },
     {
       id: "feridas",
@@ -87,6 +120,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: Bandage,
       href: "/feridas",
       adminOnly: false,
+      moduloNome: "feridas"
     },
     {
       id: "minicurso-cipe",
@@ -94,6 +128,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: GraduationCap,
       href: "/minicurso-cipe",
       adminOnly: false,
+      moduloNome: "minicurso-cipe"
     },
     {
       id: "timeline",
@@ -115,6 +150,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: Newspaper,
       href: "/noticias",
       adminOnly: false,
+      moduloNome: "noticias"
     },
     {
       id: "sugestoes",
@@ -136,6 +172,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: HelpCircle,
       href: "/faq",
       adminOnly: false,
+      moduloNome: "faq"
     },
     {
       id: "gestao-usuarios",
@@ -146,10 +183,25 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     },
   ];
 
-  // Filtrar os itens do menu com base no perfil do usuário
-  const filteredMenuItems = menuItems.filter(
-    (item) => !item.adminOnly || (item.adminOnly && isAdmin)
-  );
+  // Filtrar os itens do menu com base no perfil do usuário e módulos ativos
+  const filteredMenuItems = menuItems.filter((item) => {
+    // Item acessível apenas para admin
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    
+    // Item com controle de módulo
+    if (item.moduloNome && !isAdmin) {
+      return modulosAtivos.includes(item.moduloNome);
+    }
+    
+    // Item sem restrições
+    return true;
+  });
+
+  if (carregando) {
+    return null;
+  }
 
   return (
     <div className="sticky top-0 z-10 w-full bg-white border-b border-csae-green-100 shadow-sm">

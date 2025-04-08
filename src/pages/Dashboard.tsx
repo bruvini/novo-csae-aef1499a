@@ -1,18 +1,23 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/services/autenticacao';
 import { motion } from 'framer-motion';
 import { 
   ClipboardCheck, FileText, Bandage, BookOpen, Newspaper, 
   Lightbulb, Info, HelpCircle, GraduationCap, Baby, 
-  ArrowRight, MessageSquare, Settings, BarChart, Users, User
+  ArrowRight, MessageSquare, Settings, BarChart, Users, User,
+  AlertCircle
 } from 'lucide-react';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
+import { buscarModulosDisponiveis } from '@/services/bancodados/modulosDB';
+import { ModuloDisponivel } from '@/types/modulos';
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
@@ -37,95 +42,31 @@ const itemVariants = {
   },
 };
 
-const toolsData = [
-  {
-    id: 1,
-    title: "Processo de Enfermagem",
-    description: "Acesse e gerencie os processos de enfermagem",
-    icon: ClipboardCheck,
-    href: "/processo-enfermagem",
-    color: "bg-green-50 text-green-700",
-  },
-  {
-    id: 2,
-    title: "Protocolos Operacionais Padrão (POPs)",
-    description: "Consulte os POPs atualizados",
-    icon: FileText,
-    href: "/pops",
-    color: "bg-blue-50 text-blue-700",
-  },
-  {
-    id: 3,
-    title: "Matriciamento de Feridas",
-    description: "Gerencie casos e consulte orientações",
-    icon: Bandage,
-    href: "/feridas",
-    color: "bg-amber-50 text-amber-700",
-  },
-  {
-    id: 4,
-    title: "Protocolos de Enfermagem",
-    description: "Acesse os protocolos vigentes",
-    icon: BookOpen,
-    href: "/protocolos",
-    color: "bg-purple-50 text-purple-700",
-  },
-  {
-    id: 5,
-    title: "Notícias",
-    description: "Acompanhe as últimas atualizações",
-    icon: Newspaper,
-    href: "/noticias",
-    color: "bg-indigo-50 text-indigo-700",
-  },
-  {
-    id: 6,
-    title: "Sugestões",
-    description: "Compartilhe suas ideias conosco",
-    icon: Lightbulb,
-    href: "/sugestoes",
-    color: "bg-yellow-50 text-yellow-700",
-  },
-  {
-    id: 7,
-    title: "Sobre Nós",
-    description: "Conheça nossa comissão",
-    icon: Info,
-    href: "/timeline",
-    color: "bg-rose-50 text-rose-700",
-  },
-  {
-    id: 8,
-    title: "F.A.Q.",
-    description: "Dúvidas frequentes",
-    icon: HelpCircle,
-    href: "/faq",
-    color: "bg-orange-50 text-orange-700",
-  },
-  {
-    id: 9,
-    title: "Minicurso CIPE",
-    description: "Aprenda a utilizar o Processo de Enfermagem com CIPE",
-    icon: GraduationCap,
-    href: "/minicurso-cipe",
-    color: "bg-emerald-50 text-emerald-700",
-  },
-  {
-    id: 10,
-    title: "Acompanhamento Perinatal",
-    description: "Gestão integral do cuidado à gestante, puérpera e criança",
-    icon: Baby,
-    href: "/acompanhamento-perinatal",
-    color: "bg-pink-50 text-pink-700",
-  },
-];
+// Mapeamento de ícones por nome do módulo
+const moduleIconMap: Record<string, React.ElementType> = {
+  "processo-enfermagem": ClipboardCheck,
+  "pops": FileText,
+  "feridas": Bandage,
+  "protocolos": BookOpen,
+  "noticias": Newspaper,
+  "sugestoes": Lightbulb,
+  "timeline": Info,
+  "faq": HelpCircle,
+  "minicurso-cipe": GraduationCap,
+  "acompanhamento-perinatal": Baby,
+};
 
 const Dashboard = () => {
   const { obterSessao, usuario } = useAutenticacao();
+  const { toast } = useToast();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
   const [showFeedback, setShowFeedback] = useState(false);
   const [accessCount, setAccessCount] = useState(0);
+  const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
+  const [modulosAtivos, setModulosAtivos] = useState<ModuloDisponivel[]>([]);
+  const [modulosInativos, setModulosInativos] = useState<ModuloDisponivel[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     const sessao = obterSessao();
@@ -148,6 +89,34 @@ const Dashboard = () => {
 
     checkAccessCount();
   }, [obterSessao, usuario]);
+
+  useEffect(() => {
+    const carregarModulos = async () => {
+      setCarregando(true);
+      try {
+        const modulosData = await buscarModulosDisponiveis();
+        setModulos(modulosData);
+        
+        // Separar módulos ativos e inativos
+        const ativos = modulosData.filter(m => m.ativo);
+        const inativos = modulosData.filter(m => !m.ativo);
+        
+        setModulosAtivos(ativos);
+        setModulosInativos(inativos);
+      } catch (error) {
+        console.error("Erro ao carregar módulos:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as funcionalidades do sistema.",
+          variant: "destructive",
+        });
+      } finally {
+        setCarregando(false);
+      }
+    };
+    
+    carregarModulos();
+  }, [toast]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -337,6 +306,18 @@ const Dashboard = () => {
               <TabsTrigger value="clinical">Clínicas</TabsTrigger>
               <TabsTrigger value="educational">Educacionais</TabsTrigger>
               <TabsTrigger value="management">Gestão</TabsTrigger>
+              
+              {/* Mostrar a aba de atualizações futuras apenas se houver módulos inativos */}
+              {(modulosInativos.length > 0 || carregando) && (
+                <TabsTrigger value="coming-soon">
+                  Atualizações Futuras{" "}
+                  {modulosInativos.length > 0 && (
+                    <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">
+                      {modulosInativos.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="all">
@@ -346,9 +327,64 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {toolsData.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} />
-                ))}
+                {modulosAtivos
+                  .filter(modulo => modulo.categoria === "clinico" || modulo.categoria === "educacional" || modulo.categoria === "gestao")
+                  .map((modulo) => (
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
+                  ))}
+                
+                {/* Ferramentas fixas do sistema que não passam pelo controle de módulos */}
+                <ModuloCard 
+                  key="processo-enfermagem"
+                  modulo={{
+                    id: "processo-enfermagem",
+                    nome: "processo-enfermagem",
+                    titulo: "Processo de Enfermagem",
+                    descricao: "Acesse e gerencie os processos de enfermagem",
+                    categoria: "clinico",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
+                
+                <ModuloCard 
+                  key="protocolos"
+                  modulo={{
+                    id: "protocolos",
+                    nome: "protocolos",
+                    titulo: "Protocolos de Enfermagem",
+                    descricao: "Consulte os protocolos vigentes",
+                    categoria: "clinico",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
+                
+                <ModuloCard 
+                  key="timeline"
+                  modulo={{
+                    id: "timeline",
+                    nome: "timeline",
+                    titulo: "Nossa História",
+                    descricao: "Conheça nossa comissão e a história do CSAE",
+                    categoria: "educacional",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
+                
+                <ModuloCard 
+                  key="sugestoes"
+                  modulo={{
+                    id: "sugestoes",
+                    nome: "sugestoes",
+                    titulo: "Sugestões",
+                    descricao: "Compartilhe suas ideias conosco",
+                    categoria: "gestao",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
               </motion.div>
             </TabsContent>
 
@@ -359,11 +395,38 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {toolsData
-                  .filter((tool) => [1, 3, 4, 10].includes(tool.id))
-                  .map((tool) => (
-                    <ToolCard key={tool.id} tool={tool} />
+                {modulosAtivos
+                  .filter(modulo => modulo.categoria === "clinico")
+                  .map((modulo) => (
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
+                
+                {/* Ferramentas clínicas fixas */}
+                <ModuloCard 
+                  key="processo-enfermagem"
+                  modulo={{
+                    id: "processo-enfermagem",
+                    nome: "processo-enfermagem",
+                    titulo: "Processo de Enfermagem",
+                    descricao: "Acesse e gerencie os processos de enfermagem",
+                    categoria: "clinico",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
+                
+                <ModuloCard 
+                  key="protocolos"
+                  modulo={{
+                    id: "protocolos",
+                    nome: "protocolos",
+                    titulo: "Protocolos de Enfermagem",
+                    descricao: "Consulte os protocolos vigentes",
+                    categoria: "clinico",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
               </motion.div>
             </TabsContent>
 
@@ -374,11 +437,25 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {toolsData
-                  .filter((tool) => [2, 5, 7, 8, 9].includes(tool.id))
-                  .map((tool) => (
-                    <ToolCard key={tool.id} tool={tool} />
+                {modulosAtivos
+                  .filter(modulo => modulo.categoria === "educacional")
+                  .map((modulo) => (
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
+                
+                {/* Ferramentas educacionais fixas */}
+                <ModuloCard 
+                  key="timeline"
+                  modulo={{
+                    id: "timeline",
+                    nome: "timeline",
+                    titulo: "Nossa História",
+                    descricao: "Conheça nossa comissão e a história do CSAE",
+                    categoria: "educacional",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
               </motion.div>
             </TabsContent>
 
@@ -389,13 +466,54 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {toolsData
-                  .filter((tool) => [6].includes(tool.id))
-                  .map((tool) => (
-                    <ToolCard key={tool.id} tool={tool} />
+                {modulosAtivos
+                  .filter(modulo => modulo.categoria === "gestao")
+                  .map((modulo) => (
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
+                
+                {/* Ferramentas de gestão fixas */}
+                <ModuloCard 
+                  key="sugestoes"
+                  modulo={{
+                    id: "sugestoes",
+                    nome: "sugestoes",
+                    titulo: "Sugestões",
+                    descricao: "Compartilhe suas ideias conosco",
+                    categoria: "gestao",
+                    ativo: true
+                  }}
+                  isAdmin={sessao?.tipoUsuario === "Administrador"}
+                />
               </motion.div>
             </TabsContent>
+            
+            {(modulosInativos.length > 0 || carregando) && (
+              <TabsContent value="coming-soon">
+                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-medium text-amber-800">Recursos em desenvolvimento</h3>
+                      <p className="text-sm text-amber-700">
+                        Estas funcionalidades estão sendo preparadas e estarão disponíveis em breve. Fique atento às atualizações!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                >
+                  {modulosInativos.map((modulo) => (
+                    <ModuloInativoCard key={modulo.id} modulo={modulo} />
+                  ))}
+                </motion.div>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </motion.main>
@@ -405,27 +523,37 @@ const Dashboard = () => {
   );
 };
 
-const ToolCard = ({ tool }: { tool: any }) => {
-  const IconComponent = tool.icon;
+// Card para módulos ativos
+const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: boolean }) => {
+  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+
+  // Definir as cores do card com base na categoria
+  const colorsByCategory: Record<string, string> = {
+    "clinico": "bg-green-50 text-green-700",
+    "educacional": "bg-blue-50 text-blue-700",
+    "gestao": "bg-amber-50 text-amber-700"
+  };
+  
+  const color = colorsByCategory[modulo.categoria] || "bg-gray-50 text-gray-700";
 
   return (
     <motion.div variants={itemVariants}>
-      <Link to={tool.href}>
+      <Link to={`/${modulo.nome}`}>
         <HoverCard>
           <HoverCardTrigger asChild>
             <Card className="h-full bg-white hover:bg-csae-green-50 transition-all duration-300 hover:shadow-md group cursor-pointer border-transparent hover:border-csae-green-200">
               <CardHeader className="pb-2">
                 <div
-                  className={`rounded-full w-12 h-12 ${tool.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
+                  className={`rounded-full w-12 h-12 ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
                 >
                   <IconComponent className="h-6 w-6" />
                 </div>
                 <CardTitle className="text-lg text-csae-green-700 group-hover:text-csae-green-800">
-                  {tool.title}
+                  {modulo.titulo}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm">{tool.description}</p>
+                <p className="text-gray-600 text-sm">{modulo.descricao}</p>
               </CardContent>
               <CardFooter>
                 <Button
@@ -441,9 +569,9 @@ const ToolCard = ({ tool }: { tool: any }) => {
           <HoverCardContent className="w-80">
             <div className="flex justify-between space-x-4">
               <div>
-                <h4 className="text-sm font-semibold">{tool.title}</h4>
+                <h4 className="text-sm font-semibold">{modulo.titulo}</h4>
                 <p className="text-sm text-muted-foreground">
-                  {tool.description}
+                  {modulo.descricao}
                 </p>
                 <div className="flex items-center pt-2">
                   <span className="text-xs text-csae-green-600">
@@ -455,6 +583,53 @@ const ToolCard = ({ tool }: { tool: any }) => {
           </HoverCardContent>
         </HoverCard>
       </Link>
+    </motion.div>
+  );
+};
+
+// Card para módulos inativos (em desenvolvimento)
+const ModuloInativoCard = ({ modulo }: { modulo: ModuloDisponivel }) => {
+  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+
+  // Definir as cores do card com base na categoria
+  const colorsByCategory: Record<string, string> = {
+    "clinico": "bg-green-50 text-green-700",
+    "educacional": "bg-blue-50 text-blue-700",
+    "gestao": "bg-amber-50 text-amber-700"
+  };
+  
+  const color = colorsByCategory[modulo.categoria] || "bg-gray-50 text-gray-700";
+
+  return (
+    <motion.div variants={itemVariants}>
+      <Card className="h-full bg-gray-50 border-dashed border transition-all">
+        <CardHeader className="pb-2">
+          <div
+            className={`rounded-full w-12 h-12 ${color} flex items-center justify-center mb-3 opacity-70`}
+          >
+            <IconComponent className="h-6 w-6" />
+          </div>
+          <CardTitle className="text-lg text-gray-600 flex items-center">
+            {modulo.titulo}
+            <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">
+              Em breve
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-500 text-sm">{modulo.descricao}</p>
+        </CardContent>
+        <CardFooter>
+          <Button
+            variant="ghost"
+            className="p-0 text-gray-400 cursor-not-allowed"
+            disabled
+          >
+            <span>Em desenvolvimento</span>
+            <AlertCircle className="ml-2 h-4 w-4" />
+          </Button>
+        </CardFooter>
+      </Card>
     </motion.div>
   );
 };
