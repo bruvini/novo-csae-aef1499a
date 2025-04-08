@@ -1,65 +1,63 @@
 
-import { 
-  doc, 
-  updateDoc, 
-  arrayUnion, 
-  Timestamp,
-  getDoc,
-  query,
-  collection,
-  where,
-  getDocs
-} from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
-/**
- * Registra um novo acesso do usuário no Firestore
- * @param uid ID do usuário que está acessando o sistema
- */
-export async function registrarAcesso(uid: string): Promise<boolean> {
-  try {
-    console.log("Registrando acesso para usuário:", uid);
-    const usuarioRef = doc(db, 'usuarios', uid);
-    
-    // Verificar se o documento existe antes de tentar atualizar
-    const docSnap = await getDoc(usuarioRef);
-    if (!docSnap.exists()) {
-      console.error("Documento de usuário não encontrado para UID:", uid);
-      return false;
-    }
-    
-    // Adicionar timestamp no array de logAcessos
-    await updateDoc(usuarioRef, {
-      logAcessos: arrayUnion(Timestamp.now()),
-      dataUltimoAcesso: Timestamp.now() // Também atualizar o campo de último acesso para compatibilidade
-    });
-    
-    console.log("Acesso registrado com sucesso");
-    return true;
-  } catch (error) {
-    console.error("Erro ao registrar acesso do usuário:", error);
-    return false;
-  }
+export interface HistoricoAcesso {
+  id?: string;
+  usuarioId: string;
+  nomeUsuario?: string;
+  emailUsuario?: string;
+  dataHora: Timestamp;
+  tipoAcao: "login" | "logout" | "visualizacao" | "acao";
+  descricaoAcao?: string;
+  recursoAcessado?: string;
 }
 
-/**
- * Obtém histórico de acessos de um usuário
- * @param uid ID do usuário
- */
-export async function obterHistoricoAcessos(uid: string): Promise<Timestamp[]> {
+export const registrarAcesso = async (
+  usuarioId: string, 
+  nomeUsuario: string, 
+  emailUsuario: string, 
+  tipoAcao: "login" | "logout" | "visualizacao" | "acao", 
+  descricaoAcao?: string, 
+  recursoAcessado?: string
+): Promise<string | null> => {
   try {
-    const usuarioRef = doc(db, 'usuarios', uid);
-    const docSnap = await getDoc(usuarioRef);
+    const acesso = {
+      usuarioId,
+      nomeUsuario,
+      emailUsuario,
+      dataHora: serverTimestamp(),
+      tipoAcao,
+      descricaoAcao,
+      recursoAcessado
+    };
+
+    const docRef = await addDoc(collection(db, "historicoAcessos"), acesso);
+    return docRef.id;
+  } catch (error) {
+    console.error("Erro ao registrar acesso:", error);
+    return null;
+  }
+};
+
+export const obterHistoricoAcessos = async (usuarioId: string): Promise<HistoricoAcesso[]> => {
+  try {
+    const q = query(
+      collection(db, "historicoAcessos"),
+      where("usuarioId", "==", usuarioId),
+      orderBy("dataHora", "desc")
+    );
     
-    if (!docSnap.exists()) {
-      console.error("Documento de usuário não encontrado para UID:", uid);
-      return [];
-    }
+    const querySnapshot = await getDocs(q);
+    const acessos: HistoricoAcesso[] = [];
     
-    const dados = docSnap.data();
-    return dados.logAcessos || [];
+    querySnapshot.forEach((doc) => {
+      acessos.push({ id: doc.id, ...doc.data() } as HistoricoAcesso);
+    });
+    
+    return acessos;
   } catch (error) {
     console.error("Erro ao obter histórico de acessos:", error);
     return [];
   }
-}
+};

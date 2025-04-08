@@ -1,65 +1,59 @@
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  serverTimestamp,
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  orderBy,
-  Timestamp
-} from 'firebase/firestore';
+
+import { collection, doc, getDoc, getDocs, updateDoc, arrayUnion, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
-import { CasoClinico, TermoCipe } from '../bancodados/tipos';
+import { TermoCipe, CasoClinico } from '../bancodados/tipos';
 
-export async function buscarTermosCipe(): Promise<{ [key: string]: TermoCipe[] }> {
+// Implementação para buscar termos CIPE
+export const buscarTermosCipe = async (tipo: string): Promise<TermoCipe[]> => {
   try {
-    // Buscar termos de cada eixo
-    const eixos = ['eixoFoco', 'eixoJulgamento', 'eixoMeios', 'eixoAcao', 'eixoTempo', 'eixoLocalizacao', 'eixoCliente'];
-    const result: { [key: string]: TermoCipe[] } = {};
+    const q = query(
+      collection(db, 'terminologiaCipe'),
+      where('tipo', '==', tipo)
+    );
     
-    for (const eixo of eixos) {
-      const q = query(collection(db, eixo), orderBy('termo'));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        result[eixo] = [];
-        querySnapshot.forEach((doc) => {
-          const termoData = doc.data();
-          result[eixo].push({ 
-            id: doc.id, 
-            ...termoData
-          } as TermoCipe);
-        });
-      }
-    }
+    const querySnapshot = await getDocs(q);
+    const termos: TermoCipe[] = [];
     
-    return result;
-  } catch (error) {
-    console.error("Erro ao buscar termos CIPE:", error);
-    return {};
-  }
-}
-
-export async function registrarVencedor(
-  userId: string,
-  casoId: string,
-  arrayEscolhido: string[]
-): Promise<boolean> {
-  try {
-    const respostaRef = await addDoc(collection(db, 'respostasCasosClinicos'), {
-      userId,
-      casoId,
-      arrayEscolhido,
-      dataResposta: serverTimestamp()
+    querySnapshot.forEach((doc) => {
+      termos.push({ id: doc.id, ...doc.data() } as TermoCipe);
     });
     
-    return !!respostaRef.id;
+    return termos;
   } catch (error) {
-    console.error('Erro ao registrar vencedor:', error);
+    console.error(`Erro ao buscar termos CIPE do tipo ${tipo}:`, error);
+    return [];
+  }
+};
+
+// Implementação para registrar vencedor em casos clínicos
+export const registrarVencedor = async (casoId: string, userId: string, toastVariant = "success") => {
+  try {
+    const casoRef = doc(db, 'casosClinicos', casoId);
+    
+    await updateDoc(casoRef, {
+      arrayVencedor: arrayUnion(userId)
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Erro ao registrar vencedor:", error);
     return false;
   }
-}
+};
+
+// Implementação para buscar casos clínicos
+export const buscarCasosClinicos = async (): Promise<CasoClinico[]> => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'casosClinicos'));
+    const casos: CasoClinico[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      casos.push({ id: doc.id, ...doc.data() } as CasoClinico);
+    });
+    
+    return casos;
+  } catch (error) {
+    console.error("Erro ao buscar casos clínicos:", error);
+    return [];
+  }
+};

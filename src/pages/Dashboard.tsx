@@ -1,52 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import Header from '@/components/Header';
-import NavigationMenuComponent from '@/components/NavigationMenu';
-import MainFooter from '@/components/MainFooter';
-import FeedbackPopup from '@/components/dashboard/FeedbackPopup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useToast } from '@/hooks/use-toast';
-import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 import { useAutenticacao } from '@/services/autenticacao';
+import { motion } from 'framer-motion';
 import { 
-  ClipboardCheck, 
-  FileText, 
-  Bandage, 
-  BookOpen, 
-  Newspaper,
-  Lightbulb, 
-  Info, 
-  HelpCircle, 
-  GraduationCap,
-  Baby, 
-  Settings,
-  Users,
-  ArrowRight,
-  MessageSquare,
-  BarChart,
-  User
+  ClipboardCheck, FileText, Bandage, BookOpen, Newspaper, 
+  Lightbulb, Info, HelpCircle, GraduationCap, Baby, 
+  ArrowRight, MessageSquare, Settings, BarChart, Users, User
 } from 'lucide-react';
+import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
+import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -67,7 +35,6 @@ const itemVariants = {
   },
 };
 
-// Card data for tools
 const toolsData = [
   {
     id: 1,
@@ -441,7 +408,6 @@ const Dashboard = () => {
   );
 };
 
-// Tool Card Component
 const ToolCard = ({ tool }: { tool: any }) => {
   const IconComponent = tool.icon;
 
