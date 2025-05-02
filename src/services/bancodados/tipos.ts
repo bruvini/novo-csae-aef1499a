@@ -117,15 +117,23 @@ export interface DiagnosticoSelecionado {
 // Diagnósticos de Enfermagem
 export interface DiagnosticoCompleto {
   id?: string;
-  titulo: string;
-  definicao: string;
+  nome: string;
+  explicacao?: string;
+  titulo?: string;
+  definicao?: string;
   codigoCipe?: string;
-  subitemId: string; // Referência para o subitem (NHB ou outro agrupamento)
-  caracteristicasDefinidoras: string[];
-  fatoresRelacionados: string[];
+  subconjuntoId: string;
+  subconjunto?: string;
+  subitemId?: string;
+  subitemNome?: string;
+  caracteristicasDefinidoras?: string[];
+  fatoresRelacionados?: string[];
   populacaoRisco?: string[];
   condicoesAssociadas?: string[];
-  ativo: boolean;
+  resultadosEsperados: ResultadoEsperado[];
+  ativo?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface Intervencao {
@@ -133,37 +141,50 @@ export interface Intervencao {
   titulo: string;
   definicao?: string;
   codigoCipe?: string;
-  diagnosticoIds: string[]; // Referencia aos diagnósticos relacionados
+  diagnosticoIds: string[];
   atividades?: string[];
   ativo: boolean;
+  verboPrimeiraEnfermeiro?: string;
+  verboOutraPessoa?: string;
+  descricaoRestante?: string;
+  intervencaoEnfermeiro?: string;
+  intervencaoInfinitivo?: string;
+  nomeDocumento?: string;
+  linkDocumento?: string;
 }
 
 export interface ResultadoEsperado {
   id?: string;
-  titulo: string;
+  titulo?: string;
+  descricao: string;
   definicao?: string;
   codigoCipe?: string;
-  diagnosticoIds: string[]; // Referencia aos diagnósticos relacionados
+  diagnosticoIds?: string[];
   indicadores?: string[];
-  ativo: boolean;
-}
-
-export interface SubconjuntoDiagnostico {
-  id?: string;
-  nome: string;
-  tipo: 'NHB' | 'Sistema' | 'Outro';
-  descricao?: string;
-  ativo: boolean;
-  ordem?: number;
+  ativo?: boolean;
+  intervencoes: Intervencao[];
 }
 
 export interface Subconjunto {
   id?: string;
   nome: string;
-  tipo: 'NHB' | 'Sistema' | 'Outro';
+  tipo: 'NHB' | 'Sistema' | 'Outro' | 'Protocolo';
   descricao?: string;
-  ativo: boolean;
+  ativo?: boolean;
   ordem?: number;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SubconjuntoDiagnostico {
+  id?: string;
+  nome: string;
+  tipo: 'NHB' | 'Sistema' | 'Outro' | 'Protocolo';
+  descricao?: string;
+  ativo?: boolean;
+  ordem?: number;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 // Sinais Vitais
@@ -177,6 +198,8 @@ export interface SinalVital {
   ordem?: number;
   descricao?: string;
   ativo: boolean;
+  diferencaSexoIdade?: boolean;
+  valoresReferencia?: AlteracaoSinalVital[];
   alteracoes?: AlteracaoSinalVital[];
 }
 
@@ -188,8 +211,8 @@ export interface AlteracaoSinalVital {
   valorMinimo?: number;
   valorMaximo?: number;
   valorReferencia?: string;
-  nhbId?: string; // ID da Necessidade Humana Básica relacionada
-  diagnosticoId?: string; // ID do Diagnóstico de Enfermagem relacionado
+  nhbId?: string;
+  diagnosticoId?: string;
 }
 
 // POPs (Procedimentos Operacionais Padrão)
@@ -209,6 +232,42 @@ export interface POP {
   anexos?: string[];
   ativo: boolean;
   categoria: string;
+}
+
+// Protocolos de Enfermagem
+export interface ProtocoloEnfermagem {
+  id?: string;
+  volume: string;
+  nome: string;
+  dataPublicacao: Timestamp;
+  dataAtualizacao?: Timestamp;
+  descricao: string;
+  linkPdf: string;
+  linkImagem?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// Sistemas Corporais e Revisão de Sistemas
+export interface SistemaCorporal {
+  id?: string;
+  nome: string;
+  descricao?: string;
+  ordem?: number;
+  ativo: boolean;
+}
+
+export interface RevisaoSistema {
+  id?: string;
+  sistemaCorporalId: string;
+  titulo: string;
+  descricao?: string;
+  tipoAlteracao: 'Objetiva' | 'Subjetiva' | 'Ambas';
+  padrao?: string;
+  diagnosticoId?: string;
+  nhbId?: string;
+  ativo: boolean;
+  ordem?: number;
 }
 
 // Variáveis de configuração
