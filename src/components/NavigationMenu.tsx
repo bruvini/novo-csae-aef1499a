@@ -10,20 +10,7 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
-import {
-  Home,
-  ClipboardCheck,
-  FileText,
-  Bandage,
-  BookOpen,
-  Newspaper,
-  Lightbulb,
-  Info,
-  HelpCircle,
-  Users,
-  Settings,
-  Clock,
-} from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
 import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
@@ -40,6 +27,7 @@ interface MenuItem {
   href: string;
   adminOnly: boolean;
   moduloNome?: string;
+  visibilidade?: 'todos' | 'admin' | 'sms';
 }
 
 const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
@@ -49,11 +37,23 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
   const currentPath = location.pathname;
   const { verificarAdmin } = useAutenticacao();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [modulosAtivos, setModulosAtivos] = useState<string[]>([]);
+  const [modulosDinamicos, setModulosDinamicos] = useState<MenuItem[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [atuaSMS, setAtuaSMS] = useState(false);
 
   useEffect(() => {
     setIsAdmin(verificarAdmin());
+
+    // Verificar se usuário atua na SMS
+    try {
+      const dadosUsuario = localStorage.getItem('usuario');
+      if (dadosUsuario) {
+        const usuario = JSON.parse(dadosUsuario);
+        setAtuaSMS(usuario.atuaSMS === true);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar atuaSMS:", error);
+    }
   }, [verificarAdmin]);
 
   // Buscar módulos ativos
@@ -61,10 +61,24 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     const carregarModulosAtivos = async () => {
       try {
         const modulos = await buscarModulosAtivos();
-        setModulosAtivos(modulos.map(m => m.nome));
+        
+        // Converter para o formato MenuItem
+        const menuItems: MenuItem[] = modulos
+          .filter(m => m.exibirNavbar !== false) // Exibir somente os marcados para mostrar na navbar
+          .map(m => ({
+            id: m.nome,
+            title: m.titulo,
+            // @ts-ignore - Acessar dinamicamente os ícones
+            icon: m.icone ? LucideIcons[m.icone] || LucideIcons.FileText : LucideIcons.FileText,
+            href: m.slug || `/${m.nome}`,
+            adminOnly: m.visibilidade === 'admin',
+            moduloNome: m.nome,
+            visibilidade: m.visibilidade
+          }));
+        
+        setModulosDinamicos(menuItems);
       } catch (error) {
         console.error("Erro ao carregar módulos ativos:", error);
-        setModulosAtivos([]);
       } finally {
         setCarregando(false);
       }
@@ -73,111 +87,86 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     carregarModulosAtivos();
   }, []);
 
-  // Lista de itens de menu com suas propriedades
-  const menuItems: MenuItem[] = [
+  // Lista de itens de menu fixos e essenciais
+  const menuItemsFixos: MenuItem[] = [
     {
       id: "home",
       title: "Página Inicial",
-      icon: Home,
+      icon: LucideIcons.Home,
       href: "/dashboard",
       adminOnly: false,
     },
     {
       id: "processo-enfermagem",
       title: "Processo de Enfermagem",
-      icon: ClipboardCheck,
+      icon: LucideIcons.ClipboardCheck,
       href: "/processo-enfermagem",
       adminOnly: false,
     },
     {
       id: "protocolos",
       title: "Protocolos de Enfermagem",
-      icon: BookOpen,
+      icon: LucideIcons.BookOpen,
       href: "/protocolos",
       adminOnly: false,
     },
     {
       id: "pops",
       title: "POPs",
-      icon: FileText,
+      icon: LucideIcons.FileText,
       href: "/pops",
       adminOnly: false,
       moduloNome: "pops"
     },
     {
-      id: "feridas",
-      title: "Matriciamento de Feridas",
-      icon: Bandage,
-      href: "/feridas",
-      adminOnly: false,
-      moduloNome: "feridas"
-    },
-    {
       id: "timeline",
       title: "Nossa História",
-      icon: Clock,
+      icon: LucideIcons.Clock,
       href: "/timeline",
       adminOnly: false,
     },
     {
       id: "gerenciamento-enfermagem",
       title: "Gerenciamento de Conteúdos",
-      icon: Settings,
+      icon: LucideIcons.Settings,
       href: "/gerenciamento-enfermagem",
       adminOnly: true,
     },
     {
-      id: "noticias",
-      title: "Notícias",
-      icon: Newspaper,
-      href: "/noticias",
-      adminOnly: false,
-      moduloNome: "noticias"
-    },
-    {
       id: "sugestoes",
       title: "Sugestões",
-      icon: Lightbulb,
+      icon: LucideIcons.Lightbulb,
       href: "/sugestoes",
       adminOnly: false,
     },
     {
-      id: "sobre",
-      title: "Sobre Nós",
-      icon: Info,
-      href: "/timeline",
-      adminOnly: false,
-    },
-    {
-      id: "faq",
-      title: "F.A.Q.",
-      icon: HelpCircle,
-      href: "/faq",
-      adminOnly: false,
-      moduloNome: "faq"
-    },
-    {
       id: "gestao-usuarios",
       title: "Gestão de Usuários",
-      icon: Users,
+      icon: LucideIcons.Users,
       href: "/gestao-usuarios",
       adminOnly: true,
     },
   ];
 
-  // Filtrar os itens do menu com base no perfil do usuário e módulos ativos
-  const filteredMenuItems = menuItems.filter((item) => {
+  // Combinar itens de menu fixos com dinâmicos
+  // Evitar duplicatas (se um módulo dinâmico tiver mesmo ID que um fixo, o dinâmico prevalece)
+  const fixosIds = new Set(menuItemsFixos.map(item => item.id));
+  const modulosFiltrados = modulosDinamicos.filter(item => !fixosIds.has(item.id));
+  
+  const allMenuItems = [...menuItemsFixos, ...modulosFiltrados];
+  
+  // Filtrar os itens do menu com base no perfil do usuário
+  const filteredMenuItems = allMenuItems.filter((item) => {
     // Item acessível apenas para admin
-    if (item.adminOnly && !isAdmin) {
+    if ((item.adminOnly || item.visibilidade === 'admin') && !isAdmin) {
       return false;
     }
     
-    // Item com controle de módulo
-    if (item.moduloNome && !isAdmin) {
-      return modulosAtivos.includes(item.moduloNome);
+    // Item com visibilidade SMS
+    if (item.visibilidade === 'sms' && !isAdmin && !atuaSMS) {
+      return false;
     }
     
-    // Item sem restrições
     return true;
   });
 

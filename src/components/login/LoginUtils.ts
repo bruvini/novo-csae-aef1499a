@@ -1,179 +1,195 @@
-import { useToast } from "@/hooks/use-toast";
-import { SessaoUsuario, useAutenticacao } from "@/services/autenticacao";
-import { buscarUsuarioPorUid } from "@/services/bancodados";
-import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
-import { User } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-import { isResidenteExpirado } from "./ResidenteUtils";
 
-export interface LoginError {
-  code?: string;
-  message: string;
+import { FirebaseError } from "firebase/app";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  User,
+} from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { auth, db } from "@/services/firebase";
+import { UsuarioAutenticado } from "@/services/bancodados/tipos";
+import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
+
+// Tipos de resultado para operações de autenticação
+export interface AuthResult {
+  success: boolean;
+  user?: User;
+  error?: string;
+  errorCode?: string;
 }
 
-export const useLoginHandler = () => {
-  const { toast } = useToast();
-  const { entrar, limparSessao, salvarSessao } = useAutenticacao();
-  const navigate = useNavigate();
+// Função para mapear códigos de erro do Firebase para mensagens amigáveis
+export const mapFirebaseErrorToMessage = (error: FirebaseError): string => {
+  const errorCode = error.code;
 
-  const handleAuthError = (error: any) => {
-    console.error("Detalhes do erro de autenticação:", error);
+  const errorMessages: Record<string, string> = {
+    "auth/email-already-in-use": "Este e-mail já está sendo usado por outra conta.",
+    "auth/invalid-email": "O formato do e-mail é inválido.",
+    "auth/user-disabled": "Esta conta foi desativada.",
+    "auth/user-not-found": "Não existe usuário com este e-mail.",
+    "auth/wrong-password": "Senha incorreta.",
+    "auth/weak-password": "A senha é muito fraca. Use pelo menos 6 caracteres.",
+    "auth/invalid-credential": "Credenciais inválidas.",
+    "auth/missing-password": "Por favor, insira uma senha.",
+    "auth/too-many-requests": "Muitas tentativas. Por favor, tente novamente mais tarde.",
+    "auth/network-request-failed": "Erro de rede. Verifique sua conexão e tente novamente.",
+  };
+
+  return errorMessages[errorCode] || "Ocorreu um erro ao processar sua solicitação.";
+};
+
+// Login com e-mail e senha
+export const loginWithEmail = async (
+  email: string,
+  senha: string
+): Promise<AuthResult> => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, senha);
     
-    if (error.code === "auth/user-not-found") {
-      toast({
-        title: "Usuário não encontrado",
-        description: "Não encontramos uma conta com esse e-mail. Que tal se registrar?",
-        variant: "destructive"
-      });
-      return true; // Indica que deve destacar o botão de registro
-    } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
-      toast({
-        title: "Senha incorreta",
-        description: "A senha que você inseriu está errada. Tente novamente.",
-        variant: "destructive"
-      });
-    } else if (error.code === "auth/invalid-email") {
-      toast({
-        title: "E-mail inválido",
-        description: "O e-mail inserido não é válido.",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Erro ao acessar",
-        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
+    // Buscar dados adicionais do usuário do Firestore
+    const userDoc = await getDoc(doc(db, "usuarios", userCredential.user.uid));
+    const userData = userDoc.data() as Partial<UsuarioAutenticado>;
+    
+    // Salvar dados do usuário no localStorage
+    localStorage.setItem('usuario', JSON.stringify({
+      uid: userCredential.user.uid,
+      email: userCredential.user.email,
+      nome: userData?.nome || userCredential.user.displayName,
+      tipoUsuario: userData?.tipoUsuario || "Enfermeiro",
+      ehAdmin: userData?.tipoUsuario === "Administrador",
+      atuaSMS: userData?.atuaSMS || false,
+      coren: userData?.coren || "",
+      unidade: userData?.unidade || "",
+      emailVerificado: userCredential.user.emailVerified,
+    }));
+    
+    // Registrar acesso
+    registrarAcesso({
+      usuarioUid: userCredential.user.uid,
+      usuarioEmail: userCredential.user.email || '',
+      usuarioNome: userData?.nome || userCredential.user.displayName || '',
+      pagina: 'login'
+    });
+    
+    // Atualizar último acesso no Firestore
+    await setDoc(
+      doc(db, "usuarios", userCredential.user.uid),
+      { ultimoAcesso: serverTimestamp() },
+      { merge: true }
+    );
+    
+    return {
+      success: true,
+      user: userCredential.user,
+    };
+  } catch (error) {
+    console.error("Erro no login:", error);
+    if (error instanceof FirebaseError) {
+      return {
+        success: false,
+        error: mapFirebaseErrorToMessage(error),
+        errorCode: error.code,
+      };
+    }
+    return {
+      success: false,
+      error: "Erro ao fazer login. Tente novamente.",
+    };
+  }
+};
+
+// Função de registro (criar nova conta)
+export const registerUser = async (
+  email: string,
+  senha: string,
+  nome: string,
+  tipoUsuario: "Administrador" | "Enfermeiro" | "Técnico" | "Estudante",
+  coren?: string,
+  unidade?: string
+): Promise<AuthResult> => {
+  try {
+    // Criar usuário no Firebase Auth
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      senha
+    );
+    
+    // Atualizar o perfil com o nome completo
+    await updateProfile(userCredential.user, {
+      displayName: nome,
+    });
+    
+    // Criar documento do usuário no Firestore
+    await setDoc(doc(db, "usuarios", userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      email: email,
+      nome: nome,
+      tipoUsuario: tipoUsuario,
+      coren: coren || "",
+      unidade: unidade || "",
+      ehAdmin: tipoUsuario === "Administrador",
+      dataCriacao: serverTimestamp(),
+      ultimoAcesso: serverTimestamp(),
+    });
+    
+    return {
+      success: true,
+      user: userCredential.user,
+    };
+  } catch (error) {
+    console.error("Erro no registro:", error);
+    if (error instanceof FirebaseError) {
+      return {
+        success: false,
+        error: mapFirebaseErrorToMessage(error),
+        errorCode: error.code,
+      };
+    }
+    return {
+      success: false,
+      error: "Erro ao registrar usuário. Tente novamente.",
+    };
+  }
+};
+
+// Função de logout
+export const logout = async (): Promise<boolean> => {
+  try {
+    await signOut(auth);
+    localStorage.removeItem('usuario');
+    localStorage.removeItem('sessao');
+    return true;
+  } catch (error) {
+    console.error("Erro ao fazer logout:", error);
+    return false;
+  }
+};
+
+// Verificar se temos um usuário logado no localStorage
+export const verificarUsuarioLocal = (): boolean => {
+  try {
+    const userData = localStorage.getItem('usuario');
+    return !!userData;
+  } catch (error) {
+    console.error("Erro ao verificar usuário local:", error);
+    return false;
+  }
+};
+
+// Verificar se usuário é admin no localStorage
+export const verificarAdminLocal = (): boolean => {
+  try {
+    const userData = localStorage.getItem('usuario');
+    if (userData) {
+      const usuario = JSON.parse(userData);
+      return usuario.ehAdmin === true || usuario.tipoUsuario === "Administrador";
     }
     return false;
-  };
-
-  const processarLoginSucesso = async (usuarioAuth: User) => {
-    console.log("Autenticação bem-sucedida. UID:", usuarioAuth.uid);
-    
-    // Buscar o usuário no Firestore
-    console.log("Buscando dados do usuário no Firestore. UID:", usuarioAuth.uid);
-    const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.uid);
-    console.log("Dados do Firestore:", usuarioFirestore);
-
-    if (!usuarioFirestore) {
-      console.error("Usuário autenticado, mas não encontrado no Firestore");
-      toast({
-        title: "Cadastro não encontrado",
-        description: "Usuário autenticado mas sem cadastro no sistema. Clique em 'Registrar' para se cadastrar.",
-        variant: "destructive"
-      });
-      return { sucesso: false, registrarAtivo: true };
-    }
-
-    // Verificar se é um residente com acesso expirado
-    if (usuarioFirestore.dadosProfissionais.formacao === "Residente de Enfermagem") {
-      const expirado = isResidenteExpirado(usuarioFirestore.dadosProfissionais.dataInicioResidencia);
-      
-      if (expirado) {
-        toast({
-          title: "Acesso suspenso",
-          description: "Os acessos para residentes são bloqueados após o término da residência, conforme previsto no Termo de Uso. Caso ainda esteja atuando, solicite liberação para gerenf.sms.pmf@gmail.com.",
-          variant: "destructive"
-        });
-        return { sucesso: false, registrarAtivo: false };
-      }
-    }
-
-    // Verificar o status de acesso
-    console.log("Status do usuário:", usuarioFirestore.statusAcesso);
-    if (usuarioFirestore.statusAcesso === "Aguardando") {
-      toast({
-        title: "Cadastro em análise",
-        description: "Recebemos seu cadastro e ele está em análise pela equipe CSAE. Tente novamente mais tarde.",
-        variant: "default"
-      });
-      return { sucesso: false, registrarAtivo: false };
-    }
-
-    if (usuarioFirestore.statusAcesso === "Negado" || 
-        usuarioFirestore.statusAcesso === "Revogado" || 
-        usuarioFirestore.statusAcesso === "Cancelado") {
-      toast({
-        title: "Acesso bloqueado",
-        description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
-        variant: "destructive"
-      });
-      return { sucesso: false, registrarAtivo: false };
-    }
-
-    if (usuarioFirestore.statusAcesso === "Aprovado") {
-      // Registrar o acesso do usuário
-      await registrarAcesso(usuarioFirestore.id);
-      
-      // Salvar a sessão do usuário
-      const dadosSessao: SessaoUsuario = {
-        uid: usuarioFirestore.uid,
-        email: usuarioFirestore.email,
-        nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-        tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-        statusAcesso: usuarioFirestore.statusAcesso,
-        dataExpiracao: Date.now() + 24 * 60 * 60 * 1000 // 24 horas
-      };
-      
-      console.log("Salvando sessão:", dadosSessao);
-      salvarSessao(dadosSessao);
-      
-      // Verificar se a sessão foi realmente salva
-      const sessaoAtual = localStorage.getItem('sessaoUsuario');
-      console.log("Sessão salva no localStorage:", sessaoAtual);
-      
-      // Verificar se o tipoUsuario foi salvo corretamente
-      const sessaoParsed = sessaoAtual ? JSON.parse(sessaoAtual) : null;
-      console.log("Tipo de usuário na sessão:", sessaoParsed?.tipoUsuario);
-
-      // Manter compatibilidade com o código existente
-      localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-      console.log("Dados do usuário salvos no localStorage");
-
-      toast({
-        title: "Acesso liberado",
-        description: "Bem-vindo de volta!",
-      });
-
-      // Redirecionar para o dashboard
-      console.log("Redirecionando para o dashboard");
-      navigate("/dashboard");
-      return { sucesso: true, registrarAtivo: false };
-    } 
-    
-    console.error("Status de acesso não reconhecido:", usuarioFirestore.statusAcesso);
-    toast({
-      title: "Erro de acesso",
-      description: "Status de acesso não reconhecido. Entre em contato com o suporte.",
-      variant: "destructive"
-    });
-    return { sucesso: false, registrarAtivo: false };
-  };
-
-  const realizarLogin = async (email: string, password: string) => {
-    try {
-      // Limpar qualquer sessão existente antes de iniciar o processo
-      limparSessao();
-      console.log("Sessões anteriores limpas");
-
-      // Autenticar no Firebase Authentication
-      console.log("Tentando autenticar com email:", email);
-      const usuarioAuth = await entrar(email, password);
-      console.log("Resposta da autenticação:", usuarioAuth);
-
-      if (!usuarioAuth) {
-        console.error("Falha na autenticação: usuarioAuth é null ou undefined");
-        throw new Error("Credenciais inválidas.");
-      }
-
-      return await processarLoginSucesso(usuarioAuth);
-    } catch (error: any) {
-      console.error("Erro durante o login:", error);
-      const registrarAtivo = handleAuthError(error);
-      return { sucesso: false, registrarAtivo };
-    }
-  };
-
-  return { realizarLogin };
+  } catch (error) {
+    console.error("Erro ao verificar admin local:", error);
+    return false;
+  }
 };
