@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Plus, Save, Trash2, X } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -22,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { ModuloDisponivel } from '@/types/modulos';
 import { buscarModulosDisponiveis, adicionarModulo, atualizarModulo, removerModulo } from '@/services/bancodados/modulosDB';
+import { ElementType } from 'react';
 
 const GerenciadorModulos = () => {
   const { toast } = useToast();
@@ -309,7 +309,7 @@ const GerenciadorModulos = () => {
             <CardContent>
               <div className="flex items-center gap-2 mb-2">
                 {modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons] && (
-                  React.createElement(LucideIcons[modulo.icone as keyof typeof LucideIcons], { 
+                  React.createElement(LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType, { 
                     size: 20,
                     className: "text-csae-green-600"
                   })
@@ -524,7 +524,7 @@ const GerenciadorModulos = () => {
                   <p className="text-sm mb-2">Ícone selecionado:</p>
                   <div className="flex items-center gap-2 p-2 border rounded mb-4">
                     {moduloSelecionado?.icone && LucideIcons[moduloSelecionado.icone as keyof typeof LucideIcons] && (
-                      React.createElement(LucideIcons[moduloSelecionado.icone as keyof typeof LucideIcons], { 
+                      React.createElement(LucideIcons[moduloSelecionado.icone as keyof typeof LucideIcons] as ElementType, { 
                         size: 24,
                         className: "text-csae-green-600"
                       })
@@ -542,7 +542,7 @@ const GerenciadorModulos = () => {
                                       ${moduloSelecionado?.icone === icone ? 'bg-csae-green-50 border border-csae-green-300' : ''}`}
                           onClick={() => selecionarIcone(icone)}
                         >
-                          {React.createElement(LucideIcons[icone], { 
+                          {React.createElement(LucideIcons[icone] as ElementType, { 
                             size: 20,
                             className: moduloSelecionado?.icone === icone ? "text-csae-green-600" : "text-gray-600"
                           })}

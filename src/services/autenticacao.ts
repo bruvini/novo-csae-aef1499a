@@ -6,7 +6,7 @@ import {
   signOut, 
   onAuthStateChanged,
   User
-} from 'firebase/firestore';
+} from 'firebase/auth';
 import { auth } from './firebase';
 import { verificarUsuario, obterDetalhesUsuario } from './bancodados/usuariosDB';
 
@@ -83,6 +83,7 @@ export const useAutenticacao = () => {
     return sessao?.tipoUsuario === 'Administrador';
   };
 
+  // Renomeado para fazerLogin para manter compatibilidade com os métodos existentes
   const fazerLogin = async (email: string, senha: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
@@ -133,6 +134,7 @@ export const useAutenticacao = () => {
     }
   };
 
+  // Renomeado para fazerLogout para manter compatibilidade
   const fazerLogout = async () => {
     try {
       await signOut(auth);
@@ -147,6 +149,15 @@ export const useAutenticacao = () => {
     }
   };
 
+  // Aliases para manter compatibilidade com os códigos que usam os nomes antigos
+  const entrar = fazerLogin;
+  const sair = fazerLogout;
+  const limparSessao = () => localStorage.removeItem('sessao');
+  const salvarSessao = (dados: Omit<Sessao, 'dataExpiracao'>) => {
+    const dataExpiracao = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    localStorage.setItem('sessao', JSON.stringify({...dados, dataExpiracao}));
+  };
+
   return {
     usuario,
     carregando,
@@ -154,6 +165,11 @@ export const useAutenticacao = () => {
     fazerLogout,
     verificarAutenticacao,
     verificarAdmin,
-    obterSessao
+    obterSessao,
+    // Exportar aliases
+    entrar,
+    sair,
+    limparSessao,
+    salvarSessao
   };
 };

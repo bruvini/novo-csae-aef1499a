@@ -7,7 +7,7 @@ import { useAutenticacao } from '@/services/autenticacao';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
-  const { usuario, sair, obterSessao } = useAutenticacao();
+  const { usuario, fazerLogout, obterSessao } = useAutenticacao();
   const [nomeUsuario, setNomeUsuario] = useState<string>('Usuário');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -21,7 +21,7 @@ const Header = () => {
 
   const handleSair = async () => {
     try {
-      await sair();
+      await fazerLogout();
       toast({
         title: "Sessão encerrada",
         description: "Você saiu do sistema com sucesso.",

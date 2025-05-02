@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
 import { buscarModulosVisiveis } from "@/services/bancodados/modulosDB";
 import { ModuloDisponivel } from "@/types/modulos";
+import { ElementType } from "react";
 
 interface NavigationMenuComponentProps {
   activeItem?: string;
@@ -23,7 +24,7 @@ interface NavigationMenuComponentProps {
 interface MenuItem {
   id: string;
   title: string;
-  icon: React.ElementType;
+  icon: ElementType;
   href: string;
   adminOnly: boolean;
   moduloNome?: string;
@@ -88,7 +89,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
         {
           id: "home",
           title: "Página Inicial",
-          icon: LucideIcons.Home,
+          icon: LucideIcons.Home as ElementType,
           href: "/dashboard",
           adminOnly: false,
         }
@@ -97,15 +98,15 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       // Converter os módulos visíveis em itens de menu
       const moduloItems = modulosVisiveis.map(modulo => {
         // Determinar o ícone a ser usado
-        let IconComponent: React.ElementType;
+        let IconComponent: ElementType;
         
         if (modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons]) {
-          IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons];
+          IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType;
         } else if (iconMap[modulo.nome]) {
-          IconComponent = LucideIcons[iconMap[modulo.nome]];
+          IconComponent = LucideIcons[iconMap[modulo.nome]] as ElementType;
         } else {
           // Fallback para Settings se o ícone não for encontrado
-          IconComponent = LucideIcons.Settings;
+          IconComponent = LucideIcons.Settings as ElementType;
         }
 
         return {
@@ -123,14 +124,14 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
         {
           id: "gerenciamento-enfermagem",
           title: "Gerenciamento de Conteúdos",
-          icon: LucideIcons.Settings,
+          icon: LucideIcons.Settings as ElementType,
           href: "/gerenciamento-enfermagem",
           adminOnly: true,
         },
         {
           id: "gestao-usuarios",
           title: "Gestão de Usuários",
-          icon: LucideIcons.Users,
+          icon: LucideIcons.Users as ElementType,
           href: "/gestao-usuarios",
           adminOnly: true,
         }
