@@ -21,12 +21,16 @@ export interface UsuarioAutenticado {
   ultimoAcesso?: Timestamp;
 }
 
+// Alias for backward compatibility
+export type Usuario = UsuarioAutenticado;
+
 export interface SessaoUsuario {
   uid: string;
   email: string;
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
+  usuario?: string; // Added this property for Dashboard.tsx
 }
 
 // Histórico de acessos
@@ -78,6 +82,7 @@ export interface ValorReferenciaExame {
   tituloAlteracao?: string;
   nhbId?: string;
   diagnosticoId?: string;
+  tipoExame?: 'Laboratorial' | 'Imagem';
 }
 
 // Registro de Evolução
@@ -97,6 +102,7 @@ export interface Evolucao {
   };
   dados: Record<string, any>;
   diagnosticosSelecionados?: DiagnosticoSelecionado[];
+  dataAtualizacao?: Timestamp; // Added for evolucoeDB.ts
 }
 
 export interface DiagnosticoSelecionado {
@@ -117,7 +123,7 @@ export interface DiagnosticoSelecionado {
 // Diagnósticos de Enfermagem
 export interface DiagnosticoCompleto {
   id?: string;
-  nome: string;
+  nome: string; // Required property
   explicacao?: string;
   titulo?: string;
   definicao?: string;
@@ -157,7 +163,7 @@ export interface Intervencao {
 export interface ResultadoEsperado {
   id?: string;
   titulo?: string;
-  descricao: string;
+  descricao: string; // Required property
   definicao?: string;
   codigoCipe?: string;
   diagnosticoIds?: string[];
@@ -171,7 +177,7 @@ export interface Subconjunto {
   nome: string;
   tipo: 'NHB' | 'Sistema' | 'Outro' | 'Protocolo';
   descricao?: string;
-  ativo?: boolean;
+  ativo: boolean;
   ordem?: number;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -220,6 +226,10 @@ export interface AlteracaoSinalVital {
   variacaoPor?: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
   tipoValor?: 'Numérico' | 'Texto';
   tituloAlteracao?: string;
+  valorTexto?: string;
+  idadeMinima?: number;
+  idadeMaxima?: number;
+  sexo?: 'Todos' | 'Masculino' | 'Feminino';
 }
 
 // POPs (Procedimentos Operacionais Padrão)
@@ -266,7 +276,7 @@ export interface SistemaCorporal {
 
 export interface RevisaoSistema {
   id?: string;
-  sistemaCorporalId: string; // Changed from sistemaId to sistemaCorporalId to match usage
+  sistemaId: string; // Changed from sistemaId to sistemaCorporalId to match usage
   sistemaNome?: string;
   titulo: string;
   nome?: string; // Added missing property
@@ -279,6 +289,7 @@ export interface RevisaoSistema {
   ordem?: number;
   valoresReferencia?: any[]; // Added missing property used in components
   sistemaId?: string; // Added for backward compatibility
+  diferencaSexoIdade?: boolean; // Added missing property
 }
 
 // Variáveis de configuração
@@ -323,4 +334,44 @@ export interface ValorReferencia {
   tituloAlteracao?: string;
   nhbId?: string;
   diagnosticoId?: string;
+}
+
+// CIPE related interfaces
+export interface TermoCipe {
+  id?: string;
+  termo: string;
+  conceito: string;
+  eixo: string;
+  codigo: string;
+  ativo: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface CasoClinico {
+  id?: string;
+  titulo: string;
+  descricao: string;
+  termosCipe: string[];
+  ativo: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// Interface for Modulos
+export interface ModuloDisponivel {
+  id?: string;
+  nome: string;
+  titulo: string;
+  slug: string;
+  descricao: string;
+  ativo: boolean;
+  categoria: "clinico" | "educacional" | "gestao";
+  ordem?: number;
+  icone?: string;
+  visibilidade: "todos" | "admin" | "sms";
+  exibirNoDashboard: boolean;
+  exibirNavbar: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

@@ -88,13 +88,17 @@ const GerenciadorSinaisVitais = () => {
   // Estado para o formulário
   const [formSinal, setFormSinal] = useState<SinalVital>({
     nome: "",
+    unidade: "", // Add this required property
+    ativo: true, // Add this required property
     diferencaSexoIdade: false,
     valoresReferencia: [
       {
+        titulo: "", // Add required property
+        condicao: "entre", // Add required property 
         unidade: "",
         representaAlteracao: false,
         variacaoPor: "Nenhum",
-        tipoValor: "Numérico",
+        tipoValor: "Numérico"
       },
     ],
   });
@@ -163,13 +167,17 @@ const GerenciadorSinaisVitais = () => {
   const abrirModalCriar = () => {
     setFormSinal({
       nome: "",
+      unidade: "", // Add this required property
+      ativo: true, // Add this required property
       diferencaSexoIdade: false,
       valoresReferencia: [
         {
+          titulo: "", // Add required property
+          condicao: "entre", // Add required property 
           unidade: "",
           representaAlteracao: false,
           variacaoPor: "Nenhum",
-          tipoValor: "Numérico",
+          tipoValor: "Numérico"
         },
       ],
     });
@@ -204,13 +212,15 @@ const GerenciadorSinaisVitais = () => {
       ...formSinal,
       valoresReferencia: [
         ...formSinal.valoresReferencia,
-        {
+        { 
+          titulo: "",  // Add required property
+          condicao: "entre", // Add required property
           unidade: "",
           representaAlteracao: false,
           variacaoPor: "Nenhum",
-          tipoValor: "Numérico",
-        },
-      ],
+          tipoValor: "Numérico"
+        }
+      ]
     });
   };
 

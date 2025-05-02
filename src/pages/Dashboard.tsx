@@ -204,7 +204,7 @@ const Dashboard = () => {
                         variant="outline"
                         className="border-csae-green-300 text-csae-green-700 hover:bg-csae-green-50 group"
                       >
-                        Deixar uma sugestão
+                        Deixar uma sugest��o
                         <MessageSquare className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-[-2px]" />
                       </Button>
                     </Link>

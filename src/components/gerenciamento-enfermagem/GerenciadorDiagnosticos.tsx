@@ -71,7 +71,7 @@ const GerenciadorDiagnosticos = () => {
     resultadosEsperados: [{ ...emptyResultado }]
   });
   
-  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'Protocolo' | 'NHB'>('Protocolo');
+  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'NHB' | 'Protocolo'>('Protocolo');
   const [subconjuntosFiltrados, setSubconjuntosFiltrados] = useState<Subconjunto[]>([]);
   
   useEffect(() => {
@@ -490,6 +490,12 @@ const GerenciadorDiagnosticos = () => {
     return subconjunto ? subconjunto.tipo : 'Desconhecido';
   };
   
+  const handleSubconjuntoTipoChange = (tipo: string) => {
+    if (tipo === 'NHB' || tipo === 'Protocolo') {
+      setTipoSubconjuntoSelecionado(tipo);
+    }
+  };
+  
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList className="mb-4">
@@ -562,7 +568,7 @@ const GerenciadorDiagnosticos = () => {
             formDiagnostico={formDiagnostico}
             setFormDiagnostico={setFormDiagnostico}
             tipoSubconjuntoSelecionado={tipoSubconjuntoSelecionado}
-            setTipoSubconjuntoSelecionado={setTipoSubconjuntoSelecionado}
+            setTipoSubconjuntoSelecionado={handleSubconjuntoTipoChange}
             subconjuntosFiltrados={subconjuntosFiltrados}
             onSalvar={salvarDiagnostico}
             onCancel={() => setModalDiagnostico(false)}

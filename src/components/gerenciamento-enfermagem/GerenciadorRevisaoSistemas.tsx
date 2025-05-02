@@ -82,19 +82,24 @@ const GerenciadorRevisaoSistemas = () => {
   // Estado para os formulários
   const [formSistema, setFormSistema] = useState<SistemaCorporal>({
     nome: '',
-    descricao: ''
+    descricao: '',
+    ativo: true // Add this required property
   });
   
   const [formParametro, setFormParametro] = useState<RevisaoSistema>({
     nome: '',
     sistemaId: '',
     sistemaNome: '',
+    tipoAlteracao: 'Objetiva', // Add required property
+    ativo: true, // Add required property
     diferencaSexoIdade: false,
     valoresReferencia: [{ 
       unidade: '',
       representaAlteracao: false,
       variacaoPor: 'Nenhum',
-      tipoValor: 'Numérico'
+      tipoValor: 'Numérico',
+      titulo: '', // Add required property
+      condicao: 'entre' // Add required property
     }]
   });
   

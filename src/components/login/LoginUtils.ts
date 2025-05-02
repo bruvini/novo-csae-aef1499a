@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/services/firebase';
@@ -28,8 +29,12 @@ export const useLoginHandler = () => {
     }
   };
 
+  // Alias for backwards compatibility
+  const realizarLogin = login;
+
   return {
     login,
+    realizarLogin,
     isLoading
   };
 };
