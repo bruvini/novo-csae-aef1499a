@@ -133,6 +133,16 @@ export interface Subconjunto {
   updatedAt?: Timestamp;
 }
 
+// Add the SubconjuntoDiagnostico interface
+export interface SubconjuntoDiagnostico {
+  id?: string;
+  nome: string;
+  tipo: 'Protocolo' | 'NHB';
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
 export interface ValorReferencia {
   id?: string;
   minimo?: number;
