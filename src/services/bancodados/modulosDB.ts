@@ -22,8 +22,10 @@ export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponive
         ativo: true,
         visibilidade: 'todos',
         ordem: 1,
+        categoria: 'clinico',
         exibirNavbar: true,
-        exibirDashboard: true
+        exibirDashboard: true,
+        linkAcesso: '/processo-enfermagem'
       },
       {
         id: '2',
@@ -35,8 +37,10 @@ export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponive
         ativo: true,
         visibilidade: 'todos',
         ordem: 2,
+        categoria: 'clinico',
         exibirNavbar: true,
-        exibirDashboard: true
+        exibirDashboard: true,
+        linkAcesso: '/pops'
       },
       {
         id: '3',
@@ -48,8 +52,10 @@ export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponive
         ativo: true,
         visibilidade: 'todos',
         ordem: 3,
+        categoria: 'clinico',
         exibirNavbar: true,
-        exibirDashboard: true
+        exibirDashboard: true,
+        linkAcesso: '/protocolos'
       }
     ];
 
@@ -57,6 +63,22 @@ export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponive
   } catch (error) {
     console.error("Erro ao buscar módulos ativos:", error);
     return [];
+  }
+}
+
+// Add the missing verificarModuloAtivo function
+export async function verificarModuloAtivo(
+  moduloNome: string, 
+  ehAdmin: boolean, 
+  atuaSMS: boolean
+): Promise<boolean> {
+  try {
+    // In a real application, this would check if the module is active
+    // For now, it's a mock implementation that always returns true
+    return true;
+  } catch (error) {
+    console.error("Erro ao verificar se módulo está ativo:", error);
+    return false;
   }
 }
 

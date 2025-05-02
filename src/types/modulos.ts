@@ -9,15 +9,14 @@ export interface ModuloDisponivel {
   ativo: boolean;
   visibilidade: 'admin' | 'sms' | 'todos';
   ordem: number;
-  categoria?: 'clinico' | 'educacional' | 'gestao';
-  exibirDashboard?: boolean;
-  exibirNavbar?: boolean;
-  linkAcesso?: string;
+  categoria: 'clinico' | 'educacional' | 'gestao';
+  exibirDashboard: boolean;
+  exibirNavbar: boolean;
+  linkAcesso: string;
 }
 
 export interface ModuloDashboard extends Omit<ModuloDisponivel, 'nome' | 'link'> {
   id: string;
   dataCadastro: any;
   dataAtualizacao: any;
-  linkAcesso: string;
 }

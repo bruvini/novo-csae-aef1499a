@@ -11,7 +11,7 @@ import { auth } from './firebase';
 import { buscarUsuarioPorUid, cadastrarUsuario as cadastrarUsuarioDB } from './bancodados/usuariosDB';
 import { Usuario } from './bancodados/tipos';
 
-// Interface para perfil de usuário do sistema
+// Interface for user profile
 export interface PerfilUsuario {
   uid: string;
   email: string;
@@ -21,14 +21,14 @@ export interface PerfilUsuario {
   atuaSMS: boolean;
 }
 
-// Hook para autenticação
+// Authentication hook
 export function useAutenticacao() {
-  // Estado local para usuário autenticado
+  // Local state for authenticated user
   let usuario: User | null = null;
   let perfilUsuario: PerfilUsuario | null = null;
   let carregando = false;
 
-  // Verificar se o usuário está autenticado
+  // Check if the user is authenticated
   const verificarAutenticacao = (): boolean => {
     const currentUser = auth.currentUser;
     if (currentUser) {
@@ -38,24 +38,24 @@ export function useAutenticacao() {
     return false;
   };
 
-  // Verificar se o usuário é admin
+  // Check if the user is admin
   const verificarAdmin = (): boolean => {
     const sessao = obterSessao();
     return sessao?.ehAdmin === true;
   };
 
-  // Função para fazer login
+  // Login function
   const fazerLogin = async (email: string, senha: string) => {
     try {
       carregando = true;
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       usuario = userCredential.user;
       
-      // Buscar dados do usuário no Firestore
+      // Get user data from Firestore
       const userDB = await buscarUsuarioPorUid(userCredential.user.uid);
       
-      // Verificar status do usuário
-      if (userDB && userDB.statusAcesso === 'Bloqueado') {
+      // Check user status
+      if (userDB && userDB.statusAcesso === "Bloqueado") {
         await fazerLogout();
         return {
           sucesso: false,
@@ -63,7 +63,7 @@ export function useAutenticacao() {
         };
       }
       
-      if (userDB && userDB.statusAcesso === 'Aguardando') {
+      if (userDB && userDB.statusAcesso === "Aguardando") {
         await fazerLogout();
         return {
           sucesso: false,
@@ -71,21 +71,19 @@ export function useAutenticacao() {
         };
       }
 
-      // Criar objeto de perfil do usuário
+      // Create user profile object
       if (userDB) {
         perfilUsuario = {
           uid: userDB.uid,
           email: userDB.email,
           nome: userDB.nome || "",
+          nomeUsuario: userDB.dadosPessoais?.nomeCompleto || userDB.nome || "",
           ehAdmin: userDB.perfil === 'admin',
           atuaSMS: userDB.atuaSMS || false
         };
         
-        // Salvar sessão no localStorage
+        // Save session to localStorage
         salvarSessao(perfilUsuario);
-        
-        // Registrar acesso (implementação fora do escopo)
-        // await registrarAcesso(userDB.uid);
       }
       
       return { sucesso: true };
@@ -107,23 +105,23 @@ export function useAutenticacao() {
     }
   };
 
-  // Função para cadastrar novo usuário
+  // Register new user function
   const cadastrarUsuario = async (
     email: string,
     senha: string,
     dadosAdicionais: any
   ) => {
     try {
-      // Criar usuário no Firebase Authentication
+      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
       const user = userCredential.user;
       
-      // Definir displayName
+      // Set displayName
       await updateProfile(user, {
         displayName: dadosAdicionais.nomeCompleto || email.split('@')[0]
       });
       
-      // Estruturar dados do usuário para salvar no Firestore
+      // Structure user data to save in Firestore
       const dadosUsuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'> = {
         uid: user.uid,
         nome: dadosAdicionais.nomeCompleto,
@@ -133,6 +131,7 @@ export function useAutenticacao() {
         telefone: '',
         atuaSMS: dadosAdicionais.atuaSMS || false,
         dadosPessoais: {
+          nomeCompleto: dadosAdicionais.nomeCompleto || '',
           rg: dadosAdicionais.rg || '',
           cpf: dadosAdicionais.cpf || '',
           endereco: {
@@ -150,6 +149,7 @@ export function useAutenticacao() {
           ufCoren: dadosAdicionais.ufCoren || '',
           dataInicioResidencia: dadosAdicionais.dataInicioResidencia || '',
           iesEnfermagem: dadosAdicionais.iesEnfermagem || '',
+          atuaSMS: dadosAdicionais.atuaSMS || false,
           matricula: dadosAdicionais.matricula || '',
           cidadeTrabalho: dadosAdicionais.cidadeTrabalho || '',
           localCargo: dadosAdicionais.localCargo || '',
@@ -157,10 +157,10 @@ export function useAutenticacao() {
         }
       };
       
-      // Salvar no Firestore
+      // Save to Firestore
       await cadastrarUsuarioDB(dadosUsuario);
       
-      // Fazer logout pois o usuário precisa aguardar aprovação
+      // Logout as user needs to wait for approval
       await fazerLogout();
       
       return { sucesso: true, usuario: user };
@@ -176,14 +176,14 @@ export function useAutenticacao() {
     }
   };
 
-  // Função para sair
+  // Logout function
   const fazerLogout = async () => {
     try {
       await signOut(auth);
       usuario = null;
       perfilUsuario = null;
       
-      // Limpar sessão
+      // Clear session
       localStorage.removeItem('sessao_usuario');
       
       return { sucesso: true };
@@ -192,7 +192,7 @@ export function useAutenticacao() {
     }
   };
 
-  // Função para recuperar senha
+  // Password recovery function
   const recuperarSenha = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
@@ -208,7 +208,7 @@ export function useAutenticacao() {
     }
   };
 
-  // Função para salvar sessão do usuário no localStorage
+  // Save user session to localStorage
   const salvarSessao = (dados: Omit<PerfilUsuario, "uid">) => {
     if (!usuario) return;
     
@@ -220,7 +220,7 @@ export function useAutenticacao() {
     localStorage.setItem('sessao_usuario', JSON.stringify(sessao));
   };
 
-  // Função para obter sessão do localStorage
+  // Get session from localStorage
   const obterSessao = (): PerfilUsuario | null => {
     const sessaoStr = localStorage.getItem('sessao_usuario');
     if (sessaoStr) {
