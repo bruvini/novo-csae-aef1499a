@@ -1,20 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, Download, FileText, Calendar, ExternalLink } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import Header from '@/components/Header';
-import SimpleFooter from '@/components/SimpleFooter';
-import { NavigationMenu } from '@/components/NavigationMenu';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { ProtocoloEnfermagem } from '@/services/bancodados/tipos';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { FileText, Calendar, Search, ExternalLink } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import { ProtocoloEnfermagem } from '@/services/bancodados/tipos';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import Header from '@/components/Header';
+import NavigationMenu from '@/components/NavigationMenu';
+import SimpleFooter from '@/components/SimpleFooter';
 
 const ProtocolosEnfermagemPage = () => {
   const [protocolos, setProtocolos] = useState<ProtocoloEnfermagem[]>([]);
@@ -24,35 +21,25 @@ const ProtocolosEnfermagemPage = () => {
   useEffect(() => {
     const carregarProtocolos = async () => {
       try {
-        // Mock data instead of actual Firebase calls
-        setTimeout(() => {
-          const mockProtocolos: ProtocoloEnfermagem[] = [
-            {
-              id: '1',
-              nome: 'Protocolo de Enfermagem Volume 1',
-              volume: 'Volume 1',
-              descricao: 'Protocolo de Atenção Primária à Saúde',
-              linkPdf: 'https://example.com/protocolo1.pdf',
-              linkImagem: 'https://via.placeholder.com/300x400',
-              dataPublicacao: new Date() as any,
-            },
-            {
-              id: '2',
-              nome: 'Protocolo de Enfermagem Volume 2',
-              volume: 'Volume 2',
-              descricao: 'Protocolo de Atenção Hospitalar',
-              linkPdf: 'https://example.com/protocolo2.pdf',
-              linkImagem: 'https://via.placeholder.com/300x400',
-              dataPublicacao: new Date() as any,
-              dataAtualizacao: new Date() as any,
-            }
-          ];
-          
-          setProtocolos(mockProtocolos);
-          setCarregando(false);
-        }, 1000);
+        const protocolosRef = collection(db, 'protocolosEnfermagem');
+        const protocolosSnapshot = await getDocs(protocolosRef);
+        const protocolosData = protocolosSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as ProtocoloEnfermagem[];
+        
+        // Ordenar protocolos por volume em ordem crescente
+        const protocolosOrdenados = protocolosData.sort((a, b) => {
+          // Converter os volumes para números (removendo possíveis caracteres não numéricos)
+          const volA = parseInt(a.volume.replace(/\D/g, '')) || 0;
+          const volB = parseInt(b.volume.replace(/\D/g, '')) || 0;
+          return volA - volB;
+        });
+        
+        setProtocolos(protocolosOrdenados);
       } catch (error) {
         console.error("Erro ao carregar protocolos:", error);
+      } finally {
         setCarregando(false);
       }
     };
@@ -82,9 +69,6 @@ const ProtocolosEnfermagemPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Helmet>
-        <title>Biblioteca de Protocolos de Enfermagem</title>
-      </Helmet>
       <Header />
       <NavigationMenu activeItem="protocolos" />
       

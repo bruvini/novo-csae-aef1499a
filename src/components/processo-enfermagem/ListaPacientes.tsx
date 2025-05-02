@@ -1,198 +1,286 @@
 
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, ArrowUp, ArrowDown } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-
-interface Paciente {
-  id: string;
-  nome: string;
-  dataNascimento: string;
-  prontuario: string;
-}
+import React, { useState } from 'react';
+import { Edit2, Trash2, Clock, ArrowRight, RefreshCw } from 'lucide-react';
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableRow, 
+  TableHead, 
+  TableCell 
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Paciente, excluirPaciente } from '@/services/bancodados';
+import { EditarPacienteModal } from './EditarPacienteModal';
+import { HistoricoEvolucaoModal } from './HistoricoEvolucaoModal';
 
 interface ListaPacientesProps {
-  onSelectPatient: (patientId: string) => void;
+  pacientes: Paciente[];
+  setPacientes: React.Dispatch<React.SetStateAction<Paciente[]>>;
+  onSelecionarPaciente: (paciente: Paciente, iniciar: boolean, evolucaoId?: string) => void;
 }
 
-export function ListaPacientes({ onSelectPatient }: ListaPacientesProps) {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [termoBusca, setTermoBusca] = useState('');
-  const [carregando, setCarregando] = useState(true);
-  const [ordenacao, setOrdenacao] = useState<{ coluna: string; ordem: 'asc' | 'desc' }>({
-    coluna: 'nome',
-    ordem: 'asc'
-  });
-  
+export function ListaPacientes({ pacientes, setPacientes, onSelecionarPaciente }: ListaPacientesProps) {
   const { toast } = useToast();
-  
-  useEffect(() => {
-    const carregarPacientes = async () => {
-      try {
-        setCarregando(true);
-        // TODO: Implementar busca de pacientes do banco de dados
-        // Por enquanto, usaremos dados de exemplo
-        const dadosExemplo: Paciente[] = [
-          { id: '1', nome: 'Ana Silva', dataNascimento: '1980-05-10', prontuario: '123456' },
-          { id: '2', nome: 'João Santos', dataNascimento: '1975-12-15', prontuario: '234567' },
-          { id: '3', nome: 'Maria Oliveira', dataNascimento: '1990-03-22', prontuario: '345678' },
-        ];
-        
-        setPacientes(dadosExemplo);
-      } catch (error) {
-        console.error('Erro ao carregar pacientes:', error);
-        toast({
-          title: 'Erro',
-          description: 'Não foi possível carregar a lista de pacientes.',
-          variant: 'destructive',
-        });
-      } finally {
-        setCarregando(false);
-      }
-    };
+  const [filtro, setFiltro] = useState('');
+  const [pacienteParaExcluir, setPacienteParaExcluir] = useState<Paciente | null>(null);
+  const [editarModalOpen, setEditarModalOpen] = useState(false);
+  const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null);
+  const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
+  const [pacienteParaHistorico, setPacienteParaHistorico] = useState<Paciente | null>(null);
+
+  const pacientesFiltrados = pacientes.filter(p => 
+    p.nomeCompleto.toLowerCase().includes(filtro.toLowerCase())
+  );
+
+  const handleExcluir = async () => {
+    if (!pacienteParaExcluir) return;
     
-    carregarPacientes();
-  }, [toast]);
-  
-  const handleOrdenar = (coluna: string) => {
-    setOrdenacao(prev => ({
-      coluna,
-      ordem: prev.coluna === coluna && prev.ordem === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-  
-  const pacientesFiltrados = pacientes
-    .filter(paciente =>
-      paciente.nome.toLowerCase().includes(termoBusca.toLowerCase()) ||
-      paciente.prontuario.includes(termoBusca)
-    )
-    .sort((a, b) => {
-      const { coluna, ordem } = ordenacao;
-      let comparacao = 0;
-      
-      if (coluna === 'nome') {
-        comparacao = a.nome.localeCompare(b.nome);
-      } else if (coluna === 'dataNascimento') {
-        comparacao = a.dataNascimento.localeCompare(b.dataNascimento);
-      } else if (coluna === 'prontuario') {
-        comparacao = a.prontuario.localeCompare(b.prontuario);
-      }
-      
-      return ordem === 'asc' ? comparacao : -comparacao;
-    });
-  
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-          <Input
-            type="search"
-            placeholder="Buscar por nome ou prontuário..."
-            className="pl-9"
-            value={termoBusca}
-            onChange={(e) => setTermoBusca(e.target.value)}
-          />
-        </div>
+    try {
+      if (pacienteParaExcluir.id) {
+        const sucesso = await excluirPaciente(pacienteParaExcluir.id);
         
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Cadastrar Paciente
-        </Button>
-      </div>
-      
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto rounded-md border">
-            <Table>
-              <TableHeader>
+        if (sucesso) {
+          setPacientes(prev => prev.filter(p => p.id !== pacienteParaExcluir.id));
+          toast({
+            title: "Paciente excluído",
+            description: "O paciente foi removido com sucesso.",
+          });
+        } else {
+          throw new Error("Falha ao excluir paciente");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao excluir paciente:", error);
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o paciente. Tente novamente.",
+        variant: "destructive"
+      });
+    }
+    
+    setPacienteParaExcluir(null);
+  };
+
+  const handleEditarPaciente = (pacienteAtualizado: Paciente) => {
+    setPacientes(prev => 
+      prev.map(p => p.id === pacienteAtualizado.id ? pacienteAtualizado : p)
+    );
+    
+    setEditarModalOpen(false);
+    toast({
+      title: "Paciente atualizado",
+      description: "Os dados do paciente foram atualizados com sucesso.",
+    });
+  };
+
+  const verificarEvolucaoEmAberto = (paciente: Paciente) => {
+    if (!paciente.evolucoes || paciente.evolucoes.length === 0) return null;
+    
+    const evolucaoAberta = paciente.evolucoes.find(e => 
+      e.statusConclusao === 'Em andamento' || e.statusConclusao === 'Interrompido'
+    );
+    
+    return evolucaoAberta;
+  };
+
+  const contarEvolucoesConcluidas = (paciente: Paciente) => {
+    if (!paciente.evolucoes) return 0;
+    
+    return paciente.evolucoes.filter(e => e.statusConclusao === 'Concluído').length;
+  };
+
+  const formatarData = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    
+    try {
+      const data = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return new Intl.DateTimeFormat('pt-BR').format(data);
+    } catch (e) {
+      return 'Data inválida';
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+        <div className="p-4 border-b bg-gray-50">
+          <div className="flex items-center gap-2 mb-2">
+            <Input 
+              placeholder="Buscar paciente por nome..." 
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              className="max-w-sm"
+            />
+            {filtro && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setFiltro('')}
+              >
+                Limpar
+              </Button>
+            )}
+          </div>
+          <h2 className="text-lg font-semibold text-csae-green-700">Lista de Pacientes</h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome do Paciente</TableHead>
+                <TableHead>Data de Nascimento</TableHead>
+                <TableHead>Evoluções Concluídas</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pacientesFiltrados.length === 0 ? (
                 <TableRow>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleOrdenar('nome')}
-                  >
-                    Nome
-                    {ordenacao.coluna === 'nome' && (
-                      ordenacao.ordem === 'asc' ? 
-                        <ArrowUp className="ml-2 h-4 w-4 inline" /> : 
-                        <ArrowDown className="ml-2 h-4 w-4 inline" />
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleOrdenar('dataNascimento')}
-                  >
-                    Data de Nascimento
-                    {ordenacao.coluna === 'dataNascimento' && (
-                      ordenacao.ordem === 'asc' ? 
-                        <ArrowUp className="ml-2 h-4 w-4 inline" /> : 
-                        <ArrowDown className="ml-2 h-4 w-4 inline" />
-                    )}
-                  </TableHead>
-                  <TableHead 
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => handleOrdenar('prontuario')}
-                  >
-                    Prontuário
-                    {ordenacao.coluna === 'prontuario' && (
-                      ordenacao.ordem === 'asc' ? 
-                        <ArrowUp className="ml-2 h-4 w-4 inline" /> : 
-                        <ArrowDown className="ml-2 h-4 w-4 inline" />
-                    )}
-                  </TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableCell colSpan={5} className="text-center py-6 text-gray-500">
+                    {filtro ? 'Nenhum paciente encontrado para o filtro aplicado.' : 'Nenhum paciente cadastrado.'}
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              
-              <TableBody>
-                {carregando ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
-                      Carregando pacientes...
-                    </TableCell>
-                  </TableRow>
-                ) : pacientesFiltrados.length > 0 ? (
-                  pacientesFiltrados.map((paciente) => (
+              ) : (
+                pacientesFiltrados.map((paciente) => {
+                  const evolucaoAberta = verificarEvolucaoEmAberto(paciente);
+                  const evolucoesConcluidas = contarEvolucoesConcluidas(paciente);
+                  
+                  return (
                     <TableRow key={paciente.id}>
-                      <TableCell>{paciente.nome}</TableCell>
+                      <TableCell className="font-medium">{paciente.nomeCompleto}</TableCell>
+                      <TableCell>{formatarData(paciente.dataNascimento)} ({paciente.idade} anos)</TableCell>
+                      <TableCell>{evolucoesConcluidas}</TableCell>
                       <TableCell>
-                        {new Date(paciente.dataNascimento).toLocaleDateString('pt-BR')}
+                        {evolucaoAberta ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {evolucaoAberta.statusConclusao === 'Interrompido' ? 'Interrompido' : 'Em andamento'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Disponível
+                          </span>
+                        )}
                       </TableCell>
-                      <TableCell>{paciente.prontuario}</TableCell>
-                      <TableCell className="text-right">
-                        <Button 
-                          onClick={() => onSelectPatient(paciente.id)}
-                          className="bg-csae-green-600 hover:bg-csae-green-700"
-                        >
-                          Iniciar Processo
-                        </Button>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setPacienteParaEditar(paciente);
+                              setEditarModalOpen(true);
+                            }}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setPacienteParaExcluir(paciente)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          
+                          {evolucoesConcluidas > 0 && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setPacienteParaHistorico(paciente);
+                                setHistoricoModalOpen(true);
+                              }}
+                            >
+                              <Clock className="h-4 w-4" />
+                            </Button>
+                          )}
+                          
+                          {evolucaoAberta ? (
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="bg-csae-green-600 hover:bg-csae-green-700"
+                              onClick={() => onSelecionarPaciente(paciente, true, evolucaoAberta.id)}
+                            >
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              Retomar
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              className="bg-csae-green-600 hover:bg-csae-green-700"
+                              onClick={() => onSelecionarPaciente(paciente, true)}
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                              Iniciar
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8">
-                      Nenhum paciente encontrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+
+      {/* Modal de confirmação de exclusão */}
+      <Dialog open={!!pacienteParaExcluir} onOpenChange={(open) => !open && setPacienteParaExcluir(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o paciente {pacienteParaExcluir?.nomeCompleto}? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPacienteParaExcluir(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleExcluir}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de edição de paciente */}
+      {pacienteParaEditar && (
+        <EditarPacienteModal 
+          isOpen={editarModalOpen}
+          onClose={() => setEditarModalOpen(false)}
+          paciente={pacienteParaEditar}
+          onEditar={handleEditarPaciente}
+        />
+      )}
+
+      {/* Modal de histórico de evoluções */}
+      {pacienteParaHistorico && (
+        <HistoricoEvolucaoModal 
+          isOpen={historicoModalOpen}
+          onClose={() => setHistoricoModalOpen(false)}
+          paciente={pacienteParaHistorico}
+        />
+      )}
+    </>
   );
 }
-
-export default ListaPacientes;

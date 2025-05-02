@@ -43,8 +43,7 @@ const GerenciadorProtocolos = () => {
   const [carregando, setCarregando] = useState(true);
   
   // Estado para o formulário
-  const [formProtocolo, setFormProtocolo] = useState<Partial<ProtocoloEnfermagem>>({
-    id: '',
+  const [formProtocolo, setFormProtocolo] = useState<ProtocoloEnfermagem>({
     volume: '',
     nome: '',
     dataPublicacao: Timestamp.now(),
@@ -91,7 +90,6 @@ const GerenciadorProtocolos = () => {
   // Abrir modal para criar novo protocolo
   const abrirModalCriar = () => {
     setFormProtocolo({
-      id: '',
       volume: '',
       nome: '',
       dataPublicacao: Timestamp.now(),
@@ -113,7 +111,7 @@ const GerenciadorProtocolos = () => {
   const salvarProtocolo = async () => {
     try {
       // Validação dos campos obrigatórios
-      if (!formProtocolo.nome?.trim() || !formProtocolo.volume?.trim() || !formProtocolo.descricao?.trim()) {
+      if (!formProtocolo.nome.trim() || !formProtocolo.volume.trim() || !formProtocolo.descricao.trim()) {
         toast({
           title: "Campos obrigatórios",
           description: "Volume, nome e descrição são obrigatórios.",
@@ -123,7 +121,7 @@ const GerenciadorProtocolos = () => {
       }
 
       // Validação dos links
-      if (!formProtocolo.linkPdf || !isValidUrl(formProtocolo.linkPdf)) {
+      if (!isValidUrl(formProtocolo.linkPdf)) {
         toast({
           title: "Link inválido",
           description: "O link do PDF deve ser uma URL válida.",
@@ -156,7 +154,7 @@ const GerenciadorProtocolos = () => {
         
         // Atualizar lista
         setProtocolos(prev => 
-          prev.map(p => p.id === editandoId ? {...formProtocolo, id: editandoId, updatedAt: Timestamp.now()} as ProtocoloEnfermagem : p)
+          prev.map(p => p.id === editandoId ? {...formProtocolo, id: editandoId, updatedAt: Timestamp.now()} : p)
         );
       } else {
         // Criar novo
@@ -176,8 +174,10 @@ const GerenciadorProtocolos = () => {
         // Adicionar à lista
         setProtocolos(prev => [...prev, {
           ...novoProtocolo, 
-          id: docRef.id
-        } as ProtocoloEnfermagem]);
+          id: docRef.id, 
+          createdAt: Timestamp.now(), 
+          updatedAt: Timestamp.now()
+        }]);
       }
       
       setModalAberto(false);

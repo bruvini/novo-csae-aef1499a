@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useLoginUtils } from "./LoginUtils";
+import { useLoginHandler } from "./LoginUtils";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -15,7 +15,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const registrarBtnRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
-  const { realizarLogin } = useLoginUtils();
+  const { realizarLogin } = useLoginHandler();
   const navigate = useNavigate();
 
   // Efeito para destacar o botão de registrar quando necessário
@@ -54,8 +54,8 @@ const LoginForm = () => {
     setLoading(true);
     setRegistrarAtivo(false);
     
-    const response = await realizarLogin(email, password);
-    setRegistrarAtivo(response.registrarAtivo || false);
+    const { sucesso, registrarAtivo: novoRegistrarAtivo } = await realizarLogin(email, password);
+    setRegistrarAtivo(novoRegistrarAtivo);
     setLoading(false);
   };
 

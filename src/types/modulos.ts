@@ -1,22 +1,14 @@
 
+import { Timestamp } from "firebase/firestore";
+
 export interface ModuloDisponivel {
   id?: string;
+  nome: string;
   titulo: string;
   descricao: string;
-  nome: string;
-  link: string;
-  icone: string;
   ativo: boolean;
-  visibilidade: 'admin' | 'sms' | 'todos';
-  ordem: number;
-  categoria: 'clinico' | 'educacional' | 'gestao';
-  exibirDashboard: boolean;
-  exibirNavbar: boolean;
-  linkAcesso: string;
-}
-
-export interface ModuloDashboard extends ModuloDisponivel {
-  id: string;
-  dataCadastro: any;
-  dataAtualizacao: any;
+  categoria: "clinico" | "educacional" | "gestao";
+  ordem?: number;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

@@ -1,246 +1,52 @@
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
-import { Timestamp } from 'firebase/firestore';
-
-export interface PacientePerinatal {
-  id?: string;
-  nome: string;
-  dataNascimento: Timestamp;
-  titulo: string;
-  descricao: string;
-  tipoPaciente: 'mulher' | 'bebê';
-  situacaoObstetrica?: 'Gestante' | 'Puérpera';
-  idadeGestacional?: number;
-  dataParto?: Timestamp;
-  nomeMae?: string;
-  idadeGestacionalNascer?: number;
-  prematuro?: boolean;
-  profissionalUid: string;
-  profissionalNome: string;
-  dataCadastro?: Timestamp;
-  dataAtualizacao?: Timestamp;
+export interface DadosPessoais {
+  nomeCompleto: string;
+  rg: string;
   cpf: string;
-  cns: string;
-  telefone: string;
-  endereco: string;
-  unidade: string;
-  municipio: string;
-  microarea: string;
-  agenteSaude: string;
-  dataUltimaMenstruacao: Timestamp | null;
-  dataProvavelParto: Timestamp | null;
-  ativo: boolean;
-  situacao: 'pre-natal' | 'puerperio' | 'puericultura';
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
 }
 
-export interface PerfilUsuario {
-  uid: string;
-  email: string;
-  nome: string;
-  nomeUsuario: string;
-  ehAdmin: boolean;
+export interface DadosProfissionais {
+  formacao: 'Enfermeiro' | 'Residente de Enfermagem' | 'Técnico de Enfermagem' | 'Acadêmico de Enfermagem';
+  numeroCoren?: string;
+  ufCoren?: string;
+  dataInicioResidencia?: string;
+  iesEnfermagem?: string;
   atuaSMS: boolean;
+  lotacao?: string;
+  matricula?: string;
+  cidadeTrabalho?: string;
+  localCargo?: string;
+}
+
+export interface Log {
+  usuario_afetado: string;
+  acao: "aprovado" | "recusado" | "revogado" | "reativado" | "excluído";
+  quem_realizou: string;
+  data_hora: Timestamp;
+  justificativa?: string;
 }
 
 export interface Usuario {
-  id?: string;
-  uid: string;
+  dadosPessoais: DadosPessoais;
+  dadosProfissionais: DadosProfissionais;
   email: string;
-  nome: string;
-  perfil: string;
-  foto: string;
-  telefone: string;
-  atuaSMS: boolean;
-  dadosPessoais: {
-    nomeCompleto: string;
-    rg: string;
-    cpf: string;
-    endereco: {
-      rua: string;
-      numero: string;
-      bairro: string;
-      cidade: string;
-      uf: string;
-      cep: string;
-    }
-  };
-  dadosProfissionais: {
-    formacao: string;
-    numeroCoren?: string;
-    ufCoren?: string;
-    dataInicioResidencia?: string;
-    iesEnfermagem?: string;
-    atuaSMS: boolean;
-    lotacao?: string;
-    matricula?: string;
-    cidadeTrabalho?: string;
-    localCargo?: string;
-  };
+  uid: string;
   dataCadastro: Timestamp;
-  statusAcesso: "Aguardando" | "Aprovado" | "Negado" | "Bloqueado";
+  statusAcesso: 'Aguardando' | 'Aprovado' | 'Negado' | 'Revogado' | 'Cancelado';
+  tipoUsuario?: 'Administrador' | 'Comum';
   dataAprovacao?: Timestamp;
   dataRevogacao?: Timestamp;
   motivoRevogacao?: string;
   dataUltimoAcesso?: Timestamp;
-  historico_logs?: any[];
-  tipoUsuario?: "Administrador" | "Comum";
-  logAcessos?: Timestamp[];
-  ehAdmin?: boolean;
-}
-
-export interface DiagnosticoCompleto {
+  historico_logs?: Log[];
   id?: string;
-  nome: string;
-  codigo?: string;
-  titulo?: string;
-  explicacao?: string;
-  subconjuntoId: string;
-  subitemId?: string;
-  definicao?: string;
-  subconjunto?: string;
-  subitemNome?: string;
-  resultadosEsperados: ResultadoEsperado[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  descricao?: string;
-}
-
-export interface ResultadoEsperado {
-  id?: string;
-  descricao: string;
-  intervencoes: Intervencao[];
-  diagnosticoId?: string;
-}
-
-export interface Intervencao {
-  id?: string;
-  descricao?: string;
-  resultadoEsperadoId?: string;
-  verboPrimeiraEnfermeiro?: string;
-  verboOutraPessoa?: string;
-  descricaoRestante?: string;
-  nomeDocumento?: string;
-  linkDocumento?: string;
-  intervencaoEnfermeiro?: string;
-  intervencaoInfinitivo?: string;
-}
-
-export interface Subconjunto {
-  id?: string;
-  nome: string;
-  tipo: 'Protocolo' | 'NHB';
-  descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-// Add the SubconjuntoDiagnostico interface
-export interface SubconjuntoDiagnostico {
-  id?: string;
-  nome: string;
-  tipo: 'Protocolo' | 'NHB';
-  descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface ValorReferencia {
-  id?: string;
-  minimo?: number;
-  maximo?: number;
-  unidade: string;
-  grupo?: string;
-  observacao?: string;
-  representaAlteracao?: boolean;
-  variacaoPor?: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
-  tipoValor?: 'Numérico' | 'Texto';
-  valorTexto?: string;
-  valorMinimo?: number;
-  valorMaximo?: number;
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  sexo?: 'Masculino' | 'Feminino' | 'Todos';
-  tituloAlteracao?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
-}
-
-export interface ExameLaboratorial {
-  id?: string;
-  nome: string;
-  sigla?: string;
-  descricao?: string;
-  tipoExame?: 'Laboratorial' | 'Imagem';
-  diferencaSexoIdade?: boolean;
-  valoresReferencia: ValorReferencia[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface SinalVital {
-  id?: string;
-  nome: string;
-  sigla: string;
-  descricao?: string;
-  valoresReferencia: ValorReferencia[];
-  diferencaSexoIdade?: boolean;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface RevisaoSistema {
-  id?: string;
-  nome: string;
-  sistemaCorporalId: string;
-  sistemaId: string;
-  sistemaNome: string;
-  pergunta?: string;
-  diferencaSexoIdade?: boolean;
-  valoresReferencia: ValorReferencia[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface SistemaCorporal {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface TermoCipe {
-  id?: string;
-  termo: string;
-  eixo: string;
-  codigo: string;
-  definicao: string;
-  tipo?: string;
-  descricao?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface CasoClinico {
-  id?: string;
-  titulo: string;
-  descricao: string;
-  diagnosticos: DiagnosticoCompleto[];
-  tipoCaso?: string;
-  casoClinico?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-  focoEsperado?: string;
-}
-
-export interface ProtocoloEnfermagem {
-  id: string;
-  nome: string;
-  volume: string;
-  descricao: string;
-  linkPdf: string;
-  linkImagem?: string;
-  dataPublicacao: Timestamp;
-  dataAtualizacao?: Timestamp;
 }
 
 export interface Paciente {
@@ -252,15 +58,15 @@ export interface Paciente {
   profissionalUid: string;
   profissionalNome: string;
   dataCadastro: Timestamp;
-  dataAtualizacao?: Timestamp;
+  dataAtualizacao?: Timestamp | FieldValue;
   evolucoes?: Evolucao[];
 }
 
 export interface Evolucao {
   id?: string;
   dataInicio: Timestamp;
-  dataAtualizacao: Timestamp | any;
-  dataConclusao?: Timestamp | any;
+  dataAtualizacao: Timestamp | FieldValue;
+  dataConclusao?: Timestamp | FieldValue;
   statusConclusao: 'Em andamento' | 'Interrompido' | 'Concluído';
   avaliacao?: string;
   diagnosticos?: DiagnosticoEnfermagem[];
@@ -288,18 +94,290 @@ export interface Implementacao {
   observacoes?: string;
 }
 
-export interface ModuloDisponivel {
+export interface ValorReferencia {
+  idadeMinima?: number;
+  idadeMaxima?: number;
+  sexo?: 'Masculino' | 'Feminino' | 'Todos';
+  valorMinimo?: number;
+  valorMaximo?: number;
+  valorTexto?: string;
+  tipoValor?: 'Numérico' | 'Texto';
+  unidade: string;
+  nhbId?: string;
+  diagnosticoId?: string;
+  representaAlteracao: boolean;
+  tituloAlteracao?: string;
+  variacaoPor: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
+}
+
+export interface SinalVital {
+  id?: string;
+  nome: string;
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ExameLaboratorial {
+  id?: string;
+  nome: string;
+  tipoExame: 'Laboratorial' | 'Imagem';
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface RevisaoSistema {
+  id?: string;
+  nome: string;
+  sistemaId: string;
+  sistemaNome: string;
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferencia[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SistemaCorporal {
+  id?: string;
+  nome: string;
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface Intervencao {
+  verboPrimeiraEnfermeiro: string;
+  verboOutraPessoa: string;
+  descricaoRestante: string;
+  intervencaoEnfermeiro?: string;
+  intervencaoInfinitivo?: string;
+  nomeDocumento?: string;
+  linkDocumento?: string;
+  id?: string;
+}
+
+export interface ResultadoEsperado {
+  descricao: string;
+  intervencoes: Intervencao[];
+  id?: string;
+}
+
+export interface DiagnosticoCompleto {
+  id?: string;
+  nome: string;
+  subconjunto: 'Protocolo de Enfermagem' | 'Necessidades Humanas Básicas';
+  subconjuntoId: string;
+  subitemNome: string;
+  subitemId?: string;
+  explicacao?: string;
+  descricao?: string;
+  resultadosEsperados: ResultadoEsperado[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface NHB {
+  id?: string;
+  nome: string;
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ProtocoloEnfermagem {
+  id?: string;
+  volume: string;
+  nome: string;
+  dataPublicacao: Timestamp;
+  dataAtualizacao?: Timestamp;
+  linkImagem?: string;
+  descricao: string;
+  linkPdf: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface Subconjunto {
+  id?: string;
+  nome: string;
+  tipo: 'Protocolo' | 'NHB';
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface SubconjuntoDiagnostico {
+  id?: string;
+  nome: string;
+  tipo: 'Protocolo' | 'NHB';
+  descricao?: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface TermoCipe {
+  id?: string;
+  tipo: string;
+  termo: string;
+  descricao: string;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface CasoClinico {
+  id?: string;
+  tipoCaso: 'Diagnóstico' | 'Ações' | 'Resultados';
+  casoClinico: string;
+  focoEsperado: string | null;
+  julgamentoEsperado: string | null;
+  meioEsperado: string | null;
+  acaoEsperado: string | null;
+  tempoEsperado: string | null;
+  localizacaoEsperado: string | null;
+  clienteEsperado: string | null;
+  arrayVencedor: string[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface PacientePerinatal {
   id?: string;
   titulo: string;
   descricao: string;
+  tipoPaciente: "mulher" | "bebê";
   nome: string;
-  link: string;
-  icone: string;
-  ativo: boolean;
-  visibilidade: 'admin' | 'sms' | 'todos';
-  ordem: number;
-  categoria: 'clinico' | 'educacional' | 'gestao';
-  exibirDashboard: boolean;
-  exibirNavbar: boolean;
-  linkAcesso: string;
+  dataNascimento: Timestamp;
+  profissionalUid: string;
+  profissionalNome: string;
+  dataCadastro: Timestamp;
+  dataAtualizacao: Timestamp;
+  
+  situacaoObstetrica?: "Gestante" | "Puérpera";
+  dataParto?: Timestamp;
+  idadeGestacional?: number;
+}
+
+export interface ConsultaPreNatal {
+  id?: string;
+  pacienteId: string;
+  dataConsulta: Timestamp;
+  profissionalUid: string;
+  profissionalNome: string;
+  tipoConsulta: "Primeira" | "Primeiro Trimestre" | "Segundo Trimestre" | "Terceiro Trimestre" | "Encerramento";
+  
+  idadeGestacional: number;
+  peso: number;
+  altura?: number;
+  imc?: number;
+  pressaoArterial: string;
+  edema?: "ausente" | "MMII" | "MMII e face" | "generalizado";
+  movimentosFetais?: "presentes" | "ausentes";
+  batimentoCardiacoFetal?: number;
+  alturaPelvica?: number;
+  examesRealizados?: { nome: string, resultado: string, data: Timestamp }[];
+  orientacoesRealizadas: string[];
+  prescricoes?: { medicamento: string, posologia: string, duracao: string }[];
+  condutas: string[];
+  
+  tipoEncerramento?: "Parto" | "Aborto";
+  dataParto?: Timestamp;
+  tipoParto?: "Normal" | "Cesárea" | "Fórceps";
+  localParto?: string;
+  nomeBebe?: string;
+  dataNascimentoBebe?: Timestamp;
+}
+
+export interface ConsultaPuerperio {
+  id?: string;
+  pacienteId: string;
+  dataConsulta: Timestamp;
+  profissionalUid: string;
+  profissionalNome: string;
+  tipoPuerperio: "Imediato" | "Tardio";
+  diasPosParto: number;
+  
+  peso: number;
+  pressaoArterial: string;
+  temperatura?: number;
+  mamas: "flácidas" | "túrgidas" | "ingurgitadas" | "mastite";
+  mamilos: "íntegros" | "fissuras" | "escoriados";
+  involucaoUterina: string;
+  loquios: "rubros" | "serosanguinolentos" | "serosos" | "ausentes";
+  ferida?: "cicatrizada" | "em cicatrização" | "sinais de infecção" | "deiscência";
+  emocional: string;
+  amamentacao: "exclusiva" | "mista" | "artificial";
+  dificuldadesAmamentacao?: string;
+  planejamentoReprodutivo?: string;
+  orientacoesRealizadas: string[];
+  prescricoes?: { medicamento: string, posologia: string, duracao: string }[];
+  condutas: string[];
+}
+
+export interface ConsultaPuericultura {
+  id?: string;
+  pacienteId: string;
+  dataConsulta: Timestamp;
+  profissionalUid: string;
+  profissionalNome: string;
+  idadeCrianca: string;
+  
+  peso: number;
+  comprimento: number;
+  perimetroCefalico: number;
+  perimetroToracico?: number;
+  imc?: number;
+  
+  dnpm: {
+    social?: string;
+    motor?: string;
+    adaptativo?: string;
+    linguagem?: string;
+  };
+  
+  avaliacaoFisica: {
+    pele?: string;
+    cabeca?: string;
+    fontanelas?: string;
+    olhos?: string;
+    orelhas?: string;
+    boca?: string;
+    torax?: string;
+    abdomen?: string;
+    genitalia?: string;
+    membros?: string;
+    coluna?: string;
+  };
+  
+  triagem: {
+    testeDoOlhinho?: "normal" | "alterado" | "não realizado";
+    testeOrelhinha?: "normal" | "alterado" | "não realizado";
+    testePezinho?: "normal" | "alterado" | "não realizado" | "pendente";
+    testeCoracaozinho?: "normal" | "alterado" | "não realizado";
+  };
+  
+  vacinacaoAtualizada: boolean;
+  vacinasPendentes?: string[];
+  
+  alimentacao: "aleitamento materno exclusivo" | "aleitamento misto" | "fórmula infantil" | "alimentação complementar" | "alimentação da família";
+  dificuldadesAlimentacao?: string;
+  
+  suplementacaoVitaminaA?: boolean;
+  suplementacaoFerro?: boolean;
+  suplementacaoOutros?: { suplemento: string, dose: string }[];
+  
+  examesRealizados?: { nome: string, resultado: string, data: Timestamp }[];
+  
+  situacoesEspeciais?: {
+    prematuro?: boolean;
+    HIV?: boolean;
+    sifilis?: boolean;
+    hepatiteB?: boolean;
+  };
+  
+  orientacoesRealizadas: string[];
+  prescricoes?: { medicamento: string, posologia: string, duracao: string }[];
+  condutas: string[];
 }

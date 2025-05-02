@@ -1,76 +1,83 @@
 
 import React, { useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/services/autenticacao';
 import { verificarModuloAtivo } from '@/services/bancodados/modulosDB';
-import Loading from './Loading';
 
 interface RotaProtegidaProps {
-  requereAutenticacao?: boolean;
-  permiteSoAdmin?: boolean;
-  permiteSoSMS?: boolean;
-  modulo?: string;
+  children: React.ReactNode;
+  apenasAdmin?: boolean;
+  moduloNome?: string;
 }
 
-const RotaProtegida = ({ 
-  requereAutenticacao = true, 
-  permiteSoAdmin = false, 
-  permiteSoSMS = false,
-  modulo
-}: RotaProtegidaProps) => {
-  const { usuario, obterSessao, carregando } = useAutenticacao();
-  const location = useLocation();
-  const [moduloAtivo, setModuloAtivo] = useState<boolean | null>(null);
-  const [verificandoModulo, setVerificandoModulo] = useState<boolean>(false);
+const RotaProtegida: React.FC<RotaProtegidaProps> = ({ 
+  children, 
+  apenasAdmin = false,
+  moduloNome
+}) => {
+  const { verificarAutenticacao, verificarAdmin } = useAutenticacao();
+  const { toast } = useToast();
+  const [verificando, setVerificando] = useState(true);
+  const [moduloAtivo, setModuloAtivo] = useState(true);
+  const autenticado = verificarAutenticacao();
+  const admin = verificarAdmin();
   
-  // Get user session for access to extra properties
-  const sessao = obterSessao();
-
   useEffect(() => {
-    const verificarModulo = async () => {
-      if (modulo && sessao) {
-        setVerificandoModulo(true);
-        const ativo = await verificarModuloAtivo(
-          modulo,
-          sessao.ehAdmin,
-          sessao.atuaSMS
-        );
-        setModuloAtivo(ativo);
-        setVerificandoModulo(false);
-      } else if (modulo) {
-        setModuloAtivo(false);
-      } else {
+    const checarModulo = async () => {
+      if (!moduloNome) {
         setModuloAtivo(true);
+        setVerificando(false);
+        return;
+      }
+      
+      try {
+        const ativo = await verificarModuloAtivo(moduloNome);
+        setModuloAtivo(ativo);
+      } catch (error) {
+        console.error("Erro ao verificar módulo:", error);
+        setModuloAtivo(false);
+      } finally {
+        setVerificando(false);
       }
     };
+    
+    checarModulo();
+  }, [moduloNome]);
 
-    verificarModulo();
-  }, [modulo, sessao]);
-
-  if (carregando || (modulo && verificandoModulo)) {
-    return <Loading />;
+  // Enquanto verifica o módulo, não renderiza nada
+  if (verificando) {
+    return null;
   }
 
-  // Não está autenticado, mas a rota requer autenticação
-  if (requereAutenticacao && !usuario) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  if (!autenticado) {
+    toast({
+      title: "Acesso negado",
+      description: "É necessário fazer login para acessar esta página.",
+      variant: "destructive",
+    });
+    return <Navigate to="/" replace />;
   }
 
-  // Está autenticado, mas não tem permissão para acessar a rota
-  if (usuario && permiteSoAdmin && sessao && !sessao.ehAdmin) {
-    return <Navigate to="/sem-permissao" replace />;
+  if (apenasAdmin && !admin) {
+    toast({
+      title: "Acesso restrito",
+      description: "Esta página é restrita para administradores.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  if (moduloNome && !moduloAtivo && !admin) {
+    toast({
+      title: "Módulo indisponível",
+      description: "Este recurso está em desenvolvimento e estará disponível em breve.",
+      variant: "destructive",
+    });
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (usuario && permiteSoSMS && sessao && !sessao.atuaSMS) {
-    return <Navigate to="/sem-permissao" replace />;
-  }
-
-  // Verifica se o módulo está ativo
-  if (moduloAtivo === false) {
-    return <Navigate to="/modulo-inativo" replace />;
-  }
-
-  return <Outlet />;
+  return <>{children}</>;
 };
 
 export default RotaProtegida;

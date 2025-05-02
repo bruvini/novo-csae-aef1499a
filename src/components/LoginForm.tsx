@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ const LoginForm = () => {
   const [registrarAtivo, setRegistrarAtivo] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
-  const { fazerLogin, fazerLogout, verificarAutenticacao, obterSessao } = useAutenticacao();
+  const { entrar, limparSessao, salvarSessao } = useAutenticacao();
   const navigate = useNavigate();
   const registrarBtnRef = React.useRef<HTMLButtonElement>(null);
 
@@ -56,31 +57,98 @@ const LoginForm = () => {
       setRegistrarAtivo(false);
       
       // Limpar qualquer sessão existente antes de iniciar o processo
-      localStorage.removeItem('sessao');
+      limparSessao();
       console.log("Sessões anteriores limpas");
 
       // 1. Autenticar no Firebase Authentication
       console.log("Tentando autenticar com email:", email);
-      const resultado = await fazerLogin(email, password);
+      const usuarioAuth = await entrar(email, password);
+      console.log("Resposta da autenticação:", usuarioAuth);
 
-      if (!resultado.sucesso) {
-        console.error("Falha na autenticação:", resultado.mensagem);
-        throw new Error(resultado.mensagem || "Credenciais inválidas.");
+      if (!usuarioAuth) {
+        console.error("Falha na autenticação: usuarioAuth é null ou undefined");
+        throw new Error("Credenciais inválidas.");
       }
 
-      const sessao = obterSessao();
-      if (!sessao) {
-        throw new Error("Erro ao obter dados de sessão.");
+      console.log("Autenticação bem-sucedida. UID:", usuarioAuth.uid);
+
+      // 2. Buscar o usuário no Firestore
+      console.log("Buscando dados do usuário no Firestore. UID:", usuarioAuth.uid);
+      const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.uid);
+      console.log("Dados do Firestore:", usuarioFirestore);
+
+      if (!usuarioFirestore) {
+        // Usuário autenticado mas sem cadastro no Firestore
+        console.error("Usuário autenticado, mas não encontrado no Firestore");
+        setRegistrarAtivo(true);
+        toast({
+          title: "Cadastro não encontrado",
+          description: "Usuário autenticado mas sem cadastro no sistema. Clique em 'Registrar' para se cadastrar.",
+          variant: "destructive"
+        });
+        return;
       }
 
-      toast({
-        title: "Acesso liberado",
-        description: "Bem-vindo de volta!",
-      });
+      // 3. Verificar o status de acesso
+      console.log("Status do usuário:", usuarioFirestore.statusAcesso);
+      if (usuarioFirestore.statusAcesso === "Aguardando") {
+        toast({
+          title: "Cadastro em análise",
+          description: "Recebemos seu cadastro e ele está em análise pela equipe CSAE. Tente novamente mais tarde.",
+          variant: "default"
+        });
+        return;
+      }
 
-      // 5. Redirecionar para o dashboard
-      console.log("Redirecionando para o dashboard");
-      navigate("/dashboard");
+      if (usuarioFirestore.statusAcesso === "Negado" || 
+          usuarioFirestore.statusAcesso === "Revogado" || 
+          usuarioFirestore.statusAcesso === "Cancelado") {
+        toast({
+          title: "Acesso bloqueado",
+          description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (usuarioFirestore.statusAcesso === "Aprovado") {
+        // 4. Salvar a sessão do usuário
+        const dadosSessao = {
+          uid: usuarioFirestore.uid,
+          email: usuarioFirestore.email,
+          nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
+          tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
+          statusAcesso: usuarioFirestore.statusAcesso
+        };
+        
+        console.log("Salvando sessão:", dadosSessao);
+        salvarSessao(dadosSessao);
+        
+        // Verificar se a sessão foi realmente salva
+        const sessaoAtual = localStorage.getItem('sessaoUsuario');
+        console.log("Sessão salva no localStorage:", sessaoAtual);
+
+        // Manter compatibilidade com o código existente
+        localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
+        console.log("Dados do usuário salvos no localStorage");
+
+        toast({
+          title: "Acesso liberado",
+          description: "Bem-vindo de volta!",
+        });
+
+        // 5. Redirecionar para o dashboard
+        console.log("Redirecionando para o dashboard");
+        navigate("/dashboard");
+      } else {
+        console.error("Status de acesso não reconhecido:", usuarioFirestore.statusAcesso);
+        toast({
+          title: "Erro de acesso",
+          description: "Status de acesso não reconhecido. Entre em contato com o suporte.",
+          variant: "destructive"
+        });
+      }
+
     } catch (error: any) {
       console.error("Erro durante o login:", error);
       handleAuthError(error);
@@ -114,7 +182,7 @@ const LoginForm = () => {
     } else {
       toast({
         title: "Erro ao acessar",
-        description: error.message || "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
         variant: "destructive"
       });
     }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
@@ -174,32 +175,17 @@ const CadastroPacientePerinatal: React.FC<CadastroPacientePerinatalProps> = ({
         return;
       }
 
-      const nomeUsuario = usuario?.displayName || usuario?.email || '';
-
       const paciente: Partial<PacientePerinatal> = {
         nome: data.nome,
         dataNascimento: Timestamp.fromDate(new Date(data.dataNascimento)),
         titulo: data.titulo,
         descricao: data.descricao,
-        tipoPaciente: "mulher", // Use string literals instead of as const
+        tipoPaciente: "mulher" as const,
         situacaoObstetrica: data.situacaoObstetrica,
         idadeGestacional: data.idadeGestacional ? parseInt(data.idadeGestacional) : undefined,
         dataParto: data.dataParto ? Timestamp.fromDate(new Date(data.dataParto)) : undefined,
-        profissionalUid: usuario?.uid || '',
-        profissionalNome: nomeUsuario,
-        // Add required fields from the updated type
-        cpf: '',
-        cns: '',
-        telefone: '',
-        endereco: '',
-        unidade: '',
-        municipio: '',
-        microarea: '',
-        agenteSaude: '',
-        dataUltimaMenstruacao: null,
-        dataProvavelParto: null,
-        ativo: true,
-        situacao: 'pre-natal',
+        profissionalUid: usuario.uid,
+        profissionalNome: usuario.nome || usuario.email,
       };
 
       if (pacienteExistente?.id) {
@@ -251,33 +237,17 @@ const CadastroPacientePerinatal: React.FC<CadastroPacientePerinatalProps> = ({
 
       const idadeGestacional = data.idadeGestacionalNascer ? parseInt(data.idadeGestacionalNascer) : undefined;
       
-      const nomeUsuario = usuario?.displayName || usuario?.email || '';
-
       const paciente: Partial<PacientePerinatal> = {
         nome: data.nome,
         dataNascimento: Timestamp.fromDate(new Date(data.dataNascimento)),
         titulo: data.titulo,
         descricao: data.descricao,
-        tipoPaciente: "bebê", // Use string literals instead of as const
+        tipoPaciente: "bebê" as const,
         nomeMae: data.nomeMae,
         idadeGestacionalNascer: idadeGestacional,
         prematuro: idadeGestacional ? idadeGestacional < 37 : false,
-        profissionalUid: usuario?.uid || '',
-        profissionalNome: nomeUsuario,
-        // Add required fields from the updated type
-        cpf: '',
-        cns: '',
-        telefone: '',
-        endereco: '',
-        unidade: '',
-        municipio: '',
-        microarea: '',
-        agenteSaude: '',
-        dataUltimaMenstruacao: null,
-        dataProvavelParto: null,
-        idadeGestacional: 0,
-        ativo: true,
-        situacao: 'puericultura',
+        profissionalUid: usuario.uid,
+        profissionalNome: usuario.nome || usuario.email,
       };
 
       if (pacienteExistente?.id) {

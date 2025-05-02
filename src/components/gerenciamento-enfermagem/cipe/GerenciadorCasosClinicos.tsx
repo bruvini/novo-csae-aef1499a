@@ -1,349 +1,673 @@
+
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { 
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { CasoClinico, TermoCipe } from '@/services/bancodados/tipos';
+import { PencilIcon, TrashIcon, PlusCircle, Search, Eye } from 'lucide-react';
 import { db } from '@/services/firebase';
-import { CasoClinico } from '@/services/bancodados/tipos';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { 
+  collection, 
+  getDocs, 
+  getDoc,
+  doc, 
+  setDoc,
+  updateDoc, 
+  deleteDoc, 
+  addDoc, 
+  serverTimestamp,
+  query,
+  where
+} from 'firebase/firestore';
 
-const GerenciadorCasosClinicos = () => {
+const GerenciadorCasosClinicos: React.FC = () => {
   const { toast } = useToast();
-  const [casosClinicos, setCasosClinicos] = useState<CasoClinico[]>([]);
-  const [modalAberto, setModalAberto] = useState(false);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
-
-  // Estado para o formulário
-  const [formCasoClinico, setFormCasoClinico] = useState<Omit<CasoClinico, 'id' | 'updatedAt' | 'createdAt'>>({
-    titulo: '',
-    descricao: '',
-    diagnosticos: [],
-    tipoCaso: '',
+  const [casos, setCasos] = useState<CasoClinico[]>([]);
+  const [filteredCasos, setFilteredCasos] = useState<CasoClinico[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [alertDialogOpen, setAlertDialogOpen] = useState(false);
+  const [selectedCaso, setSelectedCaso] = useState<CasoClinico | null>(null);
+  
+  // Lista de termos para os selects
+  const [termosFoco, setTermosFoco] = useState<{id: string, termo: string}[]>([]);
+  const [termosJulgamento, setTermosJulgamento] = useState<{id: string, termo: string}[]>([]);
+  const [termosMeios, setTermosMeios] = useState<{id: string, termo: string}[]>([]);
+  const [termosAcao, setTermosAcao] = useState<{id: string, termo: string}[]>([]);
+  const [termosTempo, setTermosTempo] = useState<{id: string, termo: string}[]>([]);
+  const [termosLocalizacao, setTermosLocalizacao] = useState<{id: string, termo: string}[]>([]);
+  const [termosCliente, setTermosCliente] = useState<{id: string, termo: string}[]>([]);
+  
+  const [formData, setFormData] = useState<Omit<CasoClinico, 'id' | 'createdAt' | 'updatedAt'>>({
+    tipoCaso: 'Diagnóstico',
     casoClinico: '',
-    focoEsperado: ''
+    focoEsperado: null,
+    julgamentoEsperado: null,
+    meioEsperado: null,
+    acaoEsperado: null,
+    tempoEsperado: null,
+    localizacaoEsperado: null,
+    clienteEsperado: null,
+    arrayVencedor: []
   });
-
-  // Carregar os casos clínicos
+  
   useEffect(() => {
-    const carregarCasosClinicos = async () => {
-      try {
-        const casosClinicosRef = collection(db, 'casosClinicos');
-        const casosClinicosSnapshot = await getDocs(casosClinicosRef);
-        const casosClinicosData = casosClinicosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as CasoClinico[];
-        setCasosClinicos(casosClinicosData);
-      } catch (error) {
-        console.error("Erro ao carregar casos clínicos:", error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os casos clínicos.",
-          variant: "destructive"
-        });
-      } finally {
-        setCarregando(false);
-      }
-    };
-
-    carregarCasosClinicos();
-  }, [toast]);
-
-  // Abrir modal para criar novo caso clínico
-  const abrirModalCriar = () => {
-    setFormCasoClinico({
-      titulo: '',
-      descricao: '',
-      diagnosticos: [],
-      tipoCaso: '',
-      casoClinico: '',
-      focoEsperado: ''
-    });
-    setEditandoId(null);
-    setModalAberto(true);
-  };
-
-  // Abrir modal para editar caso clínico existente
-  const abrirModalEditar = (casoClinico: CasoClinico) => {
-    setFormCasoClinico({
-      titulo: casoClinico.titulo,
-      descricao: casoClinico.descricao,
-      diagnosticos: casoClinico.diagnosticos,
-      tipoCaso: casoClinico.tipoCaso || '',
-      casoClinico: casoClinico.casoClinico || '',
-      focoEsperado: casoClinico.focoEsperado || ''
-    });
-    setEditandoId(casoClinico.id || null);
-    setModalAberto(true);
-  };
-
-  // Salvar caso clínico (criar novo ou atualizar existente)
-  const salvarCasoClinico = async () => {
+    fetchCasos();
+    fetchTermos();
+  }, []);
+  
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = casos.filter(caso => 
+        caso.casoClinico.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredCasos(filtered);
+    } else {
+      setFilteredCasos(casos);
+    }
+  }, [searchTerm, casos]);
+  
+  const fetchTermos = async () => {
     try {
-      // Validação dos campos obrigatórios
-      if (!formCasoClinico.titulo?.trim() || !formCasoClinico.descricao?.trim()) {
+      const termosSnapshot = await getDocs(collection(db, 'termosCipe'));
+      
+      if (!termosSnapshot.empty) {
+        const docData = termosSnapshot.docs[0].data();
+        
+        // Processar cada tipo de termo
+        const extractTermos = (array: any[], fieldName: string) => {
+          if (array && Array.isArray(array)) {
+            return array.map(item => ({
+              id: item[fieldName] || '', 
+              termo: item[fieldName] || ''
+            }));
+          }
+          return [];
+        };
+        
+        setTermosFoco(extractTermos(docData.arrayFoco || [], 'termoFoco'));
+        setTermosJulgamento(extractTermos(docData.arrayJulgamento || [], 'termoJulgamento'));
+        setTermosMeios(extractTermos(docData.arrayMeios || [], 'termoMeios'));
+        setTermosAcao(extractTermos(docData.arrayAcao || [], 'termoAcao'));
+        setTermosTempo(extractTermos(docData.arrayTempo || [], 'termoTempo'));
+        setTermosLocalizacao(extractTermos(docData.arrayLocalizacao || [], 'termoLocalizacao'));
+        setTermosCliente(extractTermos(docData.arrayCliente || [], 'termoCliente'));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar termos:", error);
+    }
+  };
+
+  const fetchCasos = async () => {
+    setIsLoading(true);
+    try {
+      const casosRef = collection(db, 'casosClinicos');
+      const casosSnapshot = await getDocs(casosRef);
+      
+      const casosData: CasoClinico[] = [];
+      casosSnapshot.forEach(doc => {
+        casosData.push({
+          id: doc.id,
+          ...doc.data() as Omit<CasoClinico, 'id'>
+        });
+      });
+      
+      setCasos(casosData);
+      setFilteredCasos(casosData);
+    } catch (error) {
+      console.error("Erro ao buscar casos clínicos:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar casos clínicos",
+        description: "Não foi possível carregar os casos clínicos. Tente novamente mais tarde."
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (value: string, fieldName: string) => {
+    setFormData(prev => ({ ...prev, [fieldName]: value || null }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      tipoCaso: 'Diagnóstico',
+      casoClinico: '',
+      focoEsperado: null,
+      julgamentoEsperado: null,
+      meioEsperado: null,
+      acaoEsperado: null,
+      tempoEsperado: null,
+      localizacaoEsperado: null,
+      clienteEsperado: null,
+      arrayVencedor: []
+    });
+    setSelectedCaso(null);
+  };
+
+  const openAddDialog = () => {
+    resetForm();
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (caso: CasoClinico) => {
+    setSelectedCaso(caso);
+    setFormData({
+      tipoCaso: caso.tipoCaso,
+      casoClinico: caso.casoClinico,
+      focoEsperado: caso.focoEsperado,
+      julgamentoEsperado: caso.julgamentoEsperado,
+      meioEsperado: caso.meioEsperado,
+      acaoEsperado: caso.acaoEsperado,
+      tempoEsperado: caso.tempoEsperado,
+      localizacaoEsperado: caso.localizacaoEsperado,
+      clienteEsperado: caso.clienteEsperado,
+      arrayVencedor: caso.arrayVencedor || []
+    });
+    setDialogOpen(true);
+  };
+
+  const openViewDialog = (caso: CasoClinico) => {
+    setSelectedCaso(caso);
+    setViewDialogOpen(true);
+  };
+
+  const openDeleteDialog = (caso: CasoClinico) => {
+    setSelectedCaso(caso);
+    setAlertDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!formData.casoClinico.trim()) {
         toast({
-          title: "Campos obrigatórios",
-          description: "Título e descrição são obrigatórios.",
-          variant: "destructive"
+          variant: "destructive",
+          title: "Campo obrigatório",
+          description: "O caso clínico não pode estar vazio."
         });
         return;
       }
 
-      if (editandoId) {
-        // Atualizar existente
-        const casoClinicoRef = doc(db, 'casosClinicos', editandoId);
-        await updateDoc(casoClinicoRef, {
-          ...formCasoClinico,
-          updatedAt: serverTimestamp()
-        });
+      const casoData = {
+        ...formData,
+        updatedAt: serverTimestamp()
+      };
 
+      // Verificar se é edição ou criação
+      if (selectedCaso?.id) {
+        // Editar caso existente
+        const casoRef = doc(db, 'casosClinicos', selectedCaso.id);
+        await updateDoc(casoRef, casoData);
+        
         toast({
           title: "Caso clínico atualizado",
-          description: `${formCasoClinico.titulo} foi atualizado com sucesso.`
+          description: "O caso clínico foi atualizado com sucesso."
         });
-
-        // Atualizar lista
-        setCasosClinicos(prev =>
-          prev.map(c => c.id === editandoId ? { ...c, ...formCasoClinico, updatedAt: Timestamp.now() } : c)
-        );
       } else {
-        // Criar novo
-        const novoCasoClinico = {
-          ...formCasoClinico,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
+        // Criar novo caso
+        const newCasoData = {
+          ...casoData,
+          createdAt: serverTimestamp()
         };
-
-        const docRef = await addDoc(collection(db, 'casosClinicos'), novoCasoClinico);
-
+        
+        await addDoc(collection(db, 'casosClinicos'), newCasoData);
+        
         toast({
           title: "Caso clínico criado",
-          description: `${formCasoClinico.titulo} foi criado com sucesso.`
+          description: "O caso clínico foi criado com sucesso."
         });
-
-        // Adicionar à lista
-        setCasosClinicos(prev => [...prev, {
-          ...novoCasoClinico,
-          id: docRef.id
-        } as CasoClinico]);
       }
-
-      setModalAberto(false);
+      
+      // Recarregar casos e fechar diálogo
+      fetchCasos();
+      setDialogOpen(false);
+      resetForm();
     } catch (error) {
       console.error("Erro ao salvar caso clínico:", error);
       toast({
+        variant: "destructive",
         title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o caso clínico.",
-        variant: "destructive"
+        description: "Não foi possível salvar o caso clínico. Tente novamente mais tarde."
       });
     }
   };
 
-  // Excluir caso clínico
-  const excluirCasoClinico = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este caso clínico? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'casosClinicos', id));
-
+  const handleDelete = async () => {
+    try {
+      if (selectedCaso?.id) {
+        const casoRef = doc(db, 'casosClinicos', selectedCaso.id);
+        await deleteDoc(casoRef);
+        
         toast({
           title: "Caso clínico excluído",
           description: "O caso clínico foi excluído com sucesso."
         });
-
-        // Remover da lista
-        setCasosClinicos(prev => prev.filter(c => c.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir caso clínico:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o caso clínico.",
-          variant: "destructive"
-        });
+        
+        // Recarregar casos
+        fetchCasos();
       }
-    }
-  };
-
-  // Formatar data
-  const formatarData = (timestamp: any) => {
-    if (!timestamp) return 'Data não definida';
-
-    try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return format(date, 'dd/MM/yyyy', { locale: ptBR });
     } catch (error) {
-      console.error("Erro ao formatar data:", error);
-      return 'Data inválida';
+      console.error("Erro ao excluir caso clínico:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o caso clínico. Tente novamente mais tarde."
+      });
+    } finally {
+      setAlertDialogOpen(false);
+      setSelectedCaso(null);
     }
   };
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
           <span>Gerenciamento de Casos Clínicos</span>
-          <Button onClick={abrirModalCriar} className="bg-csae-green-600 hover:bg-csae-green-700">
-            <Plus className="mr-2 h-4 w-4" /> Novo Caso Clínico
+          <Button onClick={openAddDialog} variant="outline" className="ml-auto">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Novo Caso Clínico
           </Button>
         </CardTitle>
-        <CardDescription>
-          Cadastre e gerencie os casos clínicos para discussão e aprendizado.
-        </CardDescription>
       </CardHeader>
       <CardContent>
-        {carregando ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
-          </div>
-        ) : casosClinicos.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            Nenhum caso clínico cadastrado. Clique em "Novo Caso Clínico" para começar.
+        {/* Filtro de busca */}
+        <div className="flex w-full max-w-sm items-center space-x-2 mb-6">
+          <Input
+            type="text"
+            placeholder="Buscar caso clínico..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full"
+          />
+          <Button variant="outline" type="button">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Tabela de casos clínicos */}
+        {isLoading ? (
+          <div className="flex justify-center items-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-csae-green-500"></div>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Criado em</TableHead>
-                <TableHead>Atualizado em</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {casosClinicos.map((casoClinico) => (
-                <TableRow key={casoClinico.id}>
-                  <TableCell className="font-medium">{casoClinico.titulo}</TableCell>
-                  <TableCell>{casoClinico.tipoCaso}</TableCell>
-                  <TableCell>{formatarData(casoClinico.createdAt)}</TableCell>
-                  <TableCell>
-                    {casoClinico.updatedAt ? formatarData(casoClinico.updatedAt) : 'Não atualizado'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditar(casoClinico)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => excluirCasoClinico(casoClinico.id!)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </TableCell>
+          <div className="border rounded-md">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Caso Clínico</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredCasos.length > 0 ? (
+                  filteredCasos.map((caso) => (
+                    <TableRow key={caso.id}>
+                      <TableCell className="font-medium">{caso.tipoCaso}</TableCell>
+                      <TableCell className="max-w-md truncate">{caso.casoClinico}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => openViewDialog(caso)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(caso)}>
+                          <PencilIcon className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => openDeleteDialog(caso)}>
+                          <TrashIcon className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center py-4">
+                      Nenhum caso clínico encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
 
-      {/* Modal para criar/editar caso clínico */}
-      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      {/* Dialog para adicionar/editar caso clínico */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editandoId ? 'Editar' : 'Novo'} Caso Clínico</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {editandoId ? 'atualizar o' : 'cadastrar um novo'} caso clínico.
-            </DialogDescription>
+            <DialogTitle>{selectedCaso ? "Editar Caso Clínico" : "Novo Caso Clínico"}</DialogTitle>
           </DialogHeader>
-
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="titulo">Título do Caso Clínico*</Label>
-              <Input
-                id="titulo"
-                value={formCasoClinico.titulo}
-                onChange={(e) => setFormCasoClinico({ ...formCasoClinico, titulo: e.target.value })}
-                placeholder="Ex: Paciente com HAS e DM2"
-                required
-              />
+          <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="tipoCaso">Tipo de Caso</Label>
+              <Select 
+                value={formData.tipoCaso} 
+                onValueChange={(value) => handleSelectChange(value, 'tipoCaso')}
+              >
+                <SelectTrigger id="tipoCaso">
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Diagnóstico">Diagnóstico</SelectItem>
+                  <SelectItem value="Ações">Ações</SelectItem>
+                  <SelectItem value="Resultados">Resultados</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="tipoCaso">Tipo de Caso Clínico</Label>
-              <Input
-                id="tipoCaso"
-                value={formCasoClinico.tipoCaso}
-                onChange={(e) => setFormCasoClinico({ ...formCasoClinico, tipoCaso: e.target.value })}
-                placeholder="Ex: Urgência, Emergência, Ambulatorial"
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="descricao">Descrição*</Label>
-              <Textarea
-                id="descricao"
-                value={formCasoClinico.descricao}
-                onChange={(e) => setFormCasoClinico({ ...formCasoClinico, descricao: e.target.value })}
-                placeholder="Descreva brevemente a situação do paciente..."
-                rows={4}
-                required
-              />
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="casoClinico">Caso Clínico Detalhado</Label>
+            
+            <div className="grid w-full gap-1.5">
+              <Label htmlFor="casoClinico">Caso Clínico</Label>
               <Textarea
                 id="casoClinico"
-                value={formCasoClinico.casoClinico}
-                onChange={(e) => setFormCasoClinico({ ...formCasoClinico, casoClinico: e.target.value })}
-                placeholder="Apresente o caso clínico detalhadamente..."
-                rows={6}
+                name="casoClinico"
+                value={formData.casoClinico}
+                onChange={handleInputChange}
+                placeholder="Descreva o caso clínico"
+                rows={5}
+                required
               />
             </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="focoEsperado">Foco Esperado</Label>
-              <Textarea
-                id="focoEsperado"
-                value={formCasoClinico.focoEsperado}
-                onChange={(e) => setFormCasoClinico({ ...formCasoClinico, focoEsperado: e.target.value })}
-                placeholder="Qual o foco principal deste caso clínico?"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <div className="w-full flex justify-between items-center">
-              <p className="text-sm text-gray-500">* Campos obrigatórios</p>
-              <div>
-                <Button variant="outline" onClick={() => setModalAberto(false)} className="mr-2">
-                  Cancelar
-                </Button>
-                <Button onClick={salvarCasoClinico} className="bg-csae-green-600 hover:bg-csae-green-700">
-                  {editandoId ? 'Atualizar' : 'Cadastrar'} Caso Clínico
-                </Button>
+            
+            {/* Selects para os termos esperados */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Foco */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="focoEsperado">Foco Esperado</Label>
+                <Select 
+                  value={formData.focoEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'focoEsperado')}
+                >
+                  <SelectTrigger id="focoEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosFoco.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Julgamento */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="julgamentoEsperado">Julgamento Esperado</Label>
+                <Select 
+                  value={formData.julgamentoEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'julgamentoEsperado')}
+                >
+                  <SelectTrigger id="julgamentoEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosJulgamento.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Meios */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="meioEsperado">Meio Esperado</Label>
+                <Select 
+                  value={formData.meioEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'meioEsperado')}
+                >
+                  <SelectTrigger id="meioEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosMeios.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Ação */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="acaoEsperado">Ação Esperada</Label>
+                <Select 
+                  value={formData.acaoEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'acaoEsperado')}
+                >
+                  <SelectTrigger id="acaoEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosAcao.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Tempo */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="tempoEsperado">Tempo Esperado</Label>
+                <Select 
+                  value={formData.tempoEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'tempoEsperado')}
+                >
+                  <SelectTrigger id="tempoEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosTempo.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Localização */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="localizacaoEsperado">Localização Esperada</Label>
+                <Select 
+                  value={formData.localizacaoEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'localizacaoEsperado')}
+                >
+                  <SelectTrigger id="localizacaoEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosLocalizacao.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Cliente */}
+              <div className="grid w-full gap-1.5">
+                <Label htmlFor="clienteEsperado">Cliente Esperado</Label>
+                <Select 
+                  value={formData.clienteEsperado || ""} 
+                  onValueChange={(value) => handleSelectChange(value, 'clienteEsperado')}
+                >
+                  <SelectTrigger id="clienteEsperado">
+                    <SelectValue placeholder="Selecione o termo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {termosCliente.map((termo) => (
+                      <SelectItem key={termo.id} value={termo.termo}>
+                        {termo.termo}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>
+              {selectedCaso ? 'Salvar' : 'Adicionar'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog para visualizar caso clínico */}
+      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Caso Clínico</DialogTitle>
+          </DialogHeader>
+          {selectedCaso && (
+            <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid w-full gap-1.5">
+                <h3 className="font-semibold">Tipo de Caso</h3>
+                <p>{selectedCaso.tipoCaso}</p>
+              </div>
+              
+              <div className="grid w-full gap-1.5">
+                <h3 className="font-semibold">Caso Clínico</h3>
+                <div className="p-4 border rounded bg-slate-50 whitespace-pre-wrap">
+                  {selectedCaso.casoClinico}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Foco Esperado</h3>
+                  <p>{selectedCaso.focoEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Julgamento Esperado</h3>
+                  <p>{selectedCaso.julgamentoEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Meio Esperado</h3>
+                  <p>{selectedCaso.meioEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Ação Esperada</h3>
+                  <p>{selectedCaso.acaoEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Tempo Esperado</h3>
+                  <p>{selectedCaso.tempoEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Localização Esperada</h3>
+                  <p>{selectedCaso.localizacaoEsperado || "Não definido"}</p>
+                </div>
+                
+                <div className="grid w-full gap-1.5">
+                  <h3 className="font-semibold">Cliente Esperado</h3>
+                  <p>{selectedCaso.clienteEsperado || "Não definido"}</p>
+                </div>
+              </div>
+              
+              <div className="grid w-full gap-1.5">
+                <h3 className="font-semibold">Acertos (Vencedores)</h3>
+                {selectedCaso.arrayVencedor && selectedCaso.arrayVencedor.length > 0 ? (
+                  <ul className="list-disc pl-5">
+                    {selectedCaso.arrayVencedor.map((vencedor, index) => (
+                      <li key={index}>{vencedor}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Nenhum vencedor registrado</p>
+                )}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setViewDialogOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alert dialog para confirmação de exclusão */}
+      <AlertDialog open={alertDialogOpen} onOpenChange={setAlertDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este caso clínico?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

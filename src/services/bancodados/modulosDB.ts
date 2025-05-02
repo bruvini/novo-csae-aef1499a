@@ -1,100 +1,105 @@
 
-import { collection, getDocs, query, where, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, serverTimestamp, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ModuloDisponivel, ModuloDashboard } from '@/types/modulos';
+import { ModuloDisponivel } from '@/types/modulos';
 
-export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponivel[]> {
+// Buscar todos os módulos disponíveis
+export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> => {
   try {
-    // This is a mock implementation for testing
-    const mockModulos: ModuloDisponivel[] = [
-      {
-        id: '1',
-        titulo: 'Processo de Enfermagem',
-        descricao: 'Registrar e acompanhar processos de enfermagem',
-        nome: 'Processo',
-        link: '/processo-enfermagem',
-        icone: 'Clipboard',
-        ativo: true,
-        visibilidade: 'todos',
-        ordem: 1,
-        categoria: 'clinico',
-        exibirNavbar: true,
-        exibirDashboard: true,
-        linkAcesso: '/processo-enfermagem'
-      },
-      {
-        id: '2',
-        titulo: 'POPs',
-        descricao: 'Procedimentos Operacionais Padrão',
-        nome: 'POPs',
-        link: '/pops',
-        icone: 'FileType',
-        ativo: true,
-        visibilidade: 'todos',
-        ordem: 2,
-        categoria: 'clinico',
-        exibirNavbar: true,
-        exibirDashboard: true,
-        linkAcesso: '/pops'
-      },
-      {
-        id: '3',
-        titulo: 'Protocolos',
-        descricao: 'Protocolos de Enfermagem',
-        nome: 'Protocolos',
-        link: '/protocolos',
-        icone: 'FileText',
-        ativo: true,
-        visibilidade: 'todos',
-        ordem: 3,
-        categoria: 'clinico',
-        exibirNavbar: true,
-        exibirDashboard: true,
-        linkAcesso: '/protocolos'
-      }
-    ];
+    const q = query(collection(db, 'modulosDisponiveis'), orderBy('ordem', 'asc'));
+    const querySnapshot = await getDocs(q);
+    const modulos: ModuloDisponivel[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      modulos.push({ id: doc.id, ...doc.data() } as ModuloDisponivel);
+    });
+    
+    return modulos;
+  } catch (error) {
+    console.error("Erro ao buscar módulos disponíveis:", error);
+    return [];
+  }
+};
 
-    return mockModulos;
+// Buscar módulos disponíveis ativos
+export const buscarModulosAtivos = async (): Promise<ModuloDisponivel[]> => {
+  try {
+    const q = query(
+      collection(db, 'modulosDisponiveis'), 
+      where('ativo', '==', true),
+      orderBy('ordem', 'asc')
+    );
+    const querySnapshot = await getDocs(q);
+    const modulos: ModuloDisponivel[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      modulos.push({ id: doc.id, ...doc.data() } as ModuloDisponivel);
+    });
+    
+    return modulos;
   } catch (error) {
     console.error("Erro ao buscar módulos ativos:", error);
     return [];
   }
-}
+};
 
-export async function verificarModuloAtivo(
-  moduloNome: string, 
-  ehAdmin: boolean, 
-  atuaSMS: boolean
-): Promise<boolean> {
+// Adicionar novo módulo
+export const adicionarModulo = async (modulo: Omit<ModuloDisponivel, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> => {
   try {
-    // In a real application, this would check if the module is active
-    // For now, it's a mock implementation that always returns true
+    const docRef = await addDoc(collection(db, 'modulosDisponiveis'), {
+      ...modulo,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+    
+    return docRef.id;
+  } catch (error) {
+    console.error("Erro ao adicionar módulo:", error);
+    return null;
+  }
+};
+
+// Atualizar módulo
+export const atualizarModulo = async (id: string, dados: Partial<ModuloDisponivel>): Promise<boolean> => {
+  try {
+    const docRef = doc(db, 'modulosDisponiveis', id);
+    
+    await updateDoc(docRef, {
+      ...dados,
+      updatedAt: serverTimestamp()
+    });
+    
     return true;
   } catch (error) {
-    console.error("Erro ao verificar se módulo está ativo:", error);
+    console.error("Erro ao atualizar módulo:", error);
     return false;
   }
-}
+};
 
-export async function criarModulo(modulo: ModuloDisponivel): Promise<string> {
-  // Mock implementation
-  console.log("Creating module:", modulo);
-  return "mock-id-" + Date.now();
-}
+// Remover módulo
+export const removerModulo = async (id: string): Promise<boolean> => {
+  try {
+    await deleteDoc(doc(db, 'modulosDisponiveis', id));
+    return true;
+  } catch (error) {
+    console.error("Erro ao remover módulo:", error);
+    return false;
+  }
+};
 
-export async function atualizarModulo(id: string, modulo: Partial<ModuloDisponivel>): Promise<boolean> {
-  // Mock implementation
-  console.log("Updating module:", id, modulo);
-  return true;
-}
-
-export async function excluirModulo(id: string): Promise<boolean> {
-  // Mock implementation
-  console.log("Deleting module:", id);
-  return true;
-}
-
-export async function buscarTodosModulos(): Promise<ModuloDisponivel[]> {
-  // Mock implementation
-  return buscarModulosAtivos();
-}
+// Verificar se módulo está ativo
+export const verificarModuloAtivo = async (nome: string): Promise<boolean> => {
+  try {
+    const q = query(
+      collection(db, 'modulosDisponiveis'),
+      where('nome', '==', nome),
+      where('ativo', '==', true)
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error(`Erro ao verificar módulo ${nome}:`, error);
+    return false; // Em caso de erro, consideramos o módulo como inativo
+  }
+};

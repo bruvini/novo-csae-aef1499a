@@ -1,25 +1,22 @@
 
 import { Timestamp } from "firebase/firestore";
 
-export interface ProfissionalSaude {
-  nome: string;
-  conselho: string;
-  numeroRegistro: string;
-}
-
 export interface ProtocoloOperacionalPadrao {
   id?: string;
   titulo: string;
   conceito: string;
-  dataImplantacao: Timestamp | string;
+  dataImplantacao: Timestamp;
   numeroEdicao: string;
   codificacao: string;
   validade: string;
-  dataRevisao: Timestamp | string | null;
+  dataRevisao: Timestamp | null;
   quantidadePaginas: number;
-  elaboradores: ProfissionalSaude[];
-  revisores: ProfissionalSaude[];
-  aprovadores: ProfissionalSaude[];
+  elaboradoPor: string;
+  corenElaborador: string;
+  revisadoPor: string;
+  corenRevisor: string;
+  aprovadoPor: string;
+  corenAprovador: string;
   imagemCapa: string;
   linkPdf: string;
   ativo: boolean;

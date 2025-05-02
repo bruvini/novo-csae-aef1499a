@@ -1,49 +1,7 @@
 
 import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, getDoc, query, orderBy, serverTimestamp, where } from 'firebase/firestore';
-import { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ProtocoloOperacionalPadrao } from '@/types/pop';
-
-// Função para converter string de data para Timestamp
-const converterDataParaTimestamp = (dataString: string): Timestamp | null => {
-  if (!dataString) return null;
-  
-  const regex = /^\d{2}\/\d{2}\/\d{4}$/;
-  if (!regex.test(dataString)) {
-    console.error(`Formato de data inválido: ${dataString}. Use o formato DD/MM/AAAA.`);
-    return null;
-  }
-  
-  const [dia, mes, ano] = dataString.split('/').map(Number);
-  // Mês no JavaScript é baseado em 0 (janeiro = 0, dezembro = 11)
-  const data = new Date(ano, mes - 1, dia);
-  
-  return Timestamp.fromDate(data);
-};
-
-// Processa os dados do POP antes de salvar no Firestore
-const processarDadosPOP = (pop: any): any => {
-  const dadosProcessados = { ...pop };
-  
-  // Converter strings de data para Timestamp
-  if (typeof dadosProcessados.dataImplantacao === 'string') {
-    const timestamp = converterDataParaTimestamp(dadosProcessados.dataImplantacao);
-    if (timestamp) {
-      dadosProcessados.dataImplantacao = timestamp;
-    }
-  }
-  
-  if (typeof dadosProcessados.dataRevisao === 'string' && dadosProcessados.dataRevisao) {
-    const timestamp = converterDataParaTimestamp(dadosProcessados.dataRevisao);
-    if (timestamp) {
-      dadosProcessados.dataRevisao = timestamp;
-    } else {
-      dadosProcessados.dataRevisao = null;
-    }
-  }
-  
-  return dadosProcessados;
-};
 
 // Buscar todos os POPs
 export const buscarProtocolosOperacionais = async (): Promise<ProtocoloOperacionalPadrao[]> => {
@@ -107,10 +65,8 @@ export const adicionarProtocoloOperacional = async (
   pop: Omit<ProtocoloOperacionalPadrao, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<string | null> => {
   try {
-    const dadosProcessados = processarDadosPOP(pop);
-    
     const docRef = await addDoc(collection(db, 'protocolosOperacionaisPadrao'), {
-      ...dadosProcessados,
+      ...pop,
       ativo: true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -129,12 +85,10 @@ export const atualizarProtocoloOperacional = async (
   dados: Partial<ProtocoloOperacionalPadrao>
 ): Promise<boolean> => {
   try {
-    const dadosProcessados = processarDadosPOP(dados);
-    
     const docRef = doc(db, 'protocolosOperacionaisPadrao', id);
     
     await updateDoc(docRef, {
-      ...dadosProcessados,
+      ...dados,
       updatedAt: serverTimestamp()
     });
     

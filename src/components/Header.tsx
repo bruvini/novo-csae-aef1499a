@@ -7,7 +7,7 @@ import { useAutenticacao } from '@/services/autenticacao';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
-  const { usuario, fazerLogout, obterSessao } = useAutenticacao();
+  const { usuario, sair, obterSessao } = useAutenticacao();
   const [nomeUsuario, setNomeUsuario] = useState<string>('Usuário');
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -15,13 +15,13 @@ const Header = () => {
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao) {
-      setNomeUsuario('Enf. ' + (sessao.nome.split(' ')[0] || 'Usuário'));
+      setNomeUsuario('Enf. ' + (sessao.nomeUsuario.split(' ')[0] || 'Usuário'));
     }
   }, [obterSessao]);
 
   const handleSair = async () => {
     try {
-      await fazerLogout();
+      await sair();
       toast({
         title: "Sessão encerrada",
         description: "Você saiu do sistema com sucesso.",
