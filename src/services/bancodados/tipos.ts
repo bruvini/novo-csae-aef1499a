@@ -30,7 +30,7 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
-  usuario?: any; // Adding the missing property for Dashboard.tsx
+  usuario: any; // This is now explicitly defined
 }
 
 // Histórico de acessos
