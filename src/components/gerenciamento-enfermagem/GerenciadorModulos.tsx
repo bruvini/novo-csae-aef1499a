@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { ModuloDisponivel } from '@/types/modulos';
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -85,7 +83,8 @@ const GerenciadorModulos = () => {
     ordem: 0,
     categoria: 'clinico',
     exibirDashboard: true,
-    exibirNavbar: true
+    exibirNavbar: true,
+    linkAcesso: ''
   });
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
@@ -101,7 +100,7 @@ const GerenciadorModulos = () => {
   const carregarModulos = async () => {
     try {
       // Replace with actual loading from Firebase
-      const modulosCarregados = [
+      const modulosCarregados: ModuloDisponivel[] = [
         {
           id: '1',
           titulo: 'Processo de Enfermagem',
@@ -110,11 +109,12 @@ const GerenciadorModulos = () => {
           link: '/processo-enfermagem',
           icone: 'Clipboard',
           ativo: true,
-          visibilidade: 'todos' as 'todos',
+          visibilidade: 'todos',
           ordem: 1,
-          categoria: 'clinico' as 'clinico',
+          categoria: 'clinico',
           exibirDashboard: true,
           exibirNavbar: true,
+          linkAcesso: '/processo-enfermagem'
         },
         {
           id: '2',
@@ -124,11 +124,12 @@ const GerenciadorModulos = () => {
           link: '/protocolos',
           icone: 'FileText',
           ativo: true,
-          visibilidade: 'todos' as 'todos',
+          visibilidade: 'todos',
           ordem: 2,
-          categoria: 'clinico' as 'clinico',
+          categoria: 'clinico',
           exibirDashboard: true,
           exibirNavbar: true,
+          linkAcesso: '/protocolos'
         }
       ];
       setModulos(modulosCarregados);
@@ -154,7 +155,8 @@ const GerenciadorModulos = () => {
       ordem: modulos.length + 1,
       categoria: 'clinico',
       exibirDashboard: true,
-      exibirNavbar: true
+      exibirNavbar: true,
+      linkAcesso: ''
     });
     setModoEdicao(false);
     setModalAberto(true);

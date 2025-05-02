@@ -28,7 +28,11 @@ const GerenciadorPOPs = () => {
           icone: 'FileText',
           ativo: true,
           visibilidade: 'todos',
-          ordem: 1
+          ordem: 1,
+          categoria: 'clinico',
+          exibirDashboard: true,
+          exibirNavbar: true,
+          linkAcesso: '/pop/medicamentos'
         }
       ]);
     }, 1000);

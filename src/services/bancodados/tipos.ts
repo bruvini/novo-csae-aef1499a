@@ -86,22 +86,21 @@ export interface Usuario {
   logAcessos?: Timestamp[];
 }
 
-// Modified/updated interfaces to fix the type errors
 export interface DiagnosticoCompleto {
   id?: string;
-  nome: string;                       // Added this property
-  codigo?: string;                    // Made optional
-  titulo?: string;                    // Made optional
-  explicacao?: string;               // Added property from GerenciadorDiagnosticos.tsx
+  nome: string;
+  codigo?: string;
+  titulo?: string;
+  explicacao?: string;
   subconjuntoId: string;
-  subitemId?: string;                // Added property used in GerenciadorExamesLaboratoriais.tsx
-  definicao?: string;                // Made optional
-  subconjunto?: string;              // Added property from GerenciadorDiagnosticos.tsx
-  subitemNome?: string;              // Added property from GerenciadorDiagnosticos.tsx
+  subitemId?: string;
+  definicao?: string;
+  subconjunto?: string;
+  subitemNome?: string;
   resultadosEsperados: ResultadoEsperado[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  descricao?: string;                // Added property
+  descricao?: string;
 }
 
 export interface ResultadoEsperado {
@@ -115,7 +114,6 @@ export interface Intervencao {
   id?: string;
   descricao?: string;
   resultadoEsperadoId?: string;
-  // Properties used in GerenciadorDiagnosticos.tsx
   verboPrimeiraEnfermeiro?: string;
   verboOutraPessoa?: string;
   descricaoRestante?: string;
@@ -141,7 +139,6 @@ export interface ValorReferencia {
   unidade: string;
   grupo?: string;
   observacao?: string;
-  // Additional properties used in GerenciadorExamesLaboratoriais.tsx
   representaAlteracao?: boolean;
   variacaoPor?: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
   tipoValor?: 'Numérico' | 'Texto';
@@ -174,6 +171,20 @@ export interface SinalVital {
   sigla: string;
   descricao?: string;
   valoresReferencia: ValorReferencia[];
+  diferencaSexoIdade?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface RevisaoSistema {
+  id?: string;
+  nome: string;
+  sistemaCorporalId: string;
+  sistemaId: string;
+  sistemaNome: string;
+  pergunta?: string;
+  diferencaSexoIdade?: boolean;
+  valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -183,14 +194,6 @@ export interface SubconjuntoDiagnostico {
   nome: string;
   descricao?: string;
   tipo: 'Protocolo' | 'NHB';
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface RevisaoSistema {
-  id?: string;
-  pergunta: string;
-  sistemaCorporalId: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -218,6 +221,8 @@ export interface CasoClinico {
   titulo: string;
   descricao: string;
   diagnosticos: DiagnosticoCompleto[];
+  tipoCaso?: string;
+  casoClinico?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

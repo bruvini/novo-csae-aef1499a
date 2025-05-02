@@ -1,12 +1,7 @@
 
 import { collection, getDocs, query, where, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ModuloDisponivel } from '@/types/modulos';
-
-export interface ModuloDashboard extends ModuloDisponivel {
-  dataCadastro: any;
-  dataAtualizacao: any;
-}
+import { ModuloDisponivel, ModuloDashboard } from '@/types/modulos';
 
 export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponivel[]> {
   try {
