@@ -11,6 +11,9 @@ import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/services/firebase";
 import { UsuarioAutenticado } from "@/services/bancodados/tipos";
 import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 
 // Tipos de resultado para operações de autenticação
 export interface AuthResult {
@@ -193,3 +196,51 @@ export const verificarAdminLocal = (): boolean => {
     return false;
   }
 };
+
+// Hook personalizado para lidar com o login
+export const useLoginHandler = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  const realizarLogin = async (email: string, password: string) => {
+    try {
+      const resultado = await loginWithEmail(email, password);
+      
+      if (!resultado.success) {
+        const isUserNotFound = resultado.errorCode === 'auth/user-not-found';
+        
+        toast({
+          title: isUserNotFound ? "Usuário não encontrado" : "Erro ao acessar",
+          description: resultado.error,
+          variant: "destructive"
+        });
+        
+        return { 
+          sucesso: false, 
+          registrarAtivo: isUserNotFound 
+        };
+      }
+      
+      toast({
+        title: "Acesso realizado",
+        description: "Login realizado com sucesso!",
+      });
+      
+      navigate("/dashboard");
+      return { sucesso: true, registrarAtivo: false };
+    } catch (error) {
+      console.error("Erro no login handler:", error);
+      
+      toast({
+        title: "Erro no sistema",
+        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+      
+      return { sucesso: false, registrarAtivo: false };
+    }
+  };
+  
+  return { realizarLogin };
+};
+

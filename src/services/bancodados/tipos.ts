@@ -1,359 +1,256 @@
 
 import { Timestamp } from "firebase/firestore";
 
-// Tipo para usuário autenticado
+// Tipos de usuário
 export interface UsuarioAutenticado {
   uid: string;
-  email: string | null;
-  nome?: string | null;
-  tipoUsuario?: "Administrador" | "Enfermeiro" | "Técnico" | "Estudante";
-  atuaSMS?: boolean;
+  email: string;
+  nome: string;
+  tipoUsuario: "Administrador" | "Enfermeiro" | "Técnico" | "Estudante";
   coren?: string;
   unidade?: string;
-  ehAdmin?: boolean;
-  emailVerificado?: boolean;
+  ehAdmin: boolean;
+  atuaSMS?: boolean;
+  statusAcesso?: "Aprovado" | "Aguardando" | "Negado" | "Revogado" | "Cancelado";
+  dadosPessoais?: {
+    nomeCompleto: string;
+    cpf: string;
+    telefone: string;
+  };
   dataCriacao?: Timestamp;
   ultimoAcesso?: Timestamp;
-  fotoURL?: string | null;
 }
 
-// Tipos para logs de acesso
+export interface SessaoUsuario {
+  uid: string;
+  email: string;
+  nomeUsuario: string;
+  tipoUsuario: string;
+  statusAcesso?: string;
+}
+
+// Histórico de acessos
 export interface LogAcesso {
   id?: string;
   usuarioUid: string;
   usuarioEmail: string;
-  usuarioNome?: string;
-  dataAcesso: Timestamp;
+  usuarioNome: string;
+  dataHora?: Timestamp;
   pagina?: string;
-  dispositivo?: {
-    tipo?: string;
-    navegador?: string;
-    sistema?: string;
-    resolucao?: string;
-  }
+  acao?: string;
 }
 
-// Tipos para sugestões
-export interface Sugestao {
-  id?: string;
-  titulo: string;
-  descricao: string;
-  categoria: "diagnostico" | "intervencao" | "resultado" | "protocolo" | "geral";
-  status: "enviada" | "analise" | "aprovada" | "rejeitada";
-  usuarioUid: string;
-  usuarioNome?: string;
-  usuarioEmail: string;
-  dataCriacao: Timestamp;
-  dataAtualizacao: Timestamp;
-  respostas?: RespostaSugestao[];
-  arquivos?: string[];
-}
-
-export interface RespostaSugestao {
-  id?: string;
-  conteudo: string;
-  usuarioUid: string;
-  usuarioNome?: string;
-  usuarioEmail: string;
-  dataCriacao: Timestamp;
-  anexos?: string[];
-}
-
-// Tipos para módulos do sistema
-export interface ModuloDisponivel {
-  id?: string;
-  nome: string; // identificador único
-  titulo: string;
-  slug: string; // para URL
-  descricao: string;
-  ativo: boolean;
-  categoria: "clinico" | "educacional" | "gestao";
-  ordem?: number;
-  icone?: string;
-  visibilidade: "todos" | "admin" | "sms";
-  exibirNoDashboard: boolean;
-  exibirNavbar: boolean;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-// Tipos para pacientes e evoluções
+// Pacientes
 export interface Paciente {
   id?: string;
   nome: string;
-  dataNascimento: Timestamp;
-  sexo: "feminino" | "masculino" | "outro";
-  cpf?: string;
-  cns?: string;
-  telefone?: string;
-  endereco?: string;
-  historico?: string;
-  condicoesPreexistentes?: string[];
-  alergias?: string[];
-  medicamentos?: string[];
+  dataNascimento: string;
+  sexo: 'Feminino' | 'Masculino';
   profissionalUid: string;
-  dataRegistro: Timestamp;
-  ultimaAtualizacao: Timestamp;
+  ultimaConsulta?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
 }
 
-export interface Evolucao {
-  id?: string;
-  pacienteId: string;
-  pacienteNome: string;
-  data: Timestamp;
-  enfermeiro: {
-    uid: string;
-    nome: string;
-    coren?: string;
-  };
-  unidade?: string;
-  motivo?: string;
-  historico?: string;
-  diagnosticos?: DiagnosticoEvolucao[];
-  intervencoes?: IntervencaoEvolucao[];
-  resultados?: ResultadoEvolucao[];
-  sinaisVitais?: SinaisVitais;
-  examesFisicos?: ExameFisicoRegistro[];
-  examesLaboratoriais?: ExameLaboratorialRegistro[];
-  conduta?: string;
-  observacoes?: string;
-  status: "rascunho" | "finalizado";
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-export interface DiagnosticoEvolucao {
-  id: string;
-  nome: string;
-  codigo?: string;
-  descricao?: string;
-  fatoresRelacionados?: string[];
-  caracteristicasDefinidoras?: string[];
-}
-
-export interface IntervencaoEvolucao {
-  id: string;
-  nome: string;
-  codigo?: string;
-  descricao?: string;
-  acoes?: string[];
-}
-
-export interface ResultadoEvolucao {
-  id: string;
-  nome: string;
-  codigo?: string;
-  descricao?: string;
-  indicadores?: string[];
-}
-
-export interface SinaisVitais {
-  pressaoArterial?: string;
-  frequenciaCardiaca?: number;
-  frequenciaRespiratoria?: number;
-  temperatura?: number;
-  saturacaoO2?: number;
-  dor?: number;
-  glicemia?: number;
-  peso?: number;
-  altura?: number;
-  imc?: number;
-  circunferenciaCintura?: number;
-  circunferenciaCraniana?: number;
-}
-
-export interface ExameFisicoRegistro {
-  sistemaId: string;
-  sistemaNome: string;
-  itens: {
-    revisaoId: string;
-    revisaoNome: string;
-    valor: string;
-    alterado: boolean;
-    observacoes?: string;
-  }[];
-}
-
-export interface ExameLaboratorialRegistro {
-  categoriaId: string;
-  categoriaNome: string;
-  exames: {
-    exameId: string;
-    exameNome: string;
-    valor: string;
-    data: Timestamp;
-    alterado: boolean;
-    observacoes?: string;
-  }[];
-}
-
-// Tipos para CIPE
-export interface EixoCipe {
-  id?: string;
-  nome: string;
-  codigo: string;
-  descricao: string;
-  ordem: number;
-}
-
-export interface TermoCipe {
-  id?: string;
-  nome: string;
-  codigo: string;
-  definicao: string;
-  eixoId: string;
-  eixoNome?: string;
-  ativo: boolean;
-  tipo?: string;
-  descricao?: string;
-  palavrasChave?: string[];
-  termosPai?: string[];
-  termosFilho?: string[];
-  exemplos?: string[];
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
-// Tipos para sistemas corporais
-export interface SistemaCorporal {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  ordem: number;
-}
-
-export interface RevisaoSistema {
-  id?: string;
-  nome: string;
-  sistemaCorporalId: string;
-  sistemaNome?: string;
-  pergunta?: string;
-  diferencaSexoIdade?: boolean;
-  valoresReferencia: ValorReferencia[];
-}
-
-export interface ValorReferencia {
-  descricao: string;
-  valor: string;
-  sexo?: "masculino" | "feminino" | "ambos";
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  unidadeTempo?: "dias" | "meses" | "anos";
-}
-
-// Tipos para exames laboratoriais
-export interface CategoriaExame {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  ordem: number;
-}
-
+// Exames Laboratoriais
 export interface ExameLaboratorial {
   id?: string;
   nome: string;
-  categoriaId: string;
-  categoriaNome?: string;
-  sigla?: string;
-  descricao?: string;
-  unidadeMedida?: string;
+  tipoExame: 'Laboratorial' | 'Imagem';
+  diferencaSexoIdade: boolean;
   valoresReferencia: ValorReferenciaExame[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface ValorReferenciaExame {
-  descricao: string;
+  id?: string;
+  unidade: string;
+  representaAlteracao: boolean;
+  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
+  tipoValor: 'Numérico' | 'Texto';
   valorMinimo?: number;
   valorMaximo?: number;
   valorTexto?: string;
-  sexo?: "masculino" | "feminino" | "ambos";
   idadeMinima?: number;
   idadeMaxima?: number;
-  unidadeTempo?: "dias" | "meses" | "anos";
+  sexo?: 'Todos' | 'Masculino' | 'Feminino';
+  tituloAlteracao?: string;
+  nhbId?: string;
+  diagnosticoId?: string;
 }
 
-// Tipos para diagnósticos de enfermagem
+// Registro de Evolução
+export interface Evolucao {
+  id?: string;
+  pacienteId: string;
+  profissionalUid: string;
+  dataInicio: Timestamp;
+  dataFim?: Timestamp;
+  status: 'iniciada' | 'em_andamento' | 'finalizada';
+  dadosAvaliacao?: {
+    queixaPrincipal: string;
+    historiaDoenca?: string;
+    comorbidades?: string[];
+    alergias?: string[];
+    medicamentosUso?: string[];
+  };
+  dados: Record<string, any>;
+  diagnosticosSelecionados?: DiagnosticoSelecionado[];
+}
+
+export interface DiagnosticoSelecionado {
+  diagnosticoId: string;
+  diagnosticoTitulo: string;
+  caracteristicasDefinidoras: string[];
+  fatoresRelacionados: string[];
+  intervencoesSelecionadas: {
+    intervencaoId: string;
+    intervencaoTitulo: string;
+  }[];
+  resultadosEsperados: {
+    resultadoId: string;
+    resultadoTitulo: string;
+  }[];
+}
+
+// Diagnósticos de Enfermagem
+export interface DiagnosticoCompleto {
+  id?: string;
+  titulo: string;
+  definicao: string;
+  codigoCipe?: string;
+  subitemId: string; // Referência para o subitem (NHB ou outro agrupamento)
+  caracteristicasDefinidoras: string[];
+  fatoresRelacionados: string[];
+  populacaoRisco?: string[];
+  condicoesAssociadas?: string[];
+  ativo: boolean;
+}
+
+export interface Intervencao {
+  id?: string;
+  titulo: string;
+  definicao?: string;
+  codigoCipe?: string;
+  diagnosticoIds: string[]; // Referencia aos diagnósticos relacionados
+  atividades?: string[];
+  ativo: boolean;
+}
+
+export interface ResultadoEsperado {
+  id?: string;
+  titulo: string;
+  definicao?: string;
+  codigoCipe?: string;
+  diagnosticoIds: string[]; // Referencia aos diagnósticos relacionados
+  indicadores?: string[];
+  ativo: boolean;
+}
+
 export interface SubconjuntoDiagnostico {
   id?: string;
   nome: string;
+  tipo: 'NHB' | 'Sistema' | 'Outro';
   descricao?: string;
   ativo: boolean;
-  tipo: "basico" | "especializado" | "personalizado";
-  diagnosticos: DiagnosticoEnfermagem[];
+  ordem?: number;
 }
 
-export interface DiagnosticoEnfermagem {
+export interface Subconjunto {
   id?: string;
   nome: string;
-  codigo?: string;
-  definicao: string;
-  eixoFoco: string;
-  eixoJulgamento: string;
-  eixoCliente?: string;
-  eixoLocalizacao?: string;
-  eixoIdade?: string;
-  eixoTempo?: string;
-  eixoMeio?: string;
-  caracteristicasDefinidoras?: string[];
-  fatoresRelacionados?: string[];
-  condicoesAssociadas?: string[];
-  populacaoRisco?: string[];
-  referencias?: string[];
-}
-
-export type TimelineEventType = "fundacao" | "evento" | "protocolo" | "publicacao" | "implementacao" | "reconhecimento";
-
-export interface TimelineEvent {
-  id?: string;
-  tipo: TimelineEventType;
-  data: Timestamp;
-  titulo: string;
-  descricao: string;
-  imagens?: string[];
-  links?: {
-    titulo: string;
-    url: string;
-  }[];
-  participantes?: string[];
-  destacado?: boolean;
+  tipo: 'NHB' | 'Sistema' | 'Outro';
+  descricao?: string;
+  ativo: boolean;
   ordem?: number;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
 }
 
-// Tipo para POPs (Procedimentos Operacionais Padrão)
+// Sinais Vitais
+export interface SinalVital {
+  id?: string;
+  nome: string;
+  abreviacao?: string;
+  unidade: string;
+  valorMinimo?: number;
+  valorMaximo?: number;
+  ordem?: number;
+  descricao?: string;
+  ativo: boolean;
+  alteracoes?: AlteracaoSinalVital[];
+}
+
+export interface AlteracaoSinalVital {
+  id?: string;
+  titulo: string;
+  descricao?: string;
+  condicao: 'abaixo' | 'acima' | 'entre' | 'igual';
+  valorMinimo?: number;
+  valorMaximo?: number;
+  valorReferencia?: string;
+  nhbId?: string; // ID da Necessidade Humana Básica relacionada
+  diagnosticoId?: string; // ID do Diagnóstico de Enfermagem relacionado
+}
+
+// POPs (Procedimentos Operacionais Padrão)
 export interface POP {
   id?: string;
-  codigo: string;
   titulo: string;
+  codigo: string;
   versao: string;
-  dataAprovacao: Timestamp;
-  dataRevisao?: Timestamp;
-  proximaRevisao?: Timestamp;
+  dataAtualizacao: Timestamp;
   objetivo: string;
-  responsaveis: string[];
-  executores: string[];
-  materiais?: string[];
+  aplicacao: string;
+  responsaveis: string;
+  materiaisNecessarios: string[];
   descricaoProcedimento: string[];
-  observacoes?: string[];
-  referencias?: string[];
+  referencias: string[];
+  cuidadosEspeciais?: string;
   anexos?: string[];
-  elaboradores: string[];
-  revisores?: string[];
-  aprovador?: string;
-  categoria: string;
   ativo: boolean;
-  pdfUrl?: string;
-  visualizacoes?: number;
-  downloads?: number;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  categoria: string;
 }
 
-// Tipo para categorias de POPs
-export interface CategoriaPOP {
+// Variáveis de configuração
+export interface ConfiguracaoSistema {
   id?: string;
   nome: string;
+  valor: string | number | boolean | object;
+  categoria: string;
   descricao?: string;
-  ordem: number;
-  ativa: boolean;
+  ultimaAtualizacao: Timestamp;
+}
+
+// Sugestões e feedback
+export interface Sugestao {
+  id?: string;
+  usuarioUid: string;
+  usuarioNome: string;
+  usuarioEmail: string;
+  tipo: 'Sugestão' | 'Erro' | 'Dúvida';
+  titulo: string;
+  descricao: string;
+  status: 'Nova' | 'Em Análise' | 'Implementada' | 'Rejeitada' | 'Respondida';
+  dataEnvio: Timestamp;
+  resposta?: string;
+  respostaData?: Timestamp;
+  respostaUsuarioUid?: string;
+}
+
+// Interface para ValorReferencia (usada em componentes)
+export interface ValorReferencia {
+  id?: string;
+  unidade: string;
+  representaAlteracao: boolean;
+  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
+  tipoValor: 'Numérico' | 'Texto';
+  valorMinimo?: number;
+  valorMaximo?: number;
+  valorTexto?: string;
+  idadeMinima?: number;
+  idadeMaxima?: number;
+  sexo?: 'Todos' | 'Masculino' | 'Feminino';
+  tituloAlteracao?: string;
+  nhbId?: string;
+  diagnosticoId?: string;
 }
