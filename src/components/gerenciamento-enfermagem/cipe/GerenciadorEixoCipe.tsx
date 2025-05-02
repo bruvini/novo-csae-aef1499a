@@ -84,7 +84,7 @@ const GerenciadorEixoCipe: React.FC<GerenciadorEixoCipeProps> = ({ eixo, arrayNa
     if (searchTerm) {
       const filtered = termos.filter(termo => 
         termo.termo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        termo.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+        (termo.descricao && termo.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
       );
       setFilteredTermos(filtered);
     } else {
@@ -107,8 +107,11 @@ const GerenciadorEixoCipe: React.FC<GerenciadorEixoCipeProps> = ({ eixo, arrayNa
           data[arrayName].forEach((item: any) => {
             termosData.push({
               id: doc.id + '_' + item.termo, // ID composto para identificação única
-              tipo: item[tipoField] || '',
               termo: item[termoField] || '',
+              eixo: eixo,
+              codigo: '',
+              definicao: '',
+              tipo: item[tipoField] || '',
               descricao: item[descricaoField] || '',
               createdAt: item.createdAt,
               updatedAt: item.updatedAt
@@ -153,9 +156,9 @@ const GerenciadorEixoCipe: React.FC<GerenciadorEixoCipeProps> = ({ eixo, arrayNa
   const openEditDialog = (termo: TermoCipe) => {
     setSelectedTermo(termo);
     setFormData({
-      tipo: termo.tipo,
+      tipo: termo.tipo || '',
       termo: termo.termo,
-      descricao: termo.descricao
+      descricao: termo.descricao || ''
     });
     setDialogOpen(true);
   };

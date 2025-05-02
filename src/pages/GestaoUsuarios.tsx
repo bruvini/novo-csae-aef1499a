@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { format, formatDistance } from 'date-fns';
@@ -25,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import { Search, RotateCcw, FileDown, Clock, BookX, UserX } from 'lucide-react';
 
 // Simplified version of GestaoUsuarios to fix build errors
@@ -60,14 +62,14 @@ const GestaoUsuarios: React.FC = () => {
           </div>
 
           <Card>
-            <div className="p-6">
+            <CardContent className="p-6">
               <p>Funcionalidade em desenvolvimento. Volte em breve!</p>
               {loading ? (
                 <p>Carregando...</p>
               ) : (
                 <p>Dados carregados.</p>
               )}
-            </div>
+            </CardContent>
           </Card>
         </main>
 

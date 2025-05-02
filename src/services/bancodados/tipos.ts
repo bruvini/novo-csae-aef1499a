@@ -190,15 +190,6 @@ export interface RevisaoSistema {
   updatedAt?: Timestamp;
 }
 
-export interface SubconjuntoDiagnostico {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  tipo: 'Protocolo' | 'NHB';
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
-}
-
 export interface SistemaCorporal {
   id?: string;
   nome: string;
@@ -213,6 +204,8 @@ export interface TermoCipe {
   eixo: string;
   codigo: string;
   definicao: string;
+  tipo?: string;
+  descricao?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
@@ -238,4 +231,65 @@ export interface ProtocoloEnfermagem {
   linkImagem?: string;
   dataPublicacao: Timestamp;
   dataAtualizacao?: Timestamp;
+}
+
+export interface Paciente {
+  id?: string;
+  nomeCompleto: string;
+  dataNascimento: Timestamp;
+  idade: number;
+  sexo: 'Masculino' | 'Feminino' | 'Outro';
+  profissionalUid: string;
+  profissionalNome: string;
+  dataCadastro: Timestamp;
+  dataAtualizacao?: Timestamp;
+  evolucoes?: Evolucao[];
+}
+
+export interface Evolucao {
+  id?: string;
+  dataInicio: Timestamp;
+  dataAtualizacao: Timestamp | any;
+  dataConclusao?: Timestamp | any;
+  statusConclusao: 'Em andamento' | 'Interrompido' | 'Concluído';
+  avaliacao?: string;
+  diagnosticos?: DiagnosticoEnfermagem[];
+  planejamento?: Planejamento[];
+  implementacao?: Implementacao[];
+  evolucaoFinal?: string;
+}
+
+export interface DiagnosticoEnfermagem {
+  id: string;
+  descricao: string;
+  selecionado: boolean;
+}
+
+export interface Planejamento {
+  diagnosticoId: string;
+  resultadoEsperado: string;
+  intervencoes: string[];
+}
+
+export interface Implementacao {
+  intervencaoId: string;
+  responsavel: string;
+  status: 'Pendente' | 'Em andamento' | 'Concluído';
+  observacoes?: string;
+}
+
+export interface ModuloDisponivel {
+  id?: string;
+  titulo: string;
+  descricao: string;
+  nome: string;
+  link: string;
+  icone: string;
+  ativo: boolean;
+  visibilidade: 'admin' | 'sms' | 'todos';
+  ordem: number;
+  categoria: 'clinico' | 'educacional' | 'gestao';
+  exibirDashboard: boolean;
+  exibirNavbar: boolean;
+  linkAcesso: string;
 }

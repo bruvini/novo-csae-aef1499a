@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -35,7 +36,8 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  serverTimestamp 
+  serverTimestamp,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { RevisaoSistema, SistemaCorporal } from '@/services/bancodados/tipos';
@@ -49,7 +51,7 @@ const GerenciadorRevisaoSistemas = () => {
   const [carregando, setCarregando] = useState(true);
   const [revisaoSistema, setRevisaoSistema] = useState<RevisaoSistema>({
     nome: "",
-    sistemaCorporalId: "",  // Add this missing field
+    sistemaCorporalId: "",
     sistemaId: "",
     sistemaNome: "",
     diferencaSexoIdade: false,
@@ -99,7 +101,7 @@ const GerenciadorRevisaoSistemas = () => {
   const abrirModalCriar = () => {
     setRevisaoSistema({
       nome: "",
-      sistemaCorporalId: "",  // Add this missing field
+      sistemaCorporalId: "",
       sistemaId: "",
       sistemaNome: "",
       diferencaSexoIdade: false,
@@ -162,7 +164,8 @@ const GerenciadorRevisaoSistemas = () => {
           description: `${revisaoSistema.nome} foi criada com sucesso.`
         });
 
-        setRevisoesSistema(prev => [...prev, { ...novaRevisao, id: docRef.id }]);
+        // Fix type issue: add type assertion for novaRevisao with serverTimestamp
+        setRevisoesSistema(prev => [...prev, { ...revisaoSistema, id: docRef.id, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }]);
       }
 
       setModalAberto(false);
