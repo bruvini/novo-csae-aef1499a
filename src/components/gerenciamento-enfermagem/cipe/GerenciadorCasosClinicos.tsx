@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -90,7 +89,11 @@ const GerenciadorCasosClinicos: React.FC = () => {
     tempoEsperado: null,
     localizacaoEsperado: null,
     clienteEsperado: null,
-    arrayVencedor: []
+    arrayVencedor: [],
+    titulo: '', // Add required property
+    descricao: '', // Add required property
+    termosCipe: [], // Add required property
+    ativo: true // Add required property
   });
   
   useEffect(() => {
@@ -188,7 +191,11 @@ const GerenciadorCasosClinicos: React.FC = () => {
       tempoEsperado: null,
       localizacaoEsperado: null,
       clienteEsperado: null,
-      arrayVencedor: []
+      arrayVencedor: [],
+      titulo: '', // Add required property
+      descricao: '', // Add required property
+      termosCipe: [], // Add required property
+      ativo: true // Add required property
     });
     setSelectedCaso(null);
   };
@@ -210,7 +217,11 @@ const GerenciadorCasosClinicos: React.FC = () => {
       tempoEsperado: caso.tempoEsperado,
       localizacaoEsperado: caso.localizacaoEsperado,
       clienteEsperado: caso.clienteEsperado,
-      arrayVencedor: caso.arrayVencedor || []
+      arrayVencedor: caso.arrayVencedor || [],
+      titulo: caso.titulo, // Add required property
+      descricao: caso.descricao, // Add required property
+      termosCipe: caso.termosCipe, // Add required property
+      ativo: caso.ativo // Add required property
     });
     setDialogOpen(true);
   };

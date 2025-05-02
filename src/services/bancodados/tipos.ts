@@ -288,7 +288,6 @@ export interface RevisaoSistema {
   ativo: boolean;
   ordem?: number;
   valoresReferencia?: any[]; // Added missing property used in components
-  sistemaId?: string; // Added for backward compatibility
   diferencaSexoIdade?: boolean; // Added missing property
 }
 
@@ -334,6 +333,8 @@ export interface ValorReferencia {
   tituloAlteracao?: string;
   nhbId?: string;
   diagnosticoId?: string;
+  titulo?: string;
+  condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
 }
 
 // CIPE related interfaces
@@ -356,6 +357,17 @@ export interface CasoClinico {
   ativo: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  // Add missing properties found in GerenciadorCasosClinicos.tsx
+  tipoCaso: string;
+  casoClinico: string;
+  focoEsperado: string | null;
+  julgamentoEsperado: string | null;
+  meioEsperado: string | null;
+  acaoEsperado: string | null;
+  tempoEsperado: string | null;
+  localizacaoEsperado: string | null;
+  clienteEsperado: string | null;
+  arrayVencedor: string[];
 }
 
 // Interface for Modulos

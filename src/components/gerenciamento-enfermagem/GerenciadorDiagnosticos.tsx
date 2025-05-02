@@ -45,7 +45,8 @@ const GerenciadorDiagnosticos = () => {
   const [formSubconjunto, setFormSubconjunto] = useState<Subconjunto>({
     nome: '',
     tipo: 'Protocolo',
-    descricao: ''
+    descricao: '',
+    ativo: true // Add required property
   });
   
   const emptyResultado: ResultadoEsperado = {
@@ -120,8 +121,9 @@ const GerenciadorDiagnosticos = () => {
   const abrirModalCriarSubconjunto = () => {
     setFormSubconjunto({
       nome: '',
-      tipo: 'Protocolo' as 'Protocolo' | 'NHB' | 'Sistema' | 'Outro',
-      descricao: ''
+      tipo: 'Protocolo' as 'NHB' | 'Sistema' | 'Outro' | 'Protocolo',
+      descricao: '',
+      ativo: true // Add required property
     });
     setEditandoSubconjuntoId(null);
     setModalSubconjunto(true);
@@ -490,10 +492,8 @@ const GerenciadorDiagnosticos = () => {
     return subconjunto ? subconjunto.tipo : 'Desconhecido';
   };
   
-  const handleSubconjuntoTipoChange = (tipo: string) => {
-    if (tipo === 'NHB' || tipo === 'Protocolo') {
-      setTipoSubconjuntoSelecionado(tipo);
-    }
+  const handleSubconjuntoTipoChange = (tipo: 'NHB' | 'Protocolo') => {
+    setTipoSubconjuntoSelecionado(tipo);
   };
   
   return (

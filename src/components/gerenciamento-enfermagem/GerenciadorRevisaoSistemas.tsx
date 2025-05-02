@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -87,13 +86,14 @@ const GerenciadorRevisaoSistemas = () => {
   });
   
   const [formParametro, setFormParametro] = useState<RevisaoSistema>({
-    nome: '',
     sistemaId: '',
     sistemaNome: '',
+    titulo: '', // Add required property
+    nome: '',
     tipoAlteracao: 'Objetiva', // Add required property
     ativo: true, // Add required property
     diferencaSexoIdade: false,
-    valoresReferencia: [{ 
+    valoresReferencia: [{
       unidade: '',
       representaAlteracao: false,
       variacaoPor: 'Nenhum',
@@ -174,7 +174,8 @@ const GerenciadorRevisaoSistemas = () => {
   const abrirModalCriarSistema = () => {
     setFormSistema({
       nome: '',
-      descricao: ''
+      descricao: '',
+      ativo: true
     });
     setEditandoSistemaId(null);
     setModalSistemaAberto(true);
@@ -295,15 +296,20 @@ const GerenciadorRevisaoSistemas = () => {
   // Funções para gerenciar parâmetros de revisão de sistemas
   const abrirModalCriarParametro = () => {
     setFormParametro({
-      nome: '',
       sistemaId: '',
       sistemaNome: '',
+      titulo: '', // Add required property
+      nome: '',
+      tipoAlteracao: 'Objetiva', // Add required property
+      ativo: true, // Add required property
       diferencaSexoIdade: false,
       valoresReferencia: [{ 
         unidade: '',
         representaAlteracao: false,
         variacaoPor: 'Nenhum',
-        tipoValor: 'Numérico'
+        tipoValor: 'Numérico',
+        titulo: '', // Add required property
+        condicao: 'entre' // Add required property
       }]
     });
     setEditandoParametroId(null);
@@ -349,7 +355,9 @@ const GerenciadorRevisaoSistemas = () => {
           unidade: '',
           representaAlteracao: false,
           variacaoPor: 'Nenhum',
-          tipoValor: 'Numérico'
+          tipoValor: 'Numérico',
+          titulo: '', // Add required property
+          condicao: 'entre' // Add required property
         }
       ]
     });
@@ -869,222 +877,3 @@ const GerenciadorRevisaoSistemas = () => {
                         </div>
                       </RadioGroup>
                     </div>
-                    
-                    {/* Campos condicionais baseados no tipo de valor */}
-                    {valor.tipoValor === 'Numérico' ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>Valor Mínimo</Label>
-                          <Input
-                            type="number"
-                            value={valor.valorMinimo !== undefined ? valor.valorMinimo : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="Ex: 12"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Valor Máximo</Label>
-                          <Input
-                            type="number"
-                            value={valor.valorMaximo !== undefined ? valor.valorMaximo : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : undefined)}
-                            placeholder="Ex: 20"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid gap-2">
-                        <Label>Valor Textual</Label>
-                        <Input
-                          value={valor.valorTexto || ''}
-                          onChange={(e) => atualizarValorReferencia(index, 'valorTexto', e.target.value)}
-                          placeholder="Ex: Normal, Presente, Ausente, etc."
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-2">
-                      <Label>Varia por</Label>
-                      <Select
-                        value={valor.variacaoPor}
-                        onValueChange={(v: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum') => atualizarValorReferencia(index, 'variacaoPor', v)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione como o valor varia" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Nenhum">Nenhum (valor único)</SelectItem>
-                          <SelectItem value="Sexo">Sexo</SelectItem>
-                          <SelectItem value="Idade">Idade</SelectItem>
-                          <SelectItem value="Ambos">Ambos (Sexo e Idade)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {(valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') && (
-                      <div className="grid gap-2">
-                        <Label>Sexo</Label>
-                        <Select
-                          value={valor.sexo || 'Todos'}
-                          onValueChange={(v: 'Masculino' | 'Feminino' | 'Todos') => atualizarValorReferencia(index, 'sexo', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Todos">Todos</SelectItem>
-                            <SelectItem value="Masculino">Masculino</SelectItem>
-                            <SelectItem value="Feminino">Feminino</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {(valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                          <Label>Idade Mínima (anos)</Label>
-                          <Input
-                            type="number"
-                            value={valor.idadeMinima !== undefined ? valor.idadeMinima : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', Number(e.target.value))}
-                            placeholder="Ex: 18"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Idade Máxima (anos)</Label>
-                          <Input
-                            type="number"
-                            value={valor.idadeMaxima !== undefined ? valor.idadeMaxima : ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', Number(e.target.value))}
-                            placeholder="Ex: 65"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="grid gap-2">
-                      <Label>Unidade</Label>
-                      <Input
-                        value={valor.unidade}
-                        onChange={(e) => atualizarValorReferencia(index, 'unidade', e.target.value)}
-                        placeholder="Ex: mpm"
-                        required
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2 pt-2">
-                      <Switch 
-                        checked={valor.representaAlteracao || false}
-                        onCheckedChange={(checked) => 
-                          atualizarValorReferencia(index, 'representaAlteracao', checked)
-                        }
-                        id={`alteracao-${index}`}
-                      />
-                      <Label htmlFor={`alteracao-${index}`}>Este valor representa uma alteração</Label>
-                      
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 p-0 ml-1">
-                              <HelpCircle className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Marque se este valor representa uma condição alterada.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    
-                    {valor.representaAlteracao && (
-                      <>
-                        <div className="grid gap-2">
-                          <Label>Título da Alteração</Label>
-                          <Input
-                            value={valor.tituloAlteracao || ''}
-                            onChange={(e) => atualizarValorReferencia(index, 'tituloAlteracao', e.target.value)}
-                            placeholder="Ex: Taquipneia, Bradipneia, etc."
-                          />
-                        </div>
-                        
-                        <div className="grid gap-2 border-t pt-3 mt-2">
-                          <Label>Vínculo com Diagnóstico</Label>
-                          
-                          <div className="grid gap-3">
-                            <div>
-                              <Label className="text-sm text-muted-foreground mb-1 block">
-                                1. Selecione uma Necessidade Humana Básica (NHB)
-                              </Label>
-                              <Select
-                                value={valor.nhbId || ''}
-                                onValueChange={(v) => handleNhbChange(index, v)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma NHB" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {subconjuntos.map((nhb) => (
-                                    <SelectItem key={nhb.id} value={nhb.id!}>
-                                      {nhb.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            {valor.nhbId && (
-                              <div>
-                                <Label className="text-sm text-muted-foreground mb-1 block">
-                                  2. Selecione um Diagnóstico
-                                </Label>
-                                <Select
-                                  value={valor.diagnosticoId || ''}
-                                  onValueChange={(v) => handleDiagnosticoChange(index, v)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione um diagnóstico" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {diagnosticosFiltrados.length > 0 ? (
-                                      diagnosticosFiltrados.map((diag) => (
-                                        <SelectItem key={diag.id} value={diag.id!}>
-                                          {diag.descricao}
-                                        </SelectItem>
-                                      ))
-                                    ) : (
-                                      <SelectItem value="no-diagnostics" disabled>
-                                        Nenhum diagnóstico disponível para esta NHB
-                                      </SelectItem>
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalParametroAberto(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={salvarParametro} className="bg-csae-green-600 hover:bg-csae-green-700">
-              {editandoParametroId ? 'Atualizar' : 'Cadastrar'} Parâmetro
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
-};
-
-export default GerenciadorRevisaoSistemas;
