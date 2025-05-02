@@ -16,12 +16,14 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   apenasAdmin = false,
   moduloNome
 }) => {
-  const { verificarAutenticacao, verificarAdmin } = useAutenticacao();
+  const { verificarAutenticacao, verificarAdmin, obterSessao } = useAutenticacao();
   const { toast } = useToast();
   const [verificando, setVerificando] = useState(true);
   const [moduloAtivo, setModuloAtivo] = useState(true);
   const autenticado = verificarAutenticacao();
   const admin = verificarAdmin();
+  const sessao = obterSessao();
+  const atuaSMS = sessao?.atuaSMS === true;
   
   useEffect(() => {
     const checarModulo = async () => {
@@ -32,7 +34,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
       }
       
       try {
-        const ativo = await verificarModuloAtivo(moduloNome);
+        const ativo = await verificarModuloAtivo(moduloNome, admin, atuaSMS);
         setModuloAtivo(ativo);
       } catch (error) {
         console.error("Erro ao verificar módulo:", error);
@@ -43,7 +45,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
     };
     
     checarModulo();
-  }, [moduloNome]);
+  }, [moduloNome, admin, atuaSMS]);
 
   // Enquanto verifica o módulo, não renderiza nada
   if (verificando) {
@@ -68,10 +70,10 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
     return <Navigate to="/dashboard" replace />;
   }
   
-  if (moduloNome && !moduloAtivo && !admin) {
+  if (moduloNome && !moduloAtivo) {
     toast({
       title: "Módulo indisponível",
-      description: "Este recurso está em desenvolvimento e estará disponível em breve.",
+      description: "Este recurso está em desenvolvimento ou não está disponível para o seu perfil.",
       variant: "destructive",
     });
     return <Navigate to="/dashboard" replace />;

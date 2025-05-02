@@ -47,15 +47,49 @@ const POPs = () => {
     const termoBuscaLower = termoBusca.toLowerCase();
     return (
       protocolo.titulo.toLowerCase().includes(termoBuscaLower) ||
-      protocolo.elaboradoPor.toLowerCase().includes(termoBuscaLower) ||
+      (protocolo.elaboradores && protocolo.elaboradores.some(e => e.nome.toLowerCase().includes(termoBuscaLower))) ||
       protocolo.conceito.toLowerCase().includes(termoBuscaLower) ||
       protocolo.numeroEdicao.toLowerCase().includes(termoBuscaLower) ||
       protocolo.codificacao.toLowerCase().includes(termoBuscaLower)
     );
   });
   
+  const formatarData = (data: any): string => {
+    if (!data) return 'Não definida';
+    
+    try {
+      // Se for um Timestamp ou objeto com toDate()
+      if (data.toDate) {
+        return format(data.toDate(), 'dd/MM/yyyy', { locale: ptBR });
+      } 
+      // Se for uma string, retornar como está (assumindo que já está formatada corretamente)
+      else if (typeof data === 'string') {
+        return data;
+      }
+      // Se for um Date
+      else if (data instanceof Date) {
+        return format(data, 'dd/MM/yyyy', { locale: ptBR });
+      }
+      return 'Data inválida';
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return 'Data inválida';
+    }
+  };
+  
   const abrirPDF = (url: string) => {
     window.open(url, '_blank');
+  };
+  
+  // Formatar texto de elaboradores
+  const formatarElaboradores = (protocolo: ProtocoloOperacionalPadrao): string => {
+    if (!protocolo.elaboradores || protocolo.elaboradores.length === 0) {
+      return "Não informado";
+    }
+    
+    return protocolo.elaboradores
+      .map(e => `${e.nome} - ${e.conselho} ${e.numeroRegistro}`)
+      .join(', ');
   };
   
   return (
@@ -137,8 +171,15 @@ const POPs = () => {
                   </ScrollArea>
                   
                   <div className="text-xs text-gray-600 space-y-1 mb-1">
-                    <p>Elaborado por: <span className="font-medium">{protocolo.elaboradoPor} - {protocolo.corenElaborador}</span></p>
-                    <p>Implantação: <span className="font-medium">{format(protocolo.dataImplantacao.toDate(), 'dd/MM/yyyy', { locale: ptBR })}</span></p>
+                    <p>
+                      Elaborado por: <span className="font-medium">
+                        {protocolo.elaboradores && protocolo.elaboradores.length > 0 
+                          ? protocolo.elaboradores.map(e => `${e.nome} (${e.conselho} ${e.numeroRegistro})`).join(', ')
+                          : "Não informado"
+                        }
+                      </span>
+                    </p>
+                    <p>Implantação: <span className="font-medium">{formatarData(protocolo.dataImplantacao)}</span></p>
                     <p>{protocolo.quantidadePaginas} {protocolo.quantidadePaginas === 1 ? 'página' : 'páginas'}</p>
                   </div>
                 </CardContent>

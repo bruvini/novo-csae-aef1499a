@@ -1,132 +1,169 @@
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, CalendarIcon, Clock, FileText, Plus, Save, Trash2, X } from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { AlertTriangle, FileText, Plus, Search, Save, Trash2, X, PlusCircle, Calendar, Pencil, Edit } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { ProtocoloOperacionalPadrao } from '@/types/pop';
-import { adicionarProtocoloOperacional, atualizarProtocoloOperacional, buscarProtocolosOperacionais, removerProtocoloOperacional } from '@/services/bancodados/popsDB';
-import { Timestamp } from 'firebase/firestore';
+import { ProtocoloOperacionalPadrao, ProfissionalSaude } from '@/types/pop';
+import { 
+  buscarProtocolosOperacionais, 
+  adicionarProtocoloOperacional, 
+  atualizarProtocoloOperacional, 
+  removerProtocoloOperacional 
+} from '@/services/bancodados/popsDB';
+
+interface ProfissionalFormProps {
+  profissionais: ProfissionalSaude[];
+  setProfissionais: React.Dispatch<React.SetStateAction<ProfissionalSaude[]>>;
+  titulo: string;
+}
 
 const GerenciadorPOPs = () => {
   const { toast } = useToast();
   const [carregando, setCarregando] = useState(true);
-  const [protocolos, setProtocolos] = useState<ProtocoloOperacionalPadrao[]>([]);
-  const [protocoloSelecionado, setProtocoloSelecionado] = useState<ProtocoloOperacionalPadrao | null>(null);
+  const [pops, setPops] = useState<ProtocoloOperacionalPadrao[]>([]);
+  const [popSelecionado, setPopSelecionado] = useState<ProtocoloOperacionalPadrao | null>(null);
   const [formAberto, setFormAberto] = useState(false);
   const [excluirDialogoAberto, setExcluirDialogoAberto] = useState(false);
-  const [dataImplantacao, setDataImplantacao] = useState<Date | undefined>(undefined);
-  const [dataRevisao, setDataRevisao] = useState<Date | undefined>(undefined);
-  const [previewImagem, setPreviewImagem] = useState<string | null>(null);
+  const [termoBusca, setTermoBusca] = useState('');
+  const [abaSelecionada, setAbaSelecionada] = useState('geral');
 
-  // Protocolo padrão para novo cadastro
-  const protocoloPadrao = {
+  // Valores padrão para novos POPs
+  const novoPopPadrao: Omit<ProtocoloOperacionalPadrao, 'id' | 'createdAt' | 'updatedAt'> = {
     titulo: '',
     conceito: '',
-    dataImplantacao: Timestamp.now(),
+    dataImplantacao: '',
     numeroEdicao: '',
     codificacao: '',
-    validade: 'Indeterminado',
-    dataRevisao: null,
+    validade: '',
+    dataRevisao: '',
     quantidadePaginas: 1,
-    elaboradoPor: '',
-    corenElaborador: '',
-    revisadoPor: '',
-    corenRevisor: '',
-    aprovadoPor: '',
-    corenAprovador: '',
+    elaboradores: [],
+    revisores: [],
+    aprovadores: [],
     imagemCapa: '',
     linkPdf: '',
     ativo: true
   };
 
-  // Carregar protocolos
-  const carregarProtocolos = async () => {
-    setCarregando(true);
-    try {
-      const protocolosData = await buscarProtocolosOperacionais();
-      setProtocolos(protocolosData);
-    } catch (error) {
-      console.error('Erro ao carregar protocolos:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível carregar os protocolos operacionais.',
-        variant: 'destructive',
-      });
-    } finally {
-      setCarregando(false);
-    }
-  };
-
+  // Carregar POPs
   useEffect(() => {
-    carregarProtocolos();
-  }, []);
+    const carregarPOPs = async () => {
+      setCarregando(true);
+      try {
+        const dados = await buscarProtocolosOperacionais();
+        setPops(dados);
+      } catch (error) {
+        console.error('Erro ao carregar POPs:', error);
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível carregar os protocolos operacionais.',
+          variant: 'destructive',
+        });
+      } finally {
+        setCarregando(false);
+      }
+    };
+
+    carregarPOPs();
+  }, [toast]);
 
   // Abrir formulário para edição ou criação
-  const abrirForm = (protocolo?: ProtocoloOperacionalPadrao) => {
-    if (protocolo) {
-      setProtocoloSelecionado(protocolo);
-      setDataImplantacao(protocolo.dataImplantacao.toDate());
-      setDataRevisao(protocolo.dataRevisao ? protocolo.dataRevisao.toDate() : undefined);
-      setPreviewImagem(protocolo.imagemCapa);
+  const abrirForm = (pop?: ProtocoloOperacionalPadrao) => {
+    if (pop) {
+      // Converter timestamps para strings se necessário
+      const popFormatado = {
+        ...pop,
+        dataImplantacao: formatarDataParaExibicao(pop.dataImplantacao),
+        dataRevisao: formatarDataParaExibicao(pop.dataRevisao)
+      };
+      setPopSelecionado(popFormatado);
     } else {
-      setProtocoloSelecionado(protocoloPadrao);
-      setDataImplantacao(new Date());
-      setDataRevisao(undefined);
-      setPreviewImagem(null);
+      setPopSelecionado(novoPopPadrao);
     }
     setFormAberto(true);
+    setAbaSelecionada('geral');
   };
 
   // Fechar formulário
   const fecharForm = () => {
     setFormAberto(false);
-    setProtocoloSelecionado(null);
-    setDataImplantacao(undefined);
-    setDataRevisao(undefined);
-    setPreviewImagem(null);
+    setPopSelecionado(null);
   };
 
-  // Atualizar campo do protocolo
-  const atualizarCampoProtocolo = (campo: keyof ProtocoloOperacionalPadrao, valor: any) => {
-    if (protocoloSelecionado) {
-      setProtocoloSelecionado({
-        ...protocoloSelecionado,
+  // Atualizar campo do POP
+  const atualizarCampoPOP = (campo: keyof ProtocoloOperacionalPadrao, valor: any) => {
+    if (popSelecionado) {
+      setPopSelecionado({
+        ...popSelecionado,
         [campo]: valor,
       });
-
-      // Atualizar preview da imagem quando o URL mudar
-      if (campo === 'imagemCapa') {
-        setPreviewImagem(valor);
-      }
     }
   };
 
-  // Salvar protocolo
-  const salvarProtocolo = async () => {
-    if (!protocoloSelecionado) return;
+  // Formatar data do Timestamp para string DD/MM/AAAA para exibição no formulário
+  const formatarDataParaExibicao = (data: any): string => {
+    if (!data) return '';
     
-    // Validação básica
-    if (!protocoloSelecionado.titulo || !protocoloSelecionado.numeroEdicao || !protocoloSelecionado.linkPdf) {
+    try {
+      // Se for um Timestamp ou objeto com toDate()
+      if (data.toDate) {
+        return format(data.toDate(), 'dd/MM/yyyy', { locale: ptBR });
+      } 
+      // Se for uma string, retornar como está (assumindo que já está formatada corretamente)
+      else if (typeof data === 'string') {
+        return data;
+      }
+      // Se for um Date
+      else if (data instanceof Date) {
+        return format(data, 'dd/MM/yyyy', { locale: ptBR });
+      }
+      return '';
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return '';
+    }
+  };
+
+  // Salvar POP
+  const salvarPOP = async () => {
+    if (!popSelecionado) return;
+    
+    // Validação dos campos obrigatórios
+    if (!popSelecionado.titulo || !popSelecionado.numeroEdicao || !popSelecionado.dataImplantacao) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha o título, número da edição e link do PDF.',
+        description: 'Preencha todos os campos obrigatórios.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validação do formato de data
+    const regexData = /^\d{2}\/\d{2}\/\d{4}$/;
+    if (!regexData.test(popSelecionado.dataImplantacao.toString())) {
+      toast({
+        title: 'Formato de data inválido',
+        description: 'A data de implantação deve estar no formato DD/MM/AAAA.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (popSelecionado.dataRevisao && !regexData.test(popSelecionado.dataRevisao.toString())) {
+      toast({
+        title: 'Formato de data inválido',
+        description: 'A data de revisão deve estar no formato DD/MM/AAAA.',
         variant: 'destructive',
       });
       return;
@@ -135,55 +172,48 @@ const GerenciadorPOPs = () => {
     setCarregando(true);
     
     try {
-      // Atualizar datas
-      const protocoloAtualizado = {
-        ...protocoloSelecionado,
-        dataImplantacao: dataImplantacao ? Timestamp.fromDate(dataImplantacao) : Timestamp.now(),
-        dataRevisao: dataRevisao ? Timestamp.fromDate(dataRevisao) : null
-      };
-
       // Se tem ID, atualiza
-      if (protocoloAtualizado.id) {
-        const { id, ...dadosAtualizados } = protocoloAtualizado;
+      if (popSelecionado.id) {
+        const { id, ...dadosAtualizados } = popSelecionado;
         const sucesso = await atualizarProtocoloOperacional(id, dadosAtualizados);
         
         if (sucesso) {
           toast({
-            title: 'Protocolo atualizado',
-            description: `O protocolo "${protocoloAtualizado.titulo}" foi atualizado com sucesso.`,
+            title: 'POP atualizado',
+            description: `O POP "${popSelecionado.titulo}" foi atualizado com sucesso.`,
           });
           
           // Atualiza a lista localmente
-          setProtocolos(protocolos.map(p => 
-            p.id === protocoloAtualizado.id ? protocoloAtualizado : p
+          setPops(pops.map(p => 
+            p.id === popSelecionado.id ? popSelecionado : p
           ));
         } else {
-          throw new Error('Falha ao atualizar protocolo');
+          throw new Error('Falha ao atualizar POP');
         }
       } 
       // Caso contrário, adiciona novo
       else {
-        const novoId = await adicionarProtocoloOperacional(protocoloAtualizado);
+        const novoId = await adicionarProtocoloOperacional(popSelecionado);
         
         if (novoId) {
           toast({
-            title: 'Protocolo adicionado',
-            description: `O protocolo "${protocoloAtualizado.titulo}" foi adicionado com sucesso.`,
+            title: 'POP adicionado',
+            description: `O POP "${popSelecionado.titulo}" foi adicionado com sucesso.`,
           });
           
-          // Adiciona à lista local
-          setProtocolos([{ ...protocoloAtualizado, id: novoId }, ...protocolos]);
+          // Adiciona à lista local com o ID gerado
+          setPops([...pops, { ...popSelecionado, id: novoId }]);
         } else {
-          throw new Error('Falha ao adicionar protocolo');
+          throw new Error('Falha ao adicionar POP');
         }
       }
       
       fecharForm();
     } catch (error) {
-      console.error('Erro ao salvar protocolo:', error);
+      console.error('Erro ao salvar POP:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao salvar o protocolo.',
+        description: 'Ocorreu um erro ao salvar o protocolo operacional.',
         variant: 'destructive',
       });
     } finally {
@@ -191,32 +221,32 @@ const GerenciadorPOPs = () => {
     }
   };
 
-  // Alternar estado do protocolo (ativo/inativo)
-  const alternarEstadoProtocolo = async (protocolo: ProtocoloOperacionalPadrao) => {
+  // Alternar estado de ativo/inativo
+  const alternarEstadoPOP = async (pop: ProtocoloOperacionalPadrao) => {
     setCarregando(true);
     
     try {
-      const novoEstado = !protocolo.ativo;
-      const sucesso = await atualizarProtocoloOperacional(protocolo.id!, { ativo: novoEstado });
+      const novoEstado = !pop.ativo;
+      const sucesso = await atualizarProtocoloOperacional(pop.id!, { ativo: novoEstado });
       
       if (sucesso) {
         // Atualiza a lista local
-        setProtocolos(protocolos.map(p => 
-          p.id === protocolo.id ? { ...p, ativo: novoEstado } : p
+        setPops(pops.map(p => 
+          p.id === pop.id ? { ...p, ativo: novoEstado } : p
         ));
         
         toast({
-          title: novoEstado ? 'Protocolo ativado' : 'Protocolo desativado',
-          description: `O protocolo "${protocolo.titulo}" foi ${novoEstado ? 'ativado' : 'desativado'} com sucesso.`,
+          title: novoEstado ? 'POP ativado' : 'POP desativado',
+          description: `O POP "${pop.titulo}" foi ${novoEstado ? 'ativado' : 'desativado'} com sucesso.`,
         });
       } else {
-        throw new Error('Falha ao atualizar estado do protocolo');
+        throw new Error('Falha ao atualizar estado do POP');
       }
     } catch (error) {
-      console.error('Erro ao alternar estado do protocolo:', error);
+      console.error('Erro ao alternar estado do POP:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao alterar o estado do protocolo.',
+        description: 'Ocorreu um erro ao alterar o estado do protocolo operacional.',
         variant: 'destructive',
       });
     } finally {
@@ -225,44 +255,52 @@ const GerenciadorPOPs = () => {
   };
 
   // Confirmar exclusão
-  const confirmarExclusao = (protocolo: ProtocoloOperacionalPadrao) => {
-    setProtocoloSelecionado(protocolo);
+  const confirmarExclusao = (pop: ProtocoloOperacionalPadrao) => {
+    setPopSelecionado(pop);
     setExcluirDialogoAberto(true);
   };
 
-  // Excluir protocolo
-  const excluirProtocolo = async () => {
-    if (!protocoloSelecionado?.id) return;
+  // Excluir POP
+  const excluirPOP = async () => {
+    if (!popSelecionado?.id) return;
     
     setCarregando(true);
     
     try {
-      const sucesso = await removerProtocoloOperacional(protocoloSelecionado.id);
+      const sucesso = await removerProtocoloOperacional(popSelecionado.id);
       
       if (sucesso) {
         // Remove da lista local
-        setProtocolos(protocolos.filter(p => p.id !== protocoloSelecionado.id));
+        setPops(pops.filter(p => p.id !== popSelecionado.id));
         
         toast({
-          title: 'Protocolo excluído',
-          description: `O protocolo "${protocoloSelecionado.titulo}" foi excluído com sucesso.`,
+          title: 'POP excluído',
+          description: `O POP "${popSelecionado.titulo}" foi excluído com sucesso.`,
         });
       } else {
-        throw new Error('Falha ao excluir protocolo');
+        throw new Error('Falha ao excluir POP');
       }
     } catch (error) {
-      console.error('Erro ao excluir protocolo:', error);
+      console.error('Erro ao excluir POP:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao excluir o protocolo.',
+        description: 'Ocorreu um erro ao excluir o protocolo operacional.',
         variant: 'destructive',
       });
     } finally {
       setExcluirDialogoAberto(false);
-      setProtocoloSelecionado(null);
+      setPopSelecionado(null);
       setCarregando(false);
     }
   };
+
+  // Filtrar POPs pela busca
+  const popsFiltrados = pops.filter(pop =>
+    pop.titulo.toLowerCase().includes(termoBusca.toLowerCase()) ||
+    pop.conceito.toLowerCase().includes(termoBusca.toLowerCase()) ||
+    pop.numeroEdicao.toLowerCase().includes(termoBusca.toLowerCase()) ||
+    pop.codificacao.toLowerCase().includes(termoBusca.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -274,67 +312,95 @@ const GerenciadorPOPs = () => {
         <div className="flex items-center gap-2">
           <Button onClick={() => abrirForm()} className="bg-csae-green-600 hover:bg-csae-green-700">
             <Plus className="mr-2 h-4 w-4" />
-            Adicionar POP
+            Adicionar Novo POP
           </Button>
         </div>
       </div>
       
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+        <Input
+          placeholder="Buscar POPs por título, conteúdo ou edição..."
+          className="pl-10"
+          value={termoBusca}
+          onChange={(e) => setTermoBusca(e.target.value)}
+        />
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {protocolos.map((protocolo) => (
+        {popsFiltrados.map((pop) => (
           <Card 
-            key={protocolo.id} 
-            className={`hover:shadow-md transition-shadow border-l-4 ${
-              protocolo.ativo ? 'border-l-blue-500' : 'border-l-gray-300'
+            key={pop.id} 
+            className={`overflow-hidden hover:shadow-md transition-all border-l-4 ${
+              pop.ativo ? 'border-l-green-500' : 'border-l-gray-300'
             }`}
           >
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">
-                    {protocolo.numeroEdicao} - {protocolo.titulo}
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    <div className="flex items-center gap-1 text-xs">
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      Implantação: {format(protocolo.dataImplantacao.toDate(), 'dd/MM/yyyy', { locale: ptBR })}
-                    </div>
-                  </CardDescription>
-                </div>
-                <Switch 
-                  checked={protocolo.ativo} 
-                  onCheckedChange={() => alternarEstadoProtocolo(protocolo)}
-                  disabled={carregando}
-                  className="ml-2"
+            <div className="h-36 bg-gray-100 relative">
+              {pop.imagemCapa ? (
+                <img 
+                  src={pop.imagemCapa} 
+                  alt={`Capa do POP ${pop.titulo}`} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://placehold.co/400x200/e2e8f0/64748b?text=Sem+imagem";
+                  }}
                 />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {protocolo.imagemCapa && (
-                <div className="w-full h-32 mb-3 overflow-hidden rounded">
-                  <img
-                    src={protocolo.imagemCapa}
-                    alt={`Capa do POP ${protocolo.titulo}`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://placehold.co/300x200/e3e3e3/888?text=Imagem+indispon%C3%ADvel";
-                    }}
-                  />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <FileText className="h-12 w-12 text-gray-300" />
                 </div>
               )}
               
-              <p className="text-sm mb-3 line-clamp-2">{protocolo.conceito}</p>
-              
-              <div className="text-xs text-gray-600 mb-3">
-                <p>Elaborado por: {protocolo.elaboradoPor} - {protocolo.corenElaborador}</p>
+              <div className="absolute top-2 right-2">
+                <Switch 
+                  checked={pop.ativo} 
+                  onCheckedChange={() => alternarEstadoPOP(pop)}
+                  disabled={carregando}
+                />
               </div>
+            </div>
+            
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">
+                {pop.numeroEdicao} - {pop.titulo}
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Código: {pop.codificacao || 'Não definido'}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <ScrollArea className="h-16 mb-2">
+                <p className="text-sm text-gray-600">
+                  {pop.conceito || 'Sem descrição'}
+                </p>
+              </ScrollArea>
               
-              <div className="flex justify-between">
+              <div className="text-xs text-gray-500 space-y-1">
+                <p>
+                  <span className="font-medium">Implantação:</span> {formatarDataParaExibicao(pop.dataImplantacao)}
+                </p>
+                <p>
+                  <span className="font-medium">Elaborado por:</span> {pop.elaboradores && pop.elaboradores.length > 0
+                    ? pop.elaboradores.map(e => `${e.nome} (${e.conselho} ${e.numeroRegistro})`).join(', ')
+                    : 'Não informado'
+                  }
+                </p>
+                <p>
+                  <span className="font-medium">Páginas:</span> {pop.quantidadePaginas}
+                </p>
+              </div>
+            </CardContent>
+            
+            <CardFooter>
+              <div className="flex justify-between w-full">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => abrirForm(protocolo)}
+                  onClick={() => abrirForm(pop)}
                   disabled={carregando}
                 >
+                  <Edit className="mr-2 h-3 w-3" />
                   Editar
                 </Button>
                 
@@ -342,274 +408,235 @@ const GerenciadorPOPs = () => {
                   variant="outline" 
                   size="sm"
                   className="text-red-600 hover:bg-red-50"
-                  onClick={() => confirmarExclusao(protocolo)}
+                  onClick={() => confirmarExclusao(pop)}
                   disabled={carregando}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
-            </CardContent>
+            </CardFooter>
           </Card>
         ))}
         
-        {protocolos.length === 0 && !carregando && (
+        {popsFiltrados.length === 0 && (
           <div className="col-span-full p-8 text-center border rounded-lg border-dashed">
-            <AlertTriangle className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-            <h3 className="text-lg font-medium mb-1">Nenhum protocolo cadastrado</h3>
-            <p className="text-gray-500 mb-4">
-              Adicione protocolos operacionais padrão para disponibilizar no sistema.
-            </p>
-            <Button onClick={() => abrirForm()} className="bg-csae-green-600 hover:bg-csae-green-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Primeiro POP
-            </Button>
+            {termoBusca ? (
+              <>
+                <Search className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                <h3 className="text-lg font-medium mb-1">Nenhum resultado encontrado</h3>
+                <p className="text-gray-500">
+                  Não encontramos POPs correspondentes ao termo "{termoBusca}".
+                </p>
+              </>
+            ) : (
+              <>
+                <FileText className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                <h3 className="text-lg font-medium mb-1">Nenhum POP cadastrado</h3>
+                <p className="text-gray-500 mb-4">
+                  Adicione seu primeiro protocolo operacional padrão.
+                </p>
+                <Button onClick={() => abrirForm()} className="bg-csae-green-600 hover:bg-csae-green-700">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar POP
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>
       
       {/* Formulário de Edição/Criação */}
-      <Dialog open={formAberto} onOpenChange={setFormAberto}>
-        <DialogContent className="sm:max-w-[700px]">
-          <DialogHeader>
-            <DialogTitle>{protocoloSelecionado?.id ? 'Editar Protocolo Operacional' : 'Adicionar Protocolo Operacional'}</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {protocoloSelecionado?.id ? 'editar o' : 'adicionar um novo'} protocolo operacional padrão.
-            </DialogDescription>
-          </DialogHeader>
+      <Sheet open={formAberto} onOpenChange={setFormAberto}>
+        <SheetContent className="sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>{popSelecionado?.id ? 'Editar POP' : 'Adicionar POP'}</SheetTitle>
+            <SheetDescription>
+              Preencha os campos abaixo para {popSelecionado?.id ? 'editar o' : 'adicionar um novo'} protocolo operacional padrão.
+            </SheetDescription>
+          </SheetHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="titulo">Título</Label>
-              <Input
-                id="titulo"
-                value={protocoloSelecionado?.titulo || ''}
-                onChange={(e) => atualizarCampoProtocolo('titulo', e.target.value)}
-                placeholder="Ex: Administração de Medicamentos"
-              />
-            </div>
+          <Tabs defaultValue="geral" className="mt-6" value={abaSelecionada} onValueChange={setAbaSelecionada}>
+            <TabsList className="grid grid-cols-4 mb-4">
+              <TabsTrigger value="geral">Geral</TabsTrigger>
+              <TabsTrigger value="elaboradores">Elaboradores</TabsTrigger>
+              <TabsTrigger value="revisores">Revisores</TabsTrigger>
+              <TabsTrigger value="aprovadores">Aprovadores</TabsTrigger>
+            </TabsList>
             
-            <div className="space-y-2">
-              <Label htmlFor="numeroEdicao">Número da Edição</Label>
-              <Input
-                id="numeroEdicao"
-                value={protocoloSelecionado?.numeroEdicao || ''}
-                onChange={(e) => atualizarCampoProtocolo('numeroEdicao', e.target.value)}
-                placeholder="Ex: 01"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="codificacao">Codificação</Label>
-              <Input
-                id="codificacao"
-                value={protocoloSelecionado?.codificacao || ''}
-                onChange={(e) => atualizarCampoProtocolo('codificacao', e.target.value)}
-                placeholder="Ex: POP.ENF.001"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Data de Implantação</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataImplantacao ? (
-                      format(dataImplantacao, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span>Selecione a data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataImplantacao}
-                    onSelect={setDataImplantacao}
+            <TabsContent value="geral" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="titulo">Título do POP <span className="text-red-500">*</span></Label>
+                <Input
+                  id="titulo"
+                  value={popSelecionado?.titulo || ''}
+                  onChange={(e) => atualizarCampoPOP('titulo', e.target.value)}
+                  placeholder="Ex: Administração de medicamentos via intramuscular"
+                  required
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numeroEdicao">Número/Edição <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="numeroEdicao"
+                    value={popSelecionado?.numeroEdicao || ''}
+                    onChange={(e) => atualizarCampoPOP('numeroEdicao', e.target.value)}
+                    placeholder="Ex: POP 01"
+                    required
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="validade">Validade</Label>
-              <Input
-                id="validade"
-                value={protocoloSelecionado?.validade || ''}
-                onChange={(e) => atualizarCampoProtocolo('validade', e.target.value)}
-                placeholder="Ex: Indeterminado ou 1 ano"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Data de Revisão</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    {dataRevisao ? (
-                      format(dataRevisao, "dd/MM/yyyy", { locale: ptBR })
-                    ) : (
-                      <span>Sem data de revisão</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataRevisao}
-                    onSelect={setDataRevisao}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="quantidadePaginas">Quantidade de Páginas</Label>
-              <Input
-                id="quantidadePaginas"
-                type="number"
-                min="1"
-                value={protocoloSelecionado?.quantidadePaginas || 1}
-                onChange={(e) => atualizarCampoProtocolo('quantidadePaginas', parseInt(e.target.value))}
-              />
-            </div>
-            
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="conceito">Conceito/Descrição</Label>
-              <Textarea
-                id="conceito"
-                value={protocoloSelecionado?.conceito || ''}
-                onChange={(e) => atualizarCampoProtocolo('conceito', e.target.value)}
-                placeholder="Descrição do protocolo operacional padrão"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="elaboradoPor">Elaborado por</Label>
-              <Input
-                id="elaboradoPor"
-                value={protocoloSelecionado?.elaboradoPor || ''}
-                onChange={(e) => atualizarCampoProtocolo('elaboradoPor', e.target.value)}
-                placeholder="Nome do profissional"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="corenElaborador">COREN do Elaborador</Label>
-              <Input
-                id="corenElaborador"
-                value={protocoloSelecionado?.corenElaborador || ''}
-                onChange={(e) => atualizarCampoProtocolo('corenElaborador', e.target.value)}
-                placeholder="Ex: 123456-SC"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="revisadoPor">Revisado por</Label>
-              <Input
-                id="revisadoPor"
-                value={protocoloSelecionado?.revisadoPor || ''}
-                onChange={(e) => atualizarCampoProtocolo('revisadoPor', e.target.value)}
-                placeholder="Nome do revisor"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="corenRevisor">COREN do Revisor</Label>
-              <Input
-                id="corenRevisor"
-                value={protocoloSelecionado?.corenRevisor || ''}
-                onChange={(e) => atualizarCampoProtocolo('corenRevisor', e.target.value)}
-                placeholder="Ex: 123456-SC"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="aprovadoPor">Aprovado por</Label>
-              <Input
-                id="aprovadoPor"
-                value={protocoloSelecionado?.aprovadoPor || ''}
-                onChange={(e) => atualizarCampoProtocolo('aprovadoPor', e.target.value)}
-                placeholder="Nome do aprovador"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="corenAprovador">COREN do Aprovador</Label>
-              <Input
-                id="corenAprovador"
-                value={protocoloSelecionado?.corenAprovador || ''}
-                onChange={(e) => atualizarCampoProtocolo('corenAprovador', e.target.value)}
-                placeholder="Ex: 123456-SC"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="imagemCapa">Link da Imagem de Capa</Label>
-              <Input
-                id="imagemCapa"
-                value={protocoloSelecionado?.imagemCapa || ''}
-                onChange={(e) => atualizarCampoProtocolo('imagemCapa', e.target.value)}
-                placeholder="URL da imagem"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="linkPdf">Link do PDF</Label>
-              <Input
-                id="linkPdf"
-                value={protocoloSelecionado?.linkPdf || ''}
-                onChange={(e) => atualizarCampoProtocolo('linkPdf', e.target.value)}
-                placeholder="URL do arquivo PDF"
-              />
-            </div>
-            
-            {previewImagem && (
-              <div className="md:col-span-2">
-                <Label htmlFor="previewImagem">Preview da Capa</Label>
-                <div className="mt-2 h-40 overflow-hidden rounded border">
-                  <img
-                    src={previewImagem}
-                    alt="Preview da capa"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://placehold.co/300x200/e3e3e3/888?text=Imagem+indispon%C3%ADvel";
-                    }}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="codificacao">Codificação</Label>
+                  <Input
+                    id="codificacao"
+                    value={popSelecionado?.codificacao || ''}
+                    onChange={(e) => atualizarCampoPOP('codificacao', e.target.value)}
+                    placeholder="Ex: ENF-01"
                   />
                 </div>
               </div>
-            )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="conceito">Conceito/Descrição</Label>
+                <Textarea
+                  id="conceito"
+                  value={popSelecionado?.conceito || ''}
+                  onChange={(e) => atualizarCampoPOP('conceito', e.target.value)}
+                  placeholder="Descreva brevemente o conceito ou objetivo deste POP"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dataImplantacao">Data de Implantação <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Input
+                      id="dataImplantacao"
+                      value={popSelecionado?.dataImplantacao || ''}
+                      onChange={(e) => atualizarCampoPOP('dataImplantacao', e.target.value)}
+                      placeholder="DD/MM/AAAA"
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="dataRevisao">Data de Revisão</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Input
+                      id="dataRevisao"
+                      value={popSelecionado?.dataRevisao || ''}
+                      onChange={(e) => atualizarCampoPOP('dataRevisao', e.target.value)}
+                      placeholder="DD/MM/AAAA"
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="validade">Validade</Label>
+                  <Input
+                    id="validade"
+                    value={popSelecionado?.validade || ''}
+                    onChange={(e) => atualizarCampoPOP('validade', e.target.value)}
+                    placeholder="Ex: 2 anos ou Indeterminado"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="quantidadePaginas">Quantidade de Páginas</Label>
+                  <Input
+                    id="quantidadePaginas"
+                    type="number"
+                    min="1"
+                    value={popSelecionado?.quantidadePaginas || 1}
+                    onChange={(e) => atualizarCampoPOP('quantidadePaginas', parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="imagemCapa">Link da Imagem de Capa</Label>
+                <Input
+                  id="imagemCapa"
+                  value={popSelecionado?.imagemCapa || ''}
+                  onChange={(e) => atualizarCampoPOP('imagemCapa', e.target.value)}
+                  placeholder="URL da imagem de capa"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="linkPdf">Link do PDF <span className="text-red-500">*</span></Label>
+                <Input
+                  id="linkPdf"
+                  value={popSelecionado?.linkPdf || ''}
+                  onChange={(e) => atualizarCampoPOP('linkPdf', e.target.value)}
+                  placeholder="URL do documento PDF"
+                  required
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 pt-2">
+                <Switch
+                  id="ativo"
+                  checked={popSelecionado?.ativo}
+                  onCheckedChange={(checked) => atualizarCampoPOP('ativo', checked)}
+                />
+                <Label htmlFor="ativo">POP Ativo</Label>
+              </div>
+            </TabsContent>
             
-            <div className="md:col-span-2 flex items-center space-x-2">
-              <Switch
-                id="ativo"
-                checked={protocoloSelecionado?.ativo}
-                onCheckedChange={(checked) => atualizarCampoProtocolo('ativo', checked)}
-              />
-              <Label htmlFor="ativo">Protocolo ativo</Label>
-            </div>
-          </div>
+            <TabsContent value="elaboradores">
+              {popSelecionado && (
+                <ProfissionalForm 
+                  profissionais={popSelecionado.elaboradores || []} 
+                  setProfissionais={(profissionais) => atualizarCampoPOP('elaboradores', profissionais)}
+                  titulo="Elaboradores"
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="revisores">
+              {popSelecionado && (
+                <ProfissionalForm 
+                  profissionais={popSelecionado.revisores || []} 
+                  setProfissionais={(profissionais) => atualizarCampoPOP('revisores', profissionais)}
+                  titulo="Revisores"
+                />
+              )}
+            </TabsContent>
+            
+            <TabsContent value="aprovadores">
+              {popSelecionado && (
+                <ProfissionalForm 
+                  profissionais={popSelecionado.aprovadores || []} 
+                  setProfissionais={(profissionais) => atualizarCampoPOP('aprovadores', profissionais)}
+                  titulo="Aprovadores"
+                />
+              )}
+            </TabsContent>
+          </Tabs>
           
-          <DialogFooter className="mt-4">
+          <div className="flex justify-end gap-2 pt-6">
             <Button variant="outline" onClick={fecharForm} disabled={carregando}>
               <X className="mr-2 h-4 w-4" />
               Cancelar
             </Button>
-            <Button onClick={salvarProtocolo} disabled={carregando} className="bg-csae-green-600 hover:bg-csae-green-700">
+            <Button onClick={salvarPOP} disabled={carregando} className="bg-csae-green-600 hover:bg-csae-green-700">
               <Save className="mr-2 h-4 w-4" />
               {carregando ? 'Salvando...' : 'Salvar'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </SheetContent>
+      </Sheet>
       
       {/* Diálogo de confirmação de exclusão */}
       <AlertDialog open={excluirDialogoAberto} onOpenChange={setExcluirDialogoAberto}>
@@ -617,13 +644,13 @@ const GerenciadorPOPs = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o protocolo "{protocoloSelecionado?.titulo}"? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o POP "{popSelecionado?.titulo}"? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={excluirProtocolo}
+              onClick={excluirPOP}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               Excluir
@@ -631,6 +658,149 @@ const GerenciadorPOPs = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+};
+
+// Componente para gerenciar profissionais (elaboradores, revisores, aprovadores)
+const ProfissionalForm: React.FC<ProfissionalFormProps> = ({ profissionais, setProfissionais, titulo }) => {
+  const [novoProfissional, setNovoProfissional] = useState<ProfissionalSaude>({
+    nome: '',
+    conselho: 'COREN',
+    numeroRegistro: ''
+  });
+  const [editandoIndex, setEditandoIndex] = useState<number | null>(null);
+
+  const adicionarProfissional = () => {
+    if (!novoProfissional.nome || !novoProfissional.conselho || !novoProfissional.numeroRegistro) {
+      return;
+    }
+    
+    if (editandoIndex !== null) {
+      // Editar profissional existente
+      const novosProfs = [...profissionais];
+      novosProfs[editandoIndex] = { ...novoProfissional };
+      setProfissionais(novosProfs);
+      setEditandoIndex(null);
+    } else {
+      // Adicionar novo profissional
+      setProfissionais([...profissionais, { ...novoProfissional }]);
+    }
+    
+    // Resetar form
+    setNovoProfissional({
+      nome: '',
+      conselho: 'COREN',
+      numeroRegistro: ''
+    });
+  };
+
+  const editarProfissional = (index: number) => {
+    setNovoProfissional({ ...profissionais[index] });
+    setEditandoIndex(index);
+  };
+
+  const removerProfissional = (index: number) => {
+    const novosProfs = [...profissionais];
+    novosProfs.splice(index, 1);
+    setProfissionais(novosProfs);
+    
+    // Se estava editando o que foi removido, cancelar edição
+    if (editandoIndex === index) {
+      setEditandoIndex(null);
+      setNovoProfissional({
+        nome: '',
+        conselho: 'COREN',
+        numeroRegistro: ''
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-medium">{titulo}</h3>
+      
+      <div className="space-y-4">
+        <div className="grid grid-cols-7 gap-2">
+          <div className="col-span-3 space-y-1">
+            <Label htmlFor="nome">Nome completo</Label>
+            <Input 
+              id="nome"
+              value={novoProfissional.nome}
+              onChange={(e) => setNovoProfissional({...novoProfissional, nome: e.target.value})}
+              placeholder="Ex: Maria da Silva"
+            />
+          </div>
+          
+          <div className="col-span-2 space-y-1">
+            <Label htmlFor="conselho">Conselho</Label>
+            <Input 
+              id="conselho"
+              value={novoProfissional.conselho}
+              onChange={(e) => setNovoProfissional({...novoProfissional, conselho: e.target.value})}
+              placeholder="Ex: COREN"
+            />
+          </div>
+          
+          <div className="col-span-2 space-y-1">
+            <Label htmlFor="numeroRegistro">Número</Label>
+            <div className="flex">
+              <Input 
+                id="numeroRegistro"
+                value={novoProfissional.numeroRegistro}
+                onChange={(e) => setNovoProfissional({...novoProfissional, numeroRegistro: e.target.value})}
+                placeholder="Ex: 123456"
+                className="flex-1"
+              />
+              <Button 
+                type="button" 
+                size="sm" 
+                className="ml-2 bg-csae-green-600 hover:bg-csae-green-700"
+                onClick={adicionarProfissional}
+              >
+                {editandoIndex !== null ? <Pencil className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {profissionais.length === 0 ? (
+          <div className="text-center p-4 border border-dashed rounded-md">
+            <p className="text-gray-500">Nenhum {titulo.toLowerCase().slice(0, -2)} cadastrado</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {profissionais.map((prof, index) => (
+              <div key={index} className="p-2 bg-gray-50 rounded-md flex justify-between items-center">
+                <div>
+                  <span className="font-medium">{prof.nome}</span>
+                  <span className="text-sm text-gray-600"> - {prof.conselho} {prof.numeroRegistro}</span>
+                </div>
+                <div className="flex gap-1">
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    onClick={() => editarProfissional(index)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-red-600"
+                    onClick={() => removerProfissional(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

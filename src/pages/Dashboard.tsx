@@ -9,14 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/services/autenticacao';
 import { motion } from 'framer-motion';
+import * as LucideIcons from 'lucide-react';
 import { 
-  ClipboardCheck, FileText, Bandage, BookOpen, Newspaper, 
-  Lightbulb, Info, HelpCircle, GraduationCap, Baby, 
   ArrowRight, MessageSquare, Settings, BarChart, Users, User,
   AlertCircle
 } from 'lucide-react';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
-import { buscarModulosDisponiveis } from '@/services/bancodados/modulosDB';
+import { buscarModulosVisiveis } from '@/services/bancodados/modulosDB';
 import { ModuloDisponivel } from '@/types/modulos';
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
 import Header from '@/components/Header';
@@ -42,22 +41,22 @@ const itemVariants = {
   },
 };
 
-// Mapeamento de ícones por nome do módulo
-const moduleIconMap: Record<string, React.ElementType> = {
-  "processo-enfermagem": ClipboardCheck,
-  "pops": FileText,
-  "feridas": Bandage,
-  "protocolos": BookOpen,
-  "noticias": Newspaper,
-  "sugestoes": Lightbulb,
-  "timeline": Info,
-  "faq": HelpCircle,
-  "minicurso-cipe": GraduationCap,
-  "acompanhamento-perinatal": Baby,
+// Mapa de ícones por nome do módulo
+const iconMap: {[key: string]: keyof typeof LucideIcons} = {
+  "processo-enfermagem": "ClipboardCheck",
+  "pops": "FileText",
+  "feridas": "Bandage",
+  "protocolos": "BookOpen",
+  "noticias": "Newspaper",
+  "sugestoes": "Lightbulb",
+  "timeline": "Clock",
+  "faq": "HelpCircle",
+  "minicurso-cipe": "GraduationCap",
+  "acompanhamento-perinatal": "Baby",
 };
 
 const Dashboard = () => {
-  const { obterSessao, usuario } = useAutenticacao();
+  const { obterSessao, usuario, verificarAdmin } = useAutenticacao();
   const { toast } = useToast();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
@@ -66,8 +65,12 @@ const Dashboard = () => {
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   const [modulosAtivos, setModulosAtivos] = useState<ModuloDisponivel[]>([]);
   const [modulosInativos, setModulosInativos] = useState<ModuloDisponivel[]>([]);
+  const [modulosFiltrados, setModulosFiltrados] = useState<ModuloDisponivel[]>([]);
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("all");
   const [carregando, setCarregando] = useState(true);
-
+  const isAdmin = verificarAdmin();
+  const atuaSMS = sessao?.atuaSMS === true;
+  
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao?.nomeUsuario) {
@@ -94,15 +97,16 @@ const Dashboard = () => {
     const carregarModulos = async () => {
       setCarregando(true);
       try {
-        const modulosData = await buscarModulosDisponiveis();
+        const modulosData = await buscarModulosVisiveis(isAdmin, atuaSMS);
         setModulos(modulosData);
         
-        // Separar módulos ativos e inativos
-        const ativos = modulosData.filter(m => m.ativo);
-        const inativos = modulosData.filter(m => !m.ativo);
+        // Separar módulos ativos e inativos, mas que são para exibir no dashboard
+        const ativos = modulosData.filter(m => m.ativo && m.exibirDashboard);
+        const inativos = modulosData.filter(m => !m.ativo && m.exibirDashboard);
         
         setModulosAtivos(ativos);
         setModulosInativos(inativos);
+        setModulosFiltrados(ativos); // Por padrão, mostra os ativos
       } catch (error) {
         console.error("Erro ao carregar módulos:", error);
         toast({
@@ -116,7 +120,20 @@ const Dashboard = () => {
     };
     
     carregarModulos();
-  }, [toast]);
+  }, [toast, isAdmin, atuaSMS]);
+
+  // Filtrar módulos por categoria
+  useEffect(() => {
+    if (filtroCategoria === "all") {
+      setModulosFiltrados(modulosAtivos);
+    } else if (filtroCategoria === "coming-soon") {
+      setModulosFiltrados(modulosInativos);
+    } else {
+      setModulosFiltrados(
+        modulosAtivos.filter(m => m.categoria === filtroCategoria)
+      );
+    }
+  }, [filtroCategoria, modulosAtivos, modulosInativos]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -296,16 +313,16 @@ const Dashboard = () => {
         {/* Tools Section */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-csae-green-700 mb-6 flex items-center">
-            <BookOpen className="mr-2 h-5 w-5" />
+            <LucideIcons.BookOpen className="mr-2 h-5 w-5" />
             Ferramentas disponíveis
           </h2>
 
-          <Tabs defaultValue="all" className="mb-6">
+          <Tabs defaultValue="all" className="mb-6" value={filtroCategoria} onValueChange={setFiltroCategoria}>
             <TabsList className="mb-4">
               <TabsTrigger value="all">Todas</TabsTrigger>
-              <TabsTrigger value="clinical">Clínicas</TabsTrigger>
-              <TabsTrigger value="educational">Educacionais</TabsTrigger>
-              <TabsTrigger value="management">Gestão</TabsTrigger>
+              <TabsTrigger value="clinico">Clínicas</TabsTrigger>
+              <TabsTrigger value="educacional">Educacionais</TabsTrigger>
+              <TabsTrigger value="gestao">Gestão</TabsTrigger>
               
               {/* Mostrar a aba de atualizações futuras apenas se houver módulos inativos */}
               {(modulosInativos.length > 0 || carregando) && (
@@ -320,176 +337,31 @@ const Dashboard = () => {
               )}
             </TabsList>
 
-            <TabsContent value="all">
+            {/* Tab content */}
+            {filtroCategoria !== "coming-soon" ? (
               <motion.div
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {modulosAtivos
-                  .filter(modulo => modulo.categoria === "clinico" || modulo.categoria === "educacional" || modulo.categoria === "gestao")
-                  .map((modulo) => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
-                  ))}
+                {modulosFiltrados.map((modulo) => (
+                  <ModuloCard key={modulo.id} modulo={modulo} isAdmin={isAdmin} />
+                ))}
                 
-                {/* Ferramentas fixas do sistema que não passam pelo controle de módulos */}
-                <ModuloCard 
-                  key="processo-enfermagem"
-                  modulo={{
-                    id: "processo-enfermagem",
-                    nome: "processo-enfermagem",
-                    titulo: "Processo de Enfermagem",
-                    descricao: "Acesse e gerencie os processos de enfermagem",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="protocolos"
-                  modulo={{
-                    id: "protocolos",
-                    nome: "protocolos",
-                    titulo: "Protocolos de Enfermagem",
-                    descricao: "Consulte os protocolos vigentes",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="timeline"
-                  modulo={{
-                    id: "timeline",
-                    nome: "timeline",
-                    titulo: "Nossa História",
-                    descricao: "Conheça nossa comissão e a história do CSAE",
-                    categoria: "educacional",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="sugestoes"
-                  modulo={{
-                    id: "sugestoes",
-                    nome: "sugestoes",
-                    titulo: "Sugestões",
-                    descricao: "Compartilhe suas ideias conosco",
-                    categoria: "gestao",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
+                {modulosFiltrados.length === 0 && !carregando && (
+                  <div className="col-span-full p-8 text-center border rounded-lg border-dashed">
+                    <LucideIcons.Search className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                    <h3 className="text-lg font-medium mb-1">Nenhum módulo disponível</h3>
+                    <p className="text-gray-500">
+                      Não há módulos disponíveis para esta categoria.
+                    </p>
+                  </div>
+                )}
               </motion.div>
-            </TabsContent>
-
-            <TabsContent value="clinical">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosAtivos
-                  .filter(modulo => modulo.categoria === "clinico")
-                  .map((modulo) => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
-                  ))}
-                
-                {/* Ferramentas clínicas fixas */}
-                <ModuloCard 
-                  key="processo-enfermagem"
-                  modulo={{
-                    id: "processo-enfermagem",
-                    nome: "processo-enfermagem",
-                    titulo: "Processo de Enfermagem",
-                    descricao: "Acesse e gerencie os processos de enfermagem",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="protocolos"
-                  modulo={{
-                    id: "protocolos",
-                    nome: "protocolos",
-                    titulo: "Protocolos de Enfermagem",
-                    descricao: "Consulte os protocolos vigentes",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="educational">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosAtivos
-                  .filter(modulo => modulo.categoria === "educacional")
-                  .map((modulo) => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
-                  ))}
-                
-                {/* Ferramentas educacionais fixas */}
-                <ModuloCard 
-                  key="timeline"
-                  modulo={{
-                    id: "timeline",
-                    nome: "timeline",
-                    titulo: "Nossa História",
-                    descricao: "Conheça nossa comissão e a história do CSAE",
-                    categoria: "educacional",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-              </motion.div>
-            </TabsContent>
-
-            <TabsContent value="management">
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosAtivos
-                  .filter(modulo => modulo.categoria === "gestao")
-                  .map((modulo) => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
-                  ))}
-                
-                {/* Ferramentas de gestão fixas */}
-                <ModuloCard 
-                  key="sugestoes"
-                  modulo={{
-                    id: "sugestoes",
-                    nome: "sugestoes",
-                    titulo: "Sugestões",
-                    descricao: "Compartilhe suas ideias conosco",
-                    categoria: "gestao",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-              </motion.div>
-            </TabsContent>
-            
-            {(modulosInativos.length > 0 || carregando) && (
-              <TabsContent value="coming-soon">
+            ) : (
+              // Coming soon tab
+              <>
                 <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
@@ -511,8 +383,18 @@ const Dashboard = () => {
                   {modulosInativos.map((modulo) => (
                     <ModuloInativoCard key={modulo.id} modulo={modulo} />
                   ))}
+                  
+                  {modulosInativos.length === 0 && !carregando && (
+                    <div className="col-span-full p-8 text-center border rounded-lg border-dashed">
+                      <LucideIcons.Check className="mx-auto h-12 w-12 text-gray-300 mb-2" />
+                      <h3 className="text-lg font-medium mb-1">Sem atualizações pendentes</h3>
+                      <p className="text-gray-500">
+                        Não há módulos em desenvolvimento no momento.
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
-              </TabsContent>
+              </>
             )}
           </Tabs>
         </div>
@@ -525,7 +407,17 @@ const Dashboard = () => {
 
 // Card para módulos ativos
 const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: boolean }) => {
-  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+  // Determinar o ícone a ser usado
+  let IconComponent: React.ElementType;
+  
+  if (modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons]) {
+    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons];
+  } else if (iconMap[modulo.nome]) {
+    IconComponent = LucideIcons[iconMap[modulo.nome]];
+  } else {
+    // Fallback para Settings se o ícone não for encontrado
+    IconComponent = LucideIcons.Settings;
+  }
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
@@ -589,7 +481,17 @@ const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: bo
 
 // Card para módulos inativos (em desenvolvimento)
 const ModuloInativoCard = ({ modulo }: { modulo: ModuloDisponivel }) => {
-  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+  // Determinar o ícone a ser usado
+  let IconComponent: React.ElementType;
+  
+  if (modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons]) {
+    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons];
+  } else if (iconMap[modulo.nome]) {
+    IconComponent = LucideIcons[iconMap[modulo.nome]];
+  } else {
+    // Fallback para Settings se o ícone não for encontrado
+    IconComponent = LucideIcons.Settings;
+  }
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
