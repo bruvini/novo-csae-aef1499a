@@ -178,6 +178,7 @@ export interface ResultadoEsperado {
   intervencoes: Intervencao[];
 }
 
+// Updated Subconjunto interface to include "Sistema" and "Outro" types
 export interface Subconjunto {
   id?: string;
   nome: string;
@@ -189,6 +190,7 @@ export interface Subconjunto {
   updatedAt?: Timestamp;
 }
 
+// Updated SubconjuntoDiagnostico interface to include "Sistema" and "Outro" types
 export interface SubconjuntoDiagnostico {
   id?: string;
   nome: string;
@@ -200,7 +202,7 @@ export interface SubconjuntoDiagnostico {
   updatedAt?: Timestamp;
 }
 
-// Sinais Vitais
+// Sinal Vitais
 export interface SinalVital {
   id?: string;
   nome: string;
@@ -347,12 +349,12 @@ export interface ValorReferencia {
 export interface TermoCipe {
   id?: string;
   termo: string;
-  tipo: string;
-  descricao: string;
-  conceito: string;
-  eixo: string;
-  codigo: string;
-  ativo: boolean;
+  tipo?: string;
+  descricao?: string;
+  conceito?: string;
+  eixo?: string;
+  codigo?: string;
+  ativo?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
@@ -121,16 +122,23 @@ const GerenciadorDiagnosticos = () => {
   const abrirModalCriarSubconjunto = () => {
     setFormSubconjunto({
       nome: '',
-      tipo: 'Protocolo' as 'NHB' | 'Sistema' | 'Outro' | 'Protocolo',
+      tipo: 'Protocolo',
       descricao: '',
-      ativo: true // Add required property
+      ativo: true
     });
     setEditandoSubconjuntoId(null);
     setModalSubconjunto(true);
   };
   
   const abrirModalEditarSubconjunto = (subconjunto: Subconjunto) => {
-    setFormSubconjunto({...subconjunto});
+    // Type cast to ensure only compatible tipos are set
+    const tipoCompatible = subconjunto.tipo as 'NHB' | 'Sistema' | 'Outro' | 'Protocolo';
+    setFormSubconjunto({
+      ...subconjunto, 
+      tipo: tipoCompatible === 'NHB' || tipoCompatible === 'Protocolo' 
+        ? tipoCompatible 
+        : 'Protocolo'
+    });
     setEditandoSubconjuntoId(subconjunto.id || null);
     setModalSubconjunto(true);
   };
