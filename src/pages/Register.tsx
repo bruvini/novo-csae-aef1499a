@@ -1,800 +1,417 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Mail, Lock, User, Phone, MapPin, IdCard, GraduationCap, Briefcase, CheckCircle, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
 import {
-  verificarUsuarioExistente,
-  cadastrarUsuario,
-} from "@/services/bancodados";
-import SimpleFooter from "@/components/SimpleFooter";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
-const estadosBrasileiros = [
-  "AC",
-  "AL",
-  "AP",
-  "AM",
-  "BA",
-  "CE",
-  "DF",
-  "ES",
-  "GO",
-  "MA",
-  "MT",
-  "MS",
-  "MG",
-  "PA",
-  "PB",
-  "PR",
-  "PE",
-  "PI",
-  "RJ",
-  "RN",
-  "RS",
-  "RO",
-  "RR",
-  "SC",
-  "SP",
-  "SE",
-  "TO",
-];
-
-const lotacoesSMS = [
-  "Abraão",
-  "Agronômica",
-  "Alto Ribeirão",
-  "Armação",
-  "Balneário",
-  "Barra da Lagoa",
-  "Cachoeira do Bom Jesus",
-  "Caieira da Barra do Sul",
-  "Campeche",
-  "Canasvieiras",
-  "Canto da Lagoa",
-  "Capivari",
-  "CAPS - Pontal do Coral",
-  "CAPSAD - Continente",
-  "CAPSAD - Ilha",
-  "CAPSI - Infantil",
-  "Capoeiras",
-  "Carianos",
-  "Centro",
-  "Coloninha",
-  "Coqueiros",
-  "Córrego Grande",
-  "Costa da Lagoa",
-  "Costeira do Pirajubaé",
-  "Estreito",
-  "Fazenda do Rio Tavares",
-  "Ingleses",
-  "Itacorubi",
-  "Jardim Atlântico",
-  "João Paulo",
-  "Jurerê",
-  "Lagoa da Conceição",
-  "Monte Cristo",
-  "Monte Serrat",
-  "Morro das Pedras",
-  "Novo Continente",
-  "Pantanal",
-  "Pântano do Sul",
-  "Policlínica Centro",
-  "Policlínica Continente",
-  "Policlínica Norte",
-  "Policlínica Sul",
-  "Ponta das Canas",
-  "Prainha",
-  "Ratones",
-  "Ribeirão da Ilha",
-  "Rio Tavares",
-  "Rio Vemelho",
-  "Saco dos Limões",
-  "Saco Grande",
-  "Santinho",
-  "Santo Antônio de Lisboa",
-  "Sapé",
-  "Tapera",
-  "Trindade",
-  "Upa Continente",
-  "Upa Norte",
-  "Upa Sul",
-  "Vargem Grande",
-  "Vargem Pequena",
-  "Vila Aparecida",
-];
+const formSchema = z.object({
+  nomeCompleto: z.string().min(3, { message: "Nome completo é obrigatório" }),
+  rg: z.string().min(9, { message: "RG é obrigatório" }),
+  cpf: z.string().min(11, { message: "CPF é obrigatório" }),
+  rua: z.string().min(3, { message: "Rua é obrigatória" }),
+  numero: z.string().min(1, { message: "Número é obrigatório" }),
+  bairro: z.string().min(3, { message: "Bairro é obrigatório" }),
+  cidade: z.string().min(3, { message: "Cidade é obrigatória" }),
+  uf: z.string().min(2, { message: "UF é obrigatória" }),
+  cep: z.string().min(8, { message: "CEP é obrigatório" }),
+  formacao: z.enum(['Enfermeiro', 'Residente de Enfermagem', 'Técnico de Enfermagem', 'Acadêmico de Enfermagem'], {
+    required_error: "A sua formação é necessária.",
+  }),
+  numeroCoren: z.string().optional(),
+  ufCoren: z.string().optional(),
+  dataInicioResidencia: z.string().optional(),
+  iesEnfermagem: z.string().optional(),
+  atuaSMS: z.boolean().default(false),
+  lotacao: z.string().optional(),
+  matricula: z.string().optional(),
+  cidadeTrabalho: z.string().optional(),
+  localCargo: z.string().optional(),
+  email: z.string().email({ message: "Email inválido" }),
+  senha: z.string().min(6, { message: "Senha precisa ter no mínimo 6 caracteres" }),
+});
 
 const Register = () => {
-  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { registrarUsuario } = useAutenticacao();
   const { toast } = useToast();
-  const { registrar } = useAutenticacao();
+  const router = useNavigate();
 
-  const [camposComErro, setCamposComErro] = useState<Set<string>>(new Set());
-  const [carregando, setCarregando] = useState(false);
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      nomeCompleto: "",
+      rg: "",
+      cpf: "",
+      rua: "",
+      numero: "",
+      bairro: "",
+      cidade: "",
+      uf: "",
+      cep: "",
+      formacao: "Enfermeiro",
+      numeroCoren: "",
+      ufCoren: "",
+      dataInicioResidencia: "",
+      iesEnfermagem: "",
+      atuaSMS: false,
+      lotacao: "",
+      matricula: "",
+      cidadeTrabalho: "",
+      localCargo: "",
+      email: "",
+      senha: "",
+    },
+  });
 
-  const [nomeCompleto, setNomeCompleto] = useState("");
-  const [rg, setRg] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [rua, setRua] = useState("");
-  const [numero, setNumero] = useState("");
-  const [bairro, setBairro] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [uf, setUf] = useState("");
-  const [cep, setCep] = useState("");
-
-  const [formacao, setFormacao] = useState("");
-  const [numeroCoren, setNumeroCoren] = useState("");
-  const [ufCoren, setUfCoren] = useState("");
-  const [dataInicioResidencia, setDataInicioResidencia] = useState("");
-  const [iesEnfermagem, setIesEnfermagem] = useState("");
-  const [atuaSMS, setAtuaSMS] = useState(false);
-  const [lotacao, setLotacao] = useState("");
-  const [matricula, setMatricula] = useState("");
-  const [cidadeTrabalho, setCidadeTrabalho] = useState("");
-  const [localCargo, setLocalCargo] = useState("");
-
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-
-  useEffect(() => {
-    if (
-      formacao !== "Enfermeiro" &&
-      formacao !== "Residente de Enfermagem" &&
-      formacao !== "Técnico de Enfermagem"
-    ) {
-      setNumeroCoren("");
-      setUfCoren("");
-    }
-
-    if (formacao !== "Residente de Enfermagem") {
-      setDataInicioResidencia("");
-    }
-
-    if (formacao !== "Acadêmico de Enfermagem") {
-      setIesEnfermagem("");
-    }
-  }, [formacao]);
-
-  useEffect(() => {
-    if (atuaSMS) {
-      setCidadeTrabalho("");
-      setLocalCargo("");
-    } else {
-      setLotacao("");
-      setMatricula("");
-    }
-  }, [atuaSMS]);
-
-  const validarFormulario = () => {
-    const novosErros = new Set<string>();
-
-    if (!nomeCompleto) novosErros.add("nomeCompleto");
-    if (!rg) novosErros.add("rg");
-    if (!cpf) novosErros.add("cpf");
-    if (!rua) novosErros.add("rua");
-    if (!numero) novosErros.add("numero");
-    if (!bairro) novosErros.add("bairro");
-    if (!cidade) novosErros.add("cidade");
-    if (!uf) novosErros.add("uf");
-    if (!cep) novosErros.add("cep");
-
-    if (!formacao) novosErros.add("formacao");
-
-    if (
-      formacao === "Enfermeiro" ||
-      formacao === "Residente de Enfermagem" ||
-      formacao === "Técnico de Enfermagem"
-    ) {
-      if (!numeroCoren) novosErros.add("numeroCoren");
-      if (!ufCoren) novosErros.add("ufCoren");
-    }
-
-    if (formacao === "Residente de Enfermagem" && !dataInicioResidencia) {
-      novosErros.add("dataInicioResidencia");
-    }
-
-    if (formacao === "Acadêmico de Enfermagem" && !iesEnfermagem) {
-      novosErros.add("iesEnfermagem");
-    }
-
-    if (atuaSMS) {
-      if (!lotacao) novosErros.add("lotacao");
-      if (!matricula) novosErros.add("matricula");
-    } else {
-      if (!cidadeTrabalho) novosErros.add("cidadeTrabalho");
-      if (!localCargo) novosErros.add("localCargo");
-    }
-
-    if (!email) novosErros.add("email");
-    if (!senha) novosErros.add("senha");
-    if (!confirmarSenha) novosErros.add("confirmarSenha");
-
-    if (senha !== confirmarSenha) {
-      novosErros.add("senha");
-      novosErros.add("confirmarSenha");
-      toast({
-        title: "Senhas não conferem",
-        description: "A senha e a confirmação de senha devem ser idênticas",
-        variant: "destructive",
-      });
-    }
-
-    setCamposComErro(novosErros);
-    return novosErros.size === 0;
+  const handleFormacaoChange = (value: string) => {
+    form.setValue("formacao", value);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validarFormulario()) {
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+  setIsSubmitting(true);
+  
+  try {
+    const { email, senha, ...resto } = values;
+    const resultado = await registrarUsuario(email, senha, resto);
+    
+    if (resultado.sucesso && resultado.usuario) {
+      router.push("/");
       toast({
-        title: "Formulário incompleto",
-        description: "Por favor, preencha todos os campos obrigatórios",
-        variant: "destructive",
+        title: "Cadastro realizado com sucesso",
+        description: "Seu cadastro está aguardando aprovação.",
       });
-      return;
-    }
-
-    setCarregando(true);
-
-    try {
-      const usuarioExiste = await verificarUsuarioExistente(
-        email,
-        formacao === "Enfermeiro" ||
-          formacao === "Residente de Enfermagem" ||
-          formacao === "Técnico de Enfermagem"
-          ? numeroCoren
-          : undefined,
-        formacao === "Enfermeiro" ||
-          formacao === "Residente de Enfermagem" ||
-          formacao === "Técnico de Enfermagem"
-          ? ufCoren
-          : undefined,
-        atuaSMS ? matricula : undefined
-      );
-
-      if (usuarioExiste) {
-        toast({
-          title: "Usuário já cadastrado",
-          description:
-            "Já existe um cadastro com esses dados. Verifique seu e-mail, COREN ou matrícula.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const usuarioAuth = await registrar(email, senha);
-
-      await cadastrarUsuario({
-        uid: usuarioAuth.uid,
-        email,
-        dadosPessoais: {
-          nomeCompleto,
-          rg,
-          cpf,
-          rua,
-          numero,
-          bairro,
-          cidade,
-          uf,
-          cep,
-        },
-        dadosProfissionais: {
-          formacao: formacao as any,
-          numeroCoren:
-            formacao === "Enfermeiro" ||
-            formacao === "Residente de Enfermagem" ||
-            formacao === "Técnico de Enfermagem"
-              ? numeroCoren
-              : null,
-          ufCoren:
-            formacao === "Enfermeiro" ||
-            formacao === "Residente de Enfermagem" ||
-            formacao === "Técnico de Enfermagem"
-              ? ufCoren
-              : null,
-          dataInicioResidencia:
-            formacao === "Residente de Enfermagem"
-              ? dataInicioResidencia
-              : null,
-          iesEnfermagem:
-            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : null,
-          atuaSMS,
-          lotacao: atuaSMS ? lotacao : null,
-          matricula: atuaSMS ? matricula : null,
-          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : null,
-          localCargo: !atuaSMS ? localCargo : null,
-        },
-      });
-
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description:
-          "Seu cadastro foi enviado para análise. Você receberá um e-mail quando for aprovado.",
-      });
-
-      navigate("/");
-    } catch (error) {
-      console.error("Erro ao cadastrar:", error);
+    } else {
       toast({
         title: "Erro no cadastro",
-        description:
-          "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.",
+        description: resultado.mensagem || "Ocorreu um erro desconhecido",
         variant: "destructive",
       });
-    } finally {
-      setCarregando(false);
     }
-  };
+  } catch (error: any) {
+    console.error("Erro durante o registro:", error);
+    toast({
+      title: "Erro no cadastro",
+      description: error.message || "Ocorreu um erro desconhecido",
+      variant: "destructive",
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <main className="flex-grow container mx-auto px-4 py-8">
-        <div className="container max-w-4xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-csae-green-800 mb-2">
-              Junte-se à evolução da enfermagem em Florianópolis
+    <>
+      <Helmet>
+        <title>Registrar | CSAE</title>
+      </Helmet>
+
+      <div className="container mx-auto py-10 flex justify-center items-start">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg animate-fade-in">
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-bold tracking-tight text-csae-green-800">
+              Crie sua conta
             </h1>
-            <p className="text-gray-600">
-              Os dados abaixo serão utilizados para garantir segurança aos seus
-              dados e dos pacientes sobre seus cuidados, assim como para gerar o
-              termo de responsabilidade sobre o uso da plataforma.
+            <p className="text-sm text-gray-500">
+              Preencha os dados abaixo para solicitar acesso à plataforma
             </p>
           </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-8 bg-white p-8 rounded-lg shadow-lg"
-          >
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
-                Informações Pessoais
-              </h2>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <FormItem>
+                  <FormLabel>Nome Completo</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Digite seu nome completo" {...form.register("nomeCompleto")} />
+                  </FormControl>
+                  <FormDescription>Este é o nome que será exibido em seu perfil.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome Completo
-                  </label>
-                  <Input
-                    type="text"
-                    value={nomeCompleto}
-                    onChange={(e) => setNomeCompleto(e.target.value)}
-                    className={
-                      camposComErro.has("nomeCompleto") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <FormItem>
+                    <FormLabel>RG</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite seu RG" {...form.register("rg")} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    RG (apenas números)
-                  </label>
-                  <Input
-                    type="text"
-                    value={rg}
-                    onChange={(e) => setRg(e.target.value.replace(/\D/g, ""))}
-                    className={camposComErro.has("rg") ? "border-red-500" : ""}
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CPF (apenas números)
-                  </label>
-                  <Input
-                    type="text"
-                    value={cpf}
-                    onChange={(e) => setCpf(e.target.value.replace(/\D/g, ""))}
-                    maxLength={11}
-                    className={camposComErro.has("cpf") ? "border-red-500" : ""}
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Rua
-                  </label>
-                  <Input
-                    type="text"
-                    value={rua}
-                    onChange={(e) => setRua(e.target.value)}
-                    className={camposComErro.has("rua") ? "border-red-500" : ""}
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número
-                  </label>
-                  <Input
-                    type="text"
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                    className={
-                      camposComErro.has("numero") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bairro
-                  </label>
-                  <Input
-                    type="text"
-                    value={bairro}
-                    onChange={(e) => setBairro(e.target.value)}
-                    className={
-                      camposComErro.has("bairro") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cidade
-                  </label>
-                  <Input
-                    type="text"
-                    value={cidade}
-                    onChange={(e) => setCidade(e.target.value)}
-                    className={
-                      camposComErro.has("cidade") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    UF
-                  </label>
-                  <select
-                    value={uf}
-                    onChange={(e) => setUf(e.target.value)}
-                    className={`w-full h-10 px-3 py-2 rounded-md border ${
-                      camposComErro.has("uf")
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } bg-white focus:outline-none focus:ring-2 focus:ring-csae-green-400`}
-                    disabled={carregando}
-                  >
-                    <option value="">Selecione</option>
-                    {estadosBrasileiros.map((estado) => (
-                      <option key={estado} value={estado}>
-                        {estado}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CEP (apenas números)
-                  </label>
-                  <Input
-                    type="text"
-                    value={cep}
-                    onChange={(e) => setCep(e.target.value.replace(/\D/g, ""))}
-                    maxLength={8}
-                    className={camposComErro.has("cep") ? "border-red-500" : ""}
-                    disabled={carregando}
-                  />
+                <div className="space-y-2">
+                  <FormItem>
+                    <FormLabel>CPF</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Digite seu CPF" {...form.register("cpf")} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 </div>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
-                Informações Profissionais
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Formação
-                  </label>
-                  <select
-                    value={formacao}
-                    onChange={(e) => setFormacao(e.target.value)}
-                    className={`w-full h-10 px-3 py-2 rounded-md border ${
-                      camposComErro.has("formacao")
-                        ? "border-red-500"
-                        : "border-gray-300"
-                    } bg-white focus:outline-none focus:ring-2 focus:ring-csae-green-400`}
-                    disabled={carregando}
-                  >
-                    <option value="">Selecione</option>
-                    <option value="Enfermeiro">Enfermeiro</option>
-                    <option value="Residente de Enfermagem">
-                      Residente de Enfermagem
-                    </option>
-                    <option value="Técnico de Enfermagem">
-                      Técnico de Enfermagem
-                    </option>
-                    <option value="Acadêmico de Enfermagem">
-                      Acadêmico de Enfermagem
-                    </option>
-                  </select>
-                </div>
-
-                {(formacao === "Enfermeiro" ||
-                  formacao === "Residente de Enfermagem" ||
-                  formacao === "Técnico de Enfermagem") && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Número do COREN
-                      </label>
-                      <Input
-                        type="text"
-                        value={numeroCoren}
-                        onChange={(e) => setNumeroCoren(e.target.value)}
-                        className={
-                          camposComErro.has("numeroCoren")
-                            ? "border-red-500"
-                            : ""
-                        }
-                        disabled={carregando}
-                      />
+              <div className="space-y-2">
+                <FormItem>
+                  <FormLabel>Endereço</FormLabel>
+                  <div className="grid grid-cols-5 gap-2">
+                    <div className="col-span-3">
+                      <FormControl>
+                        <Input placeholder="Rua" {...form.register("rua")} />
+                      </FormControl>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        UF do COREN
-                      </label>
-                      <select
-                        value={ufCoren}
-                        onChange={(e) => setUfCoren(e.target.value)}
-                        className={`w-full h-10 px-3 py-2 rounded-md border ${
-                          camposComErro.has("ufCoren")
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } bg-white focus:outline-none focus:ring-2 focus:ring-csae-green-400`}
-                        disabled={carregando}
-                      >
-                        <option value="">Selecione</option>
-                        {estadosBrasileiros.map((estado) => (
-                          <option key={estado} value={estado}>
-                            {estado}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="col-span-1">
+                      <FormControl>
+                        <Input placeholder="Número" {...form.register("numero")} />
+                      </FormControl>
                     </div>
-                  </>
-                )}
-
-                {formacao === "Residente de Enfermagem" && (
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Data de Início da Residência
-                    </label>
-                    <Input
-                      type="date"
-                      value={dataInicioResidencia}
-                      onChange={(e) => setDataInicioResidencia(e.target.value)}
-                      className={
-                        camposComErro.has("dataInicioResidencia")
-                          ? "border-red-500"
-                          : ""
-                      }
-                      disabled={carregando}
-                    />
+                    <div className="col-span-1">
+                      <FormControl>
+                        <Input placeholder="CEP" {...form.register("cep")} />
+                      </FormControl>
+                    </div>
                   </div>
-                )}
+                  <FormDescription>Rua, número e CEP.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              </div>
 
-                {formacao === "Acadêmico de Enfermagem" && (
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Instituição de Ensino Superior
-                    </label>
-                    <Input
-                      type="text"
-                      value={iesEnfermagem}
-                      onChange={(e) => setIesEnfermagem(e.target.value)}
-                      className={
-                        camposComErro.has("iesEnfermagem")
-                          ? "border-red-500"
-                          : ""
-                      }
-                      disabled={carregando}
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <FormItem>
+                    <FormLabel>Bairro</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Bairro" {...form.register("bairro")} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </div>
+
+                <div className="space-y-2">
+                  <FormItem>
+                    <FormLabel>Cidade</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Cidade" {...form.register("cidade")} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </div>
+
+                <div className="space-y-2">
+                  <FormItem>
+                    <FormLabel>UF</FormLabel>
+                    <FormControl>
+                      <Input placeholder="UF" {...form.register("uf")} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <FormItem>
+                  <FormLabel>Formação</FormLabel>
+                  <Select onValueChange={handleFormacaoChange} defaultValue={form.getValues("formacao")}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione sua formação" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Enfermeiro">Enfermeiro(a)</SelectItem>
+                      <SelectItem value="Residente de Enfermagem">Residente de Enfermagem</SelectItem>
+                      <SelectItem value="Técnico de Enfermagem">Técnico(a) de Enfermagem</SelectItem>
+                      <SelectItem value="Acadêmico de Enfermagem">Acadêmico(a) de Enfermagem</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>Qual sua formação na área de enfermagem?</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              {form.getValues("formacao") !== "Acadêmico de Enfermagem" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Número do COREN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número do COREN" {...form.register("numeroCoren")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   </div>
-                )}
 
-                <div className="col-span-2 flex items-center space-x-2 pt-2">
-                  <Checkbox
-                    id="atuaSMS"
-                    checked={atuaSMS}
-                    onCheckedChange={() => setAtuaSMS(!atuaSMS)}
-                    disabled={carregando}
-                  />
-                  <label
-                    htmlFor="atuaSMS"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Atuo na Secretaria Municipal de Saúde de Florianópolis
-                  </label>
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>UF do COREN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="UF do COREN" {...form.register("ufCoren")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
                 </div>
+              )}
 
-                {atuaSMS ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Lotação
-                      </label>
-                      <select
-                        value={lotacao}
-                        onChange={(e) => setLotacao(e.target.value)}
-                        className={`w-full h-10 px-3 py-2 rounded-md border ${
-                          camposComErro.has("lotacao")
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        } bg-white focus:outline-none focus:ring-2 focus:ring-csae-green-400`}
-                        disabled={carregando}
-                      >
-                        <option value="">Selecione</option>
-                        {lotacoesSMS.map((unidade) => (
-                          <option key={unidade} value={unidade}>
-                            {unidade}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              {form.getValues("formacao") === "Residente de Enfermagem" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Data de Início da Residência</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...form.register("dataInicioResidencia")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Número da Matrícula
-                      </label>
-                      <Input
-                        type="text"
-                        value={matricula}
-                        onChange={(e) => setMatricula(e.target.value)}
-                        className={
-                          camposComErro.has("matricula") ? "border-red-500" : ""
-                        }
-                        disabled={carregando}
-                      />
-                    </div>
-                  </>
-                ) : formacao ? (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cidade que Trabalha
-                      </label>
-                      <Input
-                        type="text"
-                        value={cidadeTrabalho}
-                        onChange={(e) => setCidadeTrabalho(e.target.value)}
-                        className={
-                          camposComErro.has("cidadeTrabalho")
-                            ? "border-red-500"
-                            : ""
-                        }
-                        disabled={carregando}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>IES da Residência</FormLabel>
+                      <FormControl>
+                        <Input placeholder="IES da Residência" {...form.register("iesEnfermagem")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
+                </div>
+              )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Local/Cargo
-                      </label>
-                      <Input
-                        type="text"
-                        value={localCargo}
-                        onChange={(e) => setLocalCargo(e.target.value)}
-                        className={
-                          camposComErro.has("localCargo")
-                            ? "border-red-500"
-                            : ""
-                        }
-                        disabled={carregando}
+              <div className="space-y-2">
+                <FormItem>
+                  <div className="flex items-center space-x-2">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-csae-green-600 focus:ring-csae-green-500"
+                        {...form.register("atuaSMS")}
                       />
-                    </div>
-                  </>
-                ) : null}
+                    </FormControl>
+                    <FormLabel className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Atua na SMS?
+                    </FormLabel>
+                  </div>
+                  <FormDescription>Você atua na Secretaria Municipal de Saúde?</FormDescription>
+                  <FormMessage />
+                </FormItem>
               </div>
-            </div>
 
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-csae-green-700 pb-2 border-b border-csae-green-200">
-                Informações de Acesso
-              </h2>
+              {form.getValues("atuaSMS") && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Lotação</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Lotação" {...form.register("lotacao")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    E-mail
-                  </label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={
-                      camposComErro.has("email") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Matrícula</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Matrícula" {...form.register("matricula")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Senha
-                  </label>
-                  <Input
-                    type="password"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                    className={
-                      camposComErro.has("senha") ? "border-red-500" : ""
-                    }
-                    disabled={carregando}
-                  />
-                </div>
+              {form.getValues("atuaSMS") && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Cidade de Trabalho</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cidade de Trabalho" {...form.register("cidadeTrabalho")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirmar Senha
-                  </label>
-                  <Input
-                    type="password"
-                    value={confirmarSenha}
-                    onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className={
-                      camposComErro.has("confirmarSenha")
-                        ? "border-red-500"
-                        : ""
-                    }
-                    disabled={carregando}
-                  />
+                  <div className="space-y-2">
+                    <FormItem>
+                      <FormLabel>Local/Cargo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Local/Cargo" {...form.register("localCargo")} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  </div>
                 </div>
+              )}
+
+              <div className="space-y-2">
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input type="email" placeholder="Digite seu email" {...form.register("email")} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row justify-between gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/")}
-                className="csae-btn-secondary order-2 sm:order-1"
-                disabled={carregando}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para o Login
-              </Button>
+              <div className="space-y-2">
+                <FormItem>
+                  <FormLabel>Senha</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Digite sua senha" {...form.register("senha")} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
 
-              <Button
-                type="submit"
-                className="csae-btn-primary order-1 sm:order-2"
-                disabled={carregando}
-              >
-                {carregando ? (
-                  "Processando..."
+              <Button type="submit" className="w-full csae-btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12 4V2m0 16v2m8-8h2M4 12H2m7.9-7.9l1.4 1.4M17.1 6.9l-1.4-1.4M6.9 17.1l-1.4 1.4M17.1 17.1l1.4-1.4" opacity=".5"/>
+                      <path fill="currentColor" d="M12 22C7.029 22 3 17.971 3 12S7.029 2 12 2s9 4.029 9 9-4.029 10-9 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="15.708 15.708" strokeDashoffset="15.708"/>
+                    </svg>
+                    Cadastrando...
+                  </>
                 ) : (
-                  <>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Criar Conta
-                  </>
+                  "Solicitar Acesso"
                 )}
               </Button>
-            </div>
-          </form>
+              <div className="text-sm text-gray-500 text-center">
+                Já possui uma conta?{" "}
+                <Link to="/" className="csae-link">
+                  Acesse agora
+                </Link>
+              </div>
+            </form>
+          </Form>
         </div>
-      </main>
-
-      <SimpleFooter />
-    </div>
+      </div>
+    </>
   );
 };
 

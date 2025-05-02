@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   doc, 
@@ -11,6 +12,7 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { ModuloDisponivel } from '@/types/modulos';
 
 export interface ModuloDashboard {
   id?: string;
@@ -79,7 +81,7 @@ export const atualizarModulo = async (id: string, dados: object): Promise<boolea
     
     // Fix the spread issue by ensuring dados is an object
     await updateDoc(moduloRef, { 
-      ...dados as object, 
+      ...dados, 
       dataAtualizacao: serverTimestamp() 
     });
     
@@ -116,3 +118,106 @@ export const buscarModulosAtivos = async (): Promise<ModuloDashboard[]> => {
     return [];
   }
 };
+
+// Adding missing functions
+
+// Function to verify if a module is active
+export const verificarModuloAtivo = async (
+  moduloNome: string, 
+  isAdmin: boolean, 
+  atuaSMS: boolean
+): Promise<boolean> => {
+  try {
+    const modulosRef = collection(db, 'modulosDashboard');
+    const q = query(modulosRef, where('nome', '==', moduloNome));
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      return false;
+    }
+    
+    const modulo = snapshot.docs[0].data() as ModuloDisponivel;
+    
+    // If module is not active, it's not available to anyone
+    if (!modulo.ativo) {
+      return false;
+    }
+    
+    // Admin can access all modules
+    if (isAdmin) {
+      return true;
+    }
+    
+    // Check visibility permissions
+    if (modulo.visibilidade === 'todos') {
+      return true;
+    } else if (modulo.visibilidade === 'sms' && atuaSMS) {
+      return true;
+    } else if (modulo.visibilidade === 'admin') {
+      return false; // Only admins can access admin modules
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Erro ao verificar status do módulo:', error);
+    return false;
+  }
+};
+
+// Function to get visible modules based on user profile
+export const buscarModulosVisiveis = async (
+  isAdmin: boolean, 
+  atuaSMS: boolean
+): Promise<ModuloDisponivel[]> => {
+  try {
+    const modulosRef = collection(db, 'modulosDashboard');
+    const q = query(modulosRef, where('ativo', '==', true));
+    const snapshot = await getDocs(q);
+    
+    const modulos: ModuloDisponivel[] = [];
+    
+    snapshot.forEach(doc => {
+      const modulo = { id: doc.id, ...doc.data() } as ModuloDisponivel;
+      
+      // Filter based on visibility permissions
+      if (
+        modulo.visibilidade === 'todos' || 
+        (modulo.visibilidade === 'admin' && isAdmin) ||
+        (modulo.visibilidade === 'sms' && (atuaSMS || isAdmin))
+      ) {
+        modulos.push(modulo);
+      }
+    });
+    
+    // Sort modules by order field
+    return modulos.sort((a, b) => (a.ordem || 1000) - (b.ordem || 1000));
+  } catch (error) {
+    console.error('Erro ao buscar módulos visíveis:', error);
+    return [];
+  }
+};
+
+// Function for GerenciadorModulos component
+export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> => {
+  try {
+    const modulosRef = collection(db, 'modulosDashboard');
+    const snapshot = await getDocs(modulosRef);
+    
+    const modulos: ModuloDisponivel[] = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as ModuloDisponivel[];
+    
+    // Sort modules by order field
+    return modulos.sort((a, b) => (a.ordem || 1000) - (b.ordem || 1000));
+  } catch (error) {
+    console.error('Erro ao buscar módulos disponíveis:', error);
+    return [];
+  }
+};
+
+// Alias for criarModulo for GerenciadorModulos component
+export const adicionarModulo = criarModulo;
+
+// Alias for excluirModulo for GerenciadorModulos component
+export const removerModulo = excluirModulo;

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -53,8 +54,8 @@ const LoginForm = () => {
     setLoading(true);
     setRegistrarAtivo(false);
     
-    const { sucesso, registrarAtivo: novoRegistrarAtivo } = await realizarLogin(email, password);
-    setRegistrarAtivo(novoRegistrarAtivo);
+    const response = await realizarLogin(email, password);
+    setRegistrarAtivo(response.registrarAtivo || false);
     setLoading(false);
   };
 

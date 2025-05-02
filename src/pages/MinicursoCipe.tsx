@@ -1,172 +1,86 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { Helmet } from 'react-helmet';
 import { useAutenticacao } from '@/services/autenticacao';
-import { buscarTermosCipe } from '@/services/bancodados/cipeDB';
+import { buscarCasosClinicos, buscarTermosCipe } from '@/services/bancodados/cipeDB';
 import { CasoClinico } from '@/types/cipe';
-import CursoSidebar from '@/components/minicurso-cipe/CursoSidebar';
-import ModuloIntroducao from '@/components/minicurso-cipe/ModuloIntroducao';
-import ModuloEixo from '@/components/minicurso-cipe/ModuloEixo';
-import ModuloElaboracao from '@/components/minicurso-cipe/ModuloElaboracao';
+import PageHeader from '@/components/PageHeader';
 import ModuloExercicios from '@/components/minicurso-cipe/ModuloExercicios';
-import Header from '@/components/Header';
+import { UserRound } from 'lucide-react';
 
-const MinicursoCipe: React.FC = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const { obterSessao } = useAutenticacao();
-  const [modulosCompletados, setModulosCompletados] = useState<string[]>([]);
-  const [moduloAtivo, setModuloAtivo] = useState('introducao');
-  const [termosCipe, setTermosCipe] = useState<{ [key: string]: any[] }>({});
-  const [casosClinicos, setCasosClinicos] = useState<CasoClinico[]>([]);
-
-  useEffect(() => {
-    const sessao = obterSessao();
-    if (!sessao || sessao.statusAcesso !== "Aprovado") {
-      toast({
-        title: "Acesso restrito",
-        description: "É necessário fazer login para acessar esta página.",
-        variant: "destructive",
-      });
-      navigate("/");
-    }
-  }, [obterSessao, navigate, toast]);
+const MinicursoCipe = () => {
+  const { usuario } = useAutenticacao();
+  const [casos, setCasos] = useState<CasoClinico[]>([]);
+  const [termosFoco, setTermosFoco] = useState<any[]>([]);
+  const [termosJulgamento, setTermosJulgamento] = useState<any[]>([]);
+  const [termosMeios, setTermosMeios] = useState<any[]>([]);
+  const [termosAcao, setTermosAcao] = useState<any[]>([]);
+  const [termosTempo, setTermosTempo] = useState<any[]>([]);
+  const [termosLocalizacao, setTermosLocalizacao] = useState<any[]>([]);
+  const [termosCliente, setTermosCliente] = useState<any[]>([]);
+  const [moduloCompletado, setModuloCompletado] = useState<boolean>(false);
 
   useEffect(() => {
-    const carregarTermosCipe = async () => {
-      const termos = await buscarTermosCipe("foco");
-      setTermosCipe({
-        eixoFoco: termos,
-        eixoJulgamento: [],
-        eixoMeios: [],
-        eixoAcao: [],
-        eixoTempo: [],
-        eixoLocalizacao: [],
-        eixoCliente: []
-      });
+    const carregarDados = async () => {
+      if (!usuario) return;
+
+      try {
+        const casosData = await buscarCasosClinicos();
+        const termosFocoData = await buscarTermosCipe('Foco');
+        const termosJulgamentoData = await buscarTermosCipe('Julgamento');
+        const termosMeiosData = await buscarTermosCipe('Meio');
+        const termosAcaoData = await buscarTermosCipe('Acao');
+        const termosTempoData = await buscarTermosCipe('Tempo');
+        const termosLocalizacaoData = await buscarTermosCipe('Localizacao');
+        const termosClienteData = await buscarTermosCipe('Cliente');
+
+        setCasos(casosData);
+        setTermosFoco(termosFocoData);
+        setTermosJulgamento(termosJulgamentoData);
+        setTermosMeios(termosMeiosData);
+        setTermosAcao(termosAcaoData);
+        setTermosTempo(termosTempoData);
+        setTermosLocalizacao(termosLocalizacaoData);
+        setTermosCliente(termosClienteData);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
     };
 
-    carregarTermosCipe();
-  }, []);
+    carregarDados();
+  }, [usuario]);
 
-  const marcarModuloComoCompletado = (moduloId: string) => {
-    setModulosCompletados(prev => {
-      if (prev.includes(moduloId)) {
-        return prev;
-      }
-      return [...prev, moduloId];
-    });
+  const marcarModuloCompleto = () => {
+    setModuloCompletado(true);
   };
 
-  const sessao = obterSessao();
-
   return (
-    <div className="flex flex-col min-h-screen bg-csae-light">
-      <Header />
+    <>
+      <Helmet>
+        <title>Minicurso CIPE® | CSAE</title>
+      </Helmet>
 
-      <main className="flex-grow container mx-auto px-4 py-8 flex">
-        <CursoSidebar
-          modulos={[
-            { id: 'introducao', nome: 'Introdução' },
-            { id: 'foco', nome: 'Eixo Foco' },
-            { id: 'julgamento', nome: 'Eixo Julgamento' },
-            { id: 'meios', nome: 'Eixo Meios' },
-            { id: 'acao', nome: 'Eixo Ação' },
-            { id: 'tempo', nome: 'Eixo Tempo' },
-            { id: 'localizacao', nome: 'Eixo Localização' },
-            { id: 'cliente', nome: 'Eixo Cliente' },
-            { id: 'elaboracao', nome: 'Elaboração do Diagnóstico' },
-            { id: 'exercicios', nome: 'Exercícios' },
-          ]}
-          moduloAtivo={moduloAtivo}
-          setModuloAtivo={setModuloAtivo}
+      <div className="container mx-auto my-6 space-y-6">
+        <PageHeader
+          title="Minicurso CIPE®"
+          description="Treine seus conhecimentos sobre a CIPE® com casos clínicos"
+          icon={<UserRound className="h-8 w-8 text-csae-green-600" />}
         />
 
-        <div className="w-3/4 pl-8">
-          {moduloAtivo === 'introducao' && (
-            <ModuloIntroducao 
-              completado={modulosCompletados.includes('introducao')}
-              onComplete={() => marcarModuloComoCompletado('introducao')}
-            />
-          )}
-
-          {moduloAtivo === 'foco' && (
-            <ModuloEixo
-              tipo="Foco"
-              termos={termosCipe.eixoFoco || []}
-            />
-          )}
-
-          {moduloAtivo === 'julgamento' && (
-            <ModuloEixo
-              tipo="Julgamento"
-              termos={termosCipe.eixoJulgamento || []}
-            />
-          )}
-
-          {moduloAtivo === 'meios' && (
-            <ModuloEixo
-              tipo="Meios"
-              termos={termosCipe.eixoMeios || []}
-            />
-          )}
-
-          {moduloAtivo === 'acao' && (
-            <ModuloEixo
-              tipo="Ação"
-              termos={termosCipe.eixoAcao || []}
-            />
-          )}
-
-          {moduloAtivo === 'tempo' && (
-            <ModuloEixo
-              tipo="Tempo"
-              termos={termosCipe.eixoTempo || []}
-            />
-          )}
-
-          {moduloAtivo === 'localizacao' && (
-            <ModuloEixo
-              tipo="Localização"
-              termos={termosCipe.eixoLocalizacao || []}
-            />
-          )}
-
-          {moduloAtivo === 'cliente' && (
-            <ModuloEixo
-              tipo="Cliente"
-              termos={termosCipe.eixoCliente || []}
-            />
-          )}
-
-          {moduloAtivo === 'elaboracao' && (
-            <ModuloElaboracao
-              id="elaboracao"
-              tipo="diagnostico"
-              completado={modulosCompletados.includes('elaboracao')}
-              onComplete={() => marcarModuloComoCompletado('elaboracao')}
-            />
-          )}
-
-          {moduloAtivo === 'exercicios' && (
-            <ModuloExercicios
-              casos={casosClinicos}
-              termosFoco={termosCipe.eixoFoco || []}
-              termosJulgamento={termosCipe.eixoJulgamento || []}
-              termosMeios={termosCipe.eixoMeios || []}
-              termosAcao={termosCipe.eixoAcao || []}
-              termosTempo={termosCipe.eixoTempo || []}
-              termosLocalizacao={termosCipe.eixoLocalizacao || []}
-              termosCliente={termosCipe.eixoCliente || []}
-              completado={modulosCompletados.includes('exercicios')}
-              onComplete={() => marcarModuloComoCompletado('exercicios')}
-              userId={sessao ? sessao.uid : ''}
-            />
-          )}
-        </div>
-      </main>
-    </div>
+        <ModuloExercicios
+          casos={casos}
+          termosFoco={termosFoco}
+          termosJulgamento={termosJulgamento}
+          termosMeios={termosMeios}
+          termosAcao={termosAcao}
+          termosTempo={termosTempo}
+          termosLocalizacao={termosLocalizacao}
+          termosCliente={termosCliente}
+          completado={moduloCompletado}
+          onComplete={marcarModuloCompleto}
+          userId={usuario?.uid || ''}
+        />
+      </div>
+    </>
   );
 };
 
