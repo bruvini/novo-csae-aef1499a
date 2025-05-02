@@ -103,6 +103,12 @@ export interface Evolucao {
   dados: Record<string, any>;
   diagnosticosSelecionados?: DiagnosticoSelecionado[];
   dataAtualizacao?: Timestamp; // Added for evolucoeDB.ts
+  statusConclusao?: 'Em andamento' | 'Concluído' | 'Interrompido';
+  avaliacao?: string;
+  diagnosticos?: any[];
+  planejamento?: any[];
+  implementacao?: any[];
+  evolucaoFinal?: string;
 }
 
 export interface DiagnosticoSelecionado {
@@ -341,6 +347,8 @@ export interface ValorReferencia {
 export interface TermoCipe {
   id?: string;
   termo: string;
+  tipo: string;
+  descricao: string;
   conceito: string;
   eixo: string;
   codigo: string;

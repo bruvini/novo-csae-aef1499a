@@ -33,7 +33,7 @@ export const useLoginHandler = () => {
       try {
         const usuarioFirestore = await buscarUsuarioPorUid(result.user.uid);
         if (!usuarioFirestore) {
-          return { success: false, registrarAtivo: true };
+          return { success: false, registrarAtivo: true, error: "Usuário não encontrado" };
         }
         
         // Check user status
@@ -42,7 +42,7 @@ export const useLoginHandler = () => {
             title: "Cadastro em análise",
             description: "Seu cadastro está em análise pela equipe CSAE. Tente novamente mais tarde.",
           });
-          return { success: false, registrarAtivo: false };
+          return { success: false, registrarAtivo: false, error: "Cadastro em análise" };
         }
         
         if (["Negado", "Revogado", "Cancelado"].includes(usuarioFirestore.statusAcesso || "")) {
@@ -51,7 +51,7 @@ export const useLoginHandler = () => {
             description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
             variant: "destructive"
           });
-          return { success: false, registrarAtivo: false };
+          return { success: false, registrarAtivo: false, error: "Acesso bloqueado" };
         }
         
         if (usuarioFirestore.statusAcesso === "Aprovado") {
@@ -59,14 +59,19 @@ export const useLoginHandler = () => {
             title: "Acesso liberado",
             description: "Bem-vindo de volta!",
           });
-          return { success: true, registrarAtivo: false };
+          return { success: true, registrarAtivo: false, error: null };
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching user data:", error);
+        return { ...result, error: error.message };
       }
     }
     
-    return result;
+    // Ensure error is always included in result
+    return { 
+      ...result, 
+      error: result.error || "Erro desconhecido" 
+    };
   };
 
   return { login, isLoading: false, realizarLogin };
