@@ -22,9 +22,7 @@ import {
   HelpCircle,
   Users,
   Settings,
-  GraduationCap,
   Clock,
-  Baby
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
@@ -99,14 +97,6 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       adminOnly: false,
     },
     {
-      id: "perinatal",
-      title: "Acompanhamento Perinatal",
-      icon: Baby,
-      href: "/acompanhamento-perinatal",
-      adminOnly: false,
-      moduloNome: "acompanhamento-perinatal"
-    },
-    {
       id: "pops",
       title: "POPs",
       icon: FileText,
@@ -121,14 +111,6 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       href: "/feridas",
       adminOnly: false,
       moduloNome: "feridas"
-    },
-    {
-      id: "minicurso-cipe",
-      title: "Minicurso CIPE",
-      icon: GraduationCap,
-      href: "/minicurso-cipe",
-      adminOnly: false,
-      moduloNome: "minicurso-cipe"
     },
     {
       id: "timeline",

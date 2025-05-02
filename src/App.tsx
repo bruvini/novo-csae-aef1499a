@@ -13,9 +13,7 @@ import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
 import POPs from "./pages/POPs";
-import MinicursoCipe from "./pages/MinicursoCipe";
 import Timeline from "./pages/Timeline";
-import AcompanhamentoPerinatal from "./pages/AcompanhamentoPerinatal";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -30,7 +28,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/registrar" element={<Register />} />
-          <Route path="/minicurso-cipe" element={<MinicursoCipe />} />
           <Route path="/timeline" element={<Timeline />} />
           
           {/* Rotas protegidas - exigem autenticação */}
@@ -57,16 +54,6 @@ const App = () => (
           <Route path="/pops" element={
             <RotaProtegida moduloNome="pops">
               <POPs />
-            </RotaProtegida>
-          } />
-          <Route path="/acompanhamento-perinatal" element={
-            <RotaProtegida moduloNome="acompanhamento-perinatal">
-              <AcompanhamentoPerinatal />
-            </RotaProtegida>
-          } />
-          <Route path="/minicurso-cipe" element={
-            <RotaProtegida moduloNome="minicurso-cipe">
-              <MinicursoCipe />
             </RotaProtegida>
           } />
           
