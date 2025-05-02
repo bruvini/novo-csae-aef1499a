@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
@@ -411,7 +410,7 @@ const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: bo
   let IconComponent: React.ElementType;
   
   if (modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons]) {
-    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons];
+    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType;
   } else if (iconMap[modulo.nome]) {
     IconComponent = LucideIcons[iconMap[modulo.nome]];
   } else {
@@ -485,7 +484,7 @@ const ModuloInativoCard = ({ modulo }: { modulo: ModuloDisponivel }) => {
   let IconComponent: React.ElementType;
   
   if (modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons]) {
-    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons];
+    IconComponent = LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType;
   } else if (iconMap[modulo.nome]) {
     IconComponent = LucideIcons[iconMap[modulo.nome]];
   } else {

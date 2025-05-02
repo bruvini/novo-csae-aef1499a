@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCw, Check, Calendar, Clock, AlertCircle } from 'lucide-react';
-import { CasoClinico, TermoCipe } from '@/services/bancodados/tipos';
+import { CasoClinico, TermoCipe } from '@/types/cipe';
 import ExercicioCasoClinico from './ExercicioCasoClinico';
 
 export interface ModuloExerciciosProps {

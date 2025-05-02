@@ -9,23 +9,31 @@ export interface PacientePerinatal {
   cns: string; 
   telefone: string;
   endereco: string;
-  nomeMae?: string; // Nova propriedade
+  nomeMae?: string;
   dataUltimaMenstruacao: Timestamp | null;
   idadeGestacional: number;
-  idadeGestacionalNascer?: number; // Nova propriedade
+  idadeGestacionalNascer?: number;
   dataProvavelParto: Timestamp | null;
   dataParto?: Timestamp | null;
-  prematuro?: boolean; // Nova propriedade
+  prematuro?: boolean;
   // Campos de unidade
   unidade: string;
   municipio: string;
   microarea: string;
   agenteSaude: string;
+  // Campos adicionais
+  titulo: string;
+  descricao: string;
+  profissionalUid: string;
+  profissionalNome: string;
+  tipoPaciente: 'mulher' | 'bebê';
+  situacaoObstetrica?: 'Gestante' | 'Puérpera';
   // Campos de controle
   ativo: boolean;
   situacao: 'pre-natal' | 'parto' | 'puerperio' | 'puericultura' | 'concluido';
-  tipoPaciente: 'gestante' | 'puerpera' | 'bebe';
   // Histórico
+  dataCadastro?: Timestamp;
+  dataAtualizacao?: Timestamp;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   createdBy?: string;

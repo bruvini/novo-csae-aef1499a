@@ -8,7 +8,7 @@ import {
   User
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { verificarUsuario, obterDetalhesUsuario } from './bancodados/usuariosDB';
+import { buscarUsuarioPorUid } from './bancodados/usuariosDB';
 
 interface Sessao {
   uid: string;
@@ -89,7 +89,7 @@ export const useAutenticacao = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const usuarioAuth = userCredential.user;
       
-      const usuarioDB = await verificarUsuario(usuarioAuth.uid);
+      const usuarioDB = await buscarUsuarioPorUid(usuarioAuth.uid);
       
       if (!usuarioDB) {
         throw new Error('Usuário não encontrado na base de dados.');

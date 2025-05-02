@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
@@ -175,17 +174,32 @@ const CadastroPacientePerinatal: React.FC<CadastroPacientePerinatalProps> = ({
         return;
       }
 
+      const nomeUsuario = usuario?.displayName || usuario?.email || '';
+
       const paciente: Partial<PacientePerinatal> = {
         nome: data.nome,
         dataNascimento: Timestamp.fromDate(new Date(data.dataNascimento)),
         titulo: data.titulo,
         descricao: data.descricao,
-        tipoPaciente: "mulher" as const,
+        tipoPaciente: "mulher", // Use string literals instead of as const
         situacaoObstetrica: data.situacaoObstetrica,
         idadeGestacional: data.idadeGestacional ? parseInt(data.idadeGestacional) : undefined,
         dataParto: data.dataParto ? Timestamp.fromDate(new Date(data.dataParto)) : undefined,
-        profissionalUid: usuario.uid,
-        profissionalNome: usuario.nome || usuario.email,
+        profissionalUid: usuario?.uid || '',
+        profissionalNome: nomeUsuario,
+        // Add required fields from the updated type
+        cpf: '',
+        cns: '',
+        telefone: '',
+        endereco: '',
+        unidade: '',
+        municipio: '',
+        microarea: '',
+        agenteSaude: '',
+        dataUltimaMenstruacao: null,
+        dataProvavelParto: null,
+        ativo: true,
+        situacao: 'pre-natal',
       };
 
       if (pacienteExistente?.id) {
@@ -237,17 +251,33 @@ const CadastroPacientePerinatal: React.FC<CadastroPacientePerinatalProps> = ({
 
       const idadeGestacional = data.idadeGestacionalNascer ? parseInt(data.idadeGestacionalNascer) : undefined;
       
+      const nomeUsuario = usuario?.displayName || usuario?.email || '';
+
       const paciente: Partial<PacientePerinatal> = {
         nome: data.nome,
         dataNascimento: Timestamp.fromDate(new Date(data.dataNascimento)),
         titulo: data.titulo,
         descricao: data.descricao,
-        tipoPaciente: "bebê" as const,
+        tipoPaciente: "bebê", // Use string literals instead of as const
         nomeMae: data.nomeMae,
         idadeGestacionalNascer: idadeGestacional,
         prematuro: idadeGestacional ? idadeGestacional < 37 : false,
-        profissionalUid: usuario.uid,
-        profissionalNome: usuario.nome || usuario.email,
+        profissionalUid: usuario?.uid || '',
+        profissionalNome: nomeUsuario,
+        // Add required fields from the updated type
+        cpf: '',
+        cns: '',
+        telefone: '',
+        endereco: '',
+        unidade: '',
+        municipio: '',
+        microarea: '',
+        agenteSaude: '',
+        dataUltimaMenstruacao: null,
+        dataProvavelParto: null,
+        idadeGestacional: 0,
+        ativo: true,
+        situacao: 'puericultura',
       };
 
       if (pacienteExistente?.id) {
