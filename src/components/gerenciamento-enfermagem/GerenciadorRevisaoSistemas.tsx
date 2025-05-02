@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -82,24 +83,24 @@ const GerenciadorRevisaoSistemas = () => {
   const [formSistema, setFormSistema] = useState<SistemaCorporal>({
     nome: '',
     descricao: '',
-    ativo: true // Add this required property
+    ativo: true 
   });
   
   const [formParametro, setFormParametro] = useState<RevisaoSistema>({
     sistemaId: '',
     sistemaNome: '',
-    titulo: '', // Add required property
+    titulo: '', 
     nome: '',
-    tipoAlteracao: 'Objetiva', // Add required property
-    ativo: true, // Add required property
+    tipoAlteracao: 'Objetiva', 
+    ativo: true,
     diferencaSexoIdade: false,
     valoresReferencia: [{
       unidade: '',
       representaAlteracao: false,
       variacaoPor: 'Nenhum',
       tipoValor: 'Numérico',
-      titulo: '', // Add required property
-      condicao: 'entre' // Add required property
+      titulo: '', 
+      condicao: 'entre'
     }]
   });
   
@@ -298,18 +299,18 @@ const GerenciadorRevisaoSistemas = () => {
     setFormParametro({
       sistemaId: '',
       sistemaNome: '',
-      titulo: '', // Add required property
+      titulo: '', 
       nome: '',
-      tipoAlteracao: 'Objetiva', // Add required property
-      ativo: true, // Add required property
+      tipoAlteracao: 'Objetiva',
+      ativo: true,
       diferencaSexoIdade: false,
       valoresReferencia: [{ 
         unidade: '',
         representaAlteracao: false,
         variacaoPor: 'Nenhum',
         tipoValor: 'Numérico',
-        titulo: '', // Add required property
-        condicao: 'entre' // Add required property
+        titulo: '', 
+        condicao: 'entre' 
       }]
     });
     setEditandoParametroId(null);
@@ -356,8 +357,8 @@ const GerenciadorRevisaoSistemas = () => {
           representaAlteracao: false,
           variacaoPor: 'Nenhum',
           tipoValor: 'Numérico',
-          titulo: '', // Add required property
-          condicao: 'entre' // Add required property
+          titulo: '',
+          condicao: 'entre'
         }
       ]
     });
@@ -877,3 +878,24 @@ const GerenciadorRevisaoSistemas = () => {
                         </div>
                       </RadioGroup>
                     </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalParametroAberto(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={salvarParametro} className="bg-csae-green-600 hover:bg-csae-green-700">
+              {editandoParametroId ? 'Atualizar' : 'Cadastrar'} Parâmetro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+};
+
+export default GerenciadorRevisaoSistemas;
