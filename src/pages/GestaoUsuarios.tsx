@@ -1,41 +1,38 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Timestamp } from 'firebase/firestore';
-import { useToast } from "@/hooks/use-toast";
-import { useAutenticacao } from "@/services/autenticacao";
-import Header from '@/components/Header';
-import SimpleFooter from '@/components/SimpleFooter';
-import { NavigationMenu } from '@/components/NavigationMenu';
 import { format, formatDistance } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
-  Button, 
-  Card, 
-  Input, 
-  Label, 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from '@/components/ui/';
+  collection, 
+  getDocs, 
+  doc, 
+  updateDoc, 
+  deleteDoc, 
+  addDoc, 
+  arrayUnion, 
+  Timestamp
+} from 'firebase/firestore';
+import { db } from '@/services/firebase';
+import { useToast } from "@/hooks/use-toast";
+import { useAutenticacao } from "@/services/autenticacao";
+import { useNavigate } from 'react-router-dom';
+import { Usuario } from '@/services/bancodados/tipos';
+import { isResidenteExpirado, calcularDataProrrogacao } from '@/components/login/ResidenteUtils';
+import Header from '@/components/Header';
+import SimpleFooter from '@/components/SimpleFooter';
+import { NavigationMenu } from '@/components/NavigationMenu';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, RotateCcw, FileDown, Clock, BookX, UserX } from 'lucide-react';
 
 // Simplified version of GestaoUsuarios to fix build errors
 const GestaoUsuarios: React.FC = () => {
   const { toast } = useToast();
   const { usuario } = useAutenticacao();
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(false);

@@ -15,7 +15,7 @@ export interface ModuloDisponivel {
   linkAcesso: string;
 }
 
-export interface ModuloDashboard extends Omit<ModuloDisponivel, 'nome' | 'link'> {
+export interface ModuloDashboard extends ModuloDisponivel {
   id: string;
   dataCadastro: any;
   dataAtualizacao: any;

@@ -1,5 +1,5 @@
 
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, addDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ModuloDisponivel } from '@/types/modulos';
 
@@ -66,7 +66,6 @@ export async function buscarModulosAtivos(uid?: string): Promise<ModuloDisponive
   }
 }
 
-// Add the missing verificarModuloAtivo function
 export async function verificarModuloAtivo(
   moduloNome: string, 
   ehAdmin: boolean, 
@@ -82,8 +81,7 @@ export async function verificarModuloAtivo(
   }
 }
 
-// Implement other module-related functions here
-export async function criarModulo(modulo: Omit<ModuloDashboard, "id" | "dataCadastro" | "dataAtualizacao">): Promise<string> {
+export async function criarModulo(modulo: ModuloDisponivel): Promise<string> {
   // Mock implementation
   console.log("Creating module:", modulo);
   return "mock-id-" + Date.now();

@@ -46,7 +46,7 @@ const IntervencaoForm = ({
           <div className="grid gap-1">
             <Label className="text-xs">Verbo em 1ª pessoa (Enfermeiro)</Label>
             <Input
-              value={intervencao.verboPrimeiraEnfermeiro}
+              value={intervencao.verboPrimeiraEnfermeiro || ''}
               onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'verboPrimeiraEnfermeiro', e.target.value)}
               placeholder="Ex: Avalio"
               required
@@ -55,7 +55,7 @@ const IntervencaoForm = ({
           <div className="grid gap-1">
             <Label className="text-xs">Verbo infinitivo (3ª pessoa)</Label>
             <Input
-              value={intervencao.verboOutraPessoa}
+              value={intervencao.verboOutraPessoa || ''}
               onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'verboOutraPessoa', e.target.value)}
               placeholder="Ex: Avaliar"
               required
@@ -66,7 +66,7 @@ const IntervencaoForm = ({
         <div className="grid gap-1">
           <Label className="text-xs">Restante da intervenção</Label>
           <Input
-            value={intervencao.descricaoRestante}
+            value={intervencao.descricaoRestante || ''}
             onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'descricaoRestante', e.target.value)}
             placeholder="Ex: a intensidade da dor periodicamente"
             required

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   NavigationMenu as NavigationMenuRoot,
@@ -14,29 +13,33 @@ import { ElementType } from "react";
 import * as LucideIcons from 'lucide-react';
 
 interface NavigationMenuProps {
-  activeItem?: string;
+  activeItem?: string; // Made optional to fix error in GerenciamentoEnfermagem.tsx
 }
 
-export function NavigationMenu({ activeItem }: NavigationMenuProps) {
+export const NavigationMenu = ({ activeItem }: NavigationMenuProps) => {
   const { usuario } = useAutenticacao();
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   
   useEffect(() => {
     const carregarModulos = async () => {
       try {
-        if (usuario) {
-          // Use buscarModulosAtivos
-          const modulosDisponiveis = await buscarModulosAtivos();
-          setModulos(modulosDisponiveis as ModuloDisponivel[]);
-        }
+        const modulosCarregados = await buscarModulosAtivos();
+        // Ensure modules have all required properties before setting state
+        const modulosCompletos = modulosCarregados.map(modulo => ({
+          ...modulo,
+          // Add default values for any potentially missing properties
+          link: modulo.link || modulo.linkAcesso || '',
+          nome: modulo.nome || ''
+        }));
+        setModulos(modulosCompletos);
       } catch (error) {
         console.error("Erro ao carregar módulos:", error);
       }
     };
     
     carregarModulos();
-  }, [usuario]);
-
+  }, []);
+  
   // Opções de menu estáticas
   const opcoesMenu = [
     { name: "Dashboard", href: "/dashboard", icon: Clipboard },

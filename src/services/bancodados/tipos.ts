@@ -86,16 +86,22 @@ export interface Usuario {
   logAcessos?: Timestamp[];
 }
 
-// Additional interfaces needed by various components
+// Modified/updated interfaces to fix the type errors
 export interface DiagnosticoCompleto {
   id?: string;
-  codigo: string;
-  titulo: string;
-  definicao: string;
+  nome: string;                       // Added this property
+  codigo?: string;                    // Made optional
+  titulo?: string;                    // Made optional
+  explicacao?: string;               // Added property from GerenciadorDiagnosticos.tsx
   subconjuntoId: string;
+  subitemId?: string;                // Added property used in GerenciadorExamesLaboratoriais.tsx
+  definicao?: string;                // Made optional
+  subconjunto?: string;              // Added property from GerenciadorDiagnosticos.tsx
+  subitemNome?: string;              // Added property from GerenciadorDiagnosticos.tsx
   resultadosEsperados: ResultadoEsperado[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  descricao?: string;                // Added property
 }
 
 export interface ResultadoEsperado {
@@ -107,8 +113,16 @@ export interface ResultadoEsperado {
 
 export interface Intervencao {
   id?: string;
-  descricao: string;
+  descricao?: string;
   resultadoEsperadoId?: string;
+  // Properties used in GerenciadorDiagnosticos.tsx
+  verboPrimeiraEnfermeiro?: string;
+  verboOutraPessoa?: string;
+  descricaoRestante?: string;
+  nomeDocumento?: string;
+  linkDocumento?: string;
+  intervencaoEnfermeiro?: string;
+  intervencaoInfinitivo?: string;
 }
 
 export interface Subconjunto {
@@ -127,13 +141,28 @@ export interface ValorReferencia {
   unidade: string;
   grupo?: string;
   observacao?: string;
+  // Additional properties used in GerenciadorExamesLaboratoriais.tsx
+  representaAlteracao?: boolean;
+  variacaoPor?: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
+  tipoValor?: 'Numérico' | 'Texto';
+  valorTexto?: string;
+  valorMinimo?: number;
+  valorMaximo?: number;
+  idadeMinima?: number;
+  idadeMaxima?: number;
+  sexo?: 'Masculino' | 'Feminino' | 'Todos';
+  tituloAlteracao?: string;
+  nhbId?: string;
+  diagnosticoId?: string;
 }
 
 export interface ExameLaboratorial {
   id?: string;
   nome: string;
-  sigla: string;
+  sigla?: string;
   descricao?: string;
+  tipoExame?: 'Laboratorial' | 'Imagem';
+  diferencaSexoIdade?: boolean;
   valoresReferencia: ValorReferencia[];
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -153,6 +182,7 @@ export interface SubconjuntoDiagnostico {
   id?: string;
   nome: string;
   descricao?: string;
+  tipo: 'Protocolo' | 'NHB';
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }
