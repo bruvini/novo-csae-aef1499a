@@ -1,49 +1,73 @@
 
-import { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/services/firebase';
+// Add export for realizarLogin function that matches the interface used in LoginForm.tsx
+import { useToast } from "@/hooks/use-toast";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/services/firebase";
+import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { User } from "firebase/auth";
 
 export const useLoginHandler = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      return { success: true, user };
+      return { 
+        success: true, 
+        user: userCredential.user 
+      };
     } catch (error: any) {
-      let errorMessage = "Falha ao fazer login. Tente novamente.";
-      
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        errorMessage = "Email ou senha incorretos.";
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = "Muitas tentativas de login. Tente novamente mais tarde.";
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = "Esta conta foi desativada.";
-      }
-      
-      return { success: false, error: errorMessage };
-    } finally {
-      setIsLoading(false);
+      console.error("Error during login:", error);
+      return { 
+        success: false, 
+        error: error.message 
+      };
     }
   };
-
-  // Alias for backwards compatibility
-  const realizarLogin = login;
-
-  return {
-    login,
-    realizarLogin,
-    isLoading
+  
+  // Add the realizarLogin function that wraps login but returns properties expected by LoginForm
+  const realizarLogin = async (email: string, password: string) => {
+    const result = await login(email, password);
+    
+    if (result.success && result.user) {
+      try {
+        const usuarioFirestore = await buscarUsuarioPorUid(result.user.uid);
+        if (!usuarioFirestore) {
+          return { success: false, registrarAtivo: true };
+        }
+        
+        // Check user status
+        if (usuarioFirestore.statusAcesso === "Aguardando") {
+          toast({
+            title: "Cadastro em análise",
+            description: "Seu cadastro está em análise pela equipe CSAE. Tente novamente mais tarde.",
+          });
+          return { success: false, registrarAtivo: false };
+        }
+        
+        if (["Negado", "Revogado", "Cancelado"].includes(usuarioFirestore.statusAcesso || "")) {
+          toast({
+            title: "Acesso bloqueado",
+            description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
+            variant: "destructive"
+          });
+          return { success: false, registrarAtivo: false };
+        }
+        
+        if (usuarioFirestore.statusAcesso === "Aprovado") {
+          toast({
+            title: "Acesso liberado",
+            description: "Bem-vindo de volta!",
+          });
+          return { success: true, registrarAtivo: false };
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    }
+    
+    return result;
   };
-};
 
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-export const validatePassword = (password: string): boolean => {
-  return password.length >= 6;
+  return { login, isLoading: false, realizarLogin };
 };

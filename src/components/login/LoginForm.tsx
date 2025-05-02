@@ -54,8 +54,12 @@ const LoginForm = () => {
     setLoading(true);
     setRegistrarAtivo(false);
     
-    const { sucesso, registrarAtivo: novoRegistrarAtivo } = await realizarLogin(email, password);
-    setRegistrarAtivo(novoRegistrarAtivo);
+    const result = await realizarLogin(email, password);
+    // Use the correct property names from the result object (success instead of sucesso)
+    const success = result.success || false;
+    const shouldRegisterActive = !success && !result.error?.includes("senha");
+    
+    setRegistrarAtivo(shouldRegisterActive);
     setLoading(false);
   };
 

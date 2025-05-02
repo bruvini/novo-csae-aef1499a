@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 
 // Tipos de usuário
@@ -19,6 +18,7 @@ export interface UsuarioAutenticado {
   };
   dataCriacao?: Timestamp;
   ultimoAcesso?: Timestamp;
+  id?: string; // Adding missing property for usuariosDB.ts
 }
 
 // Alias for backward compatibility
@@ -30,7 +30,7 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
-  usuario?: string; // Added this property for Dashboard.tsx
+  usuario?: any; // Adding the missing property for Dashboard.tsx
 }
 
 // Histórico de acessos

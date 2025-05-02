@@ -37,13 +37,16 @@ export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: 
     const novaEvolucao: Evolucao = {
       id: evolucaoId,
       dataInicio: Timestamp.now(),
-      dataAtualizacao: serverTimestamp(),
+      dataAtualizacao: Timestamp.now(), // Using actual Timestamp instead of serverTimestamp
       statusConclusao: 'Em andamento',
       avaliacao: '',
       diagnosticos: [],
       planejamento: [],
       implementacao: [],
-      evolucaoFinal: ''
+      evolucaoFinal: '',
+      pacienteId: pacienteId,  // Adding required property
+      profissionalUid: '',     // Adding required property
+      status: 'iniciada'       // Adding required property
     };
     
     // Adicionar evolução ao array de evoluções do paciente
