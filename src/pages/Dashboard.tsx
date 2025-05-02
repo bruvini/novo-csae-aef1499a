@@ -15,7 +15,7 @@ import { AlertCircle, Users, AlertTriangle, Info, LayoutDashboard, ArrowRight, C
 import { ElementType, ComponentType } from 'react';  // Import ElementType properly
 import { ModuloDashboard } from '@/services/bancodados/modulosDB';
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const { usuario, verificarAdmin } = useAutenticacao();
   const [visibleModules, setVisibleModules] = useState<ModuloDashboard[]>([]);
@@ -47,6 +47,35 @@ const Dashboard = () => {
   useEffect(() => {
     setIsAdmin(verificarAdmin());
   }, [verificarAdmin]);
+
+  // Lista de módulos disponíveis atualizada para remover os módulos que não existem mais
+  const modulos = [
+    {
+      id: 'processo-enfermagem',
+      nome: 'Processo de Enfermagem',
+      descricao: 'Registre e acompanhe o processo de enfermagem',
+      icone: ClipboardIcon,
+      link: '/processo-enfermagem',
+      cor: 'bg-blue-500'
+    },
+    {
+      id: 'protocolos',
+      nome: 'Protocolos',
+      descricao: 'Consulte protocolos de enfermagem',
+      icone: FileIcon,
+      link: '/protocolos',
+      cor: 'bg-green-500'
+    },
+    {
+      id: 'pops',
+      nome: 'POPs',
+      descricao: 'Procedimentos operacionais padrão',
+      icone: FileTypeIcon,
+      link: '/pops',
+      cor: 'bg-amber-500'
+    },
+    // Removidas as entradas para o Acompanhamento Perinatal e Minicurso CIPE
+  ];
 
   // Placeholder data for alerts
   const alerts = [

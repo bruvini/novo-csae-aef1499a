@@ -13,9 +13,7 @@ import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import GerenciamentoEnfermagem from "./pages/GerenciamentoEnfermagem";
 import ProtocolosEnfermagem from "./pages/ProtocolosEnfermagem";
 import POPs from "./pages/POPs";
-import MinicursoCipe from "./pages/MinicursoCipe";
 import Timeline from "./pages/Timeline";
-import AcompanhamentoPerinatal from "./pages/AcompanhamentoPerinatal";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 
@@ -29,60 +27,71 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/registrar" element={<Register />} />
-          <Route path="/minicurso-cipe" element={<MinicursoCipe />} />
-          <Route path="/timeline" element={<Timeline />} />
-          
-          {/* Rotas protegidas - exigem autenticação */}
-          <Route path="/dashboard" element={
-            <RotaProtegida>
-              <Dashboard />
-            </RotaProtegida>
-          } />
-          <Route path="/sugestoes" element={
-            <RotaProtegida>
-              <Sugestoes />
-            </RotaProtegida>
-          } />
-          <Route path="/processo-enfermagem" element={
-            <RotaProtegida>
-              <ProcessoEnfermagem />
-            </RotaProtegida>
-          } />
-          <Route path="/protocolos" element={
-            <RotaProtegida>
-              <ProtocolosEnfermagem />
-            </RotaProtegida>
-          } />
-          <Route path="/pops" element={
-            <RotaProtegida moduloNome="pops">
-              <POPs />
-            </RotaProtegida>
-          } />
-          <Route path="/acompanhamento-perinatal" element={
-            <RotaProtegida moduloNome="acompanhamento-perinatal">
-              <AcompanhamentoPerinatal />
-            </RotaProtegida>
-          } />
-          <Route path="/minicurso-cipe" element={
-            <RotaProtegida moduloNome="minicurso-cipe">
-              <MinicursoCipe />
-            </RotaProtegida>
-          } />
-          
-          {/* Rotas protegidas apenas para administradores */}
-          <Route path="/gestao-usuarios" element={
-            <RotaProtegida apenasAdmin>
-              <GestaoUsuarios />
-            </RotaProtegida>
-          } />
-          <Route path="/gerenciamento-enfermagem" element={
-            <RotaProtegida apenasAdmin>
-              <GerenciamentoEnfermagem />
-            </RotaProtegida>
-          } />
-          
-          {/* Rota 404 */}
+          <Route path="/registro" element={<Register />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              <RotaProtegida>
+                <Dashboard />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/processo-enfermagem" 
+            element={
+              <RotaProtegida>
+                <ProcessoEnfermagem />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/protocolos" 
+            element={
+              <RotaProtegida>
+                <ProtocolosEnfermagem />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/pops" 
+            element={
+              <RotaProtegida>
+                <POPs />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/gerenciamento" 
+            element={
+              <RotaProtegida>
+                <GerenciamentoEnfermagem />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/gestao-usuarios" 
+            element={
+              <RotaProtegida>
+                <GestaoUsuarios />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/sugestoes" 
+            element={
+              <RotaProtegida>
+                <Sugestoes />
+              </RotaProtegida>
+            } 
+          />
+          <Route 
+            path="/timeline" 
+            element={
+              <RotaProtegida>
+                <Timeline />
+              </RotaProtegida>
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
