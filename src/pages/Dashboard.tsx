@@ -21,6 +21,7 @@ import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
 import * as LucideIcons from "lucide-react";
+import { SessaoUsuario } from '@/types/usuario';
 
 const containerVariants = {
   hidden: { opacity: 0 },

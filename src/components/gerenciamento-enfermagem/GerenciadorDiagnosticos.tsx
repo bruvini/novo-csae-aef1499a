@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Tabs, 
@@ -15,7 +16,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { ResultadoEsperado, Intervencao, Subconjunto, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { ResultadoEsperado, Intervencao, Subconjunto, DiagnosticoCompleto } from '@/types/index';
 import SubconjuntoTab from './diagnosticos/SubconjuntoTab';
 import DiagnosticosTab from './diagnosticos/DiagnosticosTab';
 import FormSubconjunto from './diagnosticos/FormSubconjunto';

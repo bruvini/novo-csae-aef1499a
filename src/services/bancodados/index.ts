@@ -16,8 +16,9 @@ import {
   obterHistoricoAcessos
 } from './logAcessosDB';
 
-// Re-exportar todos os tipos e funções
-export * from './tipos';
+// Re-export all types from the types directory
+export * from '../../types';
+
 export {
   // Usuários
   verificarUsuarioExistente,
