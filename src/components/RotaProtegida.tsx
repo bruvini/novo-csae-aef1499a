@@ -18,19 +18,22 @@ const RotaProtegida = ({
   permiteSoSMS = false,
   modulo
 }: RotaProtegidaProps) => {
-  const { usuario, carregando } = useAutenticacao();
+  const { usuario, obterSessao, carregando } = useAutenticacao();
   const location = useLocation();
   const [moduloAtivo, setModuloAtivo] = useState<boolean | null>(null);
   const [verificandoModulo, setVerificandoModulo] = useState<boolean>(false);
+  
+  // Get user session for access to extra properties
+  const sessao = obterSessao();
 
   useEffect(() => {
     const verificarModulo = async () => {
-      if (modulo && usuario) {
+      if (modulo && sessao) {
         setVerificandoModulo(true);
         const ativo = await verificarModuloAtivo(
           modulo,
-          usuario.ehAdmin,
-          usuario.atuaSMS
+          sessao.ehAdmin,
+          sessao.atuaSMS
         );
         setModuloAtivo(ativo);
         setVerificandoModulo(false);
@@ -42,7 +45,7 @@ const RotaProtegida = ({
     };
 
     verificarModulo();
-  }, [modulo, usuario]);
+  }, [modulo, sessao]);
 
   if (carregando || (modulo && verificandoModulo)) {
     return <Loading />;
@@ -54,11 +57,11 @@ const RotaProtegida = ({
   }
 
   // Está autenticado, mas não tem permissão para acessar a rota
-  if (usuario && permiteSoAdmin && !usuario.ehAdmin) {
+  if (usuario && permiteSoAdmin && sessao && !sessao.ehAdmin) {
     return <Navigate to="/sem-permissao" replace />;
   }
 
-  if (usuario && permiteSoSMS && !usuario.atuaSMS) {
+  if (usuario && permiteSoSMS && sessao && !sessao.atuaSMS) {
     return <Navigate to="/sem-permissao" replace />;
   }
 

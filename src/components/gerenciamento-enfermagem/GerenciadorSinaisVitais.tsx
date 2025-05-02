@@ -88,6 +88,7 @@ const GerenciadorSinaisVitais = () => {
   // Estado para o formulário
   const [formSinal, setFormSinal] = useState<SinalVital>({
     nome: "",
+    sigla: "",  // Add this missing field
     diferencaSexoIdade: false,
     valoresReferencia: [
       {
@@ -163,6 +164,7 @@ const GerenciadorSinaisVitais = () => {
   const abrirModalCriar = () => {
     setFormSinal({
       nome: "",
+      sigla: "",  // Add this missing field
       diferencaSexoIdade: false,
       valoresReferencia: [
         {

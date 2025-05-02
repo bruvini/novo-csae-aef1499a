@@ -84,6 +84,7 @@ export interface Usuario {
   historico_logs?: any[];
   tipoUsuario?: "Administrador" | "Comum";
   logAcessos?: Timestamp[];
+  ehAdmin?: boolean;
 }
 
 export interface DiagnosticoCompleto {
@@ -225,6 +226,7 @@ export interface CasoClinico {
   casoClinico?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  focoEsperado?: string;
 }
 
 export interface ProtocoloEnfermagem {

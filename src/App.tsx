@@ -30,70 +30,40 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/registro" element={<Register />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <RotaProtegida>
-                  <Dashboard />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/processo-enfermagem" 
-              element={
-                <RotaProtegida>
-                  <ProcessoEnfermagem />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/protocolos" 
-              element={
-                <RotaProtegida>
-                  <ProtocolosEnfermagem />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/pops" 
-              element={
-                <RotaProtegida>
-                  <POPs />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/gerenciamento" 
-              element={
-                <RotaProtegida>
-                  <GerenciamentoEnfermagem />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/gestao-usuarios" 
-              element={
-                <RotaProtegida>
-                  <GestaoUsuarios />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/sugestoes" 
-              element={
-                <RotaProtegida>
-                  <Sugestoes />
-                </RotaProtegida>
-              } 
-            />
-            <Route 
-              path="/timeline" 
-              element={
-                <RotaProtegida>
-                  <Timeline />
-                </RotaProtegida>
-              } 
-            />
+            
+            {/* Rotas protegidas */}
+            <Route element={<RotaProtegida />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+            </Route>
+            
+            <Route element={<RotaProtegida />}>
+              <Route path="/processo-enfermagem" element={<ProcessoEnfermagem />} />
+            </Route>
+            
+            <Route element={<RotaProtegida />}>
+              <Route path="/protocolos" element={<ProtocolosEnfermagem />} />
+            </Route>
+            
+            <Route element={<RotaProtegida />}>
+              <Route path="/pops" element={<POPs />} />
+            </Route>
+            
+            <Route element={<RotaProtegida permiteSoAdmin={true} />}>
+              <Route path="/gerenciamento" element={<GerenciamentoEnfermagem />} />
+            </Route>
+            
+            <Route element={<RotaProtegida permiteSoAdmin={true} />}>
+              <Route path="/gestao-usuarios" element={<GestaoUsuarios />} />
+            </Route>
+            
+            <Route element={<RotaProtegida />}>
+              <Route path="/sugestoes" element={<Sugestoes />} />
+            </Route>
+            
+            <Route element={<RotaProtegida />}>
+              <Route path="/timeline" element={<Timeline />} />
+            </Route>
+            
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
