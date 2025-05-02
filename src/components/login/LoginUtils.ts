@@ -1,12 +1,12 @@
-// Update the import to use the correct Sessao type
+
 import { useAutenticacao } from "@/services/autenticacao";
-import { User } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
 
-// Replace SessaoUsuario with the actual types needed
+// Response interface for login functionality
 interface LoginResponse {
   sucesso: boolean;
   mensagem?: string;
+  registrarAtivo?: boolean;
 }
 
 export const useLoginUtils = () => {
@@ -63,5 +63,49 @@ export const useLoginUtils = () => {
     }
   };
 
-  return { processarLogin };
+  // Handler function for LoginForm component
+  const realizarLogin = async (email: string, senha: string): Promise<LoginResponse> => {
+    try {
+      const resultado = await fazerLogin(email, senha);
+      
+      if (resultado.sucesso) {
+        // Login successful, get session from localStorage
+        const sessao = localStorage.getItem('sessao');
+        if (sessao) {
+          const sessaoParsed = JSON.parse(sessao);
+          handleLoginSuccess(sessaoParsed.email, sessaoParsed.nomeUsuario, sessaoParsed.tipoUsuario);
+          return { sucesso: true };
+        } else {
+          return { 
+            sucesso: false,
+            mensagem: "Erro ao recuperar dados da sessão"
+          };
+        }
+      } else {
+        // Check if error is due to user not found (could suggest registration)
+        if (resultado.mensagem?.includes("não encontrado")) {
+          return { 
+            sucesso: false,
+            mensagem: resultado.mensagem,
+            registrarAtivo: true
+          };
+        }
+        
+        return { 
+          sucesso: false,
+          mensagem: resultado.mensagem
+        };
+      }
+    } catch (error: any) {
+      return {
+        sucesso: false,
+        mensagem: error.message || "Ocorreu um erro desconhecido"
+      };
+    }
+  };
+
+  return { processarLogin, realizarLogin };
 };
+
+// Exporting with the name expected in LoginForm component
+export const useLoginHandler = useLoginUtils;

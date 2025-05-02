@@ -106,11 +106,11 @@ export const useAutenticacao = () => {
       const sessao: Sessao = {
         uid: usuarioAuth.uid,
         email: usuarioAuth.email || '',
-        nomeUsuario: usuarioDB.nomeCompleto,
-        tipoUsuario: usuarioDB.tipoUsuario,
+        nomeUsuario: usuarioDB.dadosPessoais?.nomeCompleto || '',
+        tipoUsuario: usuarioDB.tipoUsuario || 'Comum',
         statusAcesso: usuarioDB.statusAcesso,
         dataExpiracao,
-        atuaSMS: usuarioDB.atuaSMS
+        atuaSMS: usuarioDB.dadosProfissionais?.atuaSMS
       };
       
       localStorage.setItem('sessao', JSON.stringify(sessao));
@@ -123,6 +123,29 @@ export const useAutenticacao = () => {
         mensagemErro = 'E-mail ou senha inválidos.';
       } else if (error.code === 'auth/too-many-requests') {
         mensagemErro = 'Muitas tentativas de login. Tente novamente mais tarde.';
+      } else if (error.message) {
+        mensagemErro = error.message;
+      }
+      
+      return { 
+        sucesso: false, 
+        mensagem: mensagemErro
+      };
+    }
+  };
+
+  // Método para registrar novos usuários
+  const registrar = async (email: string, senha: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+      return { sucesso: true, usuario: userCredential.user };
+    } catch (error: any) {
+      let mensagemErro = 'Erro ao registrar. Tente novamente.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        mensagemErro = 'Este e-mail já está em uso.';
+      } else if (error.code === 'auth/weak-password') {
+        mensagemErro = 'A senha é muito fraca.';
       } else if (error.message) {
         mensagemErro = error.message;
       }
@@ -166,6 +189,7 @@ export const useAutenticacao = () => {
     verificarAutenticacao,
     verificarAdmin,
     obterSessao,
+    registrar,
     // Exportar aliases
     entrar,
     sair,

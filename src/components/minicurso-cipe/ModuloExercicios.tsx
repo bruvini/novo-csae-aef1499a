@@ -1,162 +1,182 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, Check, Calendar, Clock, AlertCircle } from 'lucide-react';
-import { CasoClinico, TermoCipe } from '@/types/cipe';
-import ExercicioCasoClinico from './ExercicioCasoClinico';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { TermoCipe } from '@/types/cipe';
 
-export interface ModuloExerciciosProps {
-  casos: CasoClinico[];
-  termosFoco: TermoCipe[];
-  termosJulgamento: TermoCipe[];
-  termosMeios: TermoCipe[];
-  termosAcao: TermoCipe[];
-  termosTempo: TermoCipe[];
-  termosLocalizacao: TermoCipe[];
-  termosCliente: TermoCipe[];
-  completado: boolean;
-  onComplete: () => void;
-  userId: string;
+interface ModuloExerciciosProps {
+  termos: TermoCipe[];
 }
 
-const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({
-  casos,
-  termosFoco,
-  termosJulgamento,
-  termosMeios,
-  termosAcao,
-  termosLocalizacao,
-  termosCliente,
-  termosTempo,
-  completado,
-  onComplete,
-  userId
-}) => {
-  const [casoAtivo, setCasoAtivo] = useState<CasoClinico | null>(null);
-  const [casosVencidos, setCasosVencidos] = useState<string[]>([]);
-  
-  useEffect(() => {
-    if (casos.length > 0) {
-      const casosDisponíveis = casos.filter(
-        caso => !caso.arrayVencedor?.includes(userId)
-      );
-      
-      if (casosDisponíveis.length > 0) {
-        const indexAleatorio = Math.floor(Math.random() * casosDisponíveis.length);
-        setCasoAtivo(casosDisponíveis[indexAleatorio]);
-      } else if (casos.length > 0) {
-        const indexAleatorio = Math.floor(Math.random() * casos.length);
-        setCasoAtivo(casos[indexAleatorio]);
-      }
-      
-      const vencidos = casos
-        .filter(caso => caso.arrayVencedor?.includes(userId))
-        .map(caso => caso.id || '');
-      
-      setCasosVencidos(vencidos.filter(Boolean));
-    }
-  }, [casos, userId]);
+const ModuloExercicios: React.FC<ModuloExerciciosProps> = ({ termos }) => {
+  const [casoClinico, setCasoClinico] = useState<string>('');
+  const [foco, setFoco] = useState<string>('');
+  const [julgamento, setJulgamento] = useState<string>('');
+  const [meio, setMeio] = useState<string>('');
+  const [acao, setAcao] = useState<string>('');
+  const [tempo, setTempo] = useState<string>('');
+  const [localizacao, setLocalizacao] = useState<string>('');
+  const [cliente, setCliente] = useState<string>('');
 
-  const handleCasoCompleto = () => {
-    if (casoAtivo && casoAtivo.id) {
-      if (!casosVencidos.includes(casoAtivo.id)) {
-        setCasosVencidos(prev => [...prev, casoAtivo.id!]);
-      }
-      
-      const minimoParaConcluir = Math.ceil(casos.length / 3);
-      if (casosVencidos.length + 1 >= minimoParaConcluir && !completado) {
-        onComplete();
-      }
-    }
-  };
-
-  const selecionarNovoCaso = () => {
-    if (casos.length > 0) {
-      const indexAleatorio = Math.floor(Math.random() * casos.length);
-      setCasoAtivo(casos[indexAleatorio]);
-    }
-  };
-
-  if (casos.length === 0) {
-    return (
-      <div id="exercicios" className="space-y-6 pb-8">
-        <h2 className="text-2xl font-bold text-csae-green-700">Exercícios de Fixação</h2>
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-gray-600">Não há casos clínicos disponíveis para praticar.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const termosFoco = termos.filter(t => t.tipo === "Foco").map(t => t.termo);
+  const termosJulgamento = termos.filter(t => t.tipo === "Julgamento").map(t => t.termo);
+  const termosMeio = termos.filter(t => t.tipo === "Meio").map(t => t.termo);
+  const termosAcao = termos.filter(t => t.tipo === "Ação").map(t => t.termo);
+  const termosTempo = termos.filter(t => t.tipo === "Tempo").map(t => t.termo);
+  const termosLocalizacao = termos.filter(t => t.tipo === "Localização").map(t => t.termo);
+  const termosCliente = termos.filter(t => t.tipo === "Cliente").map(t => t.termo);
 
   return (
-    <div id="exercicios" className="space-y-6 pb-8">
-      <h2 className="text-2xl font-bold text-csae-green-700">Exercícios de Fixação</h2>
-      
-      <Card className="mb-4">
+    <div className="container mx-auto py-10">
+      <Card>
         <CardHeader>
-          <CardTitle>Casos Clínicos para Prática</CardTitle>
-          <CardDescription>
-            Nos exercícios abaixo, você deve aplicar os conhecimentos sobre os eixos CIPE para formular afirmativas corretas.
-            <br/>
-            Para concluir este módulo, você precisa acertar pelo menos {Math.ceil(casos.length / 3)} casos diferentes.
-          </CardDescription>
+          <CardTitle>Monte seu Caso Clínico</CardTitle>
+          <CardDescription>Selecione os termos para montar o caso clínico</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="bg-csae-green-50 p-4 rounded-md mb-4">
-            <p className="text-sm text-gray-700">
-              <strong>Status atual:</strong> Você completou {casosVencidos.length} de {casos.length} casos disponíveis.
-              {completado && <span className="ml-2 text-csae-green-700 font-medium">(Módulo concluído)</span>}
-            </p>
+        <CardContent className="grid gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="foco">Foco</Label>
+              <Select onValueChange={setFoco}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o foco" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosFoco.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="julgamento">Julgamento</Label>
+              <Select onValueChange={setJulgamento}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o julgamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosJulgamento.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="meio">Meio</Label>
+              <Select onValueChange={setMeio}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o meio" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosMeio.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="acao">Ação</Label>
+              <Select onValueChange={setAcao}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a ação" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosAcao.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="tempo">Tempo</Label>
+              <Select onValueChange={setTempo}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tempo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosTempo.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="localizacao">Localização</Label>
+              <Select onValueChange={setLocalizacao}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a localização" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosLocalizacao.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="cliente">Cliente</Label>
+              <Select onValueChange={setCliente}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {termosCliente.map((termo) => (
+                    <SelectItem key={termo} value={termo}>{termo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          
-          <div className="flex justify-end mb-4">
-            <Button 
-              onClick={selecionarNovoCaso} 
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className="h-4 w-4" /> Trocar caso clínico
-            </Button>
+          <div>
+            <Label htmlFor="casoClinico">Caso Clínico</Label>
+            <Input
+              id="casoClinico"
+              value={`${foco} ${julgamento} ${meio} ${acao} ${tempo} ${localizacao} ${cliente}`}
+              readOnly
+            />
           </div>
         </CardContent>
+        <CardFooter>
+          <Button>Salvar</Button>
+        </CardFooter>
       </Card>
-      
-      {casoAtivo && (
-        <ExercicioCasoClinico 
-          caso={casoAtivo}
-          termosFoco={termosFoco}
-          termosJulgamento={termosJulgamento}
-          termosMeios={termosMeios}
-          termosAcao={termosAcao}
-          termosLocalizacao={termosLocalizacao}
-          termosCliente={termosCliente}
-          termosTempo={termosTempo}
-          nomeUsuario={userId}
-          onCasoCompleto={handleCasoCompleto}
-        />
-      )}
-      
-      <div className="flex justify-end">
-        {!completado ? (
-          <Button 
-            onClick={onComplete} 
-            className="bg-csae-green-600 hover:bg-csae-green-700"
-            disabled={casosVencidos.length < Math.ceil(casos.length / 3)}
-          >
-            Marcar módulo como concluído
-          </Button>
-        ) : (
-          <Button disabled className="bg-csae-green-700 flex items-center gap-2">
-            <Check className="h-4 w-4" /> Módulo concluído
-          </Button>
-        )}
-      </div>
     </div>
   );
 };

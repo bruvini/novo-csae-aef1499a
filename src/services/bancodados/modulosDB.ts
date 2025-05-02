@@ -1,167 +1,118 @@
-
-import { collection, doc, addDoc, updateDoc, deleteDoc, getDocs, query, serverTimestamp, where, orderBy } from 'firebase/firestore';
+import { 
+  collection, 
+  doc, 
+  addDoc, 
+  getDocs, 
+  getDoc, 
+  updateDoc, 
+  deleteDoc, 
+  serverTimestamp,
+  query,
+  where
+} from 'firebase/firestore';
 import { db } from '../firebase';
-import { ModuloDisponivel } from '@/types/modulos';
 
-// Buscar todos os módulos disponíveis
-export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> => {
-  try {
-    const q = query(collection(db, 'modulosDisponiveis'), orderBy('ordem', 'asc'));
-    const querySnapshot = await getDocs(q);
-    const modulos: ModuloDisponivel[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      modulos.push({ id: doc.id, ...doc.data() } as ModuloDisponivel);
-    });
-    
-    return modulos;
-  } catch (error) {
-    console.error("Erro ao buscar módulos disponíveis:", error);
-    return [];
-  }
-};
+export interface ModuloDashboard {
+  id?: string;
+  titulo: string;
+  descricao: string;
+  linkAcesso: string;
+  icone: string;
+  ordem: number;
+  ativo: boolean;
+  dataCadastro: Date;
+  dataAtualizacao?: Date;
+}
 
-// Buscar módulos disponíveis ativos
-export const buscarModulosAtivos = async (): Promise<ModuloDisponivel[]> => {
+export const criarModulo = async (modulo: Omit<ModuloDashboard, 'id' | 'dataCadastro' | 'dataAtualizacao'>): Promise<string> => {
   try {
-    const q = query(
-      collection(db, 'modulosDisponiveis'), 
-      where('ativo', '==', true),
-      orderBy('ordem', 'asc')
-    );
-    const querySnapshot = await getDocs(q);
-    const modulos: ModuloDisponivel[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      modulos.push({ id: doc.id, ...doc.data() } as ModuloDisponivel);
-    });
-    
-    return modulos;
-  } catch (error) {
-    console.error("Erro ao buscar módulos ativos:", error);
-    return [];
-  }
-};
-
-// Buscar módulos visíveis para determinado tipo de usuário
-export const buscarModulosVisiveis = async (isAdmin: boolean, atuaSMS: boolean): Promise<ModuloDisponivel[]> => {
-  try {
-    let q;
-    
-    if (isAdmin) {
-      // Admins podem ver todos os módulos ativos
-      q = query(
-        collection(db, 'modulosDisponiveis'),
-        where('ativo', '==', true),
-        orderBy('ordem', 'asc')
-      );
-    } else if (atuaSMS) {
-      // Usuários SMS podem ver módulos de todos ou SMS
-      q = query(
-        collection(db, 'modulosDisponiveis'),
-        where('ativo', '==', true),
-        where('visibilidade', 'in', ['todos', 'sms']),
-        orderBy('ordem', 'asc')
-      );
-    } else {
-      // Usuários comuns podem ver apenas módulos para todos
-      q = query(
-        collection(db, 'modulosDisponiveis'),
-        where('ativo', '==', true),
-        where('visibilidade', '==', 'todos'),
-        orderBy('ordem', 'asc')
-      );
-    }
-    
-    const querySnapshot = await getDocs(q);
-    const modulos: ModuloDisponivel[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      modulos.push({ id: doc.id, ...doc.data() } as ModuloDisponivel);
-    });
-    
-    return modulos;
-  } catch (error) {
-    console.error("Erro ao buscar módulos visíveis:", error);
-    return [];
-  }
-};
-
-// Adicionar novo módulo
-export const adicionarModulo = async (modulo: Omit<ModuloDisponivel, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> => {
-  try {
-    const docRef = await addDoc(collection(db, 'modulosDisponiveis'), {
+    const moduloRef = collection(db, 'modulosDashboard');
+    const novoModulo = {
       ...modulo,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    
+      dataCadastro: serverTimestamp(),
+      dataAtualizacao: serverTimestamp()
+    };
+    const docRef = await addDoc(moduloRef, novoModulo);
     return docRef.id;
   } catch (error) {
-    console.error("Erro ao adicionar módulo:", error);
+    console.error('Erro ao criar módulo:', error);
+    throw error;
+  }
+};
+
+export const buscarModulos = async (): Promise<ModuloDashboard[]> => {
+  try {
+    const moduloRef = collection(db, 'modulosDashboard');
+    const snapshot = await getDocs(moduloRef);
+    const modulos: ModuloDashboard[] = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as ModuloDashboard[];
+    return modulos;
+  } catch (error) {
+    console.error('Erro ao buscar módulos:', error);
+    return [];
+  }
+};
+
+export const buscarModuloPorId = async (id: string): Promise<ModuloDashboard | null> => {
+  try {
+    const moduloRef = doc(db, 'modulosDashboard', id);
+    const docSnap = await getDoc(moduloRef);
+    if (docSnap.exists()) {
+      return {
+        id: docSnap.id,
+        ...docSnap.data()
+      } as ModuloDashboard;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error('Erro ao buscar módulo por ID:', error);
     return null;
   }
 };
 
-// Atualizar módulo
-export const atualizarModulo = async (id: string, dados: Partial<ModuloDisponivel>): Promise<boolean> => {
+export const atualizarModulo = async (id: string, dados: object): Promise<boolean> => {
   try {
-    const docRef = doc(db, 'modulosDisponiveis', id);
+    const moduloRef = doc(db, 'modulosDashboard', id);
     
-    await updateDoc(docRef, {
-      ...dados,
-      updatedAt: serverTimestamp()
+    // Fix the spread issue by ensuring dados is an object
+    await updateDoc(moduloRef, { 
+      ...dados as object, 
+      dataAtualizacao: serverTimestamp() 
     });
     
     return true;
   } catch (error) {
-    console.error("Erro ao atualizar módulo:", error);
+    console.error('Erro ao atualizar módulo:', error);
     return false;
   }
 };
 
-// Remover módulo
-export const removerModulo = async (id: string): Promise<boolean> => {
+export const excluirModulo = async (id: string): Promise<boolean> => {
   try {
-    await deleteDoc(doc(db, 'modulosDisponiveis', id));
+    const moduloRef = doc(db, 'modulosDashboard', id);
+    await deleteDoc(moduloRef);
     return true;
   } catch (error) {
-    console.error("Erro ao remover módulo:", error);
+    console.error('Erro ao excluir módulo:', error);
     return false;
   }
 };
 
-// Verificar se módulo está ativo e visível para o usuário
-export const verificarModuloAtivo = async (nome: string, isAdmin: boolean, atuaSMS: boolean): Promise<boolean> => {
+export const buscarModulosAtivos = async (): Promise<ModuloDashboard[]> => {
   try {
-    const docRef = doc(db, 'modulosDisponiveis', nome);
-    const docSnap = await getDocs(query(
-      collection(db, 'modulosDisponiveis'), 
-      where('nome', '==', nome)
-    ));
-    
-    if (docSnap.empty) {
-      return false;
-    }
-    
-    const modulo = docSnap.docs[0].data() as ModuloDisponivel;
-    
-    if (!modulo.ativo) {
-      return false;
-    }
-    
-    // Verificar visibilidade
-    if (isAdmin) {
-      return true; // Admin vê tudo
-    } else if (modulo.visibilidade === 'admin') {
-      return false; // Somente admins
-    } else if (modulo.visibilidade === 'sms' && !atuaSMS) {
-      return false; // Somente SMS e usuário não é SMS
-    }
-    
-    return true;
+    const modulosRef = collection(db, 'modulosDashboard');
+    const q = query(modulosRef, where('ativo', '==', true));
+    const snapshot = await getDocs(q);
+    const modulos: ModuloDashboard[] = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as ModuloDashboard[];
+    return modulos;
   } catch (error) {
-    console.error(`Erro ao verificar módulo ${nome}:`, error);
-    return false; // Em caso de erro, consideramos o módulo como inativo
+    console.error('Erro ao buscar módulos ativos:', error);
+    return [];
   }
 };

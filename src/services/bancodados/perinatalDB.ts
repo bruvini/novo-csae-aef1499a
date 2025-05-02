@@ -243,7 +243,7 @@ export async function registrarNascimentoBebe(
 ): Promise<string> {
   try {
     // Criar o bebê
-    const bebePaciente: Omit<PacientePerinatal, 'dataCadastro' | 'dataAtualizacao'> = {
+    const bebePaciente: Omit<PacientePerinatal, "dataCadastro" | "dataAtualizacao"> = {
       tipoPaciente: "bebê",
       nome: nomeBebe,
       dataNascimento,
@@ -253,7 +253,21 @@ export async function registrarNascimentoBebe(
       titulo: `Puericultura - ${nomeBebe}`,
       descricao: `Acompanhamento de puericultura iniciado em ${format(new Date(), "dd/MM/yyyy")}`,
       profissionalUid: dadosMae.profissionalUid,
-      profissionalNome: dadosMae.profissionalNome
+      profissionalNome: dadosMae.profissionalNome,
+      // Add required fields
+      cpf: '',
+      cns: '',
+      telefone: '',
+      endereco: '',
+      unidade: dadosMae.unidade || '',
+      municipio: dadosMae.municipio || '',
+      microarea: dadosMae.microarea || '',
+      agenteSaude: dadosMae.agenteSaude || '',
+      dataUltimaMenstruacao: null,
+      dataProvavelParto: null,
+      idadeGestacional: 0,
+      ativo: true,
+      situacao: 'puericultura',
     };
 
     const bebeId = await cadastrarPacientePerinatal(bebePaciente);
