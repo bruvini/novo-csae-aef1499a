@@ -134,16 +134,17 @@ export interface DiagnosticoCompleto {
   ativo?: boolean;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  descricao?: string; // Added missing property
 }
 
 export interface Intervencao {
   id?: string;
-  titulo: string;
+  titulo: string; // Required property
   definicao?: string;
   codigoCipe?: string;
-  diagnosticoIds: string[];
+  diagnosticoIds: string[]; // Required property
   atividades?: string[];
-  ativo: boolean;
+  ativo: boolean; // Required property
   verboPrimeiraEnfermeiro?: string;
   verboOutraPessoa?: string;
   descricaoRestante?: string;
@@ -213,6 +214,12 @@ export interface AlteracaoSinalVital {
   valorReferencia?: string;
   nhbId?: string;
   diagnosticoId?: string;
+  // Adding missing properties that are needed in components
+  unidade?: string;
+  representaAlteracao?: boolean;
+  variacaoPor?: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
+  tipoValor?: 'Numérico' | 'Texto';
+  tituloAlteracao?: string;
 }
 
 // POPs (Procedimentos Operacionais Padrão)
@@ -254,13 +261,15 @@ export interface SistemaCorporal {
   nome: string;
   descricao?: string;
   ordem?: number;
-  ativo: boolean;
+  ativo: boolean; // Required property
 }
 
 export interface RevisaoSistema {
   id?: string;
-  sistemaCorporalId: string;
+  sistemaCorporalId: string; // Changed from sistemaId to sistemaCorporalId to match usage
+  sistemaNome?: string;
   titulo: string;
+  nome?: string; // Added missing property
   descricao?: string;
   tipoAlteracao: 'Objetiva' | 'Subjetiva' | 'Ambas';
   padrao?: string;
@@ -268,6 +277,8 @@ export interface RevisaoSistema {
   nhbId?: string;
   ativo: boolean;
   ordem?: number;
+  valoresReferencia?: any[]; // Added missing property used in components
+  sistemaId?: string; // Added for backward compatibility
 }
 
 // Variáveis de configuração
@@ -296,7 +307,7 @@ export interface Sugestao {
   respostaUsuarioUid?: string;
 }
 
-// Interface para ValorReferencia (usada em componentes)
+// Interface for ValorReferencia (used in components)
 export interface ValorReferencia {
   id?: string;
   unidade: string;

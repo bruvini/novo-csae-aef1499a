@@ -51,6 +51,9 @@ const GerenciadorDiagnosticos = () => {
   const emptyResultado: ResultadoEsperado = {
     descricao: '',
     intervencoes: [{
+      titulo: '',  // Required property
+      diagnosticoIds: [], // Required property
+      ativo: true, // Required property
       verboPrimeiraEnfermeiro: '',
       verboOutraPessoa: '',
       descricaoRestante: '',
@@ -117,7 +120,7 @@ const GerenciadorDiagnosticos = () => {
   const abrirModalCriarSubconjunto = () => {
     setFormSubconjunto({
       nome: '',
-      tipo: 'Protocolo',
+      tipo: 'Protocolo' as 'Protocolo' | 'NHB' | 'Sistema' | 'Outro',
       descricao: ''
     });
     setEditandoSubconjuntoId(null);
@@ -257,69 +260,82 @@ const GerenciadorDiagnosticos = () => {
   };
   
   const adicionarResultadoEsperado = () => {
-    setFormDiagnostico({
-      ...formDiagnostico,
+    setFormDiagnostico(prevForm => ({
+      ...prevForm,
       resultadosEsperados: [
-        ...formDiagnostico.resultadosEsperados,
+        ...prevForm.resultadosEsperados,
         { ...emptyResultado }
       ]
-    });
+    }));
   };
   
   const removerResultadoEsperado = (index: number) => {
-    const novosResultados = [...formDiagnostico.resultadosEsperados];
-    novosResultados.splice(index, 1);
-    setFormDiagnostico({
-      ...formDiagnostico,
-      resultadosEsperados: novosResultados
+    setFormDiagnostico(prevForm => {
+      const novosResultados = [...prevForm.resultadosEsperados];
+      novosResultados.splice(index, 1);
+      return {
+        ...prevForm,
+        resultadosEsperados: novosResultados
+      };
     });
   };
   
   const atualizarResultadoEsperado = (index: number, campo: keyof ResultadoEsperado, valor: any) => {
-    const novosResultados = [...formDiagnostico.resultadosEsperados];
-    novosResultados[index] = {
-      ...novosResultados[index],
-      [campo]: valor
-    };
-    setFormDiagnostico({
-      ...formDiagnostico,
-      resultadosEsperados: novosResultados
+    setFormDiagnostico(prevForm => {
+      const novosResultados = [...prevForm.resultadosEsperados];
+      novosResultados[index] = {
+        ...novosResultados[index],
+        [campo]: valor
+      };
+      return {
+        ...prevForm,
+        resultadosEsperados: novosResultados
+      };
     });
   };
   
   const adicionarIntervencao = (resultadoIndex: number) => {
-    const novosResultados = [...formDiagnostico.resultadosEsperados];
-    novosResultados[resultadoIndex].intervencoes.push({
-      verboPrimeiraEnfermeiro: '',
-      verboOutraPessoa: '',
-      descricaoRestante: '',
-      nomeDocumento: '',
-      linkDocumento: ''
-    });
-    setFormDiagnostico({
-      ...formDiagnostico,
-      resultadosEsperados: novosResultados
+    setFormDiagnostico(prevForm => {
+      const novosResultados = [...prevForm.resultadosEsperados];
+      novosResultados[resultadoIndex].intervencoes.push({
+        titulo: '',  // Required property
+        diagnosticoIds: [], // Required property
+        ativo: true, // Required property
+        verboPrimeiraEnfermeiro: '',
+        verboOutraPessoa: '',
+        descricaoRestante: '',
+        nomeDocumento: '',
+        linkDocumento: ''
+      });
+      return {
+        ...prevForm,
+        resultadosEsperados: novosResultados
+      };
     });
   };
   
   const removerIntervencao = (resultadoIndex: number, intervencaoIndex: number) => {
-    const novosResultados = [...formDiagnostico.resultadosEsperados];
-    novosResultados[resultadoIndex].intervencoes.splice(intervencaoIndex, 1);
-    setFormDiagnostico({
-      ...formDiagnostico,
-      resultadosEsperados: novosResultados
+    setFormDiagnostico(prevForm => {
+      const novosResultados = [...prevForm.resultadosEsperados];
+      novosResultados[resultadoIndex].intervencoes.splice(intervencaoIndex, 1);
+      return {
+        ...prevForm,
+        resultadosEsperados: novosResultados
+      };
     });
   };
   
   const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: keyof Intervencao, valor: string) => {
-    const novosResultados = [...formDiagnostico.resultadosEsperados];
-    novosResultados[resultadoIndex].intervencoes[intervencaoIndex] = {
-      ...novosResultados[resultadoIndex].intervencoes[intervencaoIndex],
-      [campo]: valor
-    };
-    setFormDiagnostico({
-      ...formDiagnostico,
-      resultadosEsperados: novosResultados
+    setFormDiagnostico(prevForm => {
+      const novosResultados = [...prevForm.resultadosEsperados];
+      novosResultados[resultadoIndex].intervencoes[intervencaoIndex] = {
+        ...novosResultados[resultadoIndex].intervencoes[intervencaoIndex],
+        [campo]: valor
+      };
+      return {
+        ...prevForm,
+        resultadosEsperados: novosResultados
+      };
     });
   };
   
@@ -358,7 +374,7 @@ const GerenciadorDiagnosticos = () => {
         for (let j = 0; j < resultado.intervencoes.length; j++) {
           const intervencao = resultado.intervencoes[j];
           
-          if (!intervencao.verboPrimeiraEnfermeiro.trim() || !intervencao.verboOutraPessoa.trim() || !intervencao.descricaoRestante.trim()) {
+          if (!intervencao.verboPrimeiraEnfermeiro?.trim() || !intervencao.verboOutraPessoa?.trim() || !intervencao.descricaoRestante?.trim()) {
             toast({
               title: "Campos obrigatórios",
               description: `A intervenção #${j + 1} do resultado esperado #${i + 1} está incompleta.`,
@@ -366,6 +382,10 @@ const GerenciadorDiagnosticos = () => {
             });
             return;
           }
+          
+          intervencao.titulo = `${intervencao.verboOutraPessoa} ${intervencao.descricaoRestante}`;
+          intervencao.diagnosticoIds = [formDiagnostico.id || 'new'];
+          intervencao.ativo = true;
           
           intervencao.intervencaoEnfermeiro = `${intervencao.verboPrimeiraEnfermeiro} ${intervencao.descricaoRestante}`;
           intervencao.intervencaoInfinitivo = `${intervencao.verboOutraPessoa} ${intervencao.descricaoRestante}`;
@@ -382,9 +402,11 @@ const GerenciadorDiagnosticos = () => {
       const subconjuntoSelecionado = subconjuntos.find(s => s.id === formDiagnostico.subconjuntoId);
       if (subconjuntoSelecionado) {
         formDiagnostico.subitemNome = subconjuntoSelecionado.nome;
-        formDiagnostico.subconjunto = subconjuntoSelecionado.tipo === 'Protocolo' 
-          ? 'Protocolo de Enfermagem' 
-          : 'Necessidades Humanas Básicas';
+        if (subconjuntoSelecionado.tipo === 'Protocolo') {
+          formDiagnostico.subconjunto = 'Protocolo de Enfermagem';
+        } else {
+          formDiagnostico.subconjunto = 'Necessidades Humanas Básicas';
+        }
       }
       
       const firestoreTimestamp = serverTimestamp();
