@@ -28,7 +28,7 @@ const Timeline = () => {
 
       <div className="flex flex-col min-h-screen">
         <Header />
-        <NavigationMenu />
+        <NavigationMenu activeItem="timeline" />
 
         <main className="container mx-auto px-4 py-8 flex-grow">
           <h1 className="text-3xl font-semibold mb-6 text-csae-green-700">

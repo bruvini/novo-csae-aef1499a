@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -9,7 +8,8 @@ import {
   deleteDoc, 
   serverTimestamp,
   query,
-  where
+  where,
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ModuloDisponivel } from '@/types/modulos';
@@ -18,12 +18,18 @@ export interface ModuloDashboard {
   id?: string;
   titulo: string;
   descricao: string;
+  nome?: string;
+  link?: string;
   linkAcesso: string;
   icone: string;
   ordem: number;
   ativo: boolean;
-  dataCadastro: Date;
-  dataAtualizacao?: Date;
+  categoria?: 'clinico' | 'educacional' | 'gestao';
+  visibilidade?: 'admin' | 'sms' | 'todos';
+  exibirDashboard?: boolean;
+  exibirNavbar?: boolean;
+  dataCadastro: Date | Timestamp;
+  dataAtualizacao?: Date | Timestamp;
 }
 
 export const criarModulo = async (modulo: Omit<ModuloDashboard, 'id' | 'dataCadastro' | 'dataAtualizacao'>): Promise<string> => {
@@ -102,21 +108,96 @@ export const excluirModulo = async (id: string): Promise<boolean> => {
   }
 };
 
-export const buscarModulosAtivos = async (): Promise<ModuloDashboard[]> => {
+export const buscarModulosAtivos = async (): Promise<ModuloDisponivel[]> => {
   try {
     const modulosRef = collection(db, 'modulosDashboard');
     const q = query(modulosRef, where('ativo', '==', true));
     const snapshot = await getDocs(q);
-    const modulos: ModuloDashboard[] = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as ModuloDashboard[];
+    
+    const modulos: ModuloDisponivel[] = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        titulo: data.titulo || '',
+        descricao: data.descricao || '',
+        nome: data.nome || data.titulo || '',
+        link: data.linkAcesso || '',
+        icone: data.icone || '',
+        ativo: data.ativo || false,
+        visibilidade: data.visibilidade || 'todos',
+        ordem: data.ordem || 1000,
+        categoria: data.categoria,
+        exibirDashboard: data.exibirDashboard,
+        exibirNavbar: data.exibirNavbar,
+        linkAcesso: data.linkAcesso
+      };
+    });
+    
     return modulos;
   } catch (error) {
     console.error('Erro ao buscar módulos ativos:', error);
     return [];
   }
 };
+
+// Function for GerenciadorModulos component
+export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> => {
+  try {
+    const modulosRef = collection(db, 'modulosDashboard');
+    const snapshot = await getDocs(modulosRef);
+    
+    const modulos: ModuloDisponivel[] = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        titulo: data.titulo || '',
+        descricao: data.descricao || '',
+        nome: data.nome || data.titulo || '',
+        link: data.linkAcesso || '',
+        icone: data.icone || '',
+        ativo: data.ativo || false,
+        visibilidade: data.visibilidade || 'todos',
+        ordem: data.ordem || 1000,
+        categoria: data.categoria,
+        exibirDashboard: data.exibirDashboard,
+        exibirNavbar: data.exibirNavbar,
+        linkAcesso: data.linkAcesso
+      };
+    });
+    
+    // Sort modules by order field
+    return modulos.sort((a, b) => (a.ordem || 1000) - (b.ordem || 1000));
+  } catch (error) {
+    console.error('Erro ao buscar módulos disponíveis:', error);
+    return [];
+  }
+};
+
+// Aliases for module functions
+export const adicionarModulo = async (modulo: Partial<ModuloDisponivel>): Promise<string> => {
+  try {
+    const moduloParaCriar: Omit<ModuloDashboard, 'id' | 'dataCadastro' | 'dataAtualizacao'> = {
+      titulo: modulo.titulo || '',
+      descricao: modulo.descricao || '',
+      nome: modulo.nome,
+      linkAcesso: modulo.linkAcesso || modulo.link || '',
+      icone: modulo.icone || '',
+      ordem: modulo.ordem || 1000,
+      ativo: modulo.ativo !== undefined ? modulo.ativo : true,
+      categoria: modulo.categoria,
+      visibilidade: modulo.visibilidade,
+      exibirDashboard: modulo.exibirDashboard,
+      exibirNavbar: modulo.exibirNavbar
+    };
+    
+    return await criarModulo(moduloParaCriar);
+  } catch (error) {
+    console.error('Erro ao adicionar módulo:', error);
+    throw error;
+  }
+};
+
+export const removerModulo = excluirModulo;
 
 // Function to verify if a module is active
 export const verificarModuloAtivo = async (
@@ -126,7 +207,7 @@ export const verificarModuloAtivo = async (
 ): Promise<boolean> => {
   try {
     const modulosRef = collection(db, 'modulosDashboard');
-    const q = query(modulosRef, where('titulo', '==', moduloNome));
+    const q = query(modulosRef, where('nome', '==', moduloNome));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
@@ -174,7 +255,22 @@ export const buscarModulosVisiveis = async (
     const modulos: ModuloDisponivel[] = [];
     
     snapshot.forEach(doc => {
-      const modulo = { id: doc.id, ...doc.data() } as ModuloDisponivel;
+      const data = doc.data();
+      const modulo: ModuloDisponivel = {
+        id: doc.id,
+        titulo: data.titulo || '',
+        descricao: data.descricao || '',
+        nome: data.nome || data.titulo || '',
+        link: data.linkAcesso || '',
+        icone: data.icone || '',
+        ativo: data.ativo || false,
+        visibilidade: data.visibilidade || 'todos',
+        ordem: data.ordem || 1000,
+        categoria: data.categoria,
+        exibirDashboard: data.exibirDashboard,
+        exibirNavbar: data.exibirNavbar,
+        linkAcesso: data.linkAcesso
+      };
       
       // Filter based on visibility permissions
       if (
@@ -193,26 +289,3 @@ export const buscarModulosVisiveis = async (
     return [];
   }
 };
-
-// Function for GerenciadorModulos component
-export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> => {
-  try {
-    const modulosRef = collection(db, 'modulosDashboard');
-    const snapshot = await getDocs(modulosRef);
-    
-    const modulos: ModuloDisponivel[] = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as ModuloDisponivel[];
-    
-    // Sort modules by order field
-    return modulos.sort((a, b) => (a.ordem || 1000) - (b.ordem || 1000));
-  } catch (error) {
-    console.error('Erro ao buscar módulos disponíveis:', error);
-    return [];
-  }
-};
-
-// Aliases for module functions
-export const adicionarModulo = criarModulo;
-export const removerModulo = excluirModulo;

@@ -16,6 +16,7 @@ export interface PerfilUsuario {
   uid: string;
   email: string;
   nome: string;
+  nomeUsuario: string;
   ehAdmin: boolean;
   atuaSMS: boolean;
 }

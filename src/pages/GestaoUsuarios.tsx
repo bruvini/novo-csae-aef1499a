@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Helmet } from 'react-helmet-async';
+import { Timestamp } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/services/autenticacao";
 import Header from '@/components/Header';
@@ -828,790 +829,794 @@ const GestaoUsuarios = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
       <Helmet>
-        <title>Gestão de Usuários</title>
+        <title>Gestão de Usuários | CSAE</title>
       </Helmet>
-      <NavigationMenu activeItem="gestao-usuarios" />
 
-      <main className="flex-1 container max-w-screen-xl mx-auto my-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-csae-green-700">
-            Gestão de Usuários
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Gerencie os acessos à plataforma, aprovando novos usuários ou
-            revogando acessos existentes.
-          </p>
-        </div>
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <NavigationMenu activeItem="gestao-usuarios" />
 
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="relative flex-grow max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Buscar por nome ou matrícula..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={handleSearch}
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2"
-              onClick={handleResetFilters}
-            >
-              <RotateCcw className="h-4 w-4" />
-              Limpar filtros
-            </Button>
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 ml-auto"
-              onClick={exportToXlsx}
-            >
-              <FileDown className="h-4 w-4" />
-              Exportar dados
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="formacao">Formação</Label>
-              <Select
-                value={filtroFormacao}
-                onValueChange={handleFormacaoChange}
-              >
-                <SelectTrigger id="formacao">
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  {opcoesFormacao.map((opcao) => (
-                    <SelectItem key={opcao} value={opcao}>
-                      {opcao}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="atuaSMS">Atua na SMS</Label>
-              <Select
-                value={filtroAtuaSMS || "placeholder"}
-                onValueChange={(v) =>
-                  handleAtuaSMSChange(v === "placeholder" ? "" : v)
-                }
-              >
-                <SelectTrigger id="atuaSMS">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="placeholder" disabled>
-                    Todos
-                  </SelectItem>
-                  <SelectItem value="Sim">Sim</SelectItem>
-                  <SelectItem value="Não">Não</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="lotacao">Lotação</Label>
-              <Select
-                value={filtroLotacao || "placeholder"}
-                onValueChange={(v) =>
-                  handleLotacaoChange(v === "placeholder" ? "" : v)
-                }
-              >
-                <SelectTrigger id="lotacao">
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="placeholder" disabled>
-                    Todas
-                  </SelectItem>
-                  {opcoesLotacao.map((opcao) => (
-                    <SelectItem key={opcao} value={opcao}>
-                      {opcao}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <Tabs defaultValue="pendentes" onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="pendentes" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Usuários Pendentes
-            </TabsTrigger>
-            <TabsTrigger value="ativos" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Usuários Ativos
-            </TabsTrigger>
-            <TabsTrigger value="revogados" className="flex items-center gap-2">
-              <Ban className="h-4 w-4" />
-              Acessos Revogados
-            </TabsTrigger>
-            <TabsTrigger value="residentes" className="flex items-center gap-2">
-              <AlarmClock className="h-4 w-4" />
-              Residentes Vencidos
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pendentes" className="animate-fade-in">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
-                  Usuários Aguardando Aprovação
-                </h2>
-                {loading ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Carregando usuários...
-                  </p>
-                ) : usuariosFiltrados.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Não há usuários aguardando aprovação.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome Completo</TableHead>
-                        <TableHead>Data de Cadastro</TableHead>
-                        <TableHead>Formação</TableHead>
-                        <TableHead>Atua na SMS</TableHead>
-                        <TableHead>Contato</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
-                        <TableRow key={usuario.id}>
-                          <TableCell className="font-medium">
-                            {usuario.dadosPessoais.nomeCompleto}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(usuario.dataCadastro)}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.formacao}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.atuaSMS ? "Sim" : "Não"}
-                          </TableCell>
-                          <TableCell>{usuario.email}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
-                                onClick={() => openApproveDialog(usuario)}
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                                Aprovar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                                onClick={() => openRejectDialog(usuario)}
-                              >
-                                <XCircle className="h-4 w-4" />
-                                Recusar
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ativos" className="animate-fade-in">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
-                  Usuários com Acesso Ativo
-                </h2>
-                {loading ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Carregando usuários...
-                  </p>
-                ) : usuariosFiltrados.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Não há usuários ativos no momento.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome Completo</TableHead>
-                        <TableHead>Data de Aprovação</TableHead>
-                        <TableHead>Último Acesso</TableHead>
-                        <TableHead>Total de Acessos</TableHead>
-                        <TableHead>Formação</TableHead>
-                        <TableHead>Atua na SMS?</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
-                        <TableRow key={usuario.id}>
-                          <TableCell className="font-medium">
-                            {usuario.dadosPessoais.nomeCompleto}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(usuario.dataAprovacao)}
-                          </TableCell>
-                          <TableCell>
-                            {formatUltimoAcesso(usuario.logAcessos)}
-                            <div className="text-xs text-gray-500">
-                              {getTempoDesdeUltimoAcesso(usuario.logAcessos)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {usuario.logAcessos ? usuario.logAcessos.length : 0}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.formacao}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.atuaSMS ? "Sim" : "Não"}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                                onClick={() => openRevokeDialog(usuario)}
-                              >
-                                <Ban className="h-4 w-4" />
-                                Revogar
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="revogados" className="animate-fade-in">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
-                  Usuários com Acesso Revogado ou Recusado
-                </h2>
-                {loading ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Carregando usuários...
-                  </p>
-                ) : usuariosFiltrados.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Não há usuários revogados ou recusados.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome Completo</TableHead>
-                        <TableHead>Data de Revogação</TableHead>
-                        <TableHead>Motivo</TableHead>
-                        <TableHead>Formação</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
-                        <TableRow key={usuario.id}>
-                          <TableCell className="font-medium">
-                            {usuario.dadosPessoais.nomeCompleto}
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(usuario.dataRevogacao)}
-                          </TableCell>
-                          <TableCell>{getRevogacaoMotivo(usuario)}</TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.formacao}
-                          </TableCell>
-                          <TableCell>{usuario.email}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
-                                onClick={() => openReactivateDialog(usuario)}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                                Reativar
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-                                onClick={() => openDeleteDialog(usuario)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                                Excluir
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="residentes" className="animate-fade-in">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
-                  Residentes com Acesso Vencido
-                </h2>
-                {loading ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Carregando usuários...
-                  </p>
-                ) : residentesVencidos.length === 0 ? (
-                  <p className="text-center py-8 text-gray-500">
-                    Não há residentes com acesso vencido.
-                  </p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nome Completo</TableHead>
-                        <TableHead>Início da Residência</TableHead>
-                        <TableHead>Instituição</TableHead>
-                        <TableHead>Último Acesso</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {residentesVencidos.map((usuario) => (
-                        <TableRow key={usuario.id}>
-                          <TableCell className="font-medium">
-                            {usuario.dadosPessoais.nomeCompleto}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.dataInicioResidencia ||
-                              "Não informada"}
-                          </TableCell>
-                          <TableCell>
-                            {usuario.dadosProfissionais.iesEnfermagem ||
-                              "Não informada"}
-                          </TableCell>
-                          <TableCell>
-                            {formatUltimoAcesso(usuario.logAcessos)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
-                                onClick={() =>
-                                  openAlterarFormacaoDialog(usuario)
-                                }
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                                Alterar Formação
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
-                                onClick={() => openProrrogarDialog(usuario)}
-                              >
-                                <Calendar className="h-4 w-4" />
-                                Prorrogar 30 dias
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Modal de aprovar usuário */}
-      <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Aprovar usuário</DialogTitle>
-            <DialogDescription>
-              Você está prestes a conceder acesso para{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
-              registrada no sistema.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2 max-h-[400px] overflow-y-auto">
-            <h4 className="font-semibold">Dados Pessoais</h4>
-            {selectedUser &&
-              Object.entries(selectedUser.dadosPessoais || {}).map(
-                ([key, value]) => (
-                  <p key={key}>
-                    <strong>{key}:</strong> {value || "N/A"}
-                  </p>
-                )
-              )}
-
-            <h4 className="font-semibold mt-4">Dados Profissionais</h4>
-            {selectedUser &&
-              Object.entries(selectedUser.dadosProfissionais || {}).map(
-                ([key, value]) => (
-                  <p key={key}>
-                    <strong>{key}:</strong>{" "}
-                    {value === true
-                      ? "Sim"
-                      : value === false
-                      ? "Não"
-                      : value || "N/A"}
-                  </p>
-                )
-              )}
-
-            <h4 className="font-semibold mt-4">Tipo de Usuário</h4>
-            <select
-              value={tipoUsuario}
-              onChange={(e) =>
-                setTipoUsuario(e.target.value as "Administrador" | "Comum")
-              }
-              className="w-full border rounded p-2"
-            >
-              <option value="">Selecione o tipo de usuário</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Comum">Comum</option>
-            </select>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsApproveDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={approveUser}
-              className="bg-csae-green-600 hover:bg-csae-green-700"
-            >
-              Confirmar aprovação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de recusar usuário */}
-      <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Recusar acesso</DialogTitle>
-            <DialogDescription>
-              Você está recusando o acesso de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Por favor, informe o
-              motivo da recusa.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <Textarea
-              placeholder="Descreva o motivo da recusa de acesso..."
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRejectDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={rejectUser}
-              disabled={!justification.trim()}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Confirmar recusa
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de revogar acesso */}
-      <Dialog open={isRevokeDialogOpen} onOpenChange={setIsRevokeDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Revogar acesso</DialogTitle>
-            <DialogDescription>
-              Você está revogando o acesso de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Por favor, informe o
-              motivo da revogação.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <Textarea
-              placeholder="Descreva o motivo da revogação de acesso..."
-              value={justification}
-              onChange={(e) => setJustification(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsRevokeDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={revokeUser}
-              disabled={!justification.trim()}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Confirmar revogação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de reativar usuário */}
-      <Dialog
-        open={isReactivateDialogOpen}
-        onOpenChange={setIsReactivateDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reativar usuário</DialogTitle>
-            <DialogDescription>
-              Você está prestes a reativar o acesso de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
-              registrada no sistema.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Formação:</p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.formacao}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Lotação:</p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.lotacao || "Não informada"}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">
-                Motivo da revogação anterior:
-              </p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.motivoRevogacao || "Não informado"}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsReactivateDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={reactivateUser}
-              className="bg-csae-green-600 hover:bg-csae-green-700"
-            >
-              Confirmar reativação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de excluir usuário */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Excluir usuário</DialogTitle>
-            <DialogDescription>
-              Você está prestes a excluir permanentemente o cadastro de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação não pode ser
-              desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="bg-red-50 p-4 rounded-md border border-red-200 my-2">
-            <p className="text-red-600 text-sm">
-              <strong>Atenção:</strong> A exclusão é permanente e todos os dados
-              associados a este usuário serão removidos do sistema. Um log da
-              ação será mantido por questões de auditoria.
+        <main className="flex-1 container max-w-screen-xl mx-auto my-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-csae-green-700">
+              Gestão de Usuários
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Gerencie os acessos à plataforma, aprovando novos usuários ou
+              revogando acessos existentes.
             </p>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={deleteUser} variant="destructive">
-              Confirmar exclusão
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Modal de prorrogar acesso de residente */}
-      <Dialog
-        open={isProrrogarDialogOpen}
-        onOpenChange={setIsProrrogarDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Prorrogar acesso de residente</DialogTitle>
-            <DialogDescription>
-              Você está prorrogando o acesso de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto} por 30 dias. Esta ação
-              será registrada no sistema.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">
-                Data de início da residência:
-              </p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.dataInicioResidencia ||
-                  "Não informada"}
-              </p>
-            </div>
-            <div className="space-y-1 mt-2">
-              <p className="text-sm font-medium">Instituição:</p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.iesEnfermagem ||
-                  "Não informada"}
-              </p>
-            </div>
-
-            <div className="bg-amber-50 p-4 rounded-md border border-amber-200 my-4">
-              <p className="text-amber-700 text-sm">
-                <strong>Atenção:</strong> A prorrogação é válida por 30 dias.
-                Após este período, o acesso será automaticamente bloqueado
-                novamente.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsProrrogarDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={prorrogarResidente}
-              className="bg-csae-green-600 hover:bg-csae-green-700"
-            >
-              Confirmar prorrogação
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal de alterar formação do residente */}
-      <Dialog
-        open={isAlterarFormacaoDialogOpen}
-        onOpenChange={setIsAlterarFormacaoDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Alterar formação do usuário</DialogTitle>
-            <DialogDescription>
-              Você está alterando a formação de{" "}
-              {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
-              registrada no sistema.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-2">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Formação atual:</p>
-              <p className="text-sm text-gray-600">
-                {selectedUser?.dadosProfissionais.formacao}
-              </p>
-            </div>
-
-            <div className="mt-4">
-              <Label htmlFor="novaFormacao">Nova formação</Label>
-              <Select
-                value={novaFormacao || "placeholder"}
-                onValueChange={(v) =>
-                  setNovaFormacao(v === "placeholder" ? "" : v)
-                }
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="relative flex-grow max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Buscar por nome ou matrícula..."
+                  className="pl-10"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2"
+                onClick={handleResetFilters}
               >
-                <SelectTrigger id="novaFormacao">
-                  <SelectValue placeholder="Selecione a nova formação" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="placeholder" disabled>
-                    Selecione a nova formação
-                  </SelectItem>
-                  {opcoesFormacao.map((opcao) => (
-                    <SelectItem key={opcao} value={opcao}>
-                      {opcao}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <RotateCcw className="h-4 w-4" />
+                Limpar filtros
+              </Button>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 ml-auto"
+                onClick={exportToXlsx}
+              >
+                <FileDown className="h-4 w-4" />
+                Exportar dados
+              </Button>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-md border border-blue-200 my-4">
-              <p className="text-blue-700 text-sm">
-                <strong>Informação:</strong> Alterar a formação do usuário
-                permitirá que ele continue com acesso ao sistema sem as
-                restrições aplicadas a residentes.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="formacao">Formação</Label>
+                <Select
+                  value={filtroFormacao}
+                  onValueChange={handleFormacaoChange}
+                >
+                  <SelectTrigger id="formacao">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {opcoesFormacao.map((opcao) => (
+                      <SelectItem key={opcao} value={opcao}>
+                        {opcao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="atuaSMS">Atua na SMS</Label>
+                <Select
+                  value={filtroAtuaSMS || "placeholder"}
+                  onValueChange={(v) =>
+                    handleAtuaSMSChange(v === "placeholder" ? "" : v)
+                  }
+                >
+                  <SelectTrigger id="atuaSMS">
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placeholder" disabled>
+                      Todos
+                    </SelectItem>
+                    <SelectItem value="Sim">Sim</SelectItem>
+                    <SelectItem value="Não">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="lotacao">Lotação</Label>
+                <Select
+                  value={filtroLotacao || "placeholder"}
+                  onValueChange={(v) =>
+                    handleLotacaoChange(v === "placeholder" ? "" : v)
+                  }
+                >
+                  <SelectTrigger id="lotacao">
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placeholder" disabled>
+                      Todas
+                    </SelectItem>
+                    {opcoesLotacao.map((opcao) => (
+                      <SelectItem key={opcao} value={opcao}>
+                        {opcao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAlterarFormacaoDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={alterarFormacaoResidente}
-              className="bg-csae-green-600 hover:bg-csae-green-700"
-              disabled={!novaFormacao}
-            >
-              Confirmar alteração
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      <SimpleFooter />
-    </div>
+          <Tabs defaultValue="pendentes" onValueChange={handleTabChange}>
+            <TabsList className="grid w-full grid-cols-4 mb-8">
+              <TabsTrigger value="pendentes" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Usuários Pendentes
+              </TabsTrigger>
+              <TabsTrigger value="ativos" className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Usuários Ativos
+              </TabsTrigger>
+              <TabsTrigger value="revogados" className="flex items-center gap-2">
+                <Ban className="h-4 w-4" />
+                Acessos Revogados
+              </TabsTrigger>
+              <TabsTrigger value="residentes" className="flex items-center gap-2">
+                <AlarmClock className="h-4 w-4" />
+                Residentes Vencidos
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pendentes" className="animate-fade-in">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
+                    Usuários Aguardando Aprovação
+                  </h2>
+                  {loading ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Carregando usuários...
+                    </p>
+                  ) : usuariosFiltrados.length === 0 ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Não há usuários aguardando aprovação.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome Completo</TableHead>
+                          <TableHead>Data de Cadastro</TableHead>
+                          <TableHead>Formação</TableHead>
+                          <TableHead>Atua na SMS</TableHead>
+                          <TableHead>Contato</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usuariosFiltrados.map((usuario) => (
+                          <TableRow key={usuario.id}>
+                            <TableCell className="font-medium">
+                              {usuario.dadosPessoais.nomeCompleto}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(usuario.dataCadastro)}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.formacao}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.atuaSMS ? "Sim" : "Não"}
+                            </TableCell>
+                            <TableCell>{usuario.email}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                                  onClick={() => openApproveDialog(usuario)}
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                  Aprovar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                  onClick={() => openRejectDialog(usuario)}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                  Recusar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="ativos" className="animate-fade-in">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
+                    Usuários com Acesso Ativo
+                  </h2>
+                  {loading ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Carregando usuários...
+                    </p>
+                  ) : usuariosFiltrados.length === 0 ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Não há usuários ativos no momento.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome Completo</TableHead>
+                          <TableHead>Data de Aprovação</TableHead>
+                          <TableHead>Último Acesso</TableHead>
+                          <TableHead>Total de Acessos</TableHead>
+                          <TableHead>Formação</TableHead>
+                          <TableHead>Atua na SMS?</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usuariosFiltrados.map((usuario) => (
+                          <TableRow key={usuario.id}>
+                            <TableCell className="font-medium">
+                              {usuario.dadosPessoais.nomeCompleto}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(usuario.dataAprovacao)}
+                            </TableCell>
+                            <TableCell>
+                              {formatUltimoAcesso(usuario.logAcessos)}
+                              <div className="text-xs text-gray-500">
+                                {getTempoDesdeUltimoAcesso(usuario.logAcessos)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {usuario.logAcessos ? usuario.logAcessos.length : 0}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.formacao}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.atuaSMS ? "Sim" : "Não"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                  onClick={() => openRevokeDialog(usuario)}
+                                >
+                                  <Ban className="h-4 w-4" />
+                                  Revogar
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="revogados" className="animate-fade-in">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
+                    Usuários com Acesso Revogado ou Recusado
+                  </h2>
+                  {loading ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Carregando usuários...
+                    </p>
+                  ) : usuariosFiltrados.length === 0 ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Não há usuários revogados ou recusados.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome Completo</TableHead>
+                          <TableHead>Data de Revogação</TableHead>
+                          <TableHead>Motivo</TableHead>
+                          <TableHead>Formação</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {usuariosFiltrados.map((usuario) => (
+                          <TableRow key={usuario.id}>
+                            <TableCell className="font-medium">
+                              {usuario.dadosPessoais.nomeCompleto}
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(usuario.dataRevogacao)}
+                            </TableCell>
+                            <TableCell>{getRevogacaoMotivo(usuario)}</TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.formacao}
+                            </TableCell>
+                            <TableCell>{usuario.email}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                                  onClick={() => openReactivateDialog(usuario)}
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                  Reativar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+                                  onClick={() => openDeleteDialog(usuario)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Excluir
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="residentes" className="animate-fade-in">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-xl font-semibold mb-4 text-csae-green-700">
+                    Residentes com Acesso Vencido
+                  </h2>
+                  {loading ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Carregando usuários...
+                    </p>
+                  ) : residentesVencidos.length === 0 ? (
+                    <p className="text-center py-8 text-gray-500">
+                      Não há residentes com acesso vencido.
+                    </p>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nome Completo</TableHead>
+                          <TableHead>Início da Residência</TableHead>
+                          <TableHead>Instituição</TableHead>
+                          <TableHead>Último Acesso</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {residentesVencidos.map((usuario) => (
+                          <TableRow key={usuario.id}>
+                            <TableCell className="font-medium">
+                              {usuario.dadosPessoais.nomeCompleto}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.dataInicioResidencia ||
+                                "Não informada"}
+                            </TableCell>
+                            <TableCell>
+                              {usuario.dadosProfissionais.iesEnfermagem ||
+                                "Não informada"}
+                            </TableCell>
+                            <TableCell>
+                              {formatUltimoAcesso(usuario.logAcessos)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                                  onClick={() =>
+                                    openAlterarFormacaoDialog(usuario)
+                                  }
+                                >
+                                  <RefreshCw className="h-4 w-4" />
+                                  Alterar Formação
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                                  onClick={() => openProrrogarDialog(usuario)}
+                                >
+                                  <Calendar className="h-4 w-4" />
+                                  Prorrogar 30 dias
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </main>
+
+        {/* Modal de aprovar usuário */}
+        <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Aprovar usuário</DialogTitle>
+              <DialogDescription>
+                Você está prestes a conceder acesso para{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
+                registrada no sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2 max-h-[400px] overflow-y-auto">
+              <h4 className="font-semibold">Dados Pessoais</h4>
+              {selectedUser &&
+                Object.entries(selectedUser.dadosPessoais || {}).map(
+                  ([key, value]) => (
+                    <p key={key}>
+                      <strong>{key}:</strong> {value || "N/A"}
+                    </p>
+                  )
+                )}
+
+              <h4 className="font-semibold mt-4">Dados Profissionais</h4>
+              {selectedUser &&
+                Object.entries(selectedUser.dadosProfissionais || {}).map(
+                  ([key, value]) => (
+                    <p key={key}>
+                      <strong>{key}:</strong>{" "}
+                      {value === true
+                        ? "Sim"
+                        : value === false
+                        ? "Não"
+                        : value || "N/A"}
+                    </p>
+                  )
+                )}
+
+              <h4 className="font-semibold mt-4">Tipo de Usuário</h4>
+              <select
+                value={tipoUsuario}
+                onChange={(e) =>
+                  setTipoUsuario(e.target.value as "Administrador" | "Comum")
+                }
+                className="w-full border rounded p-2"
+              >
+                <option value="">Selecione o tipo de usuário</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Comum">Comum</option>
+              </select>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsApproveDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={approveUser}
+                className="bg-csae-green-600 hover:bg-csae-green-700"
+              >
+                Confirmar aprovação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de recusar usuário */}
+        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Recusar acesso</DialogTitle>
+              <DialogDescription>
+                Você está recusando o acesso de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Por favor, informe o
+                motivo da recusa.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <Textarea
+                placeholder="Descreva o motivo da recusa de acesso..."
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsRejectDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={rejectUser}
+                disabled={!justification.trim()}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Confirmar recusa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de revogar acesso */}
+        <Dialog open={isRevokeDialogOpen} onOpenChange={setIsRevokeDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Revogar acesso</DialogTitle>
+              <DialogDescription>
+                Você está revogando o acesso de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Por favor, informe o
+                motivo da revogação.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <Textarea
+                placeholder="Descreva o motivo da revogação de acesso..."
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsRevokeDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={revokeUser}
+                disabled={!justification.trim()}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Confirmar revogação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de reativar usuário */}
+        <Dialog
+          open={isReactivateDialogOpen}
+          onOpenChange={setIsReactivateDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reativar usuário</DialogTitle>
+              <DialogDescription>
+                Você está prestes a reativar o acesso de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
+                registrada no sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Formação:</p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.dadosProfissionais.formacao}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Lotação:</p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.dadosProfissionais.lotacao || "Não informada"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Motivo da revogação anterior:
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.motivoRevogacao || "Não informado"}
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsReactivateDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={reactivateUser}
+                className="bg-csae-green-600 hover:bg-csae-green-700"
+              >
+                Confirmar reativação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de excluir usuário */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Excluir usuário</DialogTitle>
+              <DialogDescription>
+                Você está prestes a excluir permanentemente o cadastro de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação não pode ser
+                desfeita.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="bg-red-50 p-4 rounded-md border border-red-200 my-2">
+              <p className="text-red-600 text-sm">
+                <strong>Atenção:</strong> A exclusão é permanente e todos os dados
+                associados a este usuário serão removidos do sistema. Um log da
+                ação será mantido por questões de auditoria.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={deleteUser} variant="destructive">
+                Confirmar exclusão
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de prorrogar acesso de residente */}
+        <Dialog
+          open={isProrrogarDialogOpen}
+          onOpenChange={setIsProrrogarDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Prorrogar acesso de residente</DialogTitle>
+              <DialogDescription>
+                Você está prorrogando o acesso de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto} por 30 dias. Esta ação
+                será registrada no sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">
+                  Data de início da residência:
+                </p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.dadosProfissionais.dataInicioResidencia ||
+                    "Não informada"}
+                </p>
+              </div>
+              <div className="space-y-1 mt-2">
+                <p className="text-sm font-medium">Instituição:</p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.dadosProfissionais.iesEnfermagem ||
+                    "Não informada"}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-md border border-amber-200 my-4">
+                <p className="text-amber-700 text-sm">
+                  <strong>Atenção:</strong> A prorrogação é válida por 30 dias.
+                  Após este período, o acesso será automaticamente bloqueado
+                  novamente.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsProrrogarDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={prorrogarResidente}
+                className="bg-csae-green-600 hover:bg-csae-green-700"
+              >
+                Confirmar prorrogação
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de alterar formação do residente */}
+        <Dialog
+          open={isAlterarFormacaoDialogOpen}
+          onOpenChange={setIsAlterarFormacaoDialogOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Alterar formação do usuário</DialogTitle>
+              <DialogDescription>
+                Você está alterando a formação de{" "}
+                {selectedUser?.dadosPessoais.nomeCompleto}. Esta ação será
+                registrada no sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-2">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Formação atual:</p>
+                <p className="text-sm text-gray-600">
+                  {selectedUser?.dadosProfissionais.formacao}
+                </p>
+              </div>
+
+              <div className="mt-4">
+                <Label htmlFor="novaFormacao">Nova formação</Label>
+                <Select
+                  value={novaFormacao || "placeholder"}
+                  onValueChange={(v) =>
+                    setNovaFormacao(v === "placeholder" ? "" : v)
+                  }
+                >
+                  <SelectTrigger id="novaFormacao">
+                    <SelectValue placeholder="Selecione a nova formação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="placeholder" disabled>
+                      Selecione a nova formação
+                    </SelectItem>
+                    {opcoesFormacao.map((opcao) => (
+                      <SelectItem key={opcao} value={opcao}>
+                        {opcao}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-md border border-blue-200 my-4">
+                <p className="text-blue-700 text-sm">
+                  <strong>Informação:</strong> Alterar a formação do usuário
+                  permitirá que ele continue com acesso ao sistema sem as
+                  restrições aplicadas a residentes.
+                </p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsAlterarFormacaoDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={alterarFormacaoResidente}
+                className="bg-csae-green-600 hover:bg-csae-green-700"
+                disabled={!novaFormacao}
+              >
+                Confirmar alteração
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <SimpleFooter />
+      </div>
+    </>
   );
 };
 

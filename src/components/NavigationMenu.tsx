@@ -8,16 +8,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAutenticacao } from "@/services/autenticacao";
 import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
+import { ModuloDisponivel } from "@/types/modulos";
 import { Clipboard, FileText, FileType } from "lucide-react";
+import { ElementType } from "react";
+import * as LucideIcons from 'lucide-react';
 
-interface ModuloDisponivel {
-  id: string;
-  nome: string;
-  link: string;
-  icone: any;
+interface NavigationMenuProps {
+  activeItem?: string;
 }
 
-export function NavigationMenu() {
+export function NavigationMenu({ activeItem }: NavigationMenuProps) {
   const { usuario } = useAutenticacao();
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   
@@ -25,7 +25,7 @@ export function NavigationMenu() {
     const carregarModulos = async () => {
       try {
         if (usuario) {
-          // Use buscarModulosAtivos instead
+          // Use buscarModulosAtivos
           const modulosDisponiveis = await buscarModulosAtivos();
           setModulos(modulosDisponiveis);
         }
@@ -62,7 +62,11 @@ export function NavigationMenu() {
           <NavigationMenuItem key={modulo.id}>
             <Button variant="ghost" asChild>
               <a href={modulo.link} className="flex items-center gap-2">
-                {React.createElement(modulo.icone, { className: "w-4 h-4" })}
+                {modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons] && (
+                  React.createElement(LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType, { 
+                    className: "w-4 h-4" 
+                  })
+                )}
                 {modulo.nome}
               </a>
             </Button>

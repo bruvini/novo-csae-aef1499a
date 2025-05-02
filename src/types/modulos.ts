@@ -1,6 +1,6 @@
 
 export interface ModuloDisponivel {
-  id: string;
+  id?: string;
   titulo: string;
   descricao: string;
   nome: string;
@@ -9,5 +9,8 @@ export interface ModuloDisponivel {
   ativo: boolean;
   visibilidade: 'admin' | 'sms' | 'todos';
   ordem: number;
+  categoria?: 'clinico' | 'educacional' | 'gestao';
+  exibirDashboard?: boolean;
+  exibirNavbar?: boolean;
   linkAcesso?: string;
 }

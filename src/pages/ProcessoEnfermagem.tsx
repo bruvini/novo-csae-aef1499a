@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useToast } from "@/hooks/use-toast";
@@ -5,7 +6,7 @@ import { useAutenticacao } from "@/services/autenticacao";
 import Header from '@/components/Header';
 import SimpleFooter from '@/components/SimpleFooter';
 import { NavigationMenu } from '@/components/NavigationMenu';
-import ListaPacientes from '@/components/processo-enfermagem/ListaPacientes';
+import { ListaPacientes } from '@/components/processo-enfermagem/ListaPacientes';
 import EnfermagemWizard from '@/components/processo-enfermagem/EnfermagemWizard';
 
 const ProcessoEnfermagem = () => {

@@ -15,7 +15,7 @@ const Header = () => {
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao) {
-      setNomeUsuario('Enf. ' + (sessao.nomeUsuario.split(' ')[0] || 'Usuário'));
+      setNomeUsuario('Enf. ' + (sessao.nome.split(' ')[0] || 'Usuário'));
     }
   }, [obterSessao]);
 
