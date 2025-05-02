@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -56,9 +56,9 @@ const formSchema = z.object({
 
 const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { registrarUsuario } = useAutenticacao();
+  const { cadastrarUsuario } = useAutenticacao();
   const { toast } = useToast();
-  const router = useNavigate();
+  const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,41 +87,41 @@ const Register = () => {
     },
   });
 
-  const handleFormacaoChange = (value: string) => {
+  const handleFormacaoChange = (value: "Enfermeiro" | "Residente de Enfermagem" | "Técnico de Enfermagem" | "Acadêmico de Enfermagem") => {
     form.setValue("formacao", value);
   };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-  setIsSubmitting(true);
-  
-  try {
-    const { email, senha, ...resto } = values;
-    const resultado = await registrarUsuario(email, senha, resto);
+    setIsSubmitting(true);
     
-    if (resultado.sucesso && resultado.usuario) {
-      router.push("/");
-      toast({
-        title: "Cadastro realizado com sucesso",
-        description: "Seu cadastro está aguardando aprovação.",
-      });
-    } else {
+    try {
+      const { email, senha, ...resto } = values;
+      const resultado = await cadastrarUsuario(email, senha, resto);
+      
+      if (resultado.sucesso && resultado.usuario) {
+        navigate("/");
+        toast({
+          title: "Cadastro realizado com sucesso",
+          description: "Seu cadastro está aguardando aprovação.",
+        });
+      } else {
+        toast({
+          title: "Erro no cadastro",
+          description: resultado.mensagem || "Ocorreu um erro desconhecido",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Erro durante o registro:", error);
       toast({
         title: "Erro no cadastro",
-        description: resultado.mensagem || "Ocorreu um erro desconhecido",
+        description: error.message || "Ocorreu um erro desconhecido",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error: any) {
-    console.error("Erro durante o registro:", error);
-    toast({
-      title: "Erro no cadastro",
-      description: error.message || "Ocorreu um erro desconhecido",
-      variant: "destructive",
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <>

@@ -1,199 +1,247 @@
 
-import { useState, useEffect } from 'react';
 import { 
+  createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut, 
-  onAuthStateChanged,
-  User
+  signOut,
+  sendPasswordResetEmail,
+  User,
+  updateProfile
 } from 'firebase/auth';
 import { auth } from './firebase';
-import { buscarUsuarioPorUid } from './bancodados/usuariosDB';
+import { buscarUsuarioPorUid, cadastrarUsuario as cadastrarUsuarioDB } from './bancodados/usuariosDB';
+import { Usuario } from './bancodados/tipos';
 
-interface Sessao {
+// Interface para perfil de usuário do sistema
+export interface PerfilUsuario {
   uid: string;
   email: string;
-  nomeUsuario: string;
-  tipoUsuario: string;
-  statusAcesso: string;
-  dataExpiracao: number;
-  atuaSMS?: boolean;
+  nome: string;
+  ehAdmin: boolean;
+  atuaSMS: boolean;
 }
 
-export const useAutenticacao = () => {
-  const [usuario, setUsuario] = useState<User | null>(null);
-  const [carregando, setCarregando] = useState<boolean>(true);
+// Hook para autenticação
+export function useAutenticacao() {
+  // Estado local para usuário autenticado
+  let usuario: User | null = null;
+  let perfilUsuario: PerfilUsuario | null = null;
+  let carregando = false;
 
-  useEffect(() => {
-    console.info('Inicializando listener de autenticação');
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        console.info('Estado de autenticação alterado: Autenticado');
-        setUsuario(user);
-      } else {
-        console.info('Estado de autenticação alterado: Não autenticado');
-        setUsuario(null);
-        localStorage.removeItem('sessao');
-      }
-      
-      setCarregando(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const obterSessao = (): Sessao | null => {
-    const sessaoJSON = localStorage.getItem('sessao');
-    
-    if (sessaoJSON) {
-      try {
-        const sessao = JSON.parse(sessaoJSON);
-        console.info('Sessão obtida do localStorage:', sessao);
-        
-        // Verificar se a sessão expirou
-        if (sessao.dataExpiracao && Date.now() > sessao.dataExpiracao) {
-          console.warn('Sessão expirada');
-          localStorage.removeItem('sessao');
-          return null;
-        }
-        
-        return sessao;
-      } catch (error) {
-        console.error('Erro ao obter sessão do localStorage:', error);
-        return null;
-      }
-    }
-    
-    return null;
-  };
-
+  // Verificar se o usuário está autenticado
   const verificarAutenticacao = (): boolean => {
-    const sessao = obterSessao();
-    
-    if (sessao) {
-      console.info('Sessão existente:', sessao);
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      usuario = currentUser;
       return true;
     }
-    
     return false;
   };
 
+  // Verificar se o usuário é admin
   const verificarAdmin = (): boolean => {
     const sessao = obterSessao();
-    return sessao?.tipoUsuario === 'Administrador';
+    return sessao?.ehAdmin === true;
   };
 
-  // Renomeado para fazerLogin para manter compatibilidade com os métodos existentes
+  // Função para fazer login
   const fazerLogin = async (email: string, senha: string) => {
     try {
+      carregando = true;
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      const usuarioAuth = userCredential.user;
+      usuario = userCredential.user;
       
-      const usuarioDB = await buscarUsuarioPorUid(usuarioAuth.uid);
+      // Buscar dados do usuário no Firestore
+      const userDB = await buscarUsuarioPorUid(userCredential.user.uid);
       
-      if (!usuarioDB) {
-        throw new Error('Usuário não encontrado na base de dados.');
+      // Verificar status do usuário
+      if (userDB && userDB.statusAcesso === 'Bloqueado') {
+        await fazerLogout();
+        return {
+          sucesso: false,
+          mensagem: "Sua conta está bloqueada. Entre em contato com o administrador."
+        };
       }
       
-      if (usuarioDB.statusAcesso !== 'Aprovado') {
-        throw new Error(`Acesso ${usuarioDB.statusAcesso.toLowerCase()}. Entre em contato com um administrador.`);
+      if (userDB && userDB.statusAcesso === 'Aguardando') {
+        await fazerLogout();
+        return {
+          sucesso: false,
+          mensagem: "Sua conta está aguardando aprovação. Tente novamente mais tarde."
+        };
       }
-      
-      // Definir prazo de expiração da sessão em 30 dias
-      const dataExpiracao = Date.now() + 30 * 24 * 60 * 60 * 1000;
-      
-      // Gravar dados da sessão no localStorage
-      const sessao: Sessao = {
-        uid: usuarioAuth.uid,
-        email: usuarioAuth.email || '',
-        nomeUsuario: usuarioDB.dadosPessoais?.nomeCompleto || '',
-        tipoUsuario: usuarioDB.tipoUsuario || 'Comum',
-        statusAcesso: usuarioDB.statusAcesso,
-        dataExpiracao,
-        atuaSMS: usuarioDB.dadosProfissionais?.atuaSMS
-      };
-      
-      localStorage.setItem('sessao', JSON.stringify(sessao));
+
+      // Criar objeto de perfil do usuário
+      if (userDB) {
+        perfilUsuario = {
+          uid: userDB.uid,
+          email: userDB.email,
+          nome: userDB.nome || "",
+          ehAdmin: userDB.perfil === 'admin',
+          atuaSMS: userDB.atuaSMS || false
+        };
+        
+        // Salvar sessão no localStorage
+        salvarSessao(perfilUsuario);
+        
+        // Registrar acesso (implementação fora do escopo)
+        // await registrarAcesso(userDB.uid);
+      }
       
       return { sucesso: true };
     } catch (error: any) {
-      let mensagemErro = 'Erro ao fazer login. Tente novamente.';
+      let mensagem = "Erro ao fazer login.";
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        mensagemErro = 'E-mail ou senha inválidos.';
+        mensagem = "E-mail ou senha inválidos.";
       } else if (error.code === 'auth/too-many-requests') {
-        mensagemErro = 'Muitas tentativas de login. Tente novamente mais tarde.';
-      } else if (error.message) {
-        mensagemErro = error.message;
+        mensagem = "Muitas tentativas de login. Tente novamente mais tarde.";
       }
       
-      return { 
-        sucesso: false, 
-        mensagem: mensagemErro
+      return {
+        sucesso: false,
+        mensagem
       };
+    } finally {
+      carregando = false;
     }
   };
 
-  // Método para registrar novos usuários
-  const registrar = async (email: string, senha: string) => {
+  // Função para cadastrar novo usuário
+  const cadastrarUsuario = async (
+    email: string,
+    senha: string,
+    dadosAdicionais: any
+  ) => {
     try {
+      // Criar usuário no Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-      return { sucesso: true, usuario: userCredential.user };
-    } catch (error: any) {
-      let mensagemErro = 'Erro ao registrar. Tente novamente.';
+      const user = userCredential.user;
       
+      // Definir displayName
+      await updateProfile(user, {
+        displayName: dadosAdicionais.nomeCompleto || email.split('@')[0]
+      });
+      
+      // Estruturar dados do usuário para salvar no Firestore
+      const dadosUsuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'> = {
+        uid: user.uid,
+        nome: dadosAdicionais.nomeCompleto,
+        email: email,
+        perfil: 'usuario',
+        foto: '',
+        telefone: '',
+        atuaSMS: dadosAdicionais.atuaSMS || false,
+        dadosPessoais: {
+          rg: dadosAdicionais.rg || '',
+          cpf: dadosAdicionais.cpf || '',
+          endereco: {
+            rua: dadosAdicionais.rua || '',
+            numero: dadosAdicionais.numero || '',
+            bairro: dadosAdicionais.bairro || '',
+            cidade: dadosAdicionais.cidade || '',
+            uf: dadosAdicionais.uf || '',
+            cep: dadosAdicionais.cep || ''
+          }
+        },
+        dadosProfissionais: {
+          formacao: dadosAdicionais.formacao || '',
+          numeroCoren: dadosAdicionais.numeroCoren || '',
+          ufCoren: dadosAdicionais.ufCoren || '',
+          dataInicioResidencia: dadosAdicionais.dataInicioResidencia || '',
+          iesEnfermagem: dadosAdicionais.iesEnfermagem || '',
+          matricula: dadosAdicionais.matricula || '',
+          cidadeTrabalho: dadosAdicionais.cidadeTrabalho || '',
+          localCargo: dadosAdicionais.localCargo || '',
+          lotacao: dadosAdicionais.lotacao || ''
+        }
+      };
+      
+      // Salvar no Firestore
+      await cadastrarUsuarioDB(dadosUsuario);
+      
+      // Fazer logout pois o usuário precisa aguardar aprovação
+      await fazerLogout();
+      
+      return { sucesso: true, usuario: user };
+    } catch (error: any) {
+      console.error("Erro ao cadastrar usuário:", error);
+      
+      let mensagem = "Erro ao cadastrar usuário.";
       if (error.code === 'auth/email-already-in-use') {
-        mensagemErro = 'Este e-mail já está em uso.';
-      } else if (error.code === 'auth/weak-password') {
-        mensagemErro = 'A senha é muito fraca.';
-      } else if (error.message) {
-        mensagemErro = error.message;
+        mensagem = "Este e-mail já está sendo utilizado.";
       }
       
-      return { 
-        sucesso: false, 
-        mensagem: mensagemErro
-      };
+      return { sucesso: false, mensagem };
     }
   };
 
-  // Renomeado para fazerLogout para manter compatibilidade
+  // Função para sair
   const fazerLogout = async () => {
     try {
       await signOut(auth);
-      localStorage.removeItem('sessao');
+      usuario = null;
+      perfilUsuario = null;
+      
+      // Limpar sessão
+      localStorage.removeItem('sessao_usuario');
+      
       return { sucesso: true };
     } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-      return { 
-        sucesso: false, 
-        mensagem: 'Erro ao fazer logout. Tente novamente.'
-      };
+      return { sucesso: false, mensagem: "Erro ao fazer logout." };
     }
   };
 
-  // Aliases para manter compatibilidade com os códigos que usam os nomes antigos
-  const entrar = fazerLogin;
-  const sair = fazerLogout;
-  const limparSessao = () => localStorage.removeItem('sessao');
-  const salvarSessao = (dados: Omit<Sessao, 'dataExpiracao'>) => {
-    const dataExpiracao = Date.now() + 30 * 24 * 60 * 60 * 1000;
-    localStorage.setItem('sessao', JSON.stringify({...dados, dataExpiracao}));
+  // Função para recuperar senha
+  const recuperarSenha = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { sucesso: true };
+    } catch (error: any) {
+      let mensagem = "Erro ao enviar e-mail de recuperação.";
+      
+      if (error.code === 'auth/user-not-found') {
+        mensagem = "Não existe conta para este e-mail.";
+      }
+      
+      return { sucesso: false, mensagem };
+    }
+  };
+
+  // Função para salvar sessão do usuário no localStorage
+  const salvarSessao = (dados: Omit<PerfilUsuario, "uid">) => {
+    if (!usuario) return;
+    
+    const sessao = {
+      uid: usuario.uid,
+      ...dados
+    };
+    
+    localStorage.setItem('sessao_usuario', JSON.stringify(sessao));
+  };
+
+  // Função para obter sessão do localStorage
+  const obterSessao = (): PerfilUsuario | null => {
+    const sessaoStr = localStorage.getItem('sessao_usuario');
+    if (sessaoStr) {
+      try {
+        return JSON.parse(sessaoStr) as PerfilUsuario;
+      } catch (error) {
+        return null;
+      }
+    }
+    return null;
   };
 
   return {
-    usuario,
+    usuario: auth.currentUser,
     carregando,
     fazerLogin,
+    cadastrarUsuario,
     fazerLogout,
+    recuperarSenha,
     verificarAutenticacao,
     verificarAdmin,
     obterSessao,
-    registrar,
-    // Exportar aliases
-    entrar,
-    sair,
-    limparSessao,
-    salvarSessao
+    salvarSessao,
   };
-};
+}

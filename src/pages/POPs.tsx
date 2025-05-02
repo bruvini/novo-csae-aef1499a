@@ -1,23 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
-import { ExternalLink, FileText, Search } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { useToast } from '@/hooks/use-toast';
-import { ProtocoloOperacionalPadrao } from '@/types/pop';
-import { buscarProtocolosOperacionaisAtivos } from '@/services/bancodados/popsDB';
+import { Helmet } from 'react-helmet-async';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Download, FileText, Book, BookOpen } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import Header from '@/components/Header';
 import SimpleFooter from '@/components/SimpleFooter';
-import NavigationMenu from '@/components/NavigationMenu';
+import { NavigationMenu } from '@/components/NavigationMenu';
+import { listarPOPs } from '@/services/bancodados/popsDB';
+import { POP } from '@/types/pop';
 
 const POPs = () => {
   const { toast } = useToast();
-  const [protocolos, setProtocolos] = useState<ProtocoloOperacionalPadrao[]>([]);
+  const [protocolos, setProtocolos] = useState<POP[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [termoBusca, setTermoBusca] = useState('');
   
@@ -25,7 +22,7 @@ const POPs = () => {
     const carregarProtocolos = async () => {
       setCarregando(true);
       try {
-        const protocolosData = await buscarProtocolosOperacionaisAtivos();
+        const protocolosData = await listarPOPs();
         setProtocolos(protocolosData);
       } catch (error) {
         console.error('Erro ao carregar protocolos:', error);
@@ -82,7 +79,7 @@ const POPs = () => {
   };
   
   // Formatar texto de elaboradores
-  const formatarElaboradores = (protocolo: ProtocoloOperacionalPadrao): string => {
+  const formatarElaboradores = (protocolo: POP): string => {
     if (!protocolo.elaboradores || protocolo.elaboradores.length === 0) {
       return "Não informado";
     }

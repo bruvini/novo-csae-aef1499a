@@ -1,17 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FileText, Calendar, Search, ExternalLink } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { ProtocoloEnfermagem } from '@/services/bancodados/tipos';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Helmet } from 'react-helmet-async';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, Download, FileText } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import Header from '@/components/Header';
-import NavigationMenu from '@/components/NavigationMenu';
 import SimpleFooter from '@/components/SimpleFooter';
+import { NavigationMenu } from '@/components/NavigationMenu';
 
 const ProtocolosEnfermagemPage = () => {
   const [protocolos, setProtocolos] = useState<ProtocoloEnfermagem[]>([]);
@@ -69,6 +66,9 @@ const ProtocolosEnfermagemPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <Helmet>
+        <title>Biblioteca de Protocolos de Enfermagem</title>
+      </Helmet>
       <Header />
       <NavigationMenu activeItem="protocolos" />
       

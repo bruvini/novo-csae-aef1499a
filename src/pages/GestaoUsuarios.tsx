@@ -1,74 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  getDocs,
-  updateDoc,
-  doc,
-  deleteDoc,
-  arrayUnion,
-  query,
-  where,
-  Timestamp,
-  addDoc,
-} from "firebase/firestore";
-import { db } from "@/services/firebase";
+import { Helmet } from 'react-helmet-async';
 import { useToast } from "@/hooks/use-toast";
-import { format, formatDistance } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
-  Search,
-  Filter,
-  CheckCircle,
-  XCircle,
-  Ban,
-  RefreshCw,
-  Trash2,
-  FileDown,
-  RotateCcw,
-  Clock,
-  BookX,
-  UserX,
-  Calendar,
-  AlarmClock,
-} from "lucide-react";
-import NavigationMenu from "@/components/NavigationMenu";
-import Header from "@/components/Header";
-import MainFooter from "@/components/MainFooter";
-import {
-  isResidenteExpirado,
-  calcularDataProrrogacao,
-} from "@/components/login/ResidenteUtils";
+import { useAutenticacao } from "@/services/autenticacao";
+import Header from '@/components/Header';
+import SimpleFooter from '@/components/SimpleFooter';
+import { NavigationMenu } from '@/components/NavigationMenu';
 
 interface Log {
   usuario_afetado: string;
@@ -176,6 +112,7 @@ const GestaoUsuarios = () => {
   const [novaFormacao, setNovaFormacao] = useState("");
 
   const { toast } = useToast();
+  const { usuarioAutenticado } = useAutenticacao();
   const navigate = useNavigate();
 
   // Mock do usuário administrador atual (substituir pela autenticação real depois)
@@ -892,7 +829,9 @@ const GestaoUsuarios = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Helmet>
+        <title>Gestão de Usuários</title>
+      </Helmet>
       <NavigationMenu activeItem="gestao-usuarios" />
 
       <main className="flex-1 container max-w-screen-xl mx-auto my-8">
@@ -1671,7 +1610,7 @@ const GestaoUsuarios = () => {
         </DialogContent>
       </Dialog>
 
-      <MainFooter />
+      <SimpleFooter />
     </div>
   );
 };

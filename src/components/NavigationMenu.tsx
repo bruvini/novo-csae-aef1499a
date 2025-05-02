@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   NavigationMenu as NavigationMenuRoot,
@@ -6,8 +7,8 @@ import {
 } from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { useAutenticacao } from "@/services/autenticacao";
-import { buscarModulosAtivos } from "@/services/bancodados/usuarioDB";
-import { BriefcaseIcon, ClipboardIcon, FileIcon, FileTypeIcon } from "lucide-react";
+import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
+import { Clipboard, FileText, FileType } from "lucide-react";
 
 interface ModuloDisponivel {
   id: string;
@@ -24,8 +25,8 @@ export function NavigationMenu() {
     const carregarModulos = async () => {
       try {
         if (usuario) {
-          // Substitua por buscarModulosAtivos se buscarModulosVisiveis não estiver disponível
-          const modulosDisponiveis = await buscarModulosAtivos(usuario.uid);
+          // Use buscarModulosAtivos instead
+          const modulosDisponiveis = await buscarModulosAtivos();
           setModulos(modulosDisponiveis);
         }
       } catch (error) {
@@ -38,11 +39,10 @@ export function NavigationMenu() {
 
   // Opções de menu estáticas
   const opcoesMenu = [
-    { name: "Dashboard", href: "/dashboard", icon: BriefcaseIcon },
-    { name: "Processo de Enfermagem", href: "/processo-enfermagem", icon: ClipboardIcon },
-    { name: "Protocolos", href: "/protocolos", icon: FileIcon },
-    { name: "POPs", href: "/pops", icon: FileTypeIcon },
-    // Removidas as entradas para o Acompanhamento Perinatal e Minicurso CIPE
+    { name: "Dashboard", href: "/dashboard", icon: Clipboard },
+    { name: "Processo de Enfermagem", href: "/processo-enfermagem", icon: Clipboard },
+    { name: "Protocolos", href: "/protocolos", icon: FileText },
+    { name: "POPs", href: "/pops", icon: FileType },
   ];
 
   return (

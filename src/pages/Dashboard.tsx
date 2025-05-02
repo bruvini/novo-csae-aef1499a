@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ import { buscarModulosAtivos } from '@/services/bancodados/modulosDB';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as LucideIcons from 'lucide-react';
-import { AlertCircle, Users, AlertTriangle, Info, LayoutDashboard, ArrowRight, Calendar, BookOpen } from 'lucide-react';
-import { ElementType, ComponentType } from 'react';  // Import ElementType properly
+import { AlertCircle, Users, AlertTriangle, Info, LayoutDashboard, ArrowRight, Calendar, BookOpen, Clipboard, FileText, FileType } from 'lucide-react';
+import { ComponentType } from 'react';
 import { ModuloDashboard } from '@/services/bancodados/modulosDB';
 
 const Dashboard: React.FC = () => {
@@ -54,7 +54,7 @@ const Dashboard: React.FC = () => {
       id: 'processo-enfermagem',
       nome: 'Processo de Enfermagem',
       descricao: 'Registre e acompanhe o processo de enfermagem',
-      icone: ClipboardIcon,
+      icone: Clipboard,
       link: '/processo-enfermagem',
       cor: 'bg-blue-500'
     },
@@ -62,7 +62,7 @@ const Dashboard: React.FC = () => {
       id: 'protocolos',
       nome: 'Protocolos',
       descricao: 'Consulte protocolos de enfermagem',
-      icone: FileIcon,
+      icone: FileText,
       link: '/protocolos',
       cor: 'bg-green-500'
     },
@@ -70,11 +70,10 @@ const Dashboard: React.FC = () => {
       id: 'pops',
       nome: 'POPs',
       descricao: 'Procedimentos operacionais padrão',
-      icone: FileTypeIcon,
+      icone: FileType,
       link: '/pops',
       cor: 'bg-amber-500'
-    },
-    // Removidas as entradas para o Acompanhamento Perinatal e Minicurso CIPE
+    }
   ];
 
   // Placeholder data for alerts
@@ -131,10 +130,6 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <Helmet>
-        <title>Dashboard | CSAE</title>
-      </Helmet>
-
       <div className="container mx-auto my-6 space-y-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -195,7 +190,7 @@ const Dashboard: React.FC = () => {
                       <CardContent className="pb-2"></CardContent>
                       <CardFooter>
                         <Button asChild className="w-full">
-                          <Link to={`/${module.nome}`}>
+                          <Link to={`/${module.titulo}`}>
                             <ArrowRight className="mr-2 h-4 w-4" />
                             Acessar
                           </Link>
@@ -217,7 +212,7 @@ const Dashboard: React.FC = () => {
 
               <div className="space-y-3">
                 {alerts.map((alert) => (
-                  <Alert key={alert.id} variant={alert.type}>
+                  <Alert key={alert.id} variant={alert.type === "warning" ? "destructive" : "default"}>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>{alert.title}</AlertTitle>
                     <AlertDescription>{alert.description}</AlertDescription>

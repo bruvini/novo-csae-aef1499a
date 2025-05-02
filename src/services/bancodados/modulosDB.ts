@@ -75,11 +75,10 @@ export const buscarModuloPorId = async (id: string): Promise<ModuloDashboard | n
   }
 };
 
-export const atualizarModulo = async (id: string, dados: object): Promise<boolean> => {
+export const atualizarModulo = async (id: string, dados: Partial<ModuloDashboard>): Promise<boolean> => {
   try {
     const moduloRef = doc(db, 'modulosDashboard', id);
     
-    // Fix the spread issue by ensuring dados is an object
     await updateDoc(moduloRef, { 
       ...dados, 
       dataAtualizacao: serverTimestamp() 
@@ -119,8 +118,6 @@ export const buscarModulosAtivos = async (): Promise<ModuloDashboard[]> => {
   }
 };
 
-// Adding missing functions
-
 // Function to verify if a module is active
 export const verificarModuloAtivo = async (
   moduloNome: string, 
@@ -129,7 +126,7 @@ export const verificarModuloAtivo = async (
 ): Promise<boolean> => {
   try {
     const modulosRef = collection(db, 'modulosDashboard');
-    const q = query(modulosRef, where('nome', '==', moduloNome));
+    const q = query(modulosRef, where('titulo', '==', moduloNome));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
@@ -216,8 +213,6 @@ export const buscarModulosDisponiveis = async (): Promise<ModuloDisponivel[]> =>
   }
 };
 
-// Alias for criarModulo for GerenciadorModulos component
+// Aliases for module functions
 export const adicionarModulo = criarModulo;
-
-// Alias for excluirModulo for GerenciadorModulos component
 export const removerModulo = excluirModulo;

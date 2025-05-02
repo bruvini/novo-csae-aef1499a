@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from '@/components/Header';
 import SimpleFooter from '@/components/SimpleFooter';
-import NavigationMenu from '@/components/NavigationMenu';
+import { NavigationMenu } from '@/components/NavigationMenu';
 import GerenciadorSinaisVitais from '@/components/gerenciamento-enfermagem/GerenciadorSinaisVitais';
 import GerenciadorExamesLaboratoriais from '@/components/gerenciamento-enfermagem/GerenciadorExamesLaboratoriais';
 import GerenciadorRevisaoSistemas from '@/components/gerenciamento-enfermagem/GerenciadorRevisaoSistemas';

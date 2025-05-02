@@ -82,3 +82,8 @@ export async function buscarUsuarioPorUid(uid: string): Promise<Usuario | null> 
     return null;
   }
 }
+
+export async function buscarModulosAtivos(uid?: string): Promise<any[]> {
+  // Placeholder function to return empty array until properly implemented
+  return [];
+}
