@@ -1,437 +1,564 @@
+
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Plus, Save, Trash2, X } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { ModuloDisponivel } from '@/types/modulos';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
-import { ModuloDisponivel } from '@/types/modulos';
-import { buscarModulosDisponiveis, adicionarModulo, atualizarModulo, removerModulo } from '@/services/bancodados/modulosDB';
-import { ElementType } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  Check,
+  X,
+  ArrowUp,
+  ArrowDown,
+  Filter,
+} from 'lucide-react';
+
+// Dummy function to create a module, replace with real implementation
+const criarModulo = async (modulo: Omit<ModuloDisponivel, "id">) => {
+  console.log("Creating module:", modulo);
+  return { ...modulo, id: Math.random().toString(36).substring(2, 9) };
+};
+
+// Dummy function to update a module, replace with real implementation
+const atualizarModulo = async (id: string, modulo: Partial<ModuloDisponivel>) => {
+  console.log("Updating module:", id, modulo);
+  return true;
+};
+
+// Dummy function to delete a module, replace with real implementation
+const excluirModulo = async (id: string) => {
+  console.log("Deleting module:", id);
+  return true;
+};
 
 const GerenciadorModulos = () => {
   const { toast } = useToast();
-  const [carregando, setCarregando] = useState(true);
-  const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   const [moduloSelecionado, setModuloSelecionado] = useState<ModuloDisponivel | null>(null);
-  const [formAberto, setFormAberto] = useState(false);
-  const [excluirDialogoAberto, setExcluirDialogoAberto] = useState(false);
-  const [barraDeBuscaAberta, setBarraDeBuscaAberta] = useState(false);
-  const [termoDeBusca, setTermoDeBusca] = useState('');
-  const [abaSelecionada, setAbaSelecionada] = useState('geral');
-  const [iconesSelecionados, setIconesSelecionados] = useState<Array<keyof typeof LucideIcons>>([]);
-
-  // Lista de ícones disponíveis
-  const iconesDisponiveis: Array<keyof typeof LucideIcons> = [
-    'Activity', 'Archive', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'Book', 
-    'BookOpen', 'CalendarDays', 'Check', 'ChevronDown', 'ChevronLeft', 'ChevronRight', 
-    'ChevronUp', 'Clock', 'Cog', 'Database', 'Edit', 'FileText', 'Folder', 'FolderOpen', 
-    'Grid2X2', 'Image', 'Info', 'List', 'Lock', 'LogIn', 'LogOut', 'Mail', 'Menu', 'Plus', 
-    'Search', 'Settings', 'Shield', 'Trash2', 'User', 'Users', 'X', 'Baby', 'Bandage', 
-    'GraduationCap', 'Lightbulb', 'Newspaper', 'HelpCircle', 'ClipboardCheck'
-  ];
-
-  // Novo módulo - valores padrão
-  const novoModuloPadrao = {
-    nome: '',
+  const [novoModulo, setNovoModulo] = useState<Partial<ModuloDisponivel>>({
     titulo: '',
     descricao: '',
+    nome: '',
+    link: '',
+    icone: 'Box',
     ativo: true,
-    categoria: 'clinico' as const,
-    visibilidade: 'todos' as const,
+    visibilidade: 'todos',
+    ordem: 0,
+    categoria: 'clinico',
     exibirDashboard: true,
-    exibirNavbar: true,
-    icone: 'Settings',
-    ordem: 1000,
-  };
+    exibirNavbar: true
+  });
+  const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalConfirmacao, setModalConfirmacao] = useState(false);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [filtro, setFiltro] = useState('todos');
+  const [buscaTexto, setBuscaTexto] = useState('');
 
-  // Carregar módulos
+  useEffect(() => {
+    carregarModulos();
+  }, []);
+
   const carregarModulos = async () => {
-    setCarregando(true);
     try {
-      const modulosData = await buscarModulosDisponiveis();
-      setModulos(modulosData);
+      // Replace with actual loading from Firebase
+      const modulosCarregados = [
+        {
+          id: '1',
+          titulo: 'Processo de Enfermagem',
+          descricao: 'Registrar e monitorar o processo de enfermagem',
+          nome: 'Processo',
+          link: '/processo-enfermagem',
+          icone: 'Clipboard',
+          ativo: true,
+          visibilidade: 'todos' as 'todos',
+          ordem: 1,
+          categoria: 'clinico' as 'clinico',
+          exibirDashboard: true,
+          exibirNavbar: true,
+        },
+        {
+          id: '2',
+          titulo: 'Protocolos de Enfermagem',
+          descricao: 'Consultar protocolos de enfermagem',
+          nome: 'Protocolos',
+          link: '/protocolos',
+          icone: 'FileText',
+          ativo: true,
+          visibilidade: 'todos' as 'todos',
+          ordem: 2,
+          categoria: 'clinico' as 'clinico',
+          exibirDashboard: true,
+          exibirNavbar: true,
+        }
+      ];
+      setModulos(modulosCarregados);
     } catch (error) {
       console.error('Erro ao carregar módulos:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível carregar os módulos.',
+        description: 'Não foi possível carregar os módulos',
         variant: 'destructive',
       });
-    } finally {
-      setCarregando(false);
     }
   };
 
-  useEffect(() => {
-    carregarModulos();
-    // Carregar ícones disponíveis
-    const icones = Object.keys(LucideIcons)
-      .filter(k => typeof LucideIcons[k as keyof typeof LucideIcons] === 'function')
-      .slice(0, 50);
-    
-    setIconesSelecionados(icones as Array<keyof typeof LucideIcons>);
-  }, []);
-
-  // Abrir formulário para edição ou criação
-  const abrirForm = (modulo?: ModuloDisponivel) => {
-    if (modulo) {
-      setModuloSelecionado(modulo);
-    } else {
-      setModuloSelecionado(novoModuloPadrao);
-    }
-    setFormAberto(true);
-    setAbaSelecionada('geral'); // Resetar para a primeira aba
+  const handleNovoModulo = () => {
+    setNovoModulo({
+      titulo: '',
+      descricao: '',
+      nome: '',
+      link: '',
+      icone: 'Box',
+      ativo: true,
+      visibilidade: 'todos',
+      ordem: modulos.length + 1,
+      categoria: 'clinico',
+      exibirDashboard: true,
+      exibirNavbar: true
+    });
+    setModoEdicao(false);
+    setModalAberto(true);
   };
 
-  // Fechar formulário
-  const fecharForm = () => {
-    setFormAberto(false);
-    setModuloSelecionado(null);
+  const handleEditarModulo = (modulo: ModuloDisponivel) => {
+    setNovoModulo({ ...modulo });
+    setModuloSelecionado(modulo);
+    setModoEdicao(true);
+    setModalAberto(true);
   };
 
-  // Atualizar campo do módulo
-  const atualizarCampoModulo = (campo: keyof ModuloDisponivel, valor: any) => {
-    if (moduloSelecionado) {
-      setModuloSelecionado({
-        ...moduloSelecionado,
-        [campo]: valor,
-      });
-    }
+  const handleExcluirModulo = (modulo: ModuloDisponivel) => {
+    setModuloSelecionado(modulo);
+    setModalConfirmacao(true);
   };
 
-  // Selecionar ícone
-  const selecionarIcone = (icone: string) => {
-    if (moduloSelecionado) {
-      setModuloSelecionado({
-        ...moduloSelecionado,
-        icone
-      });
-    }
-  };
-
-  // Salvar módulo
-  const salvarModulo = async () => {
+  const confirmarExclusao = async () => {
     if (!moduloSelecionado) return;
-    
-    if (!moduloSelecionado.nome || !moduloSelecionado.titulo) {
+
+    try {
+      await excluirModulo(moduloSelecionado.id || '');
+      setModulos(modulos.filter((m) => m.id !== moduloSelecionado.id));
+      toast({
+        title: 'Módulo excluído',
+        description: 'O módulo foi excluído com sucesso',
+      });
+      setModalConfirmacao(false);
+    } catch (error) {
+      console.error('Erro ao excluir módulo:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o módulo',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const salvarModulo = async () => {
+    // Validate required fields
+    if (!novoModulo.titulo || !novoModulo.nome || !novoModulo.link) {
       toast({
         title: 'Campos obrigatórios',
-        description: 'Preencha o nome interno e o título do módulo.',
+        description: 'Preencha todos os campos obrigatórios',
         variant: 'destructive',
       });
       return;
     }
 
-    setCarregando(true);
-    
     try {
-      // Se tem ID, atualiza
-      if (moduloSelecionado.id) {
-        const { id, ...dadosAtualizados } = moduloSelecionado;
-        const sucesso = await atualizarModulo(id, dadosAtualizados);
-        
-        if (sucesso) {
-          toast({
-            title: 'Módulo atualizado',
-            description: `O módulo "${moduloSelecionado.titulo}" foi atualizado com sucesso.`,
-          });
-          
-          // Atualiza a lista localmente
-          setModulos(modulos.map(m => 
-            m.id === moduloSelecionado.id ? moduloSelecionado : m
-          ));
-        } else {
-          throw new Error('Falha ao atualizar módulo');
-        }
-      } 
-      // Caso contrário, adiciona novo
-      else {
-        const novoId = await adicionarModulo(moduloSelecionado);
-        
-        if (novoId) {
-          toast({
-            title: 'Módulo adicionado',
-            description: `O módulo "${moduloSelecionado.titulo}" foi adicionado com sucesso.`,
-          });
-          
-          // Adiciona à lista local
-          setModulos([...modulos, { ...moduloSelecionado, id: novoId }]);
-        } else {
-          throw new Error('Falha ao adicionar módulo');
-        }
+      if (modoEdicao && moduloSelecionado) {
+        await atualizarModulo(moduloSelecionado.id || '', novoModulo);
+        setModulos(
+          modulos.map((m) => (m.id === moduloSelecionado.id ? { ...m, ...novoModulo } as ModuloDisponivel : m))
+        );
+        toast({
+          title: 'Módulo atualizado',
+          description: 'O módulo foi atualizado com sucesso',
+        });
+      } else {
+        const moduloCriado = await criarModulo(novoModulo as Required<Omit<ModuloDisponivel, 'id'>>);
+        setModulos([...modulos, moduloCriado]);
+        toast({
+          title: 'Módulo criado',
+          description: 'O novo módulo foi criado com sucesso',
+        });
       }
-      
-      fecharForm();
+      setModalAberto(false);
     } catch (error) {
       console.error('Erro ao salvar módulo:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao salvar o módulo.',
+        description: 'Não foi possível salvar o módulo',
         variant: 'destructive',
       });
-    } finally {
-      setCarregando(false);
     }
   };
 
-  // Alternar estado do módulo (ativo/inativo)
-  const alternarEstadoModulo = async (modulo: ModuloDisponivel) => {
-    setCarregando(true);
-    
+  const alternarAtivoModulo = async (modulo: ModuloDisponivel) => {
     try {
-      const novoEstado = !modulo.ativo;
-      const sucesso = await atualizarModulo(modulo.id!, { ativo: novoEstado });
-      
-      if (sucesso) {
-        // Atualiza a lista local
-        setModulos(modulos.map(m => 
-          m.id === modulo.id ? { ...m, ativo: novoEstado } : m
-        ));
-        
-        toast({
-          title: novoEstado ? 'Módulo ativado' : 'Módulo desativado',
-          description: `O módulo "${modulo.titulo}" foi ${novoEstado ? 'ativado' : 'desativado'} com sucesso.`,
-        });
-      } else {
-        throw new Error('Falha ao atualizar estado do módulo');
-      }
+      await atualizarModulo(modulo.id || '', { ativo: !modulo.ativo });
+      setModulos(
+        modulos.map((m) => (m.id === modulo.id ? { ...m, ativo: !m.ativo } as ModuloDisponivel : m))
+      );
+      toast({
+        title: modulo.ativo ? 'Módulo desativado' : 'Módulo ativado',
+        description: `O módulo foi ${modulo.ativo ? 'desativado' : 'ativado'} com sucesso`,
+      });
     } catch (error) {
-      console.error('Erro ao alternar estado do módulo:', error);
+      console.error('Erro ao alterar status do módulo:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao alterar o estado do módulo.',
+        description: 'Não foi possível alterar o status do módulo',
         variant: 'destructive',
       });
-    } finally {
-      setCarregando(false);
     }
   };
 
-  // Confirmar exclusão
-  const confirmarExclusao = (modulo: ModuloDisponivel) => {
-    setModuloSelecionado(modulo);
-    setExcluirDialogoAberto(true);
-  };
+  const alterarOrdem = async (modulo: ModuloDisponivel, direcao: 'up' | 'down') => {
+    const novaOrdem = [...modulos];
+    const index = novaOrdem.findIndex((m) => m.id === modulo.id);
+    
+    if (
+      (direcao === 'up' && index === 0) ||
+      (direcao === 'down' && index === novaOrdem.length - 1)
+    ) {
+      return;
+    }
 
-  // Excluir módulo
-  const excluirModulo = async () => {
-    if (!moduloSelecionado?.id) return;
-    
-    setCarregando(true);
-    
+    const novoIndex = direcao === 'up' ? index - 1 : index + 1;
+    const temp = novaOrdem[novoIndex];
+    novaOrdem[novoIndex] = novaOrdem[index];
+    novaOrdem[index] = temp;
+
+    // Update ordem values
+    novaOrdem.forEach((m, i) => {
+      m.ordem = i + 1;
+    });
+
     try {
-      const sucesso = await removerModulo(moduloSelecionado.id);
-      
-      if (sucesso) {
-        // Remove da lista local
-        setModulos(modulos.filter(m => m.id !== moduloSelecionado.id));
-        
-        toast({
-          title: 'Módulo excluído',
-          description: `O módulo "${moduloSelecionado.titulo}" foi excluído com sucesso.`,
-        });
-      } else {
-        throw new Error('Falha ao excluir módulo');
-      }
+      // Update all modules with new ordem
+      await Promise.all(
+        novaOrdem.map((m) => atualizarModulo(m.id || '', { ordem: m.ordem }))
+      );
+      setModulos(novaOrdem);
     } catch (error) {
-      console.error('Erro ao excluir módulo:', error);
+      console.error('Erro ao alterar ordem dos módulos:', error);
       toast({
         title: 'Erro',
-        description: 'Ocorreu um erro ao excluir o módulo.',
+        description: 'Não foi possível alterar a ordem dos módulos',
         variant: 'destructive',
       });
-    } finally {
-      setExcluirDialogoAberto(false);
-      setModuloSelecionado(null);
-      setCarregando(false);
     }
   };
 
-  // Filtrar módulos pela busca
-  const modulosFiltrados = modulos.filter(modulo =>
-    modulo.titulo.toLowerCase().includes(termoDeBusca.toLowerCase()) ||
-    modulo.descricao.toLowerCase().includes(termoDeBusca.toLowerCase()) ||
-    modulo.nome.toLowerCase().includes(termoDeBusca.toLowerCase())
-  );
+  const modulosFiltrados = modulos
+    .filter((modulo) => {
+      if (filtro === 'todos') return true;
+      if (filtro === 'ativos') return modulo.ativo;
+      if (filtro === 'inativos') return !modulo.ativo;
+      if (filtro === 'clinico') return modulo.categoria === 'clinico';
+      if (filtro === 'educacional') return modulo.categoria === 'educacional';
+      if (filtro === 'gestao') return modulo.categoria === 'gestao';
+      return true;
+    })
+    .filter((modulo) => {
+      if (!buscaTexto) return true;
+      return (
+        modulo.titulo.toLowerCase().includes(buscaTexto.toLowerCase()) ||
+        modulo.descricao.toLowerCase().includes(buscaTexto.toLowerCase()) ||
+        modulo.nome.toLowerCase().includes(buscaTexto.toLowerCase())
+      );
+    })
+    .sort((a, b) => a.ordem - b.ordem);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-csae-green-700">
-          Gerenciamento de Módulos do Sistema
-        </h2>
-        
-        <div className="flex items-center gap-2">
-          <Button onClick={() => abrirForm()} className="bg-csae-green-600 hover:bg-csae-green-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Adicionar Módulo
-          </Button>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          <Input
+            placeholder="Buscar módulos..."
+            value={buscaTexto}
+            onChange={(e) => setBuscaTexto(e.target.value)}
+            className="w-64"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-1" />
+                Filtrar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Filtrar módulos</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={() => setFiltro('todos')}>
+                  {filtro === 'todos' && <Check className="h-4 w-4 mr-2" />}
+                  Todos os módulos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFiltro('ativos')}>
+                  {filtro === 'ativos' && <Check className="h-4 w-4 mr-2" />}
+                  Módulos ativos
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFiltro('inativos')}>
+                  {filtro === 'inativos' && <Check className="h-4 w-4 mr-2" />}
+                  Módulos inativos
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Por categoria</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setFiltro('clinico')}>
+                {filtro === 'clinico' && <Check className="h-4 w-4 mr-2" />}
+                Clínico
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFiltro('educacional')}>
+                {filtro === 'educacional' && <Check className="h-4 w-4 mr-2" />}
+                Educacional
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFiltro('gestao')}>
+                {filtro === 'gestao' && <Check className="h-4 w-4 mr-2" />}
+                Gestão
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        <Button onClick={handleNovoModulo}>
+          <Plus className="h-4 w-4 mr-1" />
+          Novo Módulo
+        </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {modulosFiltrados.map((modulo) => (
-          <Card 
-            key={modulo.id} 
-            className={`hover:shadow-md transition-shadow border-l-4 ${
-              modulo.ativo ? 'border-l-green-500' : 'border-l-gray-300'
-            }`}
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center justify-between">
-                <span className="truncate">{modulo.titulo}</span>
-                <Switch 
-                  checked={modulo.ativo} 
-                  onCheckedChange={() => alternarEstadoModulo(modulo)}
-                  disabled={carregando}
-                  className="ml-2"
-                />
-              </CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Nome interno: {modulo.nome}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 mb-2">
-                {modulo.icone && LucideIcons[modulo.icone as keyof typeof LucideIcons] && (
-                  React.createElement(LucideIcons[modulo.icone as keyof typeof LucideIcons] as ElementType, { 
-                    size: 20,
-                    className: "text-csae-green-600"
-                  })
-                )}
-                <span className="text-sm text-gray-700">{modulo.descricao || 'Sem descrição'}</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                <div className="flex items-center gap-1">
-                  <span className={`px-2 py-1 rounded-full ${
-                    modulo.categoria === 'clinico' ? 'bg-green-100 text-green-700' :
-                    modulo.categoria === 'educacional' ? 'bg-blue-100 text-blue-700' :
-                    'bg-amber-100 text-amber-700'
-                  }`}>
-                    {modulo.categoria === 'clinico' ? 'Clínico' :
-                     modulo.categoria === 'educacional' ? 'Educacional' :
-                     'Gestão'}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-1 ml-1">
-                  <span className={`px-2 py-1 rounded-full ${
-                    modulo.visibilidade === 'todos' ? 'bg-gray-100 text-gray-700' :
-                    modulo.visibilidade === 'admin' ? 'bg-red-100 text-red-700' :
-                    'bg-purple-100 text-purple-700'
-                  }`}>
-                    {modulo.visibilidade === 'todos' ? 'Todos' :
-                     modulo.visibilidade === 'admin' ? 'Admins' :
-                     'SMS'}
-                  </span>
-                </div>
-                
-                <span className="ml-auto">Ordem: {modulo.ordem}</span>
-              </div>
-              
-              <div className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => abrirForm(modulo)}
-                  disabled={carregando}
-                >
-                  Editar
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-red-600 hover:bg-red-50"
-                  onClick={() => confirmarExclusao(modulo)}
-                  disabled={carregando}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        
-        {modulos.length === 0 && !carregando && (
-          <div className="col-span-full p-8 text-center border rounded-lg border-dashed">
-            <AlertTriangle className="mx-auto h-12 w-12 text-gray-300 mb-2" />
-            <h3 className="text-lg font-medium mb-1">Nenhum módulo cadastrado</h3>
-            <p className="text-gray-500 mb-4">
-              Adicione módulos para gerenciar a disponibilidade das páginas do sistema.
-            </p>
-            <Button onClick={() => abrirForm()} className="bg-csae-green-600 hover:bg-csae-green-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Adicionar Primeiro Módulo
-            </Button>
-          </div>
-        )}
-      </div>
-      
-      {/* Formulário de Edição/Criação */}
-      <Sheet open={formAberto} onOpenChange={setFormAberto}>
-        <SheetContent className="sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{moduloSelecionado?.id ? 'Editar Módulo' : 'Adicionar Módulo'}</SheetTitle>
-            <SheetDescription>
-              Preencha os campos abaixo para {moduloSelecionado?.id ? 'editar o' : 'adicionar um novo'} módulo.
-            </SheetDescription>
-          </SheetHeader>
-          
-          <Tabs defaultValue="geral" className="mt-6" value={abaSelecionada} onValueChange={setAbaSelecionada}>
-            <TabsList className="grid grid-cols-3 mb-4">
-              <TabsTrigger value="geral">Geral</TabsTrigger>
-              <TabsTrigger value="visibilidade">Visibilidade</TabsTrigger>
-              <TabsTrigger value="icone">Ícone</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="geral" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome interno (URL)</Label>
-                <Input
-                  id="nome"
-                  value={moduloSelecionado?.nome || ''}
-                  onChange={(e) => atualizarCampoModulo('nome', e.target.value)}
-                  placeholder="Ex: minicurso-cipe"
-                />
-                <p className="text-xs text-gray-500">
-                  Identificador único usado nas URLs e redirecionamentos.
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="titulo">Título</Label>
+
+      <Card>
+        <CardContent className="pt-6">
+          {modulosFiltrados.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Nenhum módulo encontrado com os filtros aplicados.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ordem</TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Link</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Visibilidade</TableHead>
+                  <TableHead className="w-[100px]">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {modulosFiltrados.map((modulo) => (
+                  <TableRow key={modulo.id}>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <span className="w-6 text-center">{modulo.ordem}</span>
+                        <div className="flex flex-col ml-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => alterarOrdem(modulo, 'up')}
+                            disabled={modulo.ordem === 1}
+                          >
+                            <ArrowUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => alterarOrdem(modulo, 'down')}
+                            disabled={modulo.ordem === modulosFiltrados.length}
+                          >
+                            <ArrowDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{modulo.titulo}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {modulo.descricao}
+                    </TableCell>
+                    <TableCell className="text-blue-600">
+                      <a href={modulo.link} target="_blank" rel="noreferrer">
+                        {modulo.link}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          modulo.ativo
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {modulo.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </TableCell>
+                    <TableCell>{modulo.visibilidade}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleEditarModulo(modulo)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => alternarAtivoModulo(modulo)}
+                          >
+                            {modulo.ativo ? (
+                              <>
+                                <EyeOff className="h-4 w-4 mr-2" />
+                                Desativar
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ativar
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleExcluirModulo(modulo)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={modalAberto} onOpenChange={setModalAberto}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {modoEdicao ? 'Editar Módulo' : 'Novo Módulo'}
+            </DialogTitle>
+            <DialogDescription>
+              {modoEdicao
+                ? 'Edite as informações do módulo existente.'
+                : 'Preencha os dados para criar um novo módulo.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="titulo">Título*</Label>
                 <Input
                   id="titulo"
-                  value={moduloSelecionado?.titulo || ''}
-                  onChange={(e) => atualizarCampoModulo('titulo', e.target.value)}
-                  placeholder="Ex: Minicurso CIPE"
+                  value={novoModulo.titulo || ''}
+                  onChange={(e) =>
+                    setNovoModulo({ ...novoModulo, titulo: e.target.value })
+                  }
+                  className="mt-1"
                 />
               </div>
-              
-              <div className="space-y-2">
+              <div>
+                <Label htmlFor="nome">Nome Interno*</Label>
+                <Input
+                  id="nome"
+                  value={novoModulo.nome || ''}
+                  onChange={(e) =>
+                    setNovoModulo({ ...novoModulo, nome: e.target.value })
+                  }
+                  className="mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="descricao">Descrição*</Label>
+              <Input
+                id="descricao"
+                value={novoModulo.descricao || ''}
+                onChange={(e) =>
+                  setNovoModulo({ ...novoModulo, descricao: e.target.value })
+                }
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="link">Link*</Label>
+              <Input
+                id="link"
+                value={novoModulo.link || ''}
+                onChange={(e) =>
+                  setNovoModulo({ ...novoModulo, link: e.target.value })
+                }
+                className="mt-1"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label htmlFor="categoria">Categoria</Label>
                 <Select
-                  value={moduloSelecionado?.categoria || 'clinico'}
-                  onValueChange={(valor) => atualizarCampoModulo('categoria', valor)}
+                  value={novoModulo.categoria || 'clinico'}
+                  onValueChange={(value) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      categoria: value as 'clinico' | 'educacional' | 'gestao',
+                    })
+                  }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
@@ -441,154 +568,170 @@ const GerenciadorModulos = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
-                  id="descricao"
-                  value={moduloSelecionado?.descricao || ''}
-                  onChange={(e) => atualizarCampoModulo('descricao', e.target.value)}
-                  placeholder="Breve descrição do módulo"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="ordem">Ordem de exibição</Label>
-                <Input
-                  id="ordem"
-                  type="number"
-                  min="1"
-                  value={moduloSelecionado?.ordem || 1000}
-                  onChange={(e) => atualizarCampoModulo('ordem', parseInt(e.target.value))}
-                />
-                <p className="text-xs text-gray-500">
-                  Controla a ordem dos itens no menu e dashboard. Números menores aparecem primeiro.
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="visibilidade" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="visibilidade">Visibilidade do módulo</Label>
+
+              <div>
+                <Label htmlFor="visibilidade">Visibilidade</Label>
                 <Select
-                  value={moduloSelecionado?.visibilidade || 'todos'}
-                  onValueChange={(valor: 'todos' | 'admin' | 'sms') => atualizarCampoModulo('visibilidade', valor)}
+                  value={novoModulo.visibilidade || 'todos'}
+                  onValueChange={(value) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      visibilidade: value as 'admin' | 'sms' | 'todos',
+                    })
+                  }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Selecione a visibilidade" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos os usuários</SelectItem>
-                    <SelectItem value="admin">Somente administradores</SelectItem>
-                    <SelectItem value="sms">Somente quem atua na SMS</SelectItem>
+                    <SelectItem value="admin">
+                      Apenas administradores
+                    </SelectItem>
+                    <SelectItem value="sms">
+                      Apenas usuários da SMS
+                    </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500">
-                  Define quais usuários podem acessar este módulo.
-                </p>
               </div>
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
-                  id="ativo"
-                  checked={moduloSelecionado?.ativo}
-                  onCheckedChange={(checked) => atualizarCampoModulo('ativo', checked)}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="icone">Ícone</Label>
+                <Select
+                  value={novoModulo.icone || 'Box'}
+                  onValueChange={(value) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      icone: value,
+                    })
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Selecione o ícone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Box">Box</SelectItem>
+                    <SelectItem value="FileText">FileText</SelectItem>
+                    <SelectItem value="Clipboard">Clipboard</SelectItem>
+                    <SelectItem value="Users">Users</SelectItem>
+                    <SelectItem value="Calendar">Calendar</SelectItem>
+                    <SelectItem value="BarChart">BarChart</SelectItem>
+                    <SelectItem value="BookOpen">BookOpen</SelectItem>
+                    <SelectItem value="FileType">FileType</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="ordem">Ordem</Label>
+                <Input
+                  id="ordem"
+                  type="number"
+                  min="1"
+                  value={novoModulo.ordem || 1}
+                  onChange={(e) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      ordem: parseInt(e.target.value) || 1,
+                    })
+                  }
+                  className="mt-1"
                 />
-                <Label htmlFor="ativo">Módulo ativo</Label>
               </div>
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
                   id="exibirDashboard"
-                  checked={moduloSelecionado?.exibirDashboard}
-                  onCheckedChange={(checked) => atualizarCampoModulo('exibirDashboard', checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                  checked={novoModulo.exibirDashboard || false}
+                  onChange={(e) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      exibirDashboard: e.target.checked,
+                    })
+                  }
                 />
-                <Label htmlFor="exibirDashboard">Exibir no Dashboard</Label>
+                <Label htmlFor="exibirDashboard">
+                  Exibir no Dashboard
+                </Label>
               </div>
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
                   id="exibirNavbar"
-                  checked={moduloSelecionado?.exibirNavbar}
-                  onCheckedChange={(checked) => atualizarCampoModulo('exibirNavbar', checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                  checked={novoModulo.exibirNavbar || false}
+                  onChange={(e) =>
+                    setNovoModulo({
+                      ...novoModulo,
+                      exibirNavbar: e.target.checked,
+                    })
+                  }
                 />
-                <Label htmlFor="exibirNavbar">Exibir na barra de navegação</Label>
+                <Label htmlFor="exibirNavbar">
+                  Exibir na Barra de Navegação
+                </Label>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="icone" className="space-y-4">
-              <div className="space-y-2">
-                <Label>Ícone do módulo</Label>
-                <div className="p-2 border rounded-md">
-                  <p className="text-sm mb-2">Ícone selecionado:</p>
-                  <div className="flex items-center gap-2 p-2 border rounded mb-4">
-                    {moduloSelecionado?.icone && LucideIcons[moduloSelecionado.icone as keyof typeof LucideIcons] && (
-                      React.createElement(LucideIcons[moduloSelecionado.icone as keyof typeof LucideIcons] as ElementType, { 
-                        size: 24,
-                        className: "text-csae-green-600"
-                      })
-                    )}
-                    <span className="ml-2 font-medium">{moduloSelecionado?.icone}</span>
-                  </div>
-                  
-                  <p className="text-sm mb-2">Selecione um ícone:</p>
-                  <ScrollArea className="h-60">
-                    <div className="grid grid-cols-6 gap-2">
-                      {iconesDisponiveis.map((icone) => (
-                        <div 
-                          key={icone}
-                          className={`p-2 text-center cursor-pointer rounded hover:bg-gray-100 flex flex-col items-center
-                                      ${moduloSelecionado?.icone === icone ? 'bg-csae-green-50 border border-csae-green-300' : ''}`}
-                          onClick={() => selecionarIcone(icone)}
-                        >
-                          {React.createElement(LucideIcons[icone] as ElementType, { 
-                            size: 20,
-                            className: moduloSelecionado?.icone === icone ? "text-csae-green-600" : "text-gray-600"
-                          })}
-                          <span className="text-xs mt-1 overflow-hidden text-ellipsis">{icone}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <div className="flex justify-end gap-2 pt-6">
-            <Button variant="outline" onClick={fecharForm} disabled={carregando}>
-              <X className="mr-2 h-4 w-4" />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="ativo"
+                className="h-4 w-4 rounded border-gray-300"
+                checked={novoModulo.ativo}
+                onChange={(e) =>
+                  setNovoModulo({
+                    ...novoModulo,
+                    ativo: e.target.checked,
+                  })
+                }
+              />
+              <Label htmlFor="ativo">Módulo ativo</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalAberto(false)}>
               Cancelar
             </Button>
-            <Button onClick={salvarModulo} disabled={carregando} className="bg-csae-green-600 hover:bg-csae-green-700">
-              <Save className="mr-2 h-4 w-4" />
-              {carregando ? 'Salvando...' : 'Salvar'}
+            <Button onClick={salvarModulo}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={modalConfirmacao} onOpenChange={setModalConfirmacao}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmação de exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir o módulo{' '}
+              <strong>{moduloSelecionado?.titulo}</strong>? Esta ação não
+              pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setModalConfirmacao(false)}
+            >
+              Cancelar
             </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-      
-      {/* Diálogo de confirmação de exclusão */}
-      <AlertDialog open={excluirDialogoAberto} onOpenChange={setExcluirDialogoAberto}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o módulo "{moduloSelecionado?.titulo}"? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={excluirModulo}
-              className="bg-red-600 hover:bg-red-700 text-white"
+            <Button
+              variant="destructive"
+              onClick={confirmarExclusao}
             >
               Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

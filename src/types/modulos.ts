@@ -14,3 +14,10 @@ export interface ModuloDisponivel {
   exibirNavbar?: boolean;
   linkAcesso?: string;
 }
+
+export interface ModuloDashboard extends Omit<ModuloDisponivel, 'nome' | 'link'> {
+  id: string;
+  dataCadastro: any;
+  dataAtualizacao: any;
+  linkAcesso: string;
+}

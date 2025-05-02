@@ -27,7 +27,7 @@ export function NavigationMenu({ activeItem }: NavigationMenuProps) {
         if (usuario) {
           // Use buscarModulosAtivos
           const modulosDisponiveis = await buscarModulosAtivos();
-          setModulos(modulosDisponiveis);
+          setModulos(modulosDisponiveis as ModuloDisponivel[]);
         }
       } catch (error) {
         console.error("Erro ao carregar módulos:", error);

@@ -19,7 +19,7 @@ const GerenciamentoEnfermagem = () => {
       <div className="flex flex-col min-h-screen">
         <Header />
         
-        <NavigationMenu activeItem="gerenciamento" />
+        <NavigationMenu />
 
         <main className="container mx-auto py-8 flex-grow px-4">
           <h1 className="text-3xl font-semibold text-csae-green-700 mb-6">

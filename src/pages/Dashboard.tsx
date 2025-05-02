@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,12 @@ import { ptBR } from 'date-fns/locale';
 import * as LucideIcons from 'lucide-react';
 import { AlertCircle, Users, AlertTriangle, Info, LayoutDashboard, ArrowRight, Calendar, BookOpen, Clipboard, FileText, FileType } from 'lucide-react';
 import { ComponentType } from 'react';
-import { ModuloDashboard } from '@/services/bancodados/modulosDB';
+import { ModuloDisponivel } from '@/types/modulos';
 
 const Dashboard: React.FC = () => {
   const { toast } = useToast();
   const { usuario, verificarAdmin } = useAutenticacao();
-  const [visibleModules, setVisibleModules] = useState<ModuloDashboard[]>([]);
+  const [visibleModules, setVisibleModules] = useState<ModuloDisponivel[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +28,7 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       try {
         const modules = await buscarModulosAtivos();
-        setVisibleModules(modules);
+        setVisibleModules(modules as ModuloDisponivel[]);
       } catch (error) {
         console.error("Erro ao carregar módulos:", error);
         toast({
@@ -190,7 +191,7 @@ const Dashboard: React.FC = () => {
                       <CardContent className="pb-2"></CardContent>
                       <CardFooter>
                         <Button asChild className="w-full">
-                          <Link to={`/${module.titulo}`}>
+                          <Link to={module.link}>
                             <ArrowRight className="mr-2 h-4 w-4" />
                             Acessar
                           </Link>
