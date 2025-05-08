@@ -58,3 +58,6 @@ export interface ValorReferencia {
   titulo?: string;
   condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
 }
+
+// Import the SubconjuntoDiagnostico interface from diagnósticos
+export { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';

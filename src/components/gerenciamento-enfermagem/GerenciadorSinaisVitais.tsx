@@ -67,23 +67,19 @@ import {
   SinalVital,
   SubconjuntoDiagnostico,
   DiagnosticoCompleto,
-} from "@/services/bancodados/tipos";
+} from "@/types/sinais-vitais";
 import { useForm } from "react-hook-form";
 
 const GerenciadorSinaisVitais = () => {
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
-  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>(
-    []
-  );
+  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
-  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<
-    DiagnosticoCompleto[]
-  >([]);
+  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
 
   // Estado para o formulário
   const [formSinal, setFormSinal] = useState<SinalVital>({
@@ -204,6 +200,21 @@ const GerenciadorSinaisVitais = () => {
     });
     setEditandoId(sinal.id || null);
     setModalAberto(true);
+    
+    // Resetar os diagnósticos filtrados quando abre o modal de edição
+    setDiagnosticosFiltrados([]);
+    setNhbSelecionada(null);
+    
+    // Para cada valor de referência, se tiver nhbId, precisamos carregar os diagnósticos correspondentes
+    valoresAtualizados.forEach(valor => {
+      if (valor.nhbId) {
+        const diagnosticosDaNhb = diagnosticos.filter(d => d.subconjuntoId === valor.nhbId);
+        if (diagnosticosDaNhb.length > 0) {
+          setDiagnosticosFiltrados(diagnosticosDaNhb);
+          setNhbSelecionada(valor.nhbId);
+        }
+      }
+    });
   };
 
   // Adicionar valor de referência
@@ -283,6 +294,10 @@ const GerenciadorSinaisVitais = () => {
       delete novosValores[index].tituloAlteracao;
       delete novosValores[index].nhbId;
       delete novosValores[index].diagnosticoId;
+      
+      // Resetar os estados relacionados
+      setNhbSelecionada(null);
+      setDiagnosticosFiltrados([]);
     }
 
     setFormSinal({
@@ -306,6 +321,10 @@ const GerenciadorSinaisVitais = () => {
       ...formSinal,
       valoresReferencia: novosValores,
     });
+    
+    // Filtrar diagnósticos para a NHB selecionada
+    const diagnosticosDaNhb = diagnosticos.filter(d => d.subconjuntoId === nhbId);
+    setDiagnosticosFiltrados(diagnosticosDaNhb);
   };
 
   // Atualizar diagnóstico selecionado
@@ -930,7 +949,7 @@ const GerenciadorSinaisVitais = () => {
                                   2. Selecione um Diagnóstico
                                 </Label>
                                 <Select
-                                  value={valor.diagnosticoId ?? undefined}
+                                  value={valor.diagnosticoId ?? ""}
                                   onValueChange={(v) =>
                                     handleDiagnosticoChange(index, v)
                                   }
@@ -948,7 +967,7 @@ const GerenciadorSinaisVitais = () => {
                                           key={diag.id}
                                           value={diag.id!}
                                         >
-                                          {diag.descricao}
+                                          {diag.nome || diag.descricao}
                                         </SelectItem>
                                       ))}
                                     {diagnosticos.filter(
