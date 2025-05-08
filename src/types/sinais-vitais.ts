@@ -27,8 +27,8 @@ export interface AlteracaoSinalVital {
   valorReferencia?: string;
   nhbId?: string;
   diagnosticoId?: string;
-  // Adding missing properties that are needed in components
-  unidade?: string;
+  // Making unidade required to match ValorReferencia interface
+  unidade: string;
   representaAlteracao?: boolean;
   variacaoPor?: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
   tipoValor?: 'Numérico' | 'Texto';
@@ -61,4 +61,3 @@ export interface ValorReferencia {
 
 // Import the SubconjuntoDiagnostico interface from diagnósticos
 export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
-

@@ -499,7 +499,7 @@ const GerenciadorDiagnosticos = () => {
     return subconjunto ? subconjunto.tipo : 'Desconhecido';
   };
   
-  // Fix the type issue by restricting the function to only accept 'NHB' or 'Protocolo'
+  // Fixed function to properly restrict the parameter type
   const handleSubconjuntoTipoChange = (tipo: 'NHB' | 'Protocolo') => {
     setTipoSubconjuntoSelecionado(tipo);
   };

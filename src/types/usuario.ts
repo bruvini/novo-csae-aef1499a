@@ -31,7 +31,7 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
-  usuario: any; // This needs to be explicitly defined to match usage in Dashboard.tsx
+  usuario: any; // Adding this property to match usage in Dashboard.tsx
 }
 
 // Histórico de acessos
