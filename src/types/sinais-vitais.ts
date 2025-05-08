@@ -60,4 +60,5 @@ export interface ValorReferencia {
 }
 
 // Import the SubconjuntoDiagnostico interface from diagnósticos
-export { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
+export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
+
