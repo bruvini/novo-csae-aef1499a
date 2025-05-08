@@ -29,7 +29,7 @@ export interface AlteracaoSinalVital {
   diagnosticoId?: string;
   // Making unidade required to match ValorReferencia interface
   unidade: string;
-  representaAlteracao?: boolean;
+  representaAlteracao: boolean; // Making this required to match ValorReferencia
   variacaoPor?: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
   tipoValor?: 'Numérico' | 'Texto';
   tituloAlteracao?: string;
