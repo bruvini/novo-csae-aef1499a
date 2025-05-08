@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -28,8 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Edit, Trash2, Check, X, HelpCircle } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -44,19 +42,14 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip';
+import ValorReferenciaCard from './sinais-vitais/ValorReferenciaCard';
 import { 
   ValorReferencia, 
   RevisaoSistema, 
   SistemaCorporal, 
   SubconjuntoDiagnostico, 
   DiagnosticoCompleto 
-} from '@/services/bancodados/tipos';
+} from '@/types/sinais-vitais';
 
 const GerenciadorRevisaoSistemas = () => {
   const { toast } = useToast();
@@ -164,7 +157,8 @@ const GerenciadorRevisaoSistemas = () => {
   // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
     if (nhbSelecionada) {
-      const filtrados = diagnosticos.filter(d => d.subitemId === nhbSelecionada);
+      // Correção: filtrar pelo subconjuntoId em vez de subitemId
+      const filtrados = diagnosticos.filter(d => d.subconjuntoId === nhbSelecionada);
       setDiagnosticosFiltrados(filtrados);
     } else {
       setDiagnosticosFiltrados([]);
@@ -319,12 +313,12 @@ const GerenciadorRevisaoSistemas = () => {
   
   const abrirModalEditarParametro = (parametro: RevisaoSistema) => {
     // Garantir que todos os valores de referência tenham os novos campos
-    const valoresAtualizados = parametro.valoresReferencia.map(valor => ({
+    const valoresAtualizados = parametro.valoresReferencia ? parametro.valoresReferencia.map(valor => ({
       ...valor,
       representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
       variacaoPor: valor.variacaoPor || 'Nenhum',
       tipoValor: valor.tipoValor || 'Numérico'
-    }));
+    })) : [];
 
     setFormParametro({
       ...parametro,
@@ -332,6 +326,12 @@ const GerenciadorRevisaoSistemas = () => {
     });
     setEditandoParametroId(parametro.id || null);
     setModalParametroAberto(true);
+    
+    // Se houver um nhbId em algum valor de referência, selecionar para carregar os diagnósticos
+    const valorComNhb = valoresAtualizados.find(v => v.nhbId);
+    if (valorComNhb && valorComNhb.nhbId) {
+      setNhbSelecionada(valorComNhb.nhbId);
+    }
   };
   
   // Função para atualizar o sistema selecionado
@@ -843,43 +843,17 @@ const GerenciadorRevisaoSistemas = () => {
               </div>
               
               {formParametro.valoresReferencia.map((valor, index) => (
-                <Card key={index} className="p-4">
-                  <div className="grid gap-3">
-                    <div className="flex justify-between">
-                      <h4 className="font-medium">Valor de Referência #{index + 1}</h4>
-                      {formParametro.valoresReferencia.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removerValorReferencia(index)}
-                          className="h-7 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {/* Tipo de valor: Numérico ou Textual */}
-                    <div className="grid gap-2">
-                      <Label>O valor é numérico ou textual?</Label>
-                      <RadioGroup 
-                        value={valor.tipoValor || 'Numérico'} 
-                        onValueChange={(v: 'Numérico' | 'Texto') => atualizarValorReferencia(index, 'tipoValor', v)}
-                        className="flex space-x-4"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Numérico" id={`numerico-${index}`} />
-                          <Label htmlFor={`numerico-${index}`}>Numérico</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Texto" id={`texto-${index}`} />
-                          <Label htmlFor={`texto-${index}`}>Textual</Label>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </div>
-                </Card>
+                <ValorReferenciaCard
+                  key={index}
+                  valor={valor}
+                  index={index}
+                  removerValorReferencia={removerValorReferencia}
+                  atualizarValorReferencia={atualizarValorReferencia}
+                  handleNhbChange={handleNhbChange}
+                  handleDiagnosticoChange={handleDiagnosticoChange}
+                  subconjuntos={subconjuntos}
+                  diagnosticosFiltrados={diagnosticosFiltrados}
+                />
               ))}
             </div>
           </div>
