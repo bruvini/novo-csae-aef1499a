@@ -30,8 +30,8 @@ export interface AlteracaoSinalVital {
   // Making unidade required to match ValorReferencia interface
   unidade: string;
   representaAlteracao: boolean; // Making this required to match ValorReferencia
-  variacaoPor?: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
-  tipoValor?: 'Numérico' | 'Texto';
+  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos'; // Making this required to match ValorReferencia
+  tipoValor: 'Numérico' | 'Texto'; // Making this required to match ValorReferencia
   tituloAlteracao?: string;
   valorTexto?: string;
   idadeMinima?: number;
