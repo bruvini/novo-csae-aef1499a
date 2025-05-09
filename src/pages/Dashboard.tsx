@@ -23,6 +23,7 @@ import MainFooter from '@/components/MainFooter';
 import * as LucideIcons from "lucide-react";
 import { SessaoUsuario } from '@/types/usuario';
 import { NPSPopup } from '@/components/dashboard/NPSPopup';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -153,12 +154,7 @@ const Dashboard = () => {
   // Show loading spinner while modules are being loaded
   if (carregando) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
-        <div className="flex flex-col items-center gap-4">
-          <Loader className="h-12 w-12 animate-spin text-csae-green-600" />
-          <p className="text-lg font-medium text-csae-green-700">Carregando recursos...</p>
-        </div>
-      </div>
+      <LoadingOverlay />
     );
   }
 

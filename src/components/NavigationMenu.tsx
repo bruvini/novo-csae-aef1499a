@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useAutenticacao } from "@/services/autenticacao";
 import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
 import { ModuloDisponivel } from "@/types/modulos";
+import { Loader } from "lucide-react";
 
 interface NavigationMenuComponentProps {
   activeItem?: string;
@@ -87,7 +88,7 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
     carregarModulosAtivos();
   }, []);
 
-  // Lista de itens de menu fixos e essenciais
+  // Lista de itens de menu essenciais (não são módulos controlados pelo banco de dados)
   const menuItemsFixos: MenuItem[] = [
     {
       id: "home",
@@ -95,56 +96,6 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
       icon: LucideIcons.Home,
       href: "/dashboard",
       adminOnly: false,
-    },
-    {
-      id: "processo-enfermagem",
-      title: "Processo de Enfermagem",
-      icon: LucideIcons.ClipboardCheck,
-      href: "/processo-enfermagem",
-      adminOnly: false,
-    },
-    {
-      id: "protocolos",
-      title: "Protocolos de Enfermagem",
-      icon: LucideIcons.BookOpen,
-      href: "/protocolos",
-      adminOnly: false,
-    },
-    {
-      id: "pops",
-      title: "POPs",
-      icon: LucideIcons.FileText,
-      href: "/pops",
-      adminOnly: false,
-      moduloNome: "pops"
-    },
-    {
-      id: "timeline",
-      title: "Nossa História",
-      icon: LucideIcons.Clock,
-      href: "/timeline",
-      adminOnly: false,
-    },
-    {
-      id: "gerenciamento-enfermagem",
-      title: "Gerenciamento de Conteúdos",
-      icon: LucideIcons.Settings,
-      href: "/gerenciamento-enfermagem",
-      adminOnly: true,
-    },
-    {
-      id: "sugestoes",
-      title: "Sugestões",
-      icon: LucideIcons.Lightbulb,
-      href: "/sugestoes",
-      adminOnly: false,
-    },
-    {
-      id: "gestao-usuarios",
-      title: "Gestão de Usuários",
-      icon: LucideIcons.Users,
-      href: "/gestao-usuarios",
-      adminOnly: true,
     },
   ];
 
@@ -171,14 +122,21 @@ const NavigationMenuComponent: React.FC<NavigationMenuComponentProps> = ({
   });
 
   if (carregando) {
-    return null;
+    return (
+      <div className="sticky top-0 z-10 w-full bg-white border-b border-csae-green-100 shadow-sm">
+        <div className="container mx-auto py-3 flex justify-center">
+          <Loader className="h-5 w-5 animate-spin text-csae-green-600" />
+          <span className="ml-2 text-csae-green-600">Carregando menu...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="sticky top-0 z-10 w-full bg-white border-b border-csae-green-100 shadow-sm">
       <div className="container mx-auto overflow-x-auto">
         <NavigationMenu className="py-1 max-w-full justify-start">
-          <NavigationMenuList className="flex-nowrap">
+          <NavigationMenuList className="flex-nowrap overflow-x-auto pb-1">
             {filteredMenuItems.map((item) => (
               <NavigationMenuItem key={item.id}>
                 <NavigationMenuLink asChild>

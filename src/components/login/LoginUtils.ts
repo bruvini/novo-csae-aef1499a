@@ -2,7 +2,7 @@
 import { useToast } from "@/hooks/use-toast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/services/firebase";
-import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { buscarUsuarioPorUid } from "@/services/bancodados/";
 import { useNavigate } from "react-router-dom";
 
 export const useLoginHandler = () => {
@@ -60,7 +60,9 @@ export const useLoginHandler = () => {
             description: "Bem-vindo de volta!",
           });
           // Redirect to dashboard on successful login
-          navigate("/dashboard");
+          setTimeout(() => {
+            navigate("/dashboard");
+          }, 500);
           return { success: true, registrarAtivo: false, error: null };
         }
       } catch (error: any) {

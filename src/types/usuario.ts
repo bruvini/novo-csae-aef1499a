@@ -31,7 +31,10 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
-  usuario: any; // This property is needed for Dashboard.tsx
+  usuario: {
+    atuaSMS?: boolean;
+    [key: string]: any;
+  };
 }
 
 // Histórico de acessos
