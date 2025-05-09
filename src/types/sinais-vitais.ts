@@ -1,63 +1,42 @@
 
 import { Timestamp } from "firebase/firestore";
 
-// Sinal Vitais
+export interface ValorReferencia {
+  min?: number;
+  max?: number;
+  descricao?: string;
+}
+
 export interface SinalVital {
   id?: string;
   nome: string;
-  abreviacao?: string;
-  unidade: string;
-  valorMinimo?: number;
-  valorMaximo?: number;
-  ordem?: number;
   descricao?: string;
-  ativo: boolean;
-  diferencaSexoIdade?: boolean;
-  valoresReferencia?: AlteracaoSinalVital[];
-  alteracoes?: AlteracaoSinalVital[];
-}
-
-export interface AlteracaoSinalVital {
-  id?: string;
-  titulo: string;
-  descricao?: string;
-  condicao: 'abaixo' | 'acima' | 'entre' | 'igual';
-  valorMinimo?: number;
-  valorMaximo?: number;
+  tipo: 'textual' | 'numerico';
+  unidade?: string;
   valorReferencia?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
-  // Making unidade required to match ValorReferencia interface
-  unidade: string;
-  representaAlteracao: boolean; // Making this required to match ValorReferencia
-  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos'; // Making this required to match ValorReferencia
-  tipoValor: 'Numérico' | 'Texto'; // Making this required to match ValorReferencia
-  tituloAlteracao?: string;
-  valorTexto?: string;
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  sexo?: 'Todos' | 'Masculino' | 'Feminino';
+  valoresReferencia?: ValorReferencia[];
+  criadoPor?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
 }
 
-// Interface for ValorReferencia (used in components)
-export interface ValorReferencia {
+export interface SistemaCorporal {
   id?: string;
-  unidade: string;
-  representaAlteracao: boolean;
-  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
-  tipoValor: 'Numérico' | 'Texto';
-  valorMinimo?: number;
-  valorMaximo?: number;
-  valorTexto?: string;
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  sexo?: 'Todos' | 'Masculino' | 'Feminino';
-  tituloAlteracao?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
-  titulo?: string;
-  condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
+  nome: string;
+  descricao?: string;
+  criadoPor?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
 }
 
-// Import the SubconjuntoDiagnostico interface from diagnósticos
-export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
+export interface RevisaoSistema {
+  id?: string;
+  nome: string;
+  sistemaCorporalId: string;
+  tipo: 'textual' | 'numerico';
+  unidade?: string;
+  valorReferencia?: string;
+  criadoPor?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
+}

@@ -12,6 +12,7 @@ import { ListaPacientes } from '@/components/processo-enfermagem/ListaPacientes'
 import { CadastrarPacienteModal } from '@/components/processo-enfermagem/CadastrarPacienteModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Paciente, buscarPacientesPorProfissional } from '@/services/bancodados';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 const ProcessoEnfermagem = () => {
   const { usuario, obterSessao } = useAutenticacao();
@@ -102,6 +103,8 @@ const ProcessoEnfermagem = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      {loading && <LoadingOverlay message="Carregando pacientes..." />}
+      
       <Header />
       <NavigationMenu activeItem="processo-enfermagem" />
       
@@ -123,11 +126,8 @@ const ProcessoEnfermagem = () => {
                   <Play size={48} />
                 </Button>
                 <h2 className="text-xl font-semibold text-center text-csae-green-700 mb-4">
-                  Iniciar uma evolução ou dar continuidade
+                  Iniciar uma consulta ou dar continuidade
                 </h2>
-                <p className="text-gray-600 text-center mb-6">
-                  Clique no botão acima para iniciar uma nova evolução ou continuar uma já existente.
-                </p>
                 <Button
                   onClick={() => setCadastrarModalOpen(true)}
                   className="bg-csae-green-600 hover:bg-csae-green-700"

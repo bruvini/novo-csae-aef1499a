@@ -4,28 +4,21 @@ import { Timestamp } from "firebase/firestore";
 export interface Intervencao {
   id?: string;
   titulo: string;
-  definicao?: string;
-  codigoCipe?: string;
-  diagnosticoIds: string[];
-  atividades?: string[];
-  ativo: boolean;
-  verboPrimeiraEnfermeiro?: string;
-  verboOutraPessoa?: string;
-  descricaoRestante?: string;
-  intervencaoEnfermeiro?: string;
-  intervencaoInfinitivo?: string;
-  nomeDocumento?: string;
-  linkDocumento?: string;
+  descricao: string;
+  resultado?: string; 
+  diagnosticoId?: string;
+  criadoPor?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
 }
 
 export interface ResultadoEsperado {
   id?: string;
-  titulo?: string;
+  titulo: string;
   descricao: string;
-  definicao?: string;
-  codigoCipe?: string;
-  diagnosticoIds?: string[];
-  indicadores?: string[];
-  ativo?: boolean;
-  intervencoes: Intervencao[];
+  diagnosticoId?: string;
+  intervencoes?: Intervencao[];
+  criadoPor?: string;
+  criadoEm?: Timestamp;
+  atualizadoEm?: Timestamp;
 }
