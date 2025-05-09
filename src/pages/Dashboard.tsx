@@ -73,6 +73,7 @@ const Dashboard = () => {
   const [modulosInativos, setModulosInativos] = useState<ModuloDisponivel[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [atuaSMS, setAtuaSMS] = useState(false);
+
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao?.nomeUsuario) {
@@ -88,20 +89,29 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Erro ao verificar atuaSMS:", error);
     }
+    
     const checkAccessCount = async () => {
       if (sessao?.uid) {
-        const acessos = await obterHistoricoAcessos(sessao.uid);
-        const count = acessos.length;
-        setAccessCount(count);
+        try {
+          // Obter o histórico de acessos para contar
+          const acessos = await obterHistoricoAcessos(sessao.uid);
+          const count = acessos.length;
+          setAccessCount(count);
 
-        // Check if access count is a multiple of 5 to show NPS popup
-        if (count > 0 && count % 5 === 0) {
-          setShowNPSPopup(true);
+          // Check if access count is a multiple of 5 to show NPS popup
+          // Mostrar pesquisa NPS a cada 5 acessos
+          if (count > 0 && count % 5 === 0) {
+            setShowNPSPopup(true);
+          }
+        } catch (error) {
+          console.error("Erro ao verificar quantidade de acessos:", error);
         }
       }
     };
+    
     checkAccessCount();
   }, [obterSessao]);
+
   useEffect(() => {
     const carregarModulos = async () => {
       setCarregando(true);

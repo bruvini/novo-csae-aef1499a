@@ -13,7 +13,9 @@ import {
 } from './evolucoesDB';
 import {
   registrarAcesso,
-  obterHistoricoAcessos
+  obterHistoricoAcessos,
+  obterTotalAcessos,
+  obterUltimosAcessosTodosUsuarios
 } from './logAcessosDB';
 
 // Re-export all types from the types directory
@@ -38,5 +40,7 @@ export {
   
   // Log de acessos
   registrarAcesso,
-  obterHistoricoAcessos
+  obterHistoricoAcessos,
+  obterTotalAcessos,
+  obterUltimosAcessosTodosUsuarios
 };

@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { buscarUsuarioPorUid } from "@/services/bancodados/";
 import { useNavigate } from "react-router-dom";
+import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
 
 export const useLoginHandler = () => {
   const { toast } = useToast();
@@ -55,6 +56,16 @@ export const useLoginHandler = () => {
         }
         
         if (usuarioFirestore.statusAcesso === "Aprovado") {
+          // Log this access in the database
+          await registrarAcesso(
+            usuarioFirestore.uid,
+            usuarioFirestore.dadosPessoais.nomeCompleto,
+            usuarioFirestore.email,
+            "login",
+            "Login realizado com sucesso",
+            "sistema"
+          );
+          
           toast({
             title: "Acesso liberado",
             description: "Bem-vindo de volta!",

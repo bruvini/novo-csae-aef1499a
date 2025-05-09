@@ -19,6 +19,7 @@ export interface UsuarioAutenticado {
   };
   dataCriacao?: Timestamp;
   ultimoAcesso?: Timestamp;
+  contadorAcessos?: number;
   id?: string;
 }
 
@@ -33,6 +34,7 @@ export interface SessaoUsuario {
   statusAcesso?: string;
   usuario: {
     atuaSMS?: boolean;
+    contadorAcessos?: number;
     [key: string]: any;
   };
 }
