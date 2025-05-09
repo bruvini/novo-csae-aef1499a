@@ -55,6 +55,7 @@ const LoginForm = () => {
     setRegistrarAtivo(false);
     
     const result = await realizarLogin(email, password);
+    
     // Use the correct property names from the result object
     const success = result.success || false;
     // Use optional chaining to safely check for error message

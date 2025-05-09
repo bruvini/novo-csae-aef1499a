@@ -1,13 +1,13 @@
 
-// Add export for realizarLogin function that matches the interface used in LoginForm.tsx
 import { useToast } from "@/hooks/use-toast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
-import { User } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 export const useLoginHandler = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const login = async (email: string, password: string) => {
     try {
@@ -59,6 +59,8 @@ export const useLoginHandler = () => {
             title: "Acesso liberado",
             description: "Bem-vindo de volta!",
           });
+          // Redirect to dashboard on successful login
+          navigate("/dashboard");
           return { success: true, registrarAtivo: false, error: null };
         }
       } catch (error: any) {

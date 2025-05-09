@@ -12,7 +12,7 @@ import {
   ClipboardCheck, FileText, Bandage, BookOpen, Newspaper, 
   Lightbulb, Info, HelpCircle, GraduationCap, Baby, 
   ArrowRight, MessageSquare, Settings, BarChart, Users, User,
-  AlertCircle
+  AlertCircle, Loader
 } from 'lucide-react';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 import { buscarModulosDisponiveis } from '@/services/bancodados/modulosDB';
@@ -22,6 +22,7 @@ import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
 import * as LucideIcons from "lucide-react";
 import { SessaoUsuario } from '@/types/usuario';
+import { NPSPopup } from '@/components/dashboard/NPSPopup';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -56,11 +57,12 @@ const moduloIconMap: Record<string, React.ElementType> = {
 };
 
 const Dashboard = () => {
-  const { obterSessao, usuario } = useAutenticacao();
+  const { obterSessao } = useAutenticacao();
   const { toast } = useToast();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showNPSPopup, setShowNPSPopup] = useState(false);
   const [accessCount, setAccessCount] = useState(0);
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   const [modulosAtivos, setModulosAtivos] = useState<ModuloDisponivel[]>([]);
@@ -85,19 +87,20 @@ const Dashboard = () => {
     }
 
     const checkAccessCount = async () => {
-      if (usuario?.uid) {
-        const acessos = await obterHistoricoAcessos(usuario.uid);
+      if (sessao?.uid) {
+        const acessos = await obterHistoricoAcessos(sessao.uid);
         const count = acessos.length;
         setAccessCount(count);
         
+        // Check if access count is a multiple of 5 to show NPS popup
         if (count > 0 && count % 5 === 0) {
-          setShowFeedback(true);
+          setShowNPSPopup(true);
         }
       }
     };
 
     checkAccessCount();
-  }, [obterSessao, usuario]);
+  }, [obterSessao]);
 
   useEffect(() => {
     const carregarModulos = async () => {
@@ -147,12 +150,31 @@ const Dashboard = () => {
   const modulosParaDashboard = filtrarModulosPorVisibilidade(modulosAtivos)
     .filter(modulo => modulo.exibirNoDashboard !== false);
 
+  // Show loading spinner while modules are being loaded
+  if (carregando) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader className="h-12 w-12 animate-spin text-csae-green-600" />
+          <p className="text-lg font-medium text-csae-green-700">Carregando recursos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
 
-      {showFeedback && usuario && (
+      {showFeedback && sessao && (
         <FeedbackPopup />
+      )}
+
+      {showNPSPopup && (
+        <NPSPopup 
+          onClose={() => setShowNPSPopup(false)}
+          accessCount={accessCount}
+        />
       )}
 
       <motion.main
@@ -205,18 +227,18 @@ const Dashboard = () => {
                         variant="outline"
                         className="border-csae-green-300 text-csae-green-700 hover:bg-csae-green-50 group"
                       >
-                        Deixar uma sugest��o
+                        Deixar uma sugestão
                         <MessageSquare className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-[-2px]" />
                       </Button>
                     </Link>
                   </div>
                 </motion.div>
               </div>
-              <div className="md:w-[40%] p-4 flex items-center justify-center">
+              <div className="md:w-[40%] bg-csae-green-100 flex items-center justify-center p-0">
                 <img
                   src="/lovable-uploads/a3616818-d7e5-4c43-bcf2-e813b28f2a1e.png"
                   alt="Enfermeira com laptop mostrando o Portal CSAE"
-                  className="w-full h-auto object-contain max-h-64"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
