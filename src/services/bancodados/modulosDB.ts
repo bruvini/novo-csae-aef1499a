@@ -46,11 +46,19 @@ export const buscarModulosAtivos = async (): Promise<ModuloDisponivel[]> => {
 // Adicionar novo módulo
 export const adicionarModulo = async (modulo: Omit<ModuloDisponivel, 'id' | 'createdAt' | 'updatedAt'>): Promise<string | null> => {
   try {
-    const docRef = await addDoc(collection(db, 'modulosDisponiveis'), {
+    // Garantir valores padrão para os novos campos
+    const moduloCompleto = {
       ...modulo,
+      slug: modulo.slug || `/${modulo.nome}`,
+      icone: modulo.icone || 'FileText',
+      visibilidade: modulo.visibilidade || 'todos',
+      exibirNoDashboard: modulo.exibirNoDashboard !== undefined ? modulo.exibirNoDashboard : true,
+      exibirNavbar: modulo.exibirNavbar !== undefined ? modulo.exibirNavbar : true,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    const docRef = await addDoc(collection(db, 'modulosDisponiveis'), moduloCompleto);
     
     return docRef.id;
   } catch (error) {
@@ -87,19 +95,27 @@ export const removerModulo = async (id: string): Promise<boolean> => {
   }
 };
 
-// Verificar se módulo está ativo
-export const verificarModuloAtivo = async (nome: string): Promise<boolean> => {
+// Verificar se módulo está ativo e sua visibilidade
+export const verificarModuloAtivo = async (nome: string): Promise<{ativo: boolean, visibilidade: 'todos' | 'admin' | 'sms'}> => {
   try {
     const q = query(
       collection(db, 'modulosDisponiveis'),
-      where('nome', '==', nome),
-      where('ativo', '==', true)
+      where('nome', '==', nome)
     );
     
     const querySnapshot = await getDocs(q);
-    return !querySnapshot.empty;
+    
+    if (querySnapshot.empty) {
+      return { ativo: false, visibilidade: 'todos' }; 
+    }
+    
+    const modulo = querySnapshot.docs[0].data() as ModuloDisponivel;
+    return {
+      ativo: modulo.ativo,
+      visibilidade: modulo.visibilidade || 'todos'
+    };
   } catch (error) {
     console.error(`Erro ao verificar módulo ${nome}:`, error);
-    return false; // Em caso de erro, consideramos o módulo como inativo
+    return { ativo: false, visibilidade: 'todos' }; // Em caso de erro, consideramos o módulo como inativo
   }
 };

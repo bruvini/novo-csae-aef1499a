@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Edit, Trash2, Filter, Plus } from 'lucide-react';
-import { Subconjunto } from '@/services/bancodados/tipos';
+import { Subconjunto } from '@/types/diagnosticos';
 
 interface SubconjuntoTabProps {
   filtroTipoSubconjunto: 'todos' | 'Protocolo' | 'NHB';
@@ -36,8 +36,8 @@ const SubconjuntoTab = ({
   filtroTipoSubconjunto,
   setFiltroTipoSubconjunto,
   carregando,
-  subconjuntos,
-  diagnosticos,
+  subconjuntos = [], // Provide default empty array
+  diagnosticos = [], // Provide default empty array
   abrirModalCriarSubconjunto,
   abrirModalEditarSubconjunto,
   excluirSubconjunto,
@@ -45,6 +45,10 @@ const SubconjuntoTab = ({
   
   // Filtrar subconjuntos baseado no tipo selecionado
   const getSubconjuntosFiltrados = () => {
+    if (!Array.isArray(subconjuntos)) {
+      return [];
+    }
+    
     if (filtroTipoSubconjunto === 'todos') {
       return subconjuntos;
     } else {
@@ -104,7 +108,9 @@ const SubconjuntoTab = ({
             </TableHeader>
             <TableBody>
               {getSubconjuntosFiltrados().map((subconjunto) => {
-                const diagnosticosDoSubconjunto = diagnosticos.filter(d => d.subconjuntoId === subconjunto.id);
+                const diagnosticosDoSubconjunto = Array.isArray(diagnosticos) 
+                  ? diagnosticos.filter(d => d.subconjuntoId === subconjunto.id)
+                  : [];
                 return (
                   <TableRow key={subconjunto.id}>
                     <TableCell className="font-medium">{subconjunto.nome}</TableCell>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
@@ -13,7 +12,7 @@ import {
   ClipboardCheck, FileText, Bandage, BookOpen, Newspaper, 
   Lightbulb, Info, HelpCircle, GraduationCap, Baby, 
   ArrowRight, MessageSquare, Settings, BarChart, Users, User,
-  AlertCircle
+  AlertCircle, Loader
 } from 'lucide-react';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 import { buscarModulosDisponiveis } from '@/services/bancodados/modulosDB';
@@ -21,6 +20,10 @@ import { ModuloDisponivel } from '@/types/modulos';
 import { FeedbackPopup } from '@/components/dashboard/FeedbackPopup';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';
+import * as LucideIcons from "lucide-react";
+import { SessaoUsuario } from '@/types/usuario';
+import { NPSPopup } from '@/components/dashboard/NPSPopup';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -42,8 +45,7 @@ const itemVariants = {
   },
 };
 
-// Mapeamento de ícones por nome do módulo
-const moduleIconMap: Record<string, React.ElementType> = {
+const moduloIconMap: Record<string, React.ElementType> = {
   "processo-enfermagem": ClipboardCheck,
   "pops": FileText,
   "feridas": Bandage,
@@ -53,42 +55,53 @@ const moduleIconMap: Record<string, React.ElementType> = {
   "timeline": Info,
   "faq": HelpCircle,
   "minicurso-cipe": GraduationCap,
-  "acompanhamento-perinatal": Baby,
 };
 
 const Dashboard = () => {
-  const { obterSessao, usuario } = useAutenticacao();
+  const { obterSessao } = useAutenticacao();
   const { toast } = useToast();
   const sessao = obterSessao();
   const [userName, setUserName] = useState<string>("");
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showNPSPopup, setShowNPSPopup] = useState(false);
   const [accessCount, setAccessCount] = useState(0);
   const [modulos, setModulos] = useState<ModuloDisponivel[]>([]);
   const [modulosAtivos, setModulosAtivos] = useState<ModuloDisponivel[]>([]);
   const [modulosInativos, setModulosInativos] = useState<ModuloDisponivel[]>([]);
   const [carregando, setCarregando] = useState(true);
-
+  const [atuaSMS, setAtuaSMS] = useState(false);
+  
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao?.nomeUsuario) {
       const firstName = sessao.nomeUsuario.split(" ")[0];
       setUserName(firstName);
     }
+    
+    // Verificar se usuário atua na SMS
+    try {
+      if (sessao && sessao.usuario) {
+        setAtuaSMS(!!sessao.usuario.atuaSMS);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar atuaSMS:", error);
+    }
 
     const checkAccessCount = async () => {
-      if (usuario?.uid) {
-        const acessos = await obterHistoricoAcessos(usuario.uid);
+      if (sessao?.uid) {
+        const acessos = await obterHistoricoAcessos(sessao.uid);
         const count = acessos.length;
         setAccessCount(count);
         
+        // Check if access count is a multiple of 5 to show NPS popup
         if (count > 0 && count % 5 === 0) {
-          setShowFeedback(true);
+          setShowNPSPopup(true);
         }
       }
     };
 
     checkAccessCount();
-  }, [obterSessao, usuario]);
+  }, [obterSessao]);
 
   useEffect(() => {
     const carregarModulos = async () => {
@@ -118,12 +131,46 @@ const Dashboard = () => {
     carregarModulos();
   }, [toast]);
 
+  // Filtrar módulos com base na visibilidade e permissões do usuário
+  const filtrarModulosPorVisibilidade = (modulos: ModuloDisponivel[]) => {
+    const isAdmin = sessao?.tipoUsuario === "Administrador";
+    
+    return modulos.filter(modulo => {
+      // Administradores podem ver tudo
+      if (isAdmin) return true;
+      
+      // Verificar regras de visibilidade
+      if (modulo.visibilidade === 'admin') return false;
+      if (modulo.visibilidade === 'sms' && !atuaSMS) return false;
+      
+      return true;
+    });
+  };
+  
+  // Filtrar módulos para exibição no dashboard
+  const modulosParaDashboard = filtrarModulosPorVisibilidade(modulosAtivos)
+    .filter(modulo => modulo.exibirNoDashboard !== false);
+
+  // Show loading spinner while modules are being loaded
+  if (carregando) {
+    return (
+      <LoadingOverlay />
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
 
-      {showFeedback && usuario && (
+      {showFeedback && sessao && (
         <FeedbackPopup />
+      )}
+
+      {showNPSPopup && (
+        <NPSPopup 
+          onClose={() => setShowNPSPopup(false)}
+          accessCount={accessCount}
+        />
       )}
 
       <motion.main
@@ -183,11 +230,11 @@ const Dashboard = () => {
                   </div>
                 </motion.div>
               </div>
-              <div className="md:w-[40%] p-4 flex items-center justify-center">
+              <div className="md:w-[40%] bg-csae-green-100 flex items-center justify-center p-0">
                 <img
                   src="/lovable-uploads/a3616818-d7e5-4c43-bcf2-e813b28f2a1e.png"
                   alt="Enfermeira com laptop mostrando o Portal CSAE"
-                  className="w-full h-auto object-contain max-h-64"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
@@ -307,7 +354,6 @@ const Dashboard = () => {
               <TabsTrigger value="educational">Educacionais</TabsTrigger>
               <TabsTrigger value="management">Gestão</TabsTrigger>
               
-              {/* Mostrar a aba de atualizações futuras apenas se houver módulos inativos */}
               {(modulosInativos.length > 0 || carregando) && (
                 <TabsTrigger value="coming-soon">
                   Atualizações Futuras{" "}
@@ -327,64 +373,11 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {modulosAtivos
+                {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "clinico" || modulo.categoria === "educacional" || modulo.categoria === "gestao")
                   .map((modulo) => (
                     <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
-                
-                {/* Ferramentas fixas do sistema que não passam pelo controle de módulos */}
-                <ModuloCard 
-                  key="processo-enfermagem"
-                  modulo={{
-                    id: "processo-enfermagem",
-                    nome: "processo-enfermagem",
-                    titulo: "Processo de Enfermagem",
-                    descricao: "Acesse e gerencie os processos de enfermagem",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="protocolos"
-                  modulo={{
-                    id: "protocolos",
-                    nome: "protocolos",
-                    titulo: "Protocolos de Enfermagem",
-                    descricao: "Consulte os protocolos vigentes",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="timeline"
-                  modulo={{
-                    id: "timeline",
-                    nome: "timeline",
-                    titulo: "Nossa História",
-                    descricao: "Conheça nossa comissão e a história do CSAE",
-                    categoria: "educacional",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="sugestoes"
-                  modulo={{
-                    id: "sugestoes",
-                    nome: "sugestoes",
-                    titulo: "Sugestões",
-                    descricao: "Compartilhe suas ideias conosco",
-                    categoria: "gestao",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
               </motion.div>
             </TabsContent>
 
@@ -395,38 +388,11 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {modulosAtivos
+                {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "clinico")
                   .map((modulo) => (
                     <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
-                
-                {/* Ferramentas clínicas fixas */}
-                <ModuloCard 
-                  key="processo-enfermagem"
-                  modulo={{
-                    id: "processo-enfermagem",
-                    nome: "processo-enfermagem",
-                    titulo: "Processo de Enfermagem",
-                    descricao: "Acesse e gerencie os processos de enfermagem",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
-                
-                <ModuloCard 
-                  key="protocolos"
-                  modulo={{
-                    id: "protocolos",
-                    nome: "protocolos",
-                    titulo: "Protocolos de Enfermagem",
-                    descricao: "Consulte os protocolos vigentes",
-                    categoria: "clinico",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
               </motion.div>
             </TabsContent>
 
@@ -437,25 +403,11 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {modulosAtivos
+                {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "educacional")
                   .map((modulo) => (
                     <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
-                
-                {/* Ferramentas educacionais fixas */}
-                <ModuloCard 
-                  key="timeline"
-                  modulo={{
-                    id: "timeline",
-                    nome: "timeline",
-                    titulo: "Nossa História",
-                    descricao: "Conheça nossa comissão e a história do CSAE",
-                    categoria: "educacional",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
               </motion.div>
             </TabsContent>
 
@@ -466,25 +418,11 @@ const Dashboard = () => {
                 animate="visible"
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {modulosAtivos
+                {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "gestao")
                   .map((modulo) => (
                     <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
                   ))}
-                
-                {/* Ferramentas de gestão fixas */}
-                <ModuloCard 
-                  key="sugestoes"
-                  modulo={{
-                    id: "sugestoes",
-                    nome: "sugestoes",
-                    titulo: "Sugestões",
-                    descricao: "Compartilhe suas ideias conosco",
-                    categoria: "gestao",
-                    ativo: true
-                  }}
-                  isAdmin={sessao?.tipoUsuario === "Administrador"}
-                />
               </motion.div>
             </TabsContent>
             
@@ -525,7 +463,14 @@ const Dashboard = () => {
 
 // Card para módulos ativos
 const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: boolean }) => {
-  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+  // Função para renderizar ícones dinamicamente
+  const renderIcon = () => {
+    if (!modulo.icone) return <FileText className="h-6 w-6" />;
+    
+    // @ts-ignore - Ignorar erro de tipagem para acessar dinamicamente os ícones
+    const IconComponent = LucideIcons[modulo.icone] || LucideIcons.FileText;
+    return <IconComponent className="h-6 w-6" />;
+  };
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
@@ -538,7 +483,7 @@ const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: bo
 
   return (
     <motion.div variants={itemVariants}>
-      <Link to={`/${modulo.nome}`}>
+      <Link to={modulo.slug || `/${modulo.nome}`}>
         <HoverCard>
           <HoverCardTrigger asChild>
             <Card className="h-full bg-white hover:bg-csae-green-50 transition-all duration-300 hover:shadow-md group cursor-pointer border-transparent hover:border-csae-green-200">
@@ -546,7 +491,7 @@ const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: bo
                 <div
                   className={`rounded-full w-12 h-12 ${color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}
                 >
-                  <IconComponent className="h-6 w-6" />
+                  {renderIcon()}
                 </div>
                 <CardTitle className="text-lg text-csae-green-700 group-hover:text-csae-green-800">
                   {modulo.titulo}
@@ -589,7 +534,14 @@ const ModuloCard = ({ modulo, isAdmin }: { modulo: ModuloDisponivel, isAdmin: bo
 
 // Card para módulos inativos (em desenvolvimento)
 const ModuloInativoCard = ({ modulo }: { modulo: ModuloDisponivel }) => {
-  const IconComponent = moduleIconMap[modulo.nome] || Settings;
+  // Função para renderizar ícones dinamicamente
+  const renderIcon = () => {
+    if (!modulo.icone) return <FileText className="h-6 w-6" />;
+    
+    // @ts-ignore - Ignorar erro de tipagem para acessar dinamicamente os ícones
+    const IconComponent = LucideIcons[modulo.icone] || LucideIcons.FileText;
+    return <IconComponent className="h-6 w-6" />;
+  };
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
@@ -607,7 +559,7 @@ const ModuloInativoCard = ({ modulo }: { modulo: ModuloDisponivel }) => {
           <div
             className={`rounded-full w-12 h-12 ${color} flex items-center justify-center mb-3 opacity-70`}
           >
-            <IconComponent className="h-6 w-6" />
+            {renderIcon()}
           </div>
           <CardTitle className="text-lg text-gray-600 flex items-center">
             {modulo.titulo}

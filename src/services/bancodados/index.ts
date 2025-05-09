@@ -15,23 +15,10 @@ import {
   registrarAcesso,
   obterHistoricoAcessos
 } from './logAcessosDB';
-import {
-  cadastrarPacientePerinatal,
-  buscarPacientesPerinatalPorProfissional,
-  atualizarPacientePerinatal,
-  excluirPacientePerinatal,
-  buscarPacientePerinatalPorId,
-  registrarConsultaPreNatal,
-  buscarConsultasPreNatalPorPaciente,
-  registrarConsultaPuerperio,
-  buscarConsultasPuerperioPorPaciente,
-  registrarConsultaPuericultura,
-  buscarConsultasPuericulturaPorPaciente,
-  registrarNascimentoBebe
-} from './perinatalDB';
 
-// Re-exportar todos os tipos e funções
-export * from './tipos';
+// Re-export all types from the types directory
+export * from '../../types';
+
 export {
   // Usuários
   verificarUsuarioExistente,
@@ -51,19 +38,5 @@ export {
   
   // Log de acessos
   registrarAcesso,
-  obterHistoricoAcessos,
-  
-  // Acompanhamento Perinatal
-  cadastrarPacientePerinatal,
-  buscarPacientesPerinatalPorProfissional,
-  atualizarPacientePerinatal,
-  excluirPacientePerinatal,
-  buscarPacientePerinatalPorId,
-  registrarConsultaPreNatal,
-  buscarConsultasPreNatalPorPaciente,
-  registrarConsultaPuerperio,
-  buscarConsultasPuerperioPorPaciente,
-  registrarConsultaPuericultura,
-  buscarConsultasPuericulturaPorPaciente,
-  registrarNascimentoBebe
+  obterHistoricoAcessos
 };

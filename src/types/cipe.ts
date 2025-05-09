@@ -1,24 +1,36 @@
 
 import { Timestamp } from "firebase/firestore";
 
+// CIPE related interfaces
 export interface TermoCipe {
-  id: string;
+  id?: string;
   termo: string;
-  tipo: "foco" | "julgamento" | "meio" | "acao" | "tempo" | "localizacao" | "cliente";
-  codigo: string;
-  definicao: string;
+  tipo?: string;
+  descricao?: string;
+  conceito?: string;
+  eixo?: string;
+  codigo?: string;
+  ativo?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface CasoClinico {
   id?: string;
+  titulo: string;
+  descricao: string;
+  termosCipe: string[];
+  ativo: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  tipoCaso: string;
   casoClinico: string;
-  tipoCaso: "diagnostico" | "intervencao";
   focoEsperado: string | null;
   julgamentoEsperado: string | null;
   meioEsperado: string | null;
   acaoEsperado: string | null;
+  tempoEsperado: string | null;
   localizacaoEsperado: string | null;
   clienteEsperado: string | null;
-  tempoEsperado: string | null;
-  arrayVencedor?: string[];
+  arrayVencedor: string[];
 }

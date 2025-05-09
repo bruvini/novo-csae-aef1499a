@@ -9,15 +9,18 @@ import GerenciadorExamesLaboratoriais from '@/components/gerenciamento-enfermage
 import GerenciadorRevisaoSistemas from '@/components/gerenciamento-enfermagem/GerenciadorRevisaoSistemas';
 import GerenciadorDiagnosticos from '@/components/gerenciamento-enfermagem/GerenciadorDiagnosticos';
 import GerenciadorProtocolos from '@/components/gerenciamento-enfermagem/GerenciadorProtocolos';
-import GerenciadorCIPE from '@/components/gerenciamento-enfermagem/GerenciadorCIPE';
 import GerenciadorModulos from '@/components/gerenciamento-enfermagem/GerenciadorModulos';
 import GerenciadorPOPs from '@/components/gerenciamento-enfermagem/GerenciadorPOPs';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 const GerenciamentoEnfermagem = () => {
   const [activeTab, setActiveTab] = useState("sinais-vitais");
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen">
+      {loading && <LoadingOverlay />}
+      
       <Header />
       <NavigationMenu activeItem="gerenciamento-enfermagem" />
       
@@ -27,16 +30,17 @@ const GerenciamentoEnfermagem = () => {
         </h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-1 md:grid-cols-8 mb-6">
-            <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
-            <TabsTrigger value="exames-laboratoriais">Exames Laboratoriais</TabsTrigger>
-            <TabsTrigger value="revisao-sistemas">Revisão de Sistemas</TabsTrigger>
-            <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
-            <TabsTrigger value="protocolos">Protocolos de Enfermagem</TabsTrigger>
-            <TabsTrigger value="cipe">CIPE</TabsTrigger>
-            <TabsTrigger value="pops">POPs</TabsTrigger>
-            <TabsTrigger value="modulos">Módulos</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto pb-2">
+            <TabsList className="inline-flex min-w-max">
+              <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
+              <TabsTrigger value="exames-laboratoriais">Exames Laboratoriais</TabsTrigger>
+              <TabsTrigger value="revisao-sistemas">Revisão de Sistemas</TabsTrigger>
+              <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
+              <TabsTrigger value="protocolos">Protocolos de Enfermagem</TabsTrigger>
+              <TabsTrigger value="pops">POPs</TabsTrigger>
+              <TabsTrigger value="modulos">Módulos</TabsTrigger>
+            </TabsList>
+          </div>
           
           <TabsContent value="sinais-vitais">
             <GerenciadorSinaisVitais />
@@ -56,10 +60,6 @@ const GerenciamentoEnfermagem = () => {
 
           <TabsContent value="protocolos">
             <GerenciadorProtocolos />
-          </TabsContent>
-
-          <TabsContent value="cipe">
-            <GerenciadorCIPE />
           </TabsContent>
 
           <TabsContent value="pops">

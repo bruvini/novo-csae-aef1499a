@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -126,7 +125,8 @@ const GerenciadorExamesLaboratoriais = () => {
   // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
     if (nhbSelecionada) {
-      const filtrados = diagnosticos.filter(d => d.subitemId === nhbSelecionada);
+      // Atualização: filtrar pelo subconjuntoId e não pelo subitemId
+      const filtrados = diagnosticos.filter(d => d.subconjuntoId === nhbSelecionada);
       setDiagnosticosFiltrados(filtrados);
     } else {
       setDiagnosticosFiltrados([]);
@@ -775,7 +775,7 @@ const GerenciadorExamesLaboratoriais = () => {
                                     {diagnosticosFiltrados.length > 0 ? (
                                       diagnosticosFiltrados.map((diag) => (
                                         <SelectItem key={diag.id} value={diag.id!}>
-                                          {diag.descricao}
+                                          {diag.nome || diag.descricao}
                                         </SelectItem>
                                       ))
                                     ) : (

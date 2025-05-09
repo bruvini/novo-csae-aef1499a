@@ -84,7 +84,7 @@ const GerenciadorEixoCipe: React.FC<GerenciadorEixoCipeProps> = ({ eixo, arrayNa
     if (searchTerm) {
       const filtered = termos.filter(termo => 
         termo.termo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        termo.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+        (termo.descricao?.toLowerCase() || '').includes(searchTerm.toLowerCase())
       );
       setFilteredTermos(filtered);
     } else {
@@ -105,14 +105,18 @@ const GerenciadorEixoCipe: React.FC<GerenciadorEixoCipeProps> = ({ eixo, arrayNa
         if (data[arrayName] && Array.isArray(data[arrayName])) {
           // Mapear cada item do array para incluir o ID do documento
           data[arrayName].forEach((item: any) => {
-            termosData.push({
+            const termoData: TermoCipe = {
               id: doc.id + '_' + item.termo, // ID composto para identificação única
-              tipo: item[tipoField] || '',
               termo: item[termoField] || '',
+              tipo: item[tipoField] || '',
               descricao: item[descricaoField] || '',
+              eixo: eixo,
+              codigo: '',
+              ativo: true,
               createdAt: item.createdAt,
               updatedAt: item.updatedAt
-            });
+            };
+            termosData.push(termoData);
           });
         }
       });

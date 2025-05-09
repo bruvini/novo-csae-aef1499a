@@ -1,271 +1,297 @@
+
 import React, { useState, useEffect } from 'react';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from '@/components/ui/tabs';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import { ResultadoEsperado, Intervencao, Subconjunto, DiagnosticoCompleto } from '@/services/bancodados/tipos';
-import SubconjuntoTab from './diagnosticos/SubconjuntoTab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DiagnosticosTab from './diagnosticos/DiagnosticosTab';
+import SubconjuntoTab from './diagnosticos/SubconjuntoTab';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import { collection, getDocs, doc, deleteDoc, addDoc, updateDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/services/firebase';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { DiagnosticoCompleto, Subconjunto } from '@/types/diagnosticos';
 import FormSubconjunto from './diagnosticos/FormSubconjunto';
 import FormDiagnostico from './diagnosticos/FormDiagnostico';
 import DiagnosticoVisualizer from './diagnosticos/DiagnosticoVisualizer';
-import { castFieldValueToTimestamp } from '@/utils/firebaseHelpers';
 
 const GerenciadorDiagnosticos = () => {
-  const { toast } = useToast();
+  const [carregando, setCarregando] = useState<boolean>(true);
   const [subconjuntos, setSubconjuntos] = useState<Subconjunto[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
-  const [carregando, setCarregando] = useState(true);
-  const [activeTab, setActiveTab] = useState("subconjuntos");
-  
   const [filtroTipoSubconjunto, setFiltroTipoSubconjunto] = useState<'todos' | 'Protocolo' | 'NHB'>('todos');
-  const [filtroSubconjunto, setFiltroSubconjunto] = useState<string>('');
-  const [filtroDiagnostico, setFiltroDiagnostico] = useState<string>('');
-  const [termoBusca, setTermoBusca] = useState('');
+  const [filtroSubconjunto, setFiltroSubconjunto] = useState<string>("");
+  const [filtroDiagnostico, setFiltroDiagnostico] = useState<string>("");
+  const [termoBusca, setTermoBusca] = useState<string>("");
+  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'NHB' | 'Protocolo'>('NHB');
   
-  const [modalSubconjunto, setModalSubconjunto] = useState(false);
-  const [modalDiagnostico, setModalDiagnostico] = useState(false);
-  const [modalVisualizarDiagnostico, setModalVisualizarDiagnostico] = useState(false);
-  const [editandoSubconjuntoId, setEditandoSubconjuntoId] = useState<string | null>(null);
-  const [editandoDiagnosticoId, setEditandoDiagnosticoId] = useState<string | null>(null);
-  const [diagnosticoParaVisualizar, setDiagnosticoParaVisualizar] = useState<DiagnosticoCompleto | null>(null);
-  
+  // Modal states
+  const [modalSubconjuntoAberto, setModalSubconjuntoAberto] = useState<boolean>(false);
+  const [modalDiagnosticoAberto, setModalDiagnosticoAberto] = useState<boolean>(false);
+  const [modalVisualizarDiagnosticoAberto, setModalVisualizarDiagnosticoAberto] = useState<boolean>(false);
+  const [editandoSubconjunto, setEditandoSubconjunto] = useState<boolean>(false);
+  const [editandoDiagnostico, setEditandoDiagnostico] = useState<boolean>(false);
   const [formSubconjunto, setFormSubconjunto] = useState<Subconjunto>({
-    nome: '',
-    tipo: 'Protocolo',
-    descricao: ''
+    nome: "",
+    tipo: "NHB",
+    descricao: "",
+    ativo: true
   });
-  
-  const emptyResultado: ResultadoEsperado = {
-    descricao: '',
-    intervencoes: [{
-      verboPrimeiraEnfermeiro: '',
-      verboOutraPessoa: '',
-      descricaoRestante: '',
-      nomeDocumento: '',
-      linkDocumento: ''
-    }]
-  };
-  
   const [formDiagnostico, setFormDiagnostico] = useState<DiagnosticoCompleto>({
-    nome: '',
-    explicacao: '',
-    subconjuntoId: '',
-    subconjunto: 'Protocolo de Enfermagem',
-    subitemNome: '',
-    resultadosEsperados: [{ ...emptyResultado }]
+    nome: "",
+    subconjuntoId: "",
+    resultadosEsperados: [{
+      titulo: "",
+      intervencoes: [{
+        titulo: "",
+        descricao: ""
+      }]
+    }]
   });
-  
-  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'Protocolo' | 'NHB'>('Protocolo');
-  const [subconjuntosFiltrados, setSubconjuntosFiltrados] = useState<Subconjunto[]>([]);
-  
+  const [diagnosticoVisualizar, setDiagnosticoVisualizar] = useState<DiagnosticoCompleto | null>(null);
+
+  // Fetch data on load
   useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        const subconjuntosRef = collection(db, 'subconjuntosDiagnosticos');
-        const subconjuntosSnapshot = await getDocs(subconjuntosRef);
-        const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Subconjunto[];
-        setSubconjuntos(subconjuntosData);
-        
-        const diagnosticosRef = collection(db, 'diagnosticosEnfermagem');
-        const diagnosticosSnapshot = await getDocs(diagnosticosRef);
-        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as DiagnosticoCompleto[];
-        setDiagnosticos(diagnosticosData);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        toast({
-          title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os subconjuntos e diagnósticos.",
-          variant: "destructive"
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    setCarregando(true);
+    try {
+      // Fetch subconjuntos
+      const subconjuntosSnapshot = await getDocs(collection(db, "subconjuntosDiagnosticos"));
+      const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Subconjunto[];
+      
+      // Fetch diagnósticos
+      const diagnosticosSnapshot = await getDocs(collection(db, "diagnosticosEnfermagem"));
+      const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as DiagnosticoCompleto[];
+      
+      setSubconjuntos(subconjuntosData);
+      setDiagnosticos(diagnosticosData);
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      toast.error("Erro ao carregar os dados. Por favor, tente novamente.");
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Utility functions
+  const getNomeSubconjunto = (id: string) => {
+    const subconjunto = subconjuntos.find(s => s.id === id);
+    return subconjunto ? subconjunto.nome : "Desconhecido";
+  };
+
+  const getTipoSubconjunto = (id: string) => {
+    const subconjunto = subconjuntos.find(s => s.id === id);
+    return subconjunto ? subconjunto.tipo : "Desconhecido";
+  };
+
+  // Modal handlers for Subconjuntos
+  const abrirModalCriarSubconjunto = () => {
+    setFormSubconjunto({
+      nome: "",
+      tipo: tipoSubconjuntoSelecionado,
+      descricao: "",
+      ativo: true
+    });
+    setEditandoSubconjunto(false);
+    setModalSubconjuntoAberto(true);
+  };
+
+  const abrirModalEditarSubconjunto = (subconjunto: Subconjunto) => {
+    setFormSubconjunto({...subconjunto});
+    setEditandoSubconjunto(true);
+    setModalSubconjuntoAberto(true);
+  };
+
+  const salvarSubconjunto = async () => {
+    if (!formSubconjunto.nome.trim()) {
+      toast.error("O nome do subconjunto é obrigatório.");
+      return;
+    }
+
+    setCarregando(true);
+    try {
+      if (editandoSubconjunto && formSubconjunto.id) {
+        // Update existing
+        await updateDoc(doc(db, "subconjuntosDiagnosticos", formSubconjunto.id), {
+          ...formSubconjunto,
+          updatedAt: Timestamp.now()
         });
+        toast.success("Subconjunto atualizado com sucesso!");
+      } else {
+        // Create new
+        await addDoc(collection(db, "subconjuntosDiagnosticos"), {
+          ...formSubconjunto,
+          createdAt: Timestamp.now(),
+          ativo: true
+        });
+        toast.success("Subconjunto cadastrado com sucesso!");
+      }
+      
+      setModalSubconjuntoAberto(false);
+      await carregarDados();
+      
+    } catch (error) {
+      console.error("Erro ao salvar subconjunto:", error);
+      toast.error("Erro ao salvar o subconjunto. Por favor, tente novamente.");
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const excluirSubconjunto = async (id: string) => {
+    // Check if there are any diagnostics linked to this subconjunto
+    const diagnosticosVinculados = diagnosticos.filter(d => d.subconjuntoId === id);
+    if (diagnosticosVinculados.length > 0) {
+      toast.error("Não é possível excluir um subconjunto que possui diagnósticos vinculados.");
+      return;
+    }
+    
+    if (window.confirm("Tem certeza que deseja excluir este subconjunto?")) {
+      setCarregando(true);
+      try {
+        await deleteDoc(doc(db, "subconjuntosDiagnosticos", id));
+        toast.success("Subconjunto excluído com sucesso!");
+        await carregarDados();
+      } catch (error) {
+        console.error("Erro ao excluir subconjunto:", error);
+        toast.error("Erro ao excluir o subconjunto. Por favor, tente novamente.");
       } finally {
         setCarregando(false);
       }
-    };
-    
-    carregarDados();
-  }, [toast]);
-  
-  useEffect(() => {
-    if (tipoSubconjuntoSelecionado) {
-      const filtrados = subconjuntos.filter(s => s.tipo === tipoSubconjuntoSelecionado);
-      filtrados.sort((a, b) => a.nome.localeCompare(b.nome));
-      setSubconjuntosFiltrados(filtrados);
-    } else {
-      setSubconjuntosFiltrados([]);
-    }
-  }, [tipoSubconjuntoSelecionado, subconjuntos]);
-  
-  const abrirModalCriarSubconjunto = () => {
-    setFormSubconjunto({
-      nome: '',
-      tipo: 'Protocolo',
-      descricao: ''
-    });
-    setEditandoSubconjuntoId(null);
-    setModalSubconjunto(true);
-  };
-  
-  const abrirModalEditarSubconjunto = (subconjunto: Subconjunto) => {
-    setFormSubconjunto({...subconjunto});
-    setEditandoSubconjuntoId(subconjunto.id || null);
-    setModalSubconjunto(true);
-  };
-  
-  const salvarSubconjunto = async () => {
-    try {
-      if (!formSubconjunto.nome.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Nome do subconjunto é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (editandoSubconjuntoId) {
-        const subconjuntoRef = doc(db, 'subconjuntosDiagnosticos', editandoSubconjuntoId);
-        const firestoreTimestamp = serverTimestamp();
-        
-        await updateDoc(subconjuntoRef, {
-          ...formSubconjunto,
-          updatedAt: castFieldValueToTimestamp(firestoreTimestamp)
-        });
-        
-        toast({
-          title: "Subconjunto atualizado",
-          description: `${formSubconjunto.nome} foi atualizado com sucesso.`
-        });
-        
-        setSubconjuntos(prevSubconjuntos => {
-          return prevSubconjuntos.map(s => {
-            if (s.id === editandoSubconjuntoId) {
-              return { 
-                ...formSubconjunto, 
-                id: editandoSubconjuntoId,
-                updatedAt: castFieldValueToTimestamp(firestoreTimestamp)
-              };
-            }
-            return s;
-          });
-        });
-      } else {
-        const firestoreTimestamp = serverTimestamp();
-        const novoSubconjunto = {
-          ...formSubconjunto,
-          createdAt: castFieldValueToTimestamp(firestoreTimestamp),
-          updatedAt: castFieldValueToTimestamp(firestoreTimestamp)
-        };
-        
-        const docRef = await addDoc(collection(db, 'subconjuntosDiagnosticos'), novoSubconjunto);
-        
-        toast({
-          title: "Subconjunto criado",
-          description: `${formSubconjunto.nome} foi criado com sucesso.`
-        });
-        
-        setSubconjuntos(prevSubconjuntos => [
-          ...prevSubconjuntos, 
-          {
-            ...novoSubconjunto, 
-            id: docRef.id
-          }
-        ]);
-      }
-      
-      setModalSubconjunto(false);
-    } catch (error) {
-      console.error("Erro ao salvar subconjunto:", error);
-      toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o subconjunto.",
-        variant: "destructive"
-      });
     }
   };
-  
-  const excluirSubconjunto = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este subconjunto? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'subconjuntosDiagnosticos', id));
-        
-        toast({
-          title: "Subconjunto excluído",
-          description: "O subconjunto foi excluído com sucesso."
-        });
-        
-        setSubconjuntos(prev => prev.filter(s => s.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir subconjunto:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o subconjunto.",
-          variant: "destructive"
-        });
-      }
-    }
-  };
-  
+
+  // Modal handlers for Diagnósticos
   const abrirModalCriarDiagnostico = () => {
-    setTipoSubconjuntoSelecionado('Protocolo');
-    
     setFormDiagnostico({
-      nome: '',
-      explicacao: '',
-      subconjuntoId: '',
-      subconjunto: 'Protocolo de Enfermagem',
-      subitemNome: '',
-      resultadosEsperados: [{ ...emptyResultado }]
+      nome: "",
+      subconjuntoId: "",
+      resultadosEsperados: [{
+        titulo: "",
+        intervencoes: [{
+          titulo: "",
+          descricao: ""
+        }]
+      }]
     });
-    
-    setEditandoDiagnosticoId(null);
-    setModalDiagnostico(true);
+    setEditandoDiagnostico(false);
+    setModalDiagnosticoAberto(true);
   };
-  
+
   const abrirModalEditarDiagnostico = (diagnostico: DiagnosticoCompleto) => {
     const subconjunto = subconjuntos.find(s => s.id === diagnostico.subconjuntoId);
     if (subconjunto) {
-      setTipoSubconjuntoSelecionado(subconjunto.tipo);
+      setTipoSubconjuntoSelecionado(subconjunto.tipo as 'NHB' | 'Protocolo');
     }
-    
     setFormDiagnostico({...diagnostico});
-    setEditandoDiagnosticoId(diagnostico.id || null);
-    setModalDiagnostico(true);
+    setEditandoDiagnostico(true);
+    setModalDiagnosticoAberto(true);
   };
-  
+
   const abrirModalVisualizarDiagnostico = (diagnostico: DiagnosticoCompleto) => {
-    setDiagnosticoParaVisualizar(diagnostico);
-    setModalVisualizarDiagnostico(true);
+    setDiagnosticoVisualizar(diagnostico);
+    setModalVisualizarDiagnosticoAberto(true);
   };
-  
+
+  const salvarDiagnostico = async () => {
+    if (!formDiagnostico.nome.trim()) {
+      toast.error("O nome do diagnóstico é obrigatório.");
+      return;
+    }
+
+    if (!formDiagnostico.subconjuntoId) {
+      toast.error("É obrigatório selecionar um subconjunto.");
+      return;
+    }
+
+    // Validate resultados esperados
+    for (let i = 0; i < formDiagnostico.resultadosEsperados.length; i++) {
+      const resultado = formDiagnostico.resultadosEsperados[i];
+      if (!resultado.titulo.trim()) {
+        toast.error(`O título do resultado esperado ${i+1} é obrigatório.`);
+        return;
+      }
+
+      // Validate intervenções
+      for (let j = 0; j < resultado.intervencoes.length; j++) {
+        const intervencao = resultado.intervencoes[j];
+        if (!intervencao.titulo.trim()) {
+          toast.error(`O título da intervenção ${j+1} no resultado esperado ${i+1} é obrigatório.`);
+          return;
+        }
+      }
+    }
+
+    setCarregando(true);
+    try {
+      if (editandoDiagnostico && formDiagnostico.id) {
+        // Update existing
+        await updateDoc(doc(db, "diagnosticosEnfermagem", formDiagnostico.id), {
+          ...formDiagnostico,
+          updatedAt: Timestamp.now()
+        });
+        toast.success("Diagnóstico atualizado com sucesso!");
+      } else {
+        // Create new
+        await addDoc(collection(db, "diagnosticosEnfermagem"), {
+          ...formDiagnostico,
+          createdAt: Timestamp.now(),
+          ativo: true
+        });
+        toast.success("Diagnóstico cadastrado com sucesso!");
+      }
+      
+      setModalDiagnosticoAberto(false);
+      await carregarDados();
+      
+    } catch (error) {
+      console.error("Erro ao salvar diagnóstico:", error);
+      toast.error("Erro ao salvar o diagnóstico. Por favor, tente novamente.");
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const excluirDiagnostico = async (id: string) => {
+    if (window.confirm("Tem certeza que deseja excluir este diagnóstico?")) {
+      setCarregando(true);
+      try {
+        await deleteDoc(doc(db, "diagnosticosEnfermagem", id));
+        toast.success("Diagnóstico excluído com sucesso!");
+        await carregarDados();
+      } catch (error) {
+        console.error("Erro ao excluir diagnóstico:", error);
+        toast.error("Erro ao excluir o diagnóstico. Por favor, tente novamente.");
+      } finally {
+        setCarregando(false);
+      }
+    }
+  };
+
+  // ResultadoEsperado handlers
   const adicionarResultadoEsperado = () => {
     setFormDiagnostico({
       ...formDiagnostico,
       resultadosEsperados: [
         ...formDiagnostico.resultadosEsperados,
-        { ...emptyResultado }
+        {
+          titulo: "",
+          intervencoes: [{
+            titulo: "",
+            descricao: ""
+          }]
+        }
       ]
     });
   };
-  
+
   const removerResultadoEsperado = (index: number) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados.splice(index, 1);
@@ -274,8 +300,8 @@ const GerenciadorDiagnosticos = () => {
       resultadosEsperados: novosResultados
     });
   };
-  
-  const atualizarResultadoEsperado = (index: number, campo: keyof ResultadoEsperado, valor: any) => {
+
+  const atualizarResultadoEsperado = (index: number, campo: any, valor: any) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[index] = {
       ...novosResultados[index],
@@ -286,22 +312,20 @@ const GerenciadorDiagnosticos = () => {
       resultadosEsperados: novosResultados
     });
   };
-  
+
+  // Intervenção handlers
   const adicionarIntervencao = (resultadoIndex: number) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes.push({
-      verboPrimeiraEnfermeiro: '',
-      verboOutraPessoa: '',
-      descricaoRestante: '',
-      nomeDocumento: '',
-      linkDocumento: ''
+      titulo: "",
+      descricao: ""
     });
     setFormDiagnostico({
       ...formDiagnostico,
       resultadosEsperados: novosResultados
     });
   };
-  
+
   const removerIntervencao = (resultadoIndex: number, intervencaoIndex: number) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes.splice(intervencaoIndex, 1);
@@ -310,8 +334,8 @@ const GerenciadorDiagnosticos = () => {
       resultadosEsperados: novosResultados
     });
   };
-  
-  const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: keyof Intervencao, valor: string) => {
+
+  const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: any, valor: string) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes[intervencaoIndex] = {
       ...novosResultados[resultadoIndex].intervencoes[intervencaoIndex],
@@ -322,229 +346,84 @@ const GerenciadorDiagnosticos = () => {
       resultadosEsperados: novosResultados
     });
   };
-  
-  const salvarDiagnostico = async () => {
-    try {
-      if (!formDiagnostico.nome.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Nome do diagnóstico é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!formDiagnostico.subconjuntoId) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Selecione um subconjunto para o diagnóstico.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      for (let i = 0; i < formDiagnostico.resultadosEsperados.length; i++) {
-        const resultado = formDiagnostico.resultadosEsperados[i];
-        
-        if (!resultado.descricao.trim()) {
-          toast({
-            title: "Campo obrigatório",
-            description: `O resultado esperado #${i + 1} não possui descrição.`,
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        for (let j = 0; j < resultado.intervencoes.length; j++) {
-          const intervencao = resultado.intervencoes[j];
-          
-          if (!intervencao.verboPrimeiraEnfermeiro.trim() || !intervencao.verboOutraPessoa.trim() || !intervencao.descricaoRestante.trim()) {
-            toast({
-              title: "Campos obrigatórios",
-              description: `A intervenção #${j + 1} do resultado esperado #${i + 1} está incompleta.`,
-              variant: "destructive"
-            });
-            return;
-          }
-          
-          intervencao.intervencaoEnfermeiro = `${intervencao.verboPrimeiraEnfermeiro} ${intervencao.descricaoRestante}`;
-          intervencao.intervencaoInfinitivo = `${intervencao.verboOutraPessoa} ${intervencao.descricaoRestante}`;
-          
-          if (!intervencao.nomeDocumento?.trim()) {
-            delete intervencao.nomeDocumento;
-          }
-          if (!intervencao.linkDocumento?.trim()) {
-            delete intervencao.linkDocumento;
-          }
-        }
-      }
-      
-      const subconjuntoSelecionado = subconjuntos.find(s => s.id === formDiagnostico.subconjuntoId);
-      if (subconjuntoSelecionado) {
-        formDiagnostico.subitemNome = subconjuntoSelecionado.nome;
-        formDiagnostico.subconjunto = subconjuntoSelecionado.tipo === 'Protocolo' 
-          ? 'Protocolo de Enfermagem' 
-          : 'Necessidades Humanas Básicas';
-      }
-      
-      const firestoreTimestamp = serverTimestamp();
-      
-      if (editandoDiagnosticoId) {
-        const diagnosticoRef = doc(db, 'diagnosticosEnfermagem', editandoDiagnosticoId);
-        await updateDoc(diagnosticoRef, {
-          ...formDiagnostico,
-          updatedAt: castFieldValueToTimestamp(firestoreTimestamp)
-        });
-        
-        toast({
-          title: "Diagnóstico atualizado",
-          description: `${formDiagnostico.nome} foi atualizado com sucesso.`
-        });
-        
-        setDiagnosticos(prev => 
-          prev.map(d => d.id === editandoDiagnosticoId ? 
-            {...formDiagnostico, id: editandoDiagnosticoId, updatedAt: castFieldValueToTimestamp(firestoreTimestamp)} : d)
-        );
-      } else {
-        const novoDiagnostico = {
-          ...formDiagnostico,
-          createdAt: castFieldValueToTimestamp(firestoreTimestamp),
-          updatedAt: castFieldValueToTimestamp(firestoreTimestamp)
-        };
-        
-        const docRef = await addDoc(collection(db, 'diagnosticosEnfermagem'), novoDiagnostico);
-        
-        toast({
-          title: "Diagnóstico criado",
-          description: `${formDiagnostico.nome} foi criado com sucesso.`
-        });
-        
-        setDiagnosticos(prev => [...prev, {
-          ...novoDiagnostico, 
-          id: docRef.id
-        }]);
-      }
-      
-      setModalDiagnostico(false);
-    } catch (error) {
-      console.error("Erro ao salvar diagnóstico:", error);
-      toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o diagnóstico.",
-        variant: "destructive"
-      });
-    }
+
+  // Get subconjuntos filtered by selected type
+  const getSubconjuntosFiltrados = () => {
+    return subconjuntos.filter(s => s.tipo === tipoSubconjuntoSelecionado);
   };
-  
-  const excluirDiagnostico = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este diagnóstico? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'diagnosticosEnfermagem', id));
-        
-        toast({
-          title: "Diagnóstico excluído",
-          description: "O diagnóstico foi excluído com sucesso."
-        });
-        
-        setDiagnosticos(prev => prev.filter(d => d.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir diagnóstico:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o diagnóstico.",
-          variant: "destructive"
-        });
-      }
-    }
-  };
-  
-  const getNomeSubconjunto = (id: string) => {
-    const subconjunto = subconjuntos.find(s => s.id === id);
-    return subconjunto ? subconjunto.nome : 'Subconjunto não encontrado';
-  };
-  
-  const getTipoSubconjunto = (id: string) => {
-    const subconjunto = subconjuntos.find(s => s.id === id);
-    return subconjunto ? subconjunto.tipo : 'Desconhecido';
-  };
-  
+
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab}>
-      <TabsList className="mb-4">
-        <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
-        <TabsTrigger value="diagnosticos">Diagnósticos de Enfermagem</TabsTrigger>
-      </TabsList>
+    <div>
+      {carregando && <LoadingOverlay />}
       
-      <TabsContent value="subconjuntos">
-        <SubconjuntoTab 
-          filtroTipoSubconjunto={filtroTipoSubconjunto}
-          setFiltroTipoSubconjunto={setFiltroTipoSubconjunto}
-          carregando={carregando}
-          subconjuntos={subconjuntos}
-          diagnosticos={diagnosticos}
-          abrirModalCriarSubconjunto={abrirModalCriarSubconjunto}
-          abrirModalEditarSubconjunto={abrirModalEditarSubconjunto}
-          excluirSubconjunto={excluirSubconjunto}
-        />
-      </TabsContent>
+      <h2 className="text-2xl font-bold text-csae-green-700 mb-6">Gerenciador de Diagnósticos</h2>
       
-      <TabsContent value="diagnosticos">
-        <DiagnosticosTab 
-          subconjuntos={subconjuntos}
-          diagnosticos={diagnosticos}
-          filtroSubconjunto={filtroSubconjunto}
-          filtroDiagnostico={filtroDiagnostico}
-          termoBusca={termoBusca}
-          setFiltroSubconjunto={setFiltroSubconjunto}
-          setFiltroDiagnostico={setFiltroDiagnostico}
-          setTermoBusca={setTermoBusca}
-          carregando={carregando}
-          abrirModalCriarDiagnostico={abrirModalCriarDiagnostico}
-          abrirModalEditarDiagnostico={abrirModalEditarDiagnostico}
-          abrirModalVisualizarDiagnostico={abrirModalVisualizarDiagnostico}
-          excluirDiagnostico={excluirDiagnostico}
-          getNomeSubconjunto={getNomeSubconjunto}
-          getTipoSubconjunto={getTipoSubconjunto}
-        />
-      </TabsContent>
-      
-      <Dialog open={modalSubconjunto} onOpenChange={setModalSubconjunto}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editandoSubconjuntoId ? 'Editar' : 'Novo'} Subconjunto</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {editandoSubconjuntoId ? 'atualizar o' : 'cadastrar um novo'} subconjunto.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <FormSubconjunto 
+      <Tabs defaultValue="subconjuntos" className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
+          <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="subconjuntos">
+          <SubconjuntoTab 
+            filtroTipoSubconjunto={filtroTipoSubconjunto}
+            setFiltroTipoSubconjunto={setFiltroTipoSubconjunto}
+            carregando={false}
+            subconjuntos={subconjuntos}
+            diagnosticos={diagnosticos}
+            abrirModalCriarSubconjunto={abrirModalCriarSubconjunto}
+            abrirModalEditarSubconjunto={abrirModalEditarSubconjunto}
+            excluirSubconjunto={excluirSubconjunto}
+          />
+        </TabsContent>
+        
+        <TabsContent value="diagnosticos">
+          <DiagnosticosTab 
+            subconjuntos={subconjuntos}
+            diagnosticos={diagnosticos}
+            filtroSubconjunto={filtroSubconjunto}
+            filtroDiagnostico={filtroDiagnostico}
+            termoBusca={termoBusca}
+            setFiltroSubconjunto={setFiltroSubconjunto}
+            setFiltroDiagnostico={setFiltroDiagnostico}
+            setTermoBusca={setTermoBusca}
+            carregando={false}
+            abrirModalCriarDiagnostico={abrirModalCriarDiagnostico}
+            abrirModalEditarDiagnostico={abrirModalEditarDiagnostico}
+            abrirModalVisualizarDiagnostico={abrirModalVisualizarDiagnostico}
+            excluirDiagnostico={excluirDiagnostico}
+            getNomeSubconjunto={getNomeSubconjunto}
+            getTipoSubconjunto={getTipoSubconjunto}
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Modal para criar/editar Subconjunto */}
+      <Dialog open={modalSubconjuntoAberto} onOpenChange={setModalSubconjuntoAberto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>{editandoSubconjunto ? "Editar" : "Novo"} Subconjunto</DialogTitle>
+          <FormSubconjunto
             formSubconjunto={formSubconjunto}
             setFormSubconjunto={setFormSubconjunto}
             onSalvar={salvarSubconjunto}
-            onCancel={() => setModalSubconjunto(false)}
-            editando={!!editandoSubconjuntoId}
+            onCancel={() => setModalSubconjuntoAberto(false)}
           />
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={modalDiagnostico} onOpenChange={setModalDiagnostico}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editandoDiagnosticoId ? 'Editar' : 'Novo'} Diagnóstico de Enfermagem</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {editandoDiagnosticoId ? 'atualizar o' : 'cadastrar um novo'} diagnóstico.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <FormDiagnostico 
+
+      {/* Modal para criar/editar Diagnóstico */}
+      <Dialog open={modalDiagnosticoAberto} onOpenChange={setModalDiagnosticoAberto}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>{editandoDiagnostico ? "Editar" : "Novo"} Diagnóstico de Enfermagem</DialogTitle>
+          <FormDiagnostico
             formDiagnostico={formDiagnostico}
             setFormDiagnostico={setFormDiagnostico}
             tipoSubconjuntoSelecionado={tipoSubconjuntoSelecionado}
             setTipoSubconjuntoSelecionado={setTipoSubconjuntoSelecionado}
-            subconjuntosFiltrados={subconjuntosFiltrados}
+            subconjuntosFiltrados={getSubconjuntosFiltrados()}
             onSalvar={salvarDiagnostico}
-            onCancel={() => setModalDiagnostico(false)}
-            editando={!!editandoDiagnosticoId}
+            onCancel={() => setModalDiagnosticoAberto(false)}
+            editando={editandoDiagnostico}
             onAdicionarResultadoEsperado={adicionarResultadoEsperado}
             onRemoverResultadoEsperado={removerResultadoEsperado}
             onAtualizarResultadoEsperado={atualizarResultadoEsperado}
@@ -554,27 +433,20 @@ const GerenciadorDiagnosticos = () => {
           />
         </DialogContent>
       </Dialog>
-      
-      <Dialog open={modalVisualizarDiagnostico} onOpenChange={setModalVisualizarDiagnostico}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Visualização Completa do Diagnóstico</DialogTitle>
-            <DialogDescription>
-              Detalhes completos do diagnóstico de enfermagem selecionado.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {diagnosticoParaVisualizar && (
+
+      {/* Modal para visualizar Diagnóstico */}
+      <Dialog open={modalVisualizarDiagnosticoAberto} onOpenChange={setModalVisualizarDiagnosticoAberto}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogTitle>Visualizar Diagnóstico de Enfermagem</DialogTitle>
+          {diagnosticoVisualizar && (
             <DiagnosticoVisualizer 
-              diagnostico={diagnosticoParaVisualizar}
-              onClose={() => setModalVisualizarDiagnostico(false)}
-              getNomeSubconjunto={getNomeSubconjunto}
-              getTipoSubconjunto={getTipoSubconjunto}
+              diagnostico={diagnosticoVisualizar}
+              nomeSubconjunto={getNomeSubconjunto(diagnosticoVisualizar.subconjuntoId)}
             />
           )}
         </DialogContent>
       </Dialog>
-    </Tabs>
+    </div>
   );
 };
 
