@@ -5,6 +5,11 @@ export interface Intervencao {
   id?: string;
   titulo: string;
   descricao: string;
+  verboPrimeiraEnfermeiro?: string;
+  verboOutraPessoa?: string;
+  descricaoRestante?: string;
+  nomeDocumento?: string;
+  linkDocumento?: string;
   resultado?: string; 
   diagnosticoId?: string;
   criadoPor?: string;

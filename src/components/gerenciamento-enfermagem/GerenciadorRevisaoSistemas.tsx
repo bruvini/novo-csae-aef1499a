@@ -43,13 +43,9 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import ValorReferenciaCard from './sinais-vitais/ValorReferenciaCard';
-import { 
-  ValorReferencia, 
-  RevisaoSistema, 
-  SistemaCorporal, 
-  SubconjuntoDiagnostico, 
-  DiagnosticoCompleto 
-} from '@/types/sinais-vitais';
+import { ValorReferencia } from '@/types/exames';
+import { SistemaCorporal, RevisaoSistema } from '@/types/sistemas';
+import { Subconjunto as SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/types/diagnosticos';
 
 const GerenciadorRevisaoSistemas = () => {
   const { toast } = useToast();

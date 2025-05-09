@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Trash2 } from 'lucide-react';
-import { Intervencao } from '@/services/bancodados/tipos';
+import { Intervencao } from '@/types/intervencoes';
 
 interface IntervencaoFormProps {
   intervencao: Intervencao;
@@ -46,7 +46,7 @@ const IntervencaoForm = ({
           <div className="grid gap-1">
             <Label className="text-xs">Verbo em 1ª pessoa (Enfermeiro)</Label>
             <Input
-              value={intervencao.verboPrimeiraEnfermeiro}
+              value={intervencao.verboPrimeiraEnfermeiro || ''}
               onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'verboPrimeiraEnfermeiro', e.target.value)}
               placeholder="Ex: Avalio"
               required
@@ -55,7 +55,7 @@ const IntervencaoForm = ({
           <div className="grid gap-1">
             <Label className="text-xs">Verbo infinitivo (3ª pessoa)</Label>
             <Input
-              value={intervencao.verboOutraPessoa}
+              value={intervencao.verboOutraPessoa || ''}
               onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'verboOutraPessoa', e.target.value)}
               placeholder="Ex: Avaliar"
               required
@@ -66,7 +66,7 @@ const IntervencaoForm = ({
         <div className="grid gap-1">
           <Label className="text-xs">Restante da intervenção</Label>
           <Input
-            value={intervencao.descricaoRestante}
+            value={intervencao.descricaoRestante || ''}
             onChange={(e) => onAtualizarIntervencao(resultadoIndex, intervencaoIndex, 'descricaoRestante', e.target.value)}
             placeholder="Ex: a intensidade da dor periodicamente"
             required
@@ -94,8 +94,8 @@ const IntervencaoForm = ({
         
         <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
           <span className="font-medium">Prévia:</span><br />
-          Enfermeiro: <span className="text-green-700">{intervencao.verboPrimeiraEnfermeiro}</span> {intervencao.descricaoRestante}<br />
-          Outra pessoa: <span className="text-blue-700">{intervencao.verboOutraPessoa}</span> {intervencao.descricaoRestante}
+          Enfermeiro: <span className="text-green-700">{intervencao.verboPrimeiraEnfermeiro || ''}</span> {intervencao.descricaoRestante || ''}<br />
+          Outra pessoa: <span className="text-blue-700">{intervencao.verboOutraPessoa || ''}</span> {intervencao.descricaoRestante || ''}
         </div>
       </div>
     </Card>

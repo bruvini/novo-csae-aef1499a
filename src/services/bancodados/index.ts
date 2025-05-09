@@ -17,7 +17,11 @@ import {
 } from './logAcessosDB';
 
 // Re-export all types from the types directory
-export * from '../../types';
+export * from '../../types/intervencoes';
+export * from '../../types/exames';
+export * from '../../types/sistemas';
+export * from '../../types/sinais-vitais';
+export * from '../../types/diagnosticos';
 
 // Import and re-export the new functions from the root bancodados.ts
 import {

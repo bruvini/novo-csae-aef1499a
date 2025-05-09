@@ -83,10 +83,13 @@ const DiagnosticoVisualizer: React.FC<DiagnosticoVisualizerProps> = ({
               </div>
             )}
             
-            {diagnostico.condicaoAssociada && (
+            {(diagnostico.condicaoAssociada || diagnostico.condicoesAssociadas?.length > 0) && (
               <div>
                 <h4 className="text-sm font-semibold mb-1">Condição Associada:</h4>
-                <p className="text-sm text-gray-700 pl-2">{diagnostico.condicaoAssociada}</p>
+                <p className="text-sm text-gray-700 pl-2">
+                  {diagnostico.condicaoAssociada || 
+                   (diagnostico.condicoesAssociadas && diagnostico.condicoesAssociadas.join(', '))}
+                </p>
               </div>
             )}
             
