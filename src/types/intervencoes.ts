@@ -17,7 +17,7 @@ export interface ResultadoEsperado {
   titulo: string;
   descricao: string;
   diagnosticoId?: string;
-  intervencoes?: Intervencao[];
+  intervencoes: Intervencao[];
   criadoPor?: string;
   criadoEm?: Timestamp;
   atualizadoEm?: Timestamp;

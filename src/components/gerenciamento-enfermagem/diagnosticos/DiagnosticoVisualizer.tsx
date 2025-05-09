@@ -22,7 +22,7 @@ const DiagnosticoVisualizer: React.FC<DiagnosticoVisualizerProps> = ({
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-lg text-csae-green-700">{diagnostico.titulo}</CardTitle>
+            <CardTitle className="text-lg text-csae-green-700">{diagnostico.titulo || diagnostico.nome}</CardTitle>
             <CardDescription className="text-sm mt-1">
               {diagnostico.subconjuntoId ? getNomeSubconjunto(diagnostico.subconjuntoId) : "Não categorizado"}
             </CardDescription>
@@ -33,7 +33,7 @@ const DiagnosticoVisualizer: React.FC<DiagnosticoVisualizerProps> = ({
         </div>
       </CardHeader>
       <CardContent className="pb-4">
-        <p className="text-sm text-gray-700 mb-3">{diagnostico.descricao}</p>
+        <p className="text-sm text-gray-700 mb-3">{diagnostico.descricao || diagnostico.explicacao}</p>
         
         <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
           <CollapsibleTrigger className="flex items-center justify-center w-full py-2 border-t border-gray-200 text-sm text-gray-500 hover:text-gray-700 transition-colors">

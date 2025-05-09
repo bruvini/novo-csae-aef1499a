@@ -40,6 +40,7 @@ const GerenciadorDiagnosticos = () => {
     subconjuntoId: "",
     resultadosEsperados: [{
       titulo: "",
+      descricao: "", // Adding the required descricao field
       intervencoes: [{
         titulo: "",
         descricao: ""
@@ -175,6 +176,7 @@ const GerenciadorDiagnosticos = () => {
       subconjuntoId: "",
       resultadosEsperados: [{
         titulo: "",
+        descricao: "", // Adding the required descricao field
         intervencoes: [{
           titulo: "",
           descricao: ""
@@ -283,6 +285,7 @@ const GerenciadorDiagnosticos = () => {
         ...formDiagnostico.resultadosEsperados,
         {
           titulo: "",
+          descricao: "", // Adding the required descricao field
           intervencoes: [{
             titulo: "",
             descricao: ""
@@ -369,8 +372,8 @@ const GerenciadorDiagnosticos = () => {
             filtroTipoSubconjunto={filtroTipoSubconjunto}
             setFiltroTipoSubconjunto={setFiltroTipoSubconjunto}
             carregando={false}
-            subconjuntos={subconjuntos}
-            diagnosticos={diagnosticos}
+            subconjuntos={subconjuntos || []}
+            diagnosticos={diagnosticos || []}
             abrirModalCriarSubconjunto={abrirModalCriarSubconjunto}
             abrirModalEditarSubconjunto={abrirModalEditarSubconjunto}
             excluirSubconjunto={excluirSubconjunto}
@@ -379,8 +382,8 @@ const GerenciadorDiagnosticos = () => {
         
         <TabsContent value="diagnosticos">
           <DiagnosticosTab 
-            subconjuntos={subconjuntos}
-            diagnosticos={diagnosticos}
+            subconjuntos={subconjuntos || []}
+            diagnosticos={diagnosticos || []}
             filtroSubconjunto={filtroSubconjunto}
             filtroDiagnostico={filtroDiagnostico}
             termoBusca={termoBusca}
@@ -441,7 +444,7 @@ const GerenciadorDiagnosticos = () => {
           {diagnosticoVisualizar && (
             <DiagnosticoVisualizer 
               diagnostico={diagnosticoVisualizar}
-              nomeSubconjunto={getNomeSubconjunto(diagnosticoVisualizar.subconjuntoId)}
+              getNomeSubconjunto={(id) => getNomeSubconjunto(id || '')}
             />
           )}
         </DialogContent>
