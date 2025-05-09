@@ -32,7 +32,7 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
-  usuario: {
+  usuario?: {
     atuaSMS?: boolean;
     contadorAcessos?: number;
     [key: string]: any;

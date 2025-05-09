@@ -59,7 +59,7 @@ export const useLoginHandler = () => {
           // Log this access in the database
           await registrarAcesso(
             usuarioFirestore.uid,
-            usuarioFirestore.dadosPessoais.nomeCompleto,
+            usuarioFirestore.dadosPessoais?.nomeCompleto || "",
             usuarioFirestore.email,
             "login",
             "Login realizado com sucesso",
