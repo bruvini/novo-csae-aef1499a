@@ -9,12 +9,14 @@ import {
   buscarSinaisVitais, 
   buscarExamesLaboratoriais,
   buscarSistemasCorporais,
-  buscarRevisoesSistemas,
-  SinalVital,
-  ExameLaboratorial,
-  SistemaCorporal,
-  RevisaoSistema
-} from '@/services/bancodados';
+  buscarRevisoesSistemas
+} from '@/services/bancodados/index';
+import { 
+  SinalVital, 
+  ExameLaboratorial, 
+  SistemaCorporal, 
+  RevisaoSistema 
+} from '@/types';
 import { Progress } from '@/components/ui/progress';
 import LoadingOverlay from '@/components/LoadingOverlay';
 

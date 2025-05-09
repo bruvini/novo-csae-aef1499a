@@ -19,6 +19,14 @@ import {
 // Re-export all types from the types directory
 export * from '../../types';
 
+// Import and re-export the new functions from the root bancodados.ts
+import {
+  buscarSinaisVitais,
+  buscarExamesLaboratoriais,
+  buscarSistemasCorporais,
+  buscarRevisoesSistemas
+} from '../bancodados';
+
 export {
   // Usuários
   verificarUsuarioExistente,
@@ -38,5 +46,11 @@ export {
   
   // Log de acessos
   registrarAcesso,
-  obterHistoricoAcessos
+  obterHistoricoAcessos,
+  
+  // Funções para buscar dados do processo de enfermagem
+  buscarSinaisVitais,
+  buscarExamesLaboratoriais,
+  buscarSistemasCorporais,
+  buscarRevisoesSistemas
 };
