@@ -17,19 +17,7 @@ import {
 } from './logAcessosDB';
 
 // Re-export all types from the types directory
-export * from '../../types/intervencoes';
-export * from '../../types/exames';
-export * from '../../types/sistemas';
-export * from '../../types/sinais-vitais';
-export * from '../../types/diagnosticos';
-
-// Import and re-export the new functions from the root bancodados.ts
-import {
-  buscarSinaisVitais,
-  buscarExamesLaboratoriais,
-  buscarSistemasCorporais,
-  buscarRevisoesSistemas
-} from '../bancodados';
+export * from '../../types';
 
 export {
   // Usuários
@@ -50,11 +38,5 @@ export {
   
   // Log de acessos
   registrarAcesso,
-  obterHistoricoAcessos,
-  
-  // Funções para buscar dados do processo de enfermagem
-  buscarSinaisVitais,
-  buscarExamesLaboratoriais,
-  buscarSistemasCorporais,
-  buscarRevisoesSistemas
+  obterHistoricoAcessos
 };

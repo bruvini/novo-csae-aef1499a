@@ -1,33 +1,31 @@
 
 import { Timestamp } from "firebase/firestore";
 
-export interface ValorReferencia {
+// Exames Laboratoriais
+export interface ExameLaboratorial {
+  id?: string;
+  nome: string;
+  tipoExame: 'Laboratorial' | 'Imagem';
+  diferencaSexoIdade: boolean;
+  valoresReferencia: ValorReferenciaExame[];
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface ValorReferenciaExame {
+  id?: string;
   unidade: string;
-  representaAlteracao?: boolean;
-  variacaoPor?: 'Sexo' | 'Idade' | 'Ambos' | 'Nenhum';
-  tipoValor?: 'Numérico' | 'Texto';
+  representaAlteracao: boolean;
+  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
+  tipoValor: 'Numérico' | 'Texto';
   valorMinimo?: number;
   valorMaximo?: number;
   valorTexto?: string;
   idadeMinima?: number;
   idadeMaxima?: number;
-  sexo?: 'Masculino' | 'Feminino' | 'Todos';
+  sexo?: 'Todos' | 'Masculino' | 'Feminino';
   tituloAlteracao?: string;
   nhbId?: string;
   diagnosticoId?: string;
-}
-
-export interface ExameLaboratorial {
-  id?: string;
-  nome: string;
-  descricao?: string;
-  tipo?: 'textual' | 'numerico';
   tipoExame?: 'Laboratorial' | 'Imagem';
-  unidade?: string;
-  valorReferencia?: string;
-  diferencaSexoIdade?: boolean;
-  valoresReferencia: ValorReferencia[];
-  criadoPor?: string;
-  criadoEm?: Timestamp;
-  atualizadoEm?: Timestamp;
 }

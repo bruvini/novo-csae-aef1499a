@@ -17,7 +17,6 @@ import {
   arrayUnion
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { SinalVital, ExameLaboratorial, SistemaCorporal, RevisaoSistema } from '../types';
 
 export interface DadosPessoais {
   nomeCompleto: string;
@@ -367,98 +366,5 @@ export async function finalizarEvolucao(pacienteId: string, evolucaoId: string, 
   } catch (error) {
     console.error("Erro ao finalizar evolução:", error);
     return false;
-  }
-}
-
-// Funções para buscar dados de gerenciamento para o processo de enfermagem
-export async function buscarSinaisVitais(): Promise<SinalVital[]> {
-  try {
-    const sinaisVitaisRef = collection(db, 'sinaisVitais');
-    const querySnapshot = await getDocs(sinaisVitaisRef);
-    
-    if (querySnapshot.empty) {
-      return [];
-    }
-    
-    const sinaisVitais: SinalVital[] = querySnapshot.docs.map(doc => {
-      return {
-        ...doc.data() as Omit<SinalVital, 'id'>,
-        id: doc.id
-      };
-    });
-    
-    return sinaisVitais;
-  } catch (error) {
-    console.error("Erro ao buscar sinais vitais:", error);
-    return [];
-  }
-}
-
-export async function buscarExamesLaboratoriais(): Promise<ExameLaboratorial[]> {
-  try {
-    const examesRef = collection(db, 'examesLaboratoriais');
-    const querySnapshot = await getDocs(examesRef);
-    
-    if (querySnapshot.empty) {
-      return [];
-    }
-    
-    const exames: ExameLaboratorial[] = querySnapshot.docs.map(doc => {
-      return {
-        ...doc.data() as Omit<ExameLaboratorial, 'id'>,
-        id: doc.id
-      };
-    });
-    
-    return exames;
-  } catch (error) {
-    console.error("Erro ao buscar exames laboratoriais:", error);
-    return [];
-  }
-}
-
-export async function buscarSistemasCorporais(): Promise<SistemaCorporal[]> {
-  try {
-    const sistemasRef = collection(db, 'sistemasCorporais');
-    const querySnapshot = await getDocs(sistemasRef);
-    
-    if (querySnapshot.empty) {
-      return [];
-    }
-    
-    const sistemas: SistemaCorporal[] = querySnapshot.docs.map(doc => {
-      return {
-        ...doc.data() as Omit<SistemaCorporal, 'id'>,
-        id: doc.id
-      };
-    });
-    
-    return sistemas;
-  } catch (error) {
-    console.error("Erro ao buscar sistemas corporais:", error);
-    return [];
-  }
-}
-
-export async function buscarRevisoesSistemas(): Promise<RevisaoSistema[]> {
-  try {
-    const revisoesRef = collection(db, 'revisoesSistemas');
-    const querySnapshot = await getDocs(revisoesRef);
-    
-    if (querySnapshot.empty) {
-      return [];
-    }
-    
-    const revisoes: RevisaoSistema[] = querySnapshot.docs.map(doc => {
-      return {
-        ...doc.data() as Omit<RevisaoSistema, 'id'>,
-        id: doc.id
-      };
-    });
-    
-    return revisoes;
-  } catch (error) {
-    console.error("Erro ao buscar revisões de sistemas:", error);
-    return [];
   }
 }
