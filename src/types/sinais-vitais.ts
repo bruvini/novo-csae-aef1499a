@@ -25,13 +25,12 @@ export interface AlteracaoSinalVital {
   valorMinimo?: number;
   valorMaximo?: number;
   valorReferencia?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
-  // Making unidade required to match ValorReferencia interface
+  nhbIds?: string[];
+  diagnosticoIds?: string[];
   unidade: string;
-  representaAlteracao: boolean; // Making this required to match ValorReferencia
-  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos'; // Making this required to match ValorReferencia
-  tipoValor: 'Numérico' | 'Texto'; // Making this required to match ValorReferencia
+  representaAlteracao: boolean;
+  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
+  tipoValor: 'Numérico' | 'Texto';
   tituloAlteracao?: string;
   valorTexto?: string;
   idadeMinima?: number;
@@ -53,8 +52,8 @@ export interface ValorReferencia {
   idadeMaxima?: number;
   sexo?: 'Todos' | 'Masculino' | 'Feminino';
   tituloAlteracao?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
+  nhbIds?: string[];
+  diagnosticoIds?: string[];
   titulo?: string;
   condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
 }

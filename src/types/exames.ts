@@ -25,7 +25,7 @@ export interface ValorReferenciaExame {
   idadeMaxima?: number;
   sexo?: 'Todos' | 'Masculino' | 'Feminino';
   tituloAlteracao?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
+  nhbIds?: string[];
+  diagnosticoIds?: string[];
   tipoExame?: 'Laboratorial' | 'Imagem';
 }

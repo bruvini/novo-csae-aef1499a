@@ -11,7 +11,7 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { registrarAcesso } from './bancodados';
+import { registrarAcesso } from './bancodados/logAcessosDB';
 
 import { Usuario } from '@/types/usuario';
 

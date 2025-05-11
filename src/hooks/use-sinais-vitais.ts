@@ -28,7 +28,7 @@ export const useSinaisVitais = () => {
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
+  const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
   const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
 
   // Estado para o formulário
@@ -56,15 +56,18 @@ export const useSinaisVitais = () => {
 
   // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
-    if (nhbSelecionada) {
+    if (nhbSelecionadas.length > 0) {
       const filtrados = diagnosticos.filter(
-        (d) => d.subconjuntoId === nhbSelecionada
+        (d) => {
+          // Verificar se o diagnóstico está em alguma das NHBs selecionadas
+          return d.subconjuntoIds?.some(id => nhbSelecionadas.includes(id)) || false;
+        }
       );
       setDiagnosticosFiltrados(filtrados);
     } else {
       setDiagnosticosFiltrados([]);
     }
-  }, [nhbSelecionada, diagnosticos]);
+  }, [nhbSelecionadas, diagnosticos]);
 
   const carregarDados = async () => {
     try {
@@ -129,20 +132,31 @@ export const useSinaisVitais = () => {
     });
     setEditandoId(null);
     setModalAberto(true);
+    setNhbSelecionadas([]);
+    setDiagnosticosFiltrados([]);
   };
 
   // Abrir modal para editar sinal vital existente
   const abrirModalEditar = (sinal: SinalVital) => {
     // Garantir que todos os valores de referência tenham os novos campos
-    const valoresAtualizados = (sinal.valoresReferencia || []).map((valor) => ({
-      ...valor,
-      representaAlteracao:
-        valor.representaAlteracao !== undefined
-          ? valor.representaAlteracao
-          : false,
-      variacaoPor: valor.variacaoPor || "Nenhum",
-      tipoValor: valor.tipoValor || "Numérico",
-    }));
+    const valoresAtualizados = (sinal.valoresReferencia || []).map((valor) => {
+      // Migrate nhbId to nhbIds if necessary
+      const nhbIds = valor.nhbIds || (valor.nhbId ? [valor.nhbId] : []);
+      // Migrate diagnosticoId to diagnosticoIds if necessary
+      const diagnosticoIds = valor.diagnosticoIds || (valor.diagnosticoId ? [valor.diagnosticoId] : []);
+      
+      return {
+        ...valor,
+        representaAlteracao:
+          valor.representaAlteracao !== undefined
+            ? valor.representaAlteracao
+            : false,
+        variacaoPor: valor.variacaoPor || "Nenhum",
+        tipoValor: valor.tipoValor || "Numérico",
+        nhbIds,
+        diagnosticoIds,
+      };
+    });
 
     setFormSinal({
       ...sinal,
@@ -153,18 +167,26 @@ export const useSinaisVitais = () => {
     
     // Resetar os diagnósticos filtrados quando abre o modal de edição
     setDiagnosticosFiltrados([]);
-    setNhbSelecionada(null);
     
-    // Para cada valor de referência, se tiver nhbId, precisamos carregar os diagnósticos correspondentes
-    valoresAtualizados.forEach(valor => {
-      if (valor.nhbId) {
-        const diagnosticosDaNhb = diagnosticos.filter(d => d.subconjuntoId === valor.nhbId);
-        if (diagnosticosDaNhb.length > 0) {
-          setDiagnosticosFiltrados(diagnosticosDaNhb);
-          setNhbSelecionada(valor.nhbId);
-        }
+    // Collect all NHB IDs from all values
+    const allNhbIds = valoresAtualizados.reduce((ids: string[], valor) => {
+      if (valor.nhbIds && valor.nhbIds.length > 0) {
+        return [...ids, ...valor.nhbIds];
       }
-    });
+      return ids;
+    }, []);
+    
+    // Set unique NHB IDs
+    const uniqueNhbIds = [...new Set(allNhbIds)];
+    setNhbSelecionadas(uniqueNhbIds);
+    
+    // Filter diagnósticos for all selected NHBs
+    if (uniqueNhbIds.length > 0) {
+      const relevantDiagnosticos = diagnosticos.filter(d => 
+        d.subconjuntoIds?.some(id => uniqueNhbIds.includes(id))
+      );
+      setDiagnosticosFiltrados(relevantDiagnosticos);
+    }
   };
 
   // Adicionar valor de referência
@@ -244,11 +266,11 @@ export const useSinaisVitais = () => {
     // Se desmarcar "representa alteração", limpar os campos relacionados
     if (campo === "representaAlteracao" && valor === false) {
       delete novosValores[index].tituloAlteracao;
-      delete novosValores[index].nhbId;
-      delete novosValores[index].diagnosticoId;
+      delete novosValores[index].nhbIds;
+      delete novosValores[index].diagnosticoIds;
       
       // Resetar os estados relacionados
-      setNhbSelecionada(null);
+      setNhbSelecionadas([]);
       setDiagnosticosFiltrados([]);
     }
 
@@ -258,16 +280,14 @@ export const useSinaisVitais = () => {
     });
   };
 
-  // Atualizar NHB selecionada
-  const handleNhbChange = (index: number, nhbId: string) => {
-    setNhbSelecionada(nhbId);
-
+  // Atualizar NHBs selecionadas
+  const handleNhbChange = (index: number, nhbIds: string[]) => {
+    // Atualizar as NHBs no valor de referência específico
     if (!formSinal.valoresReferencia) return;
     const novosValores = [...formSinal.valoresReferencia];
     novosValores[index] = {
       ...novosValores[index],
-      nhbId: nhbId,
-      diagnosticoId: undefined, // Limpar diagnóstico quando mudar a NHB
+      nhbIds: nhbIds,
     };
 
     setFormSinal({
@@ -275,18 +295,27 @@ export const useSinaisVitais = () => {
       valoresReferencia: novosValores,
     });
     
-    // Filtrar diagnósticos para a NHB selecionada
-    const diagnosticosDaNhb = diagnosticos.filter(d => d.subconjuntoId === nhbId);
-    setDiagnosticosFiltrados(diagnosticosDaNhb);
+    // Atualizar o estado global de NHBs selecionadas
+    setNhbSelecionadas(nhbIds);
+    
+    // Filtrar diagnósticos para todas as NHBs selecionadas
+    if (nhbIds.length > 0) {
+      const diagnosticosDaNhb = diagnosticos.filter(d => 
+        d.subconjuntoIds?.some(id => nhbIds.includes(id))
+      );
+      setDiagnosticosFiltrados(diagnosticosDaNhb);
+    } else {
+      setDiagnosticosFiltrados([]);
+    }
   };
 
-  // Atualizar diagnóstico selecionado
-  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
+  // Atualizar diagnósticos selecionados
+  const handleDiagnosticoChange = (index: number, diagnosticoIds: string[]) => {
     if (!formSinal.valoresReferencia) return;
     const novosValores = [...formSinal.valoresReferencia];
     novosValores[index] = {
       ...novosValores[index],
-      diagnosticoId: diagnosticoId,
+      diagnosticoIds: diagnosticoIds,
     };
 
     setFormSinal({
@@ -307,18 +336,20 @@ export const useSinaisVitais = () => {
         return;
       }
 
-      if (formSinal.valoresReferencia && formSinal.valoresReferencia.some((vr) => !vr.unidade?.trim())) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Unidade é obrigatória para todos os valores de referência.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Validar campos específicos de acordo com a variação
+      // Validar campos dos valores de referência
       if (formSinal.valoresReferencia) {
         for (const valor of formSinal.valoresReferencia) {
+          // Unidade só é obrigatória para valores numéricos
+          if (valor.tipoValor === "Numérico" && !valor.unidade?.trim()) {
+            toast({
+              title: "Campo obrigatório",
+              description: "Unidade é obrigatória para valores numéricos.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          // Validar campos específicos de acordo com a variação
           if (valor.variacaoPor === "Sexo" || valor.variacaoPor === "Ambos") {
             if (!valor.sexo) {
               toast({
@@ -381,21 +412,21 @@ export const useSinaisVitais = () => {
               return;
             }
 
-            if (!valor.nhbId) {
+            if (!valor.nhbIds || valor.nhbIds.length === 0) {
               toast({
                 title: "Campo obrigatório",
                 description:
-                  "Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
+                  "Pelo menos uma Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
                 variant: "destructive",
               });
               return;
             }
 
-            if (!valor.diagnosticoId) {
+            if (!valor.diagnosticoIds || valor.diagnosticoIds.length === 0) {
               toast({
                 title: "Campo obrigatório",
                 description:
-                  "Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
+                  "Pelo menos um Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
                 variant: "destructive",
               });
               return;
@@ -499,7 +530,7 @@ export const useSinaisVitais = () => {
     setModalAberto,
     editandoId,
     carregando,
-    nhbSelecionada,
+    nhbSelecionadas,
     diagnosticosFiltrados,
     formSinal,
     setFormSinal,

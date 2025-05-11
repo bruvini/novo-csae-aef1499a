@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Trash2, HelpCircle } from "lucide-react";
+import { Trash2, HelpCircle, X, Plus } from "lucide-react";
 import { ValorReferencia, SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/sinais-vitais";
 import {
   Tooltip,
@@ -26,6 +26,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 interface ValorReferenciaCardProps {
   valor: ValorReferencia;
@@ -36,8 +39,8 @@ interface ValorReferenciaCardProps {
     campo: keyof ValorReferencia,
     valor: any
   ) => void;
-  handleNhbChange: (index: number, nhbId: string) => void;
-  handleDiagnosticoChange: (index: number, diagnosticoId: string) => void;
+  handleNhbChange: (index: number, nhbIds: string[]) => void;
+  handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
   subconjuntos: SubconjuntoDiagnostico[];
   diagnosticosFiltrados: DiagnosticoCompleto[];
 }
@@ -52,6 +55,41 @@ const ValorReferenciaCard: React.FC<ValorReferenciaCardProps> = ({
   subconjuntos,
   diagnosticosFiltrados,
 }) => {
+  // Convert single values to arrays for backwards compatibility
+  const nhbIds = valor.nhbIds || (valor.nhbId ? [valor.nhbId] : []);
+  const diagnosticoIds = valor.diagnosticoIds || (valor.diagnosticoId ? [valor.diagnosticoId] : []);
+  
+  // Helper function to add or remove from an array of values
+  const toggleValueInArray = (array: string[], value: string): string[] => {
+    return array.includes(value) 
+      ? array.filter(item => item !== value) 
+      : [...array, value];
+  };
+  
+  // Function to handle NHB selection
+  const toggleNhb = (nhbId: string) => {
+    const newNhbIds = toggleValueInArray(nhbIds, nhbId);
+    handleNhbChange(index, newNhbIds);
+  };
+  
+  // Function to handle Diagnostico selection
+  const toggleDiagnostico = (diagId: string) => {
+    const newDiagnosticoIds = toggleValueInArray(diagnosticoIds, diagId);
+    handleDiagnosticoChange(index, newDiagnosticoIds);
+  };
+  
+  // Get NHB names for display
+  const getNhbName = (id: string): string => {
+    const nhb = subconjuntos.find(s => s.id === id);
+    return nhb ? nhb.nome : 'Desconhecido';
+  };
+  
+  // Get Diagnóstico names for display
+  const getDiagnosticoName = (id: string): string => {
+    const diag = diagnosticosFiltrados.find(d => d.id === id);
+    return diag ? (diag.nome || diag.descricao || 'Sem nome') : 'Desconhecido';
+  };
+
   return (
     <Card key={index} className="p-4">
       <div className="grid gap-3">
@@ -248,7 +286,7 @@ const ValorReferenciaCard: React.FC<ValorReferenciaCardProps> = ({
         )}
 
         <div className="grid gap-2">
-          <Label>Unidade</Label>
+          <Label>Unidade {valor.tipoValor === "Texto" ? "(opcional)" : "(obrigatório)"}</Label>
           <Input
             value={valor.unidade}
             onChange={(e) =>
@@ -259,7 +297,7 @@ const ValorReferenciaCard: React.FC<ValorReferenciaCardProps> = ({
               )
             }
             placeholder="Ex: mmHg"
-            required
+            required={valor.tipoValor !== "Texto"}
           />
         </div>
 
@@ -323,56 +361,111 @@ const ValorReferenciaCard: React.FC<ValorReferenciaCardProps> = ({
               <div className="grid gap-3">
                 <div>
                   <Label className="text-sm text-muted-foreground mb-1 block">
-                    1. Selecione uma Necessidade Humana Básica (NHB)
+                    1. Selecione as Necessidades Humanas Básicas (NHB)
                   </Label>
-                  <Select
-                    value={valor.nhbId || ""}
-                    onValueChange={(v) => handleNhbChange(index, v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma NHB" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subconjuntos.map((nhb) => (
-                        <SelectItem key={nhb.id} value={nhb.id!}>
-                          {nhb.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {nhbIds.map((id) => (
+                      <Badge 
+                        key={id} 
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {getNhbName(id)}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0"
+                          onClick={() => toggleNhb(id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center gap-1">
+                        <Plus className="h-4 w-4" /> Adicionar NHB
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <ScrollArea className="h-72">
+                        <div className="space-y-2">
+                          {subconjuntos.map((nhb) => (
+                            <div 
+                              key={nhb.id} 
+                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                              onClick={() => toggleNhb(nhb.id!)}
+                            >
+                              <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${nhbIds.includes(nhb.id!) ? 'bg-primary border-primary' : 'border-input'}`}>
+                                {nhbIds.includes(nhb.id!) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                              </div>
+                              <span>{nhb.nome}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
-                {valor.nhbId && (
+                {nhbIds.length > 0 && (
                   <div>
                     <Label className="text-sm text-muted-foreground mb-1 block">
-                      2. Selecione um Diagnóstico
+                      2. Selecione os Diagnósticos
                     </Label>
-                    <Select
-                      value={valor.diagnosticoId ?? ""}
-                      onValueChange={(v) =>
-                        handleDiagnosticoChange(index, v)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um diagnóstico" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {diagnosticosFiltrados.map((diag) => (
-                          <SelectItem
-                            key={diag.id}
-                            value={diag.id!}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {diagnosticoIds.map((id) => (
+                        <Badge 
+                          key={id} 
+                          variant="secondary"
+                          className="flex items-center gap-1 max-w-full"
+                        >
+                          <span className="truncate">{getDiagnosticoName(id)}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 flex-shrink-0"
+                            onClick={() => toggleDiagnostico(id)}
                           >
-                            {diag.nome || diag.descricao}
-                          </SelectItem>
-                        ))}
-                        {diagnosticosFiltrados.length === 0 && (
-                          <div className="text-sm text-muted-foreground px-2 py-1">
-                            Nenhum diagnóstico disponível para esta
-                            NHB
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="flex items-center gap-1">
+                          <Plus className="h-4 w-4" /> Adicionar Diagnóstico
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        {diagnosticosFiltrados.length > 0 ? (
+                          <ScrollArea className="h-72">
+                            <div className="space-y-2">
+                              {diagnosticosFiltrados.map((diag) => (
+                                <div 
+                                  key={diag.id} 
+                                  className="flex items-center gap-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                                  onClick={() => toggleDiagnostico(diag.id!)}
+                                >
+                                  <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${diagnosticoIds.includes(diag.id!) ? 'bg-primary border-primary' : 'border-input'}`}>
+                                    {diagnosticoIds.includes(diag.id!) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                                  </div>
+                                  <span className="truncate">{diag.nome || diag.descricao}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        ) : (
+                          <div className="text-sm text-muted-foreground p-2">
+                            Selecione pelo menos uma NHB para ver os diagnósticos disponíveis
                           </div>
                         )}
-                      </SelectContent>
-                    </Select>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 )}
               </div>
