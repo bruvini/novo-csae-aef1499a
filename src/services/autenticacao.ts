@@ -1,65 +1,59 @@
 
-import { auth, db } from './firebase';
-import {
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   sendPasswordResetEmail,
-  signOut,
-  browserSessionPersistence,
-  setPersistence,
-  User as FirebaseUser,
-  UserCredential,
+  signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
-import { registrarAcesso } from './bancodados/logAcessosDB';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from './firebase';
+import { UsuarioAutenticado } from '@/types/usuario';
 
-import { Usuario } from '@/types/usuario';
-
-// Tipo para representar a sessão do usuário
 export interface SessaoUsuario {
   uid: string;
-  email: string | null;
-  nome?: string;
-  sobrenome?: string;
-  createdAt?: Timestamp;
-  admin?: boolean;
-  gestorConteudos?: boolean;
-  totens?: string[];
-  ultimoAcesso?: Timestamp;
-  contadorAcessos?: number;
-  statusAprovacao?: 'pendente' | 'aprovado' | 'reprovado';
+  email: string;
+  nome: string;
+  sobrenome: string;
+  instituicao?: string;
+  ehAdmin: boolean;
+  gestorConteudos: boolean;
+  posFaculdade?: boolean;
+  totens?: boolean;
+  statusAprovacao?: 'Pendente' | 'Aprovado' | 'Reprovado';
+  createdAt?: Date;
 }
 
-// Função para verificar se há um usuário autenticado
+export const auth = getAuth();
+
+// Verificar se o usuário está autenticado
 export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => {
+  const auth = getAuth();
+  const usuario = auth.currentUser;
+
+  if (!usuario) {
+    return null;
+  }
+
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return null;
-    
-    // Buscar dados adicionais do usuário no Firestore
-    const docRef = doc(db, "usuarios", currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      const userData = docSnap.data() as Usuario;
-      return {
-        uid: currentUser.uid,
-        email: currentUser.email,
-        nome: userData.nome,
-        sobrenome: userData.sobrenome,
-        createdAt: userData.createdAt,
-        admin: userData.admin || false,
-        gestorConteudos: userData.gestorConteudos || false,
-        totens: userData.totens || [],
-        ultimoAcesso: userData.ultimoAcesso,
-        contadorAcessos: userData.contadorAcessos || 0,
-        statusAprovacao: userData.statusAprovacao
-      };
+    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    if (!userDoc.exists()) {
+      return null;
     }
-    
+
+    const dadosUsuario = userDoc.data() as UsuarioAutenticado;
+
     return {
-      uid: currentUser.uid,
-      email: currentUser.email
+      uid: usuario.uid,
+      email: usuario.email!,
+      nome: dadosUsuario.nome,
+      sobrenome: dadosUsuario.sobrenome || '',
+      createdAt: dadosUsuario.createdAt?.toDate(),
+      admin: dadosUsuario.ehAdmin || false,
+      gestorConteudos: dadosUsuario.gestorConteudos || false,
+      totens: dadosUsuario.totens || false,
+      instituicao: dadosUsuario.instituicao,
+      statusAprovacao: dadosUsuario.statusAprovacao
     };
   } catch (error) {
     console.error("Erro ao verificar autenticação:", error);
@@ -67,125 +61,144 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
   }
 };
 
-// Função para realizar login
+// Realizar login do usuário
 export const realizarLogin = async (email: string, senha: string): Promise<SessaoUsuario> => {
   try {
-    // Define a persistência para sessão (fecha ao fechar o navegador)
-    await setPersistence(auth, browserSessionPersistence);
+    const resultado = await signInWithEmailAndPassword(auth, email, senha);
+    const usuario = resultado.user;
+
+    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
     
-    // Realiza a autenticação
-    const userCredential: UserCredential = await signInWithEmailAndPassword(auth, email, senha);
-    const user: FirebaseUser = userCredential.user;
-    
-    // Buscar dados adicionais do usuário no Firestore
-    const docRef = doc(db, "usuarios", user.uid);
-    const docSnap = await getDoc(docRef);
-    
-    // Se o documento existe, retorna os dados completos
-    if (docSnap.exists()) {
-      const userData = docSnap.data() as Usuario;
-      
-      // Atualiza o último acesso e incrementa o contador
-      await updateDoc(docRef, {
-        ultimoAcesso: Timestamp.now(),
-        contadorAcessos: (userData.contadorAcessos || 0) + 1
-      });
-      
-      // Registrar o acesso no log
-      await registrarAcesso(user.uid);
-      
-      return {
-        uid: user.uid,
-        email: user.email,
-        nome: userData.nome,
-        sobrenome: userData.sobrenome,
-        admin: userData.admin || false,
-        gestorConteudos: userData.gestorConteudos || false,
-        totens: userData.totens || [],
-        ultimoAcesso: Timestamp.now(),
-        contadorAcessos: (userData.contadorAcessos || 0) + 1,
-        statusAprovacao: userData.statusAprovacao
-      };
+    if (!userDoc.exists()) {
+      throw new Error("Usuário não encontrado no banco de dados.");
     }
     
-    // Se o documento não existe, retorna apenas os dados básicos
+    const dadosUsuario = userDoc.data() as UsuarioAutenticado;
+
+    // Registrar data de último login
+    await updateDoc(doc(db, "usuarios", usuario.uid), {
+      ultimoLogin: serverTimestamp()
+    });
+    
+    // Registrar acesso em log-acessos
+    try {
+      await addDoc(collection(db, "logAcessos"), {
+        usuarioId: usuario.uid,
+        timestamp: serverTimestamp(),
+        plataforma: "web"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar acesso:", error);
+    }
+
     return {
-      uid: user.uid,
-      email: user.email
+      uid: usuario.uid,
+      email: usuario.email!,
+      nome: dadosUsuario.nome,
+      sobrenome: dadosUsuario.sobrenome || '',
+      admin: dadosUsuario.ehAdmin || false,
+      gestorConteudos: dadosUsuario.gestorConteudos || false,
+      totens: dadosUsuario.totens || false,
+      instituicao: dadosUsuario.instituicao,
+      statusAprovacao: dadosUsuario.statusAprovacao
     };
-  } catch (error) {
-    console.error("Erro no login:", error);
-    throw error;
+  } catch (error: any) {
+    if (error.code === "auth/invalid-credential") {
+      throw new Error("E-mail ou senha incorretos.");
+    } else if (error.code === "auth/user-not-found") {
+      throw new Error("Usuário não encontrado.");
+    } else if (error.code === "auth/wrong-password") {
+      throw new Error("Senha incorreta.");
+    } else {
+      throw new Error("Erro ao fazer login: " + error.message);
+    }
   }
 };
 
-// Função para realizar cadastro
-export const realizarCadastro = async (
-  email: string,
-  senha: string,
-  nome: string,
-  sobrenome: string,
-  instituicao: string
-): Promise<SessaoUsuario> => {
+// Realizar cadastro de usuário
+export const realizarCadastro = async (email: string, senha: string, nome: string, sobrenome: string, instituicao: string): Promise<SessaoUsuario> => {
   try {
-    // Cria o usuário no Firebase Auth
-    const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
-    const user = userCredential.user;
-    
+    const resultado = await createUserWithEmailAndPassword(auth, email, senha);
+    const usuario = resultado.user;
+
     // Criar documento do usuário no Firestore
-    const novoUsuario: Usuario = {
-      uid: user.uid,
-      email: user.email || '',
+    const dadosUsuario = {
+      nome,
+      sobrenome,
+      email,
+      instituicao,
+      ehAdmin: false,
+      gestorConteudos: false,
+      statusAprovacao: "Pendente",
+      createdAt: serverTimestamp(),
+      ultimoLogin: serverTimestamp()
+    };
+
+    await setDoc(doc(db, "usuarios", usuario.uid), dadosUsuario);
+
+    // Registrar acesso em log-acessos
+    try {
+      await addDoc(collection(db, "logAcessos"), {
+        usuarioId: usuario.uid,
+        timestamp: serverTimestamp(),
+        plataforma: "web"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar acesso:", error);
+    }
+
+    return {
+      uid: usuario.uid,
+      email,
       nome,
       sobrenome,
       instituicao,
-      createdAt: Timestamp.now(),
-      admin: false,
+      ehAdmin: false,
       gestorConteudos: false,
-      statusAprovacao: 'pendente',
-      ultimoAcesso: Timestamp.now(),
-      contadorAcessos: 1
+      statusAprovacao: "Pendente"
     };
-    
-    await setDoc(doc(db, "usuarios", user.uid), novoUsuario);
-    
-    // Registrar o primeiro acesso
-    await registrarAcesso(user.uid);
-    
-    // Retorna os dados da sessão
-    return {
-      uid: user.uid,
-      email: user.email,
-      nome,
-      sobrenome,
-      admin: false,
-      gestorConteudos: false,
-      ultimoAcesso: Timestamp.now(),
-      contadorAcessos: 1,
-      statusAprovacao: 'pendente'
-    };
-  } catch (error) {
-    console.error("Erro no cadastro:", error);
-    throw error;
+  } catch (error: any) {
+    if (error.code === "auth/email-already-in-use") {
+      throw new Error("Este e-mail já está sendo utilizado.");
+    } else if (error.code === "auth/weak-password") {
+      throw new Error("A senha deve ter pelo menos 6 caracteres.");
+    } else {
+      throw new Error("Erro ao criar conta: " + error.message);
+    }
   }
 };
 
-// Função para realizar logout
+// Realizar logout
 export const realizarLogout = async (): Promise<void> => {
   try {
     await signOut(auth);
-  } catch (error) {
-    console.error("Erro no logout:", error);
-    throw error;
+  } catch (error: any) {
+    throw new Error("Erro ao fazer logout: " + error.message);
   }
 };
 
-// Função para recuperar senha
+// Recuperar senha
 export const recuperarSenha = async (email: string): Promise<void> => {
   try {
     await sendPasswordResetEmail(auth, email);
+  } catch (error: any) {
+    if (error.code === "auth/user-not-found") {
+      throw new Error("E-mail não encontrado.");
+    } else {
+      throw new Error("Erro ao recuperar senha: " + error.message);
+    }
+  }
+};
+
+// Verificar se usuário já existe
+export const verificarUsuarioExistente = async (email: string): Promise<boolean> => {
+  try {
+    const usuariosRef = collection(db, "usuarios");
+    const q = query(usuariosRef, where("email", "==", email));
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
   } catch (error) {
-    console.error("Erro na recuperação de senha:", error);
-    throw error;
+    console.error("Erro ao verificar usuário:", error);
+    return false;
   }
 };

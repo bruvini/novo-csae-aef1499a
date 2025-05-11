@@ -45,5 +45,7 @@ export interface ValorReferenciaSistema {
   diagnosticoIds?: string[];
   titulo?: string;
   condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
+  // Legacy fields for backward compatibility
+  nhbId?: string;
+  diagnosticoId?: string;
 }
-

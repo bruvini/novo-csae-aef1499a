@@ -36,6 +36,9 @@ export interface AlteracaoSinalVital {
   idadeMinima?: number;
   idadeMaxima?: number;
   sexo?: 'Todos' | 'Masculino' | 'Feminino';
+  // Legacy fields for backward compatibility
+  nhbId?: string;
+  diagnosticoId?: string;
 }
 
 // Interface for ValorReferencia (used in components)
@@ -56,6 +59,9 @@ export interface ValorReferencia {
   diagnosticoIds?: string[];
   titulo?: string;
   condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
+  // Legacy fields for backward compatibility
+  nhbId?: string;
+  diagnosticoId?: string;
 }
 
 // Import the SubconjuntoDiagnostico interface from diagnósticos

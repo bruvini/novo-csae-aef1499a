@@ -28,4 +28,7 @@ export interface ValorReferenciaExame {
   nhbIds?: string[];
   diagnosticoIds?: string[];
   tipoExame?: 'Laboratorial' | 'Imagem';
+  // Legacy fields for backward compatibility
+  nhbId?: string;
+  diagnosticoId?: string;
 }

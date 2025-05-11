@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -48,7 +49,10 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
-import { ValorReferencia, ExameLaboratorial, SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { ValorReferenciaExame, ExameLaboratorial, SubconjuntoDiagnostico, DiagnosticoCompleto } from '@/types/exames';
 
 const GerenciadorExamesLaboratoriais = () => {
   const { toast } = useToast();
@@ -58,7 +62,7 @@ const GerenciadorExamesLaboratoriais = () => {
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
+  const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
   const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
   
   // Estado para o formulário
@@ -124,14 +128,16 @@ const GerenciadorExamesLaboratoriais = () => {
   
   // Filtrar diagnósticos quando uma NHB é selecionada
   useEffect(() => {
-    if (nhbSelecionada) {
-      // Atualização: filtrar pelo subconjuntoId e não pelo subitemId
-      const filtrados = diagnosticos.filter(d => d.subconjuntoId === nhbSelecionada);
+    if (nhbSelecionadas.length > 0) {
+      // Filtrar diagnósticos que pertencem a pelo menos uma das NHBs selecionadas
+      const filtrados = diagnosticos.filter(d => {
+        return d.subconjuntoIds?.some(id => nhbSelecionadas.includes(id)) || false;
+      });
       setDiagnosticosFiltrados(filtrados);
     } else {
       setDiagnosticosFiltrados([]);
     }
-  }, [nhbSelecionada, diagnosticos]);
+  }, [nhbSelecionadas, diagnosticos]);
   
   // Abrir modal para criar novo exame
   const abrirModalCriar = () => {
@@ -148,17 +154,28 @@ const GerenciadorExamesLaboratoriais = () => {
     });
     setEditandoId(null);
     setModalAberto(true);
+    setNhbSelecionadas([]);
   };
   
   // Abrir modal para editar exame existente
   const abrirModalEditar = (exame: ExameLaboratorial) => {
     // Garantir que todos os valores de referência tenham os novos campos
-    const valoresAtualizados = exame.valoresReferencia.map(valor => ({
-      ...valor,
-      representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
-      variacaoPor: valor.variacaoPor || 'Nenhum',
-      tipoValor: valor.tipoValor || 'Numérico'
-    }));
+    const valoresAtualizados = exame.valoresReferencia.map(valor => {
+      // Converter nhbId antigo para array nhbIds se necessário
+      const nhbIds = valor.nhbIds || (valor.nhbId ? [valor.nhbId] : []);
+      
+      // Converter diagnosticoId antigo para array diagnosticoIds se necessário
+      const diagnosticoIds = valor.diagnosticoIds || (valor.diagnosticoId ? [valor.diagnosticoId] : []);
+      
+      return {
+        ...valor,
+        representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
+        variacaoPor: valor.variacaoPor || 'Nenhum',
+        tipoValor: valor.tipoValor || 'Numérico',
+        nhbIds,
+        diagnosticoIds
+      };
+    });
 
     setFormExame({
       ...exame,
@@ -166,6 +183,26 @@ const GerenciadorExamesLaboratoriais = () => {
     });
     setEditandoId(exame.id || null);
     setModalAberto(true);
+    
+    // Coletar todos os IDs de NHB de todos os valores para pré-selecionar
+    const allNhbIds = valoresAtualizados.reduce((ids: string[], valor) => {
+      if (valor.nhbIds && valor.nhbIds.length > 0) {
+        return [...ids, ...valor.nhbIds];
+      }
+      return ids;
+    }, []);
+    
+    // Definir IDs únicos de NHB
+    const uniqueNhbIds = [...new Set(allNhbIds)];
+    setNhbSelecionadas(uniqueNhbIds);
+    
+    // Filtrar diagnósticos para todas as NHBs selecionadas
+    if (uniqueNhbIds.length > 0) {
+      const relevantDiagnosticos = diagnosticos.filter(d => 
+        d.subconjuntoIds?.some(id => uniqueNhbIds.includes(id))
+      );
+      setDiagnosticosFiltrados(relevantDiagnosticos);
+    }
   };
   
   // Adicionar valor de referência
@@ -195,7 +232,7 @@ const GerenciadorExamesLaboratoriais = () => {
   };
   
   // Atualizar valor de referência
-  const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
+  const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaExame, valor: any) => {
     const novosValores = [...formExame.valoresReferencia];
     novosValores[index] = {
       ...novosValores[index],
@@ -237,8 +274,12 @@ const GerenciadorExamesLaboratoriais = () => {
     // Se desmarcar "representa alteração", limpar os campos relacionados
     if (campo === 'representaAlteracao' && valor === false) {
       delete novosValores[index].tituloAlteracao;
-      delete novosValores[index].nhbId;
-      delete novosValores[index].diagnosticoId;
+      novosValores[index].nhbIds = [];
+      novosValores[index].diagnosticoIds = [];
+      
+      // Resetar os estados relacionados se estamos editando o valor atual
+      setNhbSelecionadas([]);
+      setDiagnosticosFiltrados([]);
     }
 
     setFormExame({
@@ -247,35 +288,78 @@ const GerenciadorExamesLaboratoriais = () => {
     });
   };
 
-  // Atualizar NHB selecionada
-  const handleNhbChange = (index: number, nhbId: string) => {
-    setNhbSelecionada(nhbId);
-    
+  // Helper para obter o nome da NHB
+  const getNhbName = (id: string): string => {
+    const nhb = subconjuntos.find(s => s.id === id);
+    return nhb ? nhb.nome : 'Desconhecido';
+  };
+  
+  // Helper para obter o nome do diagnóstico
+  const getDiagnosticoName = (id: string): string => {
+    const diag = diagnosticos.find(d => d.id === id);
+    return diag ? (diag.nome || diag.descricao || 'Sem nome') : 'Desconhecido';
+  };
+
+  // Function to toggle a value in array
+  const toggleValueInArray = (array: string[], value: string): string[] => {
+    return array.includes(value) 
+      ? array.filter(item => item !== value) 
+      : [...array, value];
+  };
+
+  // Atualizar NHBs selecionadas para um valor específico
+  const handleNhbChange = (index: number, nhbIds: string[]) => {
     const novosValores = [...formExame.valoresReferencia];
     novosValores[index] = {
       ...novosValores[index],
-      nhbId: nhbId,
-      diagnosticoId: undefined // Limpar diagnóstico quando mudar a NHB
+      nhbIds: nhbIds
     };
     
+    setFormExame({
+      ...formExame,
+      valoresReferencia: novosValores
+    });
+    
+    // Atualizar o estado global de NHBs selecionadas
+    setNhbSelecionadas(nhbIds);
+    
+    // Filtrar diagnósticos para todas as NHBs selecionadas
+    if (nhbIds.length > 0) {
+      const diagnosticosDaNhb = diagnosticos.filter(d => 
+        d.subconjuntoIds?.some(id => nhbIds.includes(id))
+      );
+      setDiagnosticosFiltrados(diagnosticosDaNhb);
+    } else {
+      setDiagnosticosFiltrados([]);
+    }
+  };
+
+  // Toggle NHB selection for a specific value
+  const toggleNhb = (index: number, nhbId: string) => {
+    const currentNhbIds = formExame.valoresReferencia[index].nhbIds || [];
+    const newNhbIds = toggleValueInArray(currentNhbIds, nhbId);
+    handleNhbChange(index, newNhbIds);
+  };
+
+  // Atualizar diagnósticos selecionados
+  const handleDiagnosticoChange = (index: number, diagnosticoIds: string[]) => {
+    const novosValores = [...formExame.valoresReferencia];
+    novosValores[index] = {
+      ...novosValores[index],
+      diagnosticoIds: diagnosticoIds
+    };
+
     setFormExame({
       ...formExame,
       valoresReferencia: novosValores
     });
   };
 
-  // Atualizar diagnóstico selecionado
-  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
-    const novosValores = [...formExame.valoresReferencia];
-    novosValores[index] = {
-      ...novosValores[index],
-      diagnosticoId: diagnosticoId
-    };
-    
-    setFormExame({
-      ...formExame,
-      valoresReferencia: novosValores
-    });
+  // Toggle diagnóstico selection for a specific value
+  const toggleDiagnostico = (index: number, diagId: string) => {
+    const currentDiagIds = formExame.valoresReferencia[index].diagnosticoIds || [];
+    const newDiagIds = toggleValueInArray(currentDiagIds, diagId);
+    handleDiagnosticoChange(index, newDiagIds);
   };
   
   // Atualizar tipo de exame
@@ -298,17 +382,19 @@ const GerenciadorExamesLaboratoriais = () => {
         return;
       }
       
-      if (formExame.valoresReferencia.some(vr => !vr.unidade.trim())) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Unidade é obrigatória para todos os valores de referência.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Validar campos específicos de acordo com a variação
+      // Validar campos dos valores de referência
       for (const valor of formExame.valoresReferencia) {
+        // Unidade só é obrigatória para valores numéricos
+        if (valor.tipoValor === "Numérico" && !valor.unidade?.trim()) {
+          toast({
+            title: "Campo obrigatório",
+            description: "Unidade é obrigatória para valores numéricos.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Validar campos específicos de acordo com a variação
         if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
           if (!valor.sexo) {
             toast({
@@ -362,19 +448,19 @@ const GerenciadorExamesLaboratoriais = () => {
             return;
           }
 
-          if (!valor.nhbId) {
+          if (!valor.nhbIds || valor.nhbIds.length === 0) {
             toast({
               title: "Campo obrigatório",
-              description: "Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
+              description: "Pelo menos uma Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
               variant: "destructive"
             });
             return;
           }
 
-          if (!valor.diagnosticoId) {
+          if (!valor.diagnosticoIds || valor.diagnosticoIds.length === 0) {
             toast({
               title: "Campo obrigatório",
-              description: "Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
+              description: "Pelo menos um Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
               variant: "destructive"
             });
             return;
@@ -688,12 +774,12 @@ const GerenciadorExamesLaboratoriais = () => {
                     )}
                     
                     <div className="grid gap-2">
-                      <Label>Unidade</Label>
+                      <Label>Unidade {valor.tipoValor === "Texto" ? "(opcional)" : "(obrigatório)"}</Label>
                       <Input
                         value={valor.unidade}
                         onChange={(e) => atualizarValorReferencia(index, 'unidade', e.target.value)}
                         placeholder="Ex: g/dL"
-                        required
+                        required={valor.tipoValor === "Numérico"}
                       />
                     </div>
                     
@@ -740,51 +826,111 @@ const GerenciadorExamesLaboratoriais = () => {
                           <div className="grid gap-3">
                             <div>
                               <Label className="text-sm text-muted-foreground mb-1 block">
-                                1. Selecione uma Necessidade Humana Básica (NHB)
+                                1. Selecione as Necessidades Humanas Básicas (NHB)
                               </Label>
-                              <Select
-                                value={valor.nhbId || ''}
-                                onValueChange={(v) => handleNhbChange(index, v)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione uma NHB" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {subconjuntos.map((nhb) => (
-                                    <SelectItem key={nhb.id} value={nhb.id!}>
-                                      {nhb.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex flex-wrap gap-1 mb-2">
+                                {(valor.nhbIds || []).map((id) => (
+                                  <Badge 
+                                    key={id} 
+                                    variant="secondary"
+                                    className="flex items-center gap-1"
+                                  >
+                                    {getNhbName(id)}
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-4 w-4 p-0"
+                                      onClick={() => toggleNhb(index, id)}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                    <Plus className="h-4 w-4" /> Adicionar NHB
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                  <ScrollArea className="h-72">
+                                    <div className="space-y-2">
+                                      {subconjuntos.map((nhb) => (
+                                        <div 
+                                          key={nhb.id} 
+                                          className="flex items-center gap-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                                          onClick={() => toggleNhb(index, nhb.id!)}
+                                        >
+                                          <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${(valor.nhbIds || []).includes(nhb.id!) ? 'bg-primary border-primary' : 'border-input'}`}>
+                                            {(valor.nhbIds || []).includes(nhb.id!) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                                          </div>
+                                          <span>{nhb.nome}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </ScrollArea>
+                                </PopoverContent>
+                              </Popover>
                             </div>
                             
-                            {valor.nhbId && (
+                            {(valor.nhbIds || []).length > 0 && (
                               <div>
                                 <Label className="text-sm text-muted-foreground mb-1 block">
-                                  2. Selecione um Diagnóstico
+                                  2. Selecione os Diagnósticos
                                 </Label>
-                                <Select
-                                  value={valor.diagnosticoId || ''}
-                                  onValueChange={(v) => handleDiagnosticoChange(index, v)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione um diagnóstico" />
-                                  </SelectTrigger>
-                                  <SelectContent>
+                                <div className="flex flex-wrap gap-1 mb-2">
+                                  {(valor.diagnosticoIds || []).map((id) => (
+                                    <Badge 
+                                      key={id} 
+                                      variant="secondary"
+                                      className="flex items-center gap-1 max-w-full"
+                                    >
+                                      <span className="truncate">{getDiagnosticoName(id)}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-4 w-4 p-0 flex-shrink-0"
+                                        onClick={() => toggleDiagnostico(index, id)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </Badge>
+                                  ))}
+                                </div>
+                                
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="flex items-center gap-1">
+                                      <Plus className="h-4 w-4" /> Adicionar Diagnóstico
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80">
                                     {diagnosticosFiltrados.length > 0 ? (
-                                      diagnosticosFiltrados.map((diag) => (
-                                        <SelectItem key={diag.id} value={diag.id!}>
-                                          {diag.nome || diag.descricao}
-                                        </SelectItem>
-                                      ))
+                                      <ScrollArea className="h-72">
+                                        <div className="space-y-2">
+                                          {diagnosticosFiltrados.map((diag) => (
+                                            <div 
+                                              key={diag.id} 
+                                              className="flex items-center gap-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                                              onClick={() => toggleDiagnostico(index, diag.id!)}
+                                            >
+                                              <div className={`w-4 h-4 border rounded-sm flex items-center justify-center ${(valor.diagnosticoIds || []).includes(diag.id!) ? 'bg-primary border-primary' : 'border-input'}`}>
+                                                {(valor.diagnosticoIds || []).includes(diag.id!) && <div className="w-2 h-2 bg-white rounded-sm" />}
+                                              </div>
+                                              <span className="truncate">{diag.nome || diag.descricao}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </ScrollArea>
                                     ) : (
-                                      <SelectItem value="no-diagnostics" disabled>
-                                        Nenhum diagnóstico disponível para esta NHB
-                                      </SelectItem>
+                                      <div className="text-sm text-muted-foreground p-2">
+                                        Selecione pelo menos uma NHB para ver os diagnósticos disponíveis
+                                      </div>
                                     )}
-                                  </SelectContent>
-                                </Select>
+                                  </PopoverContent>
+                                </Popover>
                               </div>
                             )}
                           </div>
