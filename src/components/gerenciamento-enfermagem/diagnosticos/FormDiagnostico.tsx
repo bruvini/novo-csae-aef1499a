@@ -1,4 +1,5 @@
-import React from "react";
+
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,23 +12,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
-import {
-  DiagnosticoCompleto,
-  ResultadoEsperado,
-  Subconjunto,
-  Intervencao,
-} from "@/services/bancodados/tipos";
+import { Plus, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { DiagnosticoCompleto, ResultadoEsperado, Subconjunto, Intervencao } from "@/types";
 import ResultadoEsperadoForm from "./ResultadoEsperadoForm";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface FormDiagnosticoProps {
   formDiagnostico: DiagnosticoCompleto;
   setFormDiagnostico: React.Dispatch<React.SetStateAction<DiagnosticoCompleto>>;
-  tipoSubconjuntoSelecionado: "Protocolo" | "NHB";
-  setTipoSubconjuntoSelecionado: React.Dispatch<
-    React.SetStateAction<"Protocolo" | "NHB">
-  >;
-  subconjuntosFiltrados: Subconjunto[];
+  subconjuntos: Subconjunto[];
   onSalvar: () => Promise<void>;
   onCancel: () => void;
   editando: boolean;
@@ -54,9 +48,7 @@ interface FormDiagnosticoProps {
 const FormDiagnostico = ({
   formDiagnostico,
   setFormDiagnostico,
-  tipoSubconjuntoSelecionado,
-  setTipoSubconjuntoSelecionado,
-  subconjuntosFiltrados,
+  subconjuntos,
   onSalvar,
   onCancel,
   editando,
@@ -67,57 +59,68 @@ const FormDiagnostico = ({
   onRemoverIntervencao,
   onAtualizarIntervencao,
 }: FormDiagnosticoProps) => {
+  const [subconjuntoNHB, setSubconjuntoNHB] = useState<string>("");
+  const [subconjuntoProtocolo, setSubconjuntoProtocolo] = useState<string>("");
+  
+  // Filter subconjuntos by type
+  const subconjuntosNHB = subconjuntos.filter(s => s.tipo === "NHB");
+  const subconjuntosProtocolo = subconjuntos.filter(s => s.tipo === "Protocolo");
+  
+  // Add subconjunto to the form
+  const adicionarSubconjunto = (id: string) => {
+    if (id && !formDiagnostico.subconjuntoIds.includes(id)) {
+      setFormDiagnostico({
+        ...formDiagnostico,
+        subconjuntoIds: [...formDiagnostico.subconjuntoIds, id]
+      });
+    }
+  };
+  
+  // Remove subconjunto from the form
+  const removerSubconjunto = (id: string) => {
+    setFormDiagnostico({
+      ...formDiagnostico,
+      subconjuntoIds: formDiagnostico.subconjuntoIds.filter(sid => sid !== id)
+    });
+  };
+  
+  // Handle NHB subconjunto selection
+  const handleSubconjuntoNHBChange = (value: string) => {
+    setSubconjuntoNHB(value);
+    if (value !== "placeholder") {
+      adicionarSubconjunto(value);
+      setSubconjuntoNHB("placeholder");
+    }
+  };
+  
+  // Handle Protocolo subconjunto selection
+  const handleSubconjuntoProtocoloChange = (value: string) => {
+    setSubconjuntoProtocolo(value);
+    if (value !== "placeholder") {
+      adicionarSubconjunto(value);
+      setSubconjuntoProtocolo("placeholder");
+    }
+  };
+  
+  // Get subconjunto name by ID
+  const getSubconjuntoNome = (id: string) => {
+    const subconjunto = subconjuntos.find(s => s.id === id);
+    return subconjunto ? subconjunto.nome : "Desconhecido";
+  };
+  
+  // Get subconjunto type by ID
+  const getSubconjuntoTipo = (id: string) => {
+    const subconjunto = subconjuntos.find(s => s.id === id);
+    return subconjunto ? subconjunto.tipo : "Desconhecido";
+  };
+  
+  // Check if form is valid
+  const isFormValid = () => {
+    return formDiagnostico.subconjuntoIds.length > 0 && formDiagnostico.nome.trim() !== "";
+  };
+
   return (
     <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="tipoSubconjunto">Tipo de Subconjunto</Label>
-          <Select
-            value={tipoSubconjuntoSelecionado}
-            onValueChange={(v) =>
-              setTipoSubconjuntoSelecionado(v as "Protocolo" | "NHB")
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Protocolo">Protocolo</SelectItem>
-              <SelectItem value="NHB">
-                Necessidade Humana Básica (NHB)
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid gap-2 md:col-span-2">
-          <Label htmlFor="subconjunto">Subconjunto</Label>
-          <Select
-            value={formDiagnostico.subconjuntoId || "placeholder"}
-            onValueChange={(v) =>
-              setFormDiagnostico({
-                ...formDiagnostico,
-                subconjuntoId: v === "placeholder" ? "" : v,
-              })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um subconjunto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="placeholder" disabled>
-                Selecione um subconjunto
-              </SelectItem>
-              {subconjuntosFiltrados.map((subconjunto) => (
-                <SelectItem key={subconjunto.id} value={subconjunto.id!}>
-                  {subconjunto.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <div className="grid gap-2">
         <Label htmlFor="nome">Nome do Diagnóstico</Label>
         <Input
@@ -145,6 +148,82 @@ const FormDiagnostico = ({
           rows={2}
         />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* NHB Section */}
+        <div className="grid gap-2">
+          <Label htmlFor="subconjuntoNHB">Necessidades Humanas Básicas (NHB)</Label>
+          <Select
+            value={subconjuntoNHB || "placeholder"}
+            onValueChange={handleSubconjuntoNHBChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione uma NHB" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="placeholder" disabled>
+                Selecione uma NHB
+              </SelectItem>
+              {subconjuntosNHB.map((subconjunto) => (
+                <SelectItem key={subconjunto.id} value={subconjunto.id!}>
+                  {subconjunto.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Protocolos Section */}
+        <div className="grid gap-2">
+          <Label htmlFor="subconjuntoProtocolo">Protocolos</Label>
+          <Select
+            value={subconjuntoProtocolo || "placeholder"}
+            onValueChange={handleSubconjuntoProtocoloChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um protocolo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="placeholder" disabled>
+                Selecione um protocolo
+              </SelectItem>
+              {subconjuntosProtocolo.map((subconjunto) => (
+                <SelectItem key={subconjunto.id} value={subconjunto.id!}>
+                  {subconjunto.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Selected Subconjuntos */}
+      {formDiagnostico.subconjuntoIds.length > 0 && (
+        <div className="grid gap-2">
+          <Label>Subconjuntos Selecionados</Label>
+          <div className="flex flex-wrap gap-2">
+            {formDiagnostico.subconjuntoIds.map((id) => (
+              <Badge 
+                key={id} 
+                variant="outline" 
+                className="flex items-center gap-1 p-1"
+              >
+                <span className="text-xs">{getSubconjuntoNome(id)} ({getSubconjuntoTipo(id)})</span>
+                <button 
+                  onClick={() => removerSubconjunto(id)}
+                  type="button"
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+          {formDiagnostico.subconjuntoIds.length === 0 && (
+            <p className="text-xs text-red-500">Selecione ao menos um subconjunto</p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-2">
         <div className="flex justify-between items-center">
@@ -183,6 +262,7 @@ const FormDiagnostico = ({
         <Button
           onClick={onSalvar}
           className="bg-csae-green-600 hover:bg-csae-green-700"
+          disabled={!isFormValid()}
         >
           {editando ? "Atualizar" : "Cadastrar"} Diagnóstico
         </Button>

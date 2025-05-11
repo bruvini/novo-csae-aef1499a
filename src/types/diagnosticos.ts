@@ -10,8 +10,9 @@ export interface DiagnosticoCompleto {
   titulo?: string;
   definicao?: string;
   codigoCipe?: string;
-  subconjuntoId: string;
-  subconjunto?: string;
+  // Changed from single subconjunto to arrays of subconjuntos
+  subconjuntoIds: string[];
+  subconjuntos?: string[];
   subitemId?: string;
   subitemNome?: string;
   caracteristicasDefinidoras?: string[];

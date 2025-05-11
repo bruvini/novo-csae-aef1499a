@@ -21,7 +21,6 @@ const GerenciadorDiagnosticos = () => {
   const [filtroSubconjunto, setFiltroSubconjunto] = useState<string>("");
   const [filtroDiagnostico, setFiltroDiagnostico] = useState<string>("");
   const [termoBusca, setTermoBusca] = useState<string>("");
-  const [tipoSubconjuntoSelecionado, setTipoSubconjuntoSelecionado] = useState<'NHB' | 'Protocolo'>('NHB');
   
   // Modal states
   const [modalSubconjuntoAberto, setModalSubconjuntoAberto] = useState<boolean>(false);
@@ -37,12 +36,13 @@ const GerenciadorDiagnosticos = () => {
   });
   const [formDiagnostico, setFormDiagnostico] = useState<DiagnosticoCompleto>({
     nome: "",
-    subconjuntoId: "",
+    subconjuntoIds: [], // Changed from single subconjuntoId to array
     resultadosEsperados: [{
-      titulo: "",
+      descricao: "", // Changed from titulo to descricao
       intervencoes: [{
         titulo: "",
-        descricao: ""
+        ativo: true,
+        diagnosticoIds: []
       }]
     }]
   });
@@ -67,7 +67,10 @@ const GerenciadorDiagnosticos = () => {
       const diagnosticosSnapshot = await getDocs(collection(db, "diagnosticosEnfermagem"));
       const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
+        // Ensure backward compatibility with old structure
+        subconjuntoIds: doc.data().subconjuntoIds || 
+                       (doc.data().subconjuntoId ? [doc.data().subconjuntoId] : [])
       })) as DiagnosticoCompleto[];
       
       setSubconjuntos(subconjuntosData);
@@ -90,12 +93,18 @@ const GerenciadorDiagnosticos = () => {
     const subconjunto = subconjuntos.find(s => s.id === id);
     return subconjunto ? subconjunto.tipo : "Desconhecido";
   };
+  
+  // Get comma-separated names of all subconjuntos for a diagnostico
+  const getSubconjuntosNomes = (ids: string[]) => {
+    if (!ids || ids.length === 0) return "Nenhum";
+    return ids.map(id => getNomeSubconjunto(id)).join(", ");
+  };
 
   // Modal handlers for Subconjuntos
   const abrirModalCriarSubconjunto = () => {
     setFormSubconjunto({
       nome: "",
-      tipo: tipoSubconjuntoSelecionado,
+      tipo: "NHB",
       descricao: "",
       ativo: true
     });
@@ -147,7 +156,7 @@ const GerenciadorDiagnosticos = () => {
 
   const excluirSubconjunto = async (id: string) => {
     // Check if there are any diagnostics linked to this subconjunto
-    const diagnosticosVinculados = diagnosticos.filter(d => d.subconjuntoId === id);
+    const diagnosticosVinculados = diagnosticos.filter(d => d.subconjuntoIds && d.subconjuntoIds.includes(id));
     if (diagnosticosVinculados.length > 0) {
       toast.error("Não é possível excluir um subconjunto que possui diagnósticos vinculados.");
       return;
@@ -172,12 +181,13 @@ const GerenciadorDiagnosticos = () => {
   const abrirModalCriarDiagnostico = () => {
     setFormDiagnostico({
       nome: "",
-      subconjuntoId: "",
+      subconjuntoIds: [], // Changed from single subconjuntoId to array
       resultadosEsperados: [{
-        titulo: "",
+        descricao: "",
         intervencoes: [{
           titulo: "",
-          descricao: ""
+          ativo: true,
+          diagnosticoIds: []
         }]
       }]
     });
@@ -186,17 +196,27 @@ const GerenciadorDiagnosticos = () => {
   };
 
   const abrirModalEditarDiagnostico = (diagnostico: DiagnosticoCompleto) => {
-    const subconjunto = subconjuntos.find(s => s.id === diagnostico.subconjuntoId);
-    if (subconjunto) {
-      setTipoSubconjuntoSelecionado(subconjunto.tipo as 'NHB' | 'Protocolo');
-    }
-    setFormDiagnostico({...diagnostico});
+    // Ensure diagnostico has the new structure
+    const diagnosticoAtualizado = {
+      ...diagnostico,
+      subconjuntoIds: diagnostico.subconjuntoIds || 
+                     (diagnostico.subconjuntoId ? [diagnostico.subconjuntoId] : [])
+    };
+    
+    setFormDiagnostico(diagnosticoAtualizado);
     setEditandoDiagnostico(true);
     setModalDiagnosticoAberto(true);
   };
 
   const abrirModalVisualizarDiagnostico = (diagnostico: DiagnosticoCompleto) => {
-    setDiagnosticoVisualizar(diagnostico);
+    // Ensure diagnostico has the new structure for visualization
+    const diagnosticoAtualizado = {
+      ...diagnostico,
+      subconjuntoIds: diagnostico.subconjuntoIds || 
+                     (diagnostico.subconjuntoId ? [diagnostico.subconjuntoId] : [])
+    };
+    
+    setDiagnosticoVisualizar(diagnosticoAtualizado);
     setModalVisualizarDiagnosticoAberto(true);
   };
 
@@ -206,16 +226,16 @@ const GerenciadorDiagnosticos = () => {
       return;
     }
 
-    if (!formDiagnostico.subconjuntoId) {
-      toast.error("É obrigatório selecionar um subconjunto.");
+    if (!formDiagnostico.subconjuntoIds || formDiagnostico.subconjuntoIds.length === 0) {
+      toast.error("É obrigatório selecionar pelo menos um subconjunto.");
       return;
     }
 
     // Validate resultados esperados
     for (let i = 0; i < formDiagnostico.resultadosEsperados.length; i++) {
       const resultado = formDiagnostico.resultadosEsperados[i];
-      if (!resultado.titulo.trim()) {
-        toast.error(`O título do resultado esperado ${i+1} é obrigatório.`);
+      if (!resultado.descricao || !resultado.descricao.trim()) {
+        toast.error(`A descrição do resultado esperado ${i+1} é obrigatória.`);
         return;
       }
 
@@ -226,22 +246,35 @@ const GerenciadorDiagnosticos = () => {
           toast.error(`O título da intervenção ${j+1} no resultado esperado ${i+1} é obrigatório.`);
           return;
         }
+        
+        // Set verbos if they're missing but descripção is provided
+        if (!intervencao.verboPrimeiraEnfermeiro && !intervencao.verboOutraPessoa && intervencao.titulo) {
+          toast.error(`Os verbos da intervenção ${j+1} no resultado esperado ${i+1} são obrigatórios.`);
+          return;
+        }
       }
     }
 
     setCarregando(true);
     try {
+      // Make a copy of the formDiagnostico to clean it up before saving
+      const diagnosticoParaSalvar = {
+        ...formDiagnostico,
+        // Set the first subconjunto as the primary one for backward compatibility
+        subconjuntoId: formDiagnostico.subconjuntoIds[0]
+      };
+      
       if (editandoDiagnostico && formDiagnostico.id) {
         // Update existing
         await updateDoc(doc(db, "diagnosticosEnfermagem", formDiagnostico.id), {
-          ...formDiagnostico,
+          ...diagnosticoParaSalvar,
           updatedAt: Timestamp.now()
         });
         toast.success("Diagnóstico atualizado com sucesso!");
       } else {
         // Create new
         await addDoc(collection(db, "diagnosticosEnfermagem"), {
-          ...formDiagnostico,
+          ...diagnosticoParaSalvar,
           createdAt: Timestamp.now(),
           ativo: true
         });
@@ -282,10 +315,11 @@ const GerenciadorDiagnosticos = () => {
       resultadosEsperados: [
         ...formDiagnostico.resultadosEsperados,
         {
-          titulo: "",
+          descricao: "",
           intervencoes: [{
             titulo: "",
-            descricao: ""
+            ativo: true,
+            diagnosticoIds: []
           }]
         }
       ]
@@ -301,7 +335,7 @@ const GerenciadorDiagnosticos = () => {
     });
   };
 
-  const atualizarResultadoEsperado = (index: number, campo: any, valor: any) => {
+  const atualizarResultadoEsperado = (index: number, campo: keyof ResultadoEsperado, valor: any) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[index] = {
       ...novosResultados[index],
@@ -318,7 +352,8 @@ const GerenciadorDiagnosticos = () => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes.push({
       titulo: "",
-      descricao: ""
+      ativo: true,
+      diagnosticoIds: []
     });
     setFormDiagnostico({
       ...formDiagnostico,
@@ -335,7 +370,7 @@ const GerenciadorDiagnosticos = () => {
     });
   };
 
-  const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: any, valor: string) => {
+  const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: keyof Intervencao, valor: any) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes[intervencaoIndex] = {
       ...novosResultados[resultadoIndex].intervencoes[intervencaoIndex],
@@ -345,11 +380,6 @@ const GerenciadorDiagnosticos = () => {
       ...formDiagnostico,
       resultadosEsperados: novosResultados
     });
-  };
-
-  // Get subconjuntos filtered by selected type
-  const getSubconjuntosFiltrados = () => {
-    return subconjuntos.filter(s => s.tipo === tipoSubconjuntoSelecionado);
   };
 
   return (
@@ -394,6 +424,7 @@ const GerenciadorDiagnosticos = () => {
             excluirDiagnostico={excluirDiagnostico}
             getNomeSubconjunto={getNomeSubconjunto}
             getTipoSubconjunto={getTipoSubconjunto}
+            getSubconjuntosNomes={getSubconjuntosNomes}
           />
         </TabsContent>
       </Tabs>
@@ -407,6 +438,7 @@ const GerenciadorDiagnosticos = () => {
             setFormSubconjunto={setFormSubconjunto}
             onSalvar={salvarSubconjunto}
             onCancel={() => setModalSubconjuntoAberto(false)}
+            editando={editandoSubconjunto}
           />
         </DialogContent>
       </Dialog>
@@ -418,9 +450,7 @@ const GerenciadorDiagnosticos = () => {
           <FormDiagnostico
             formDiagnostico={formDiagnostico}
             setFormDiagnostico={setFormDiagnostico}
-            tipoSubconjuntoSelecionado={tipoSubconjuntoSelecionado}
-            setTipoSubconjuntoSelecionado={setTipoSubconjuntoSelecionado}
-            subconjuntosFiltrados={getSubconjuntosFiltrados()}
+            subconjuntos={subconjuntos}
             onSalvar={salvarDiagnostico}
             onCancel={() => setModalDiagnosticoAberto(false)}
             editando={editandoDiagnostico}
@@ -441,7 +471,7 @@ const GerenciadorDiagnosticos = () => {
           {diagnosticoVisualizar && (
             <DiagnosticoVisualizer 
               diagnostico={diagnosticoVisualizar}
-              nomeSubconjunto={getNomeSubconjunto(diagnosticoVisualizar.subconjuntoId)}
+              subconjuntos={subconjuntos}
             />
           )}
         </DialogContent>
