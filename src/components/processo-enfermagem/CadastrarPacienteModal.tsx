@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -28,7 +30,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Paciente, cadastrarPaciente } from "@/services/bancodados";
-import { useAutenticacao } from "@/services/autenticacao";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";

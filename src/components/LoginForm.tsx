@@ -1,12 +1,10 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAutenticacao } from "@/services/autenticacao";
-import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");

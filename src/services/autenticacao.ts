@@ -9,6 +9,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
 import { UsuarioAutenticado } from '@/types/usuario';
+import { useAutenticacao } from '@/hooks/useAutenticacao'; // Import the hook
 
 export interface SessaoUsuario {
   uid: string;
@@ -47,13 +48,13 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
       uid: usuario.uid,
       email: usuario.email!,
       nome: dadosUsuario.nome,
-      sobrenome: dadosUsuario.sobrenome || '',
-      createdAt: dadosUsuario.createdAt?.toDate(),
-      admin: dadosUsuario.ehAdmin || false,
+      sobrenome: dadosUsuario.dadosPessoais?.nomeCompleto || '',
+      createdAt: dadosUsuario.dataCriacao?.toDate(),
+      ehAdmin: dadosUsuario.ehAdmin || false,
       gestorConteudos: dadosUsuario.gestorConteudos || false,
       totens: dadosUsuario.totens || false,
-      instituicao: dadosUsuario.instituicao,
-      statusAprovacao: dadosUsuario.statusAprovacao
+      instituicao: dadosUsuario.unidade,
+      statusAprovacao: dadosUsuario.statusAcesso
     };
   } catch (error) {
     console.error("Erro ao verificar autenticação:", error);
@@ -95,12 +96,12 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
       uid: usuario.uid,
       email: usuario.email!,
       nome: dadosUsuario.nome,
-      sobrenome: dadosUsuario.sobrenome || '',
-      admin: dadosUsuario.ehAdmin || false,
+      sobrenome: dadosUsuario.dadosPessoais?.nomeCompleto || '',
+      ehAdmin: dadosUsuario.ehAdmin || false,
       gestorConteudos: dadosUsuario.gestorConteudos || false,
       totens: dadosUsuario.totens || false,
-      instituicao: dadosUsuario.instituicao,
-      statusAprovacao: dadosUsuario.statusAprovacao
+      instituicao: dadosUsuario.unidade,
+      statusAprovacao: dadosUsuario.statusAcesso
     };
   } catch (error: any) {
     if (error.code === "auth/invalid-credential") {
@@ -202,3 +203,6 @@ export const verificarUsuarioExistente = async (email: string): Promise<boolean>
     return false;
   }
 };
+
+// Export for back-compatibility
+export { useAutenticacao } from '@/hooks/useAutenticacao';

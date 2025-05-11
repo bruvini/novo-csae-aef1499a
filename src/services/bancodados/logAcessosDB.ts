@@ -3,12 +3,23 @@ import { collection, addDoc, Timestamp, getDocs, query, where, limit, orderBy } 
 import { db } from "../firebase";
 
 // Function to register a user access
-export const registrarAcesso = async (userId: string): Promise<void> => {
+export const registrarAcesso = async (
+  userId: string,
+  userName?: string,
+  userEmail?: string,
+  action?: string,
+  details?: string,
+  platform?: string
+): Promise<void> => {
   try {
     await addDoc(collection(db, "logAcessos"), {
       usuarioId: userId,
-      timestamp: Timestamp.now(),
-      plataforma: "web"
+      usuarioNome: userName || "",
+      usuarioEmail: userEmail || "",
+      acao: action || "login",
+      detalhes: details || "Login realizado com sucesso",
+      plataforma: platform || "web",
+      timestamp: Timestamp.now()
     });
   } catch (error) {
     console.error("Erro ao registrar acesso:", error);

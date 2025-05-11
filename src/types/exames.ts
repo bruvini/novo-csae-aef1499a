@@ -1,5 +1,6 @@
 
 import { Timestamp } from "firebase/firestore";
+import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "./diagnosticos";
 
 // Exames Laboratoriais
 export interface ExameLaboratorial {
@@ -32,3 +33,6 @@ export interface ValorReferenciaExame {
   nhbId?: string;
   diagnosticoId?: string;
 }
+
+// Re-export types from diagnosticos.ts to fix import errors
+export { SubconjuntoDiagnostico, DiagnosticoCompleto } from "./diagnosticos";

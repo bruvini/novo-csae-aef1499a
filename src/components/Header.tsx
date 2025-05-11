@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
-import { useAutenticacao } from '@/services/autenticacao';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {

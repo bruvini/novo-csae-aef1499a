@@ -66,3 +66,6 @@ export interface ValorReferencia {
 
 // Import the SubconjuntoDiagnostico interface from diagnósticos
 export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
+
+// Re-export these types from sistemas.ts
+export { RevisaoSistema, SistemaCorporal, ValorReferenciaSistema } from './sistemas';

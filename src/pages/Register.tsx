@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAutenticacao } from "@/services/autenticacao";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 import {
   verificarUsuarioExistente,
   cadastrarUsuario,

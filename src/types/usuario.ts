@@ -21,6 +21,12 @@ export interface UsuarioAutenticado {
   ultimoAcesso?: Timestamp;
   contadorAcessos?: number;
   id?: string;
+  sobrenome?: string;
+  createdAt?: Timestamp;
+  gestorConteudos?: boolean;
+  totens?: boolean;
+  instituicao?: string;
+  statusAprovacao?: string;
 }
 
 // Alias for backward compatibility
@@ -32,6 +38,9 @@ export interface SessaoUsuario {
   nomeUsuario: string;
   tipoUsuario: string;
   statusAcesso?: string;
+  ehAdmin?: boolean;
+  gestorConteudos?: boolean;
+  totens?: boolean;
   usuario?: {
     atuaSMS?: boolean;
     contadorAcessos?: number;

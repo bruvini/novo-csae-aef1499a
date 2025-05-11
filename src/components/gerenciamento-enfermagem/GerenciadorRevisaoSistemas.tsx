@@ -1,874 +1,654 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  CardContent, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Card,
+  CardContent,
   CardDescription,
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  serverTimestamp,
-  query,
-  where
-} from 'firebase/firestore';
-import { db } from '@/services/firebase';
-import ValorReferenciaCard from './sinais-vitais/ValorReferenciaCard';
-import { 
-  ValorReferencia, 
-  RevisaoSistema, 
-  SistemaCorporal, 
-  SubconjuntoDiagnostico, 
-  DiagnosticoCompleto 
-} from '@/types/sinais-vitais';
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { HelpCircle, Plus, Trash2, X } from "lucide-react";
+import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sinais-vitais";
+import { useToast } from "@/hooks/use-toast";
+import {
+  createRevisaoSistema,
+  updateRevisaoSistema,
+  deleteRevisaoSistema,
+  fetchSistemasCorporais,
+  fetchRevisoesSistema,
+  createSistemaCorporal,
+  updateSistemaCorporal,
+  deleteSistemaCorporal
+} from "@/services/bancodados";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import ValorReferenciaCard from "@/components/gerenciamento-enfermagem/sinais-vitais/ValorReferenciaCard";
+import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
+import { fetchSubconjuntos, fetchDiagnosticos } from "@/services/bancodados/diagnosticosDB";
 
 const GerenciadorRevisaoSistemas = () => {
+  const [sistemasCorporais, setSistemasCorporais] = useState<SistemaCorporal[]>([]);
+  const [revisoesSistema, setRevisoesSistema] = useState<RevisaoSistema[]>([]);
+  const [selectedSistema, setSelectedSistema] = useState<string | null>(null);
+  const [isSistemaModalOpen, setIsSistemaModalOpen] = useState(false);
+  const [isRevisaoModalOpen, setIsRevisaoModalOpen] = useState(false);
+  const [sistemaEmEdicao, setSistemaEmEdicao] = useState<SistemaCorporal | null>(null);
+  const [revisaoEmEdicao, setRevisaoEmEdicao] = useState<RevisaoSistema | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("sistemas");
-  
-  // Estado para os dados
-  const [sistemas, setSistemas] = useState<SistemaCorporal[]>([]);
-  const [parametros, setParametros] = useState<RevisaoSistema[]>([]);
+  const [valoresReferencia, setValoresReferencia] = useState<ValorReferenciaSistema[]>([]);
   const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
-  const [nhbSelecionada, setNhbSelecionada] = useState<string | null>(null);
-  const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
-  
-  // Estado para os modais
-  const [modalSistemaAberto, setModalSistemaAberto] = useState(false);
-  const [modalParametroAberto, setModalParametroAberto] = useState(false);
-  const [editandoSistemaId, setEditandoSistemaId] = useState<string | null>(null);
-  const [editandoParametroId, setEditandoParametroId] = useState<string | null>(null);
-  
-  // Estado para carregamento
-  const [carregando, setCarregando] = useState(true);
-  
-  // Estado para os formulários
-  const [formSistema, setFormSistema] = useState<SistemaCorporal>({
-    nome: '',
-    descricao: '',
-    ativo: true 
-  });
-  
-  const [formParametro, setFormParametro] = useState<RevisaoSistema>({
-    sistemaId: '',
-    sistemaNome: '',
-    titulo: '', 
-    nome: '',
-    tipoAlteracao: 'Objetiva', 
-    ativo: true,
-    diferencaSexoIdade: false,
-    valoresReferencia: [{
-      unidade: '',
-      representaAlteracao: false,
-      variacaoPor: 'Nenhum',
-      tipoValor: 'Numérico',
-      titulo: '', 
-      condicao: 'entre'
-    }]
-  });
-  
-  // Carregar os dados iniciais
-  useEffect(() => {
-    const carregarDados = async () => {
-      try {
-        // Carregar sistemas
-        const sistemasRef = collection(db, 'sistemasCorporais');
-        const sistemasSnapshot = await getDocs(sistemasRef);
-        const sistemasData = sistemasSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as SistemaCorporal[];
-        setSistemas(sistemasData);
-        
-        // Carregar parâmetros
-        const parametrosRef = collection(db, 'revisaoSistemas');
-        const parametrosSnapshot = await getDocs(parametrosRef);
-        const parametrosData = parametrosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as RevisaoSistema[];
-        setParametros(parametrosData);
-        
-        // Carregar subconjuntos (NHBs)
-        const subconjuntosRef = query(
-          collection(db, 'subconjuntosDiagnosticos'), 
-          where('tipo', '==', 'NHB')
-        );
-        const subconjuntosSnapshot = await getDocs(subconjuntosRef);
-        const subconjuntosData = subconjuntosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as SubconjuntoDiagnostico[];
-        setSubconjuntos(subconjuntosData);
+  const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
 
-        // Carregar Diagnósticos
-        const diagnosticosRef = collection(db, 'diagnosticosEnfermagem');
-        const diagnosticosSnapshot = await getDocs(diagnosticosRef);
-        const diagnosticosData = diagnosticosSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as DiagnosticoCompleto[];
+  // Load data
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const sistemas = await fetchSistemasCorporais();
+        setSistemasCorporais(sistemas);
+        if (sistemas.length > 0) {
+          setSelectedSistema(sistemas[0].id || null);
+        }
+        const revisoes = await fetchRevisoesSistema();
+        setRevisoesSistema(revisoes);
+        const subconjuntosData = await fetchSubconjuntos();
+        setSubconjuntos(subconjuntosData);
+        const diagnosticosData = await fetchDiagnosticos();
         setDiagnosticos(diagnosticosData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
           title: "Erro ao carregar dados",
-          description: "Não foi possível carregar os dados dos sistemas.",
-          variant: "destructive"
+          description: "Ocorreu um erro ao carregar os dados. Por favor, tente novamente.",
+          variant: "destructive",
         });
       } finally {
-        setCarregando(false);
+        setIsLoading(false);
       }
     };
-    
-    carregarDados();
+    loadData();
   }, [toast]);
-  
-  // Filtrar diagnósticos quando uma NHB é selecionada
+
+  // Load revisões when selectedSistema changes
   useEffect(() => {
-    if (nhbSelecionada) {
-      // Correção: filtrar pelo subconjuntoId em vez de subitemId
-      const filtrados = diagnosticos.filter(d => d.subconjuntoId === nhbSelecionada);
-      setDiagnosticosFiltrados(filtrados);
-    } else {
-      setDiagnosticosFiltrados([]);
+    if (selectedSistema) {
+      setValoresReferencia(revisoesSistema.find(r => r.sistemaId === selectedSistema)?.valoresReferencia || []);
     }
-  }, [nhbSelecionada, diagnosticos]);
-  
-  // Funções para gerenciar sistemas corporais
-  const abrirModalCriarSistema = () => {
-    setFormSistema({
-      nome: '',
-      descricao: '',
-      ativo: true
-    });
-    setEditandoSistemaId(null);
-    setModalSistemaAberto(true);
+  }, [selectedSistema, revisoesSistema]);
+
+  // Handlers for Sistema Corporal
+  const handleOpenSistemaModal = () => {
+    setSistemaEmEdicao(null);
+    setIsSistemaModalOpen(true);
   };
-  
-  const abrirModalEditarSistema = (sistema: SistemaCorporal) => {
-    setFormSistema({...sistema});
-    setEditandoSistemaId(sistema.id || null);
-    setModalSistemaAberto(true);
+
+  const handleEditSistema = (sistema: SistemaCorporal) => {
+    setSistemaEmEdicao(sistema);
+    setIsSistemaModalOpen(true);
   };
-  
-  const salvarSistema = async () => {
+
+  const handleCloseSistemaModal = () => {
+    setIsSistemaModalOpen(false);
+    setSistemaEmEdicao(null);
+  };
+
+  const handleSaveSistema = async (sistema: SistemaCorporal) => {
+    setIsLoading(true);
     try {
-      if (!formSistema.nome.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Nome do sistema corporal é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (editandoSistemaId) {
-        // Atualizar existente
-        const sistemaRef = doc(db, 'sistemasCorporais', editandoSistemaId);
-        await updateDoc(sistemaRef, {
-          ...formSistema,
-          updatedAt: serverTimestamp()
-        });
-        
-        toast({
-          title: "Sistema atualizado",
-          description: `${formSistema.nome} foi atualizado com sucesso.`
-        });
-        
-        // Atualizar lista
-        setSistemas(prev => 
-          prev.map(s => s.id === editandoSistemaId ? {...formSistema, id: editandoSistemaId, updatedAt: new Date() as any} : s)
-        );
-        
-        // Atualizar nome do sistema nos parâmetros relacionados
-        if (formSistema.nome !== sistemas.find(s => s.id === editandoSistemaId)?.nome) {
-          const parametrosAtualizados = parametros.filter(p => p.sistemaId === editandoSistemaId);
-          for (const parametro of parametrosAtualizados) {
-            const parametroRef = doc(db, 'revisaoSistemas', parametro.id!);
-            await updateDoc(parametroRef, {
-              sistemaNome: formSistema.nome
-            });
-          }
-          setParametros(prev => 
-            prev.map(p => p.sistemaId === editandoSistemaId ? {...p, sistemaNome: formSistema.nome} : p)
-          );
-        }
+      if (sistema.id) {
+        await updateSistemaCorporal(sistema.id, sistema);
+        setSistemasCorporais(prev => prev.map(s => s.id === sistema.id ? sistema : s));
+        toast({ title: "Sistema atualizado com sucesso!" });
       } else {
-        // Criar novo
-        const novoSistema = {
-          ...formSistema,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-        
-        const docRef = await addDoc(collection(db, 'sistemasCorporais'), novoSistema);
-        
-        toast({
-          title: "Sistema criado",
-          description: `${formSistema.nome} foi criado com sucesso.`
-        });
-        
-        // Adicionar à lista
-        setSistemas(prev => [...prev, {...novoSistema, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
+        const novoSistema = await createSistemaCorporal(sistema);
+        setSistemasCorporais(prev => [...prev, novoSistema]);
+        toast({ title: "Sistema criado com sucesso!" });
       }
-      
-      setModalSistemaAberto(false);
+      handleCloseSistemaModal();
     } catch (error) {
       console.error("Erro ao salvar sistema:", error);
       toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o sistema corporal.",
-        variant: "destructive"
+        title: "Erro ao salvar sistema",
+        description: "Ocorreu um erro ao salvar o sistema. Por favor, tente novamente.",
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
-  const excluirSistema = async (id: string) => {
-    // Verificar se há parâmetros vinculados
-    const parametrosVinculados = parametros.filter(p => p.sistemaId === id);
-    if (parametrosVinculados.length > 0) {
-      toast({
-        title: "Não é possível excluir",
-        description: `Existem ${parametrosVinculados.length} parâmetros vinculados a este sistema. Remova-os primeiro.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (confirm("Tem certeza que deseja excluir este sistema? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'sistemasCorporais', id));
-        
-        toast({
-          title: "Sistema excluído",
-          description: "O sistema corporal foi excluído com sucesso."
-        });
-        
-        // Remover da lista
-        setSistemas(prev => prev.filter(s => s.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir sistema:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o sistema corporal.",
-          variant: "destructive"
-        });
-      }
-    }
-  };
-  
-  // Funções para gerenciar parâmetros de revisão de sistemas
-  const abrirModalCriarParametro = () => {
-    setFormParametro({
-      sistemaId: '',
-      sistemaNome: '',
-      titulo: '', 
-      nome: '',
-      tipoAlteracao: 'Objetiva',
-      ativo: true,
-      diferencaSexoIdade: false,
-      valoresReferencia: [{ 
-        unidade: '',
-        representaAlteracao: false,
-        variacaoPor: 'Nenhum',
-        tipoValor: 'Numérico',
-        titulo: '', 
-        condicao: 'entre' 
-      }]
-    });
-    setEditandoParametroId(null);
-    setModalParametroAberto(true);
-  };
-  
-  const abrirModalEditarParametro = (parametro: RevisaoSistema) => {
-    // Garantir que todos os valores de referência tenham os novos campos
-    const valoresAtualizados = parametro.valoresReferencia ? parametro.valoresReferencia.map(valor => ({
-      ...valor,
-      representaAlteracao: valor.representaAlteracao !== undefined ? valor.representaAlteracao : false,
-      variacaoPor: valor.variacaoPor || 'Nenhum',
-      tipoValor: valor.tipoValor || 'Numérico'
-    })) : [];
-
-    setFormParametro({
-      ...parametro,
-      valoresReferencia: valoresAtualizados
-    });
-    setEditandoParametroId(parametro.id || null);
-    setModalParametroAberto(true);
-    
-    // Se houver um nhbId em algum valor de referência, selecionar para carregar os diagnósticos
-    const valorComNhb = valoresAtualizados.find(v => v.nhbId);
-    if (valorComNhb && valorComNhb.nhbId) {
-      setNhbSelecionada(valorComNhb.nhbId);
-    }
-  };
-  
-  // Função para atualizar o sistema selecionado
-  const handleSistemaChange = (sistemaId: string) => {
-    const sistemaSelecionado = sistemas.find(s => s.id === sistemaId);
-    if (sistemaSelecionado) {
-      setFormParametro({
-        ...formParametro,
-        sistemaId: sistemaId,
-        sistemaNome: sistemaSelecionado.nome
-      });
-    }
-  };
-  
-  // Adicionar valor de referência
-  const adicionarValorReferencia = () => {
-    setFormParametro({
-      ...formParametro,
-      valoresReferencia: [
-        ...formParametro.valoresReferencia,
-        { 
-          unidade: '',
-          representaAlteracao: false,
-          variacaoPor: 'Nenhum',
-          tipoValor: 'Numérico',
-          titulo: '',
-          condicao: 'entre'
-        }
-      ]
-    });
-  };
-  
-  // Remover valor de referência
-  const removerValorReferencia = (index: number) => {
-    const novosValores = [...formParametro.valoresReferencia];
-    novosValores.splice(index, 1);
-    setFormParametro({
-      ...formParametro,
-      valoresReferencia: novosValores
-    });
-  };
-  
-  // Atualizar valor de referência
-  const atualizarValorReferencia = (index: number, campo: keyof ValorReferencia, valor: any) => {
-    const novosValores = [...formParametro.valoresReferencia];
-    novosValores[index] = {
-      ...novosValores[index],
-      [campo]: valor
-    };
-
-    // Quando o tipo de valor muda, ajustar os campos correspondentes
-    if (campo === 'tipoValor') {
-      if (valor === 'Texto') {
-        novosValores[index].valorTexto = '';
-        novosValores[index].valorMinimo = undefined;
-        novosValores[index].valorMaximo = undefined;
-      } else {
-        novosValores[index].valorTexto = undefined;
-      }
-    }
-
-    // Quando a variação muda, ajustamos os campos necessários
-    if (campo === 'variacaoPor') {
-      if (valor === 'Nenhum') {
-        // Remover campos desnecessários para variação única
-        delete novosValores[index].idadeMinima;
-        delete novosValores[index].idadeMaxima;
-        delete novosValores[index].sexo;
-      } else if (valor === 'Sexo') {
-        // Adicionar campo de sexo e remover idade
-        novosValores[index].sexo = 'Todos';
-        delete novosValores[index].idadeMinima;
-        delete novosValores[index].idadeMaxima;
-      } else if (valor === 'Idade') {
-        // Adicionar campos de idade e remover sexo
-        novosValores[index].idadeMinima = 0;
-        novosValores[index].idadeMaxima = 100;
-        delete novosValores[index].sexo;
-      }
-      // 'Ambos' mantém todos os campos
-    }
-
-    // Se desmarcar "representa alteração", limpar os campos relacionados
-    if (campo === 'representaAlteracao' && valor === false) {
-      delete novosValores[index].tituloAlteracao;
-      delete novosValores[index].nhbId;
-      delete novosValores[index].diagnosticoId;
-    }
-
-    setFormParametro({
-      ...formParametro,
-      valoresReferencia: novosValores
-    });
   };
 
-  // Atualizar NHB selecionada
-  const handleNhbChange = (index: number, nhbId: string) => {
-    setNhbSelecionada(nhbId);
-    
-    const novosValores = [...formParametro.valoresReferencia];
-    novosValores[index] = {
-      ...novosValores[index],
-      nhbId: nhbId,
-      diagnosticoId: undefined // Limpar diagnóstico quando mudar a NHB
-    };
-    
-    setFormParametro({
-      ...formParametro,
-      valoresReferencia: novosValores
-    });
-  };
-
-  // Atualizar diagnóstico selecionado
-  const handleDiagnosticoChange = (index: number, diagnosticoId: string) => {
-    const novosValores = [...formParametro.valoresReferencia];
-    novosValores[index] = {
-      ...novosValores[index],
-      diagnosticoId: diagnosticoId
-    };
-    
-    setFormParametro({
-      ...formParametro,
-      valoresReferencia: novosValores
-    });
-  };
-  
-  // Salvar parâmetro de revisão
-  const salvarParametro = async () => {
+  const handleDeleteSistema = async (id: string) => {
+    setIsLoading(true);
     try {
-      if (!formParametro.nome.trim()) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Nome do parâmetro é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!formParametro.sistemaId) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Sistema corporal é obrigatório.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (formParametro.valoresReferencia.some(vr => !vr.unidade.trim())) {
-        toast({
-          title: "Campo obrigatório",
-          description: "Unidade é obrigatória para todos os valores de referência.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Validar campos específicos de acordo com a variação
-      for (const valor of formParametro.valoresReferencia) {
-        if (valor.variacaoPor === 'Sexo' || valor.variacaoPor === 'Ambos') {
-          if (!valor.sexo) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Sexo é obrigatório quando a variação inclui sexo.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-        
-        if (valor.variacaoPor === 'Idade' || valor.variacaoPor === 'Ambos') {
-          if (valor.idadeMinima === undefined || valor.idadeMaxima === undefined) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Idade mínima e máxima são obrigatórias quando a variação inclui idade.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-
-        // Validar campos do tipo de valor
-        if (valor.tipoValor === 'Numérico') {
-          if (valor.valorMinimo === undefined && valor.valorMaximo === undefined) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Pelo menos um valor (mínimo ou máximo) é obrigatório para valores numéricos.",
-              variant: "destructive"
-            });
-            return;
-          }
-        } else if (valor.tipoValor === 'Texto') {
-          if (!valor.valorTexto?.trim()) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Valor textual é obrigatório quando o tipo é texto.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-
-        if (valor.representaAlteracao) {
-          if (!valor.tituloAlteracao?.trim()) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Título da alteração é obrigatório quando o valor representa uma alteração.",
-              variant: "destructive"
-            });
-            return;
-          }
-
-          if (!valor.nhbId) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Necessidade Humana Básica (NHB) é obrigatória para valores que representam alteração.",
-              variant: "destructive"
-            });
-            return;
-          }
-
-          if (!valor.diagnosticoId) {
-            toast({
-              title: "Campo obrigatório",
-              description: "Diagnóstico de Enfermagem é obrigatório para valores que representam alteração.",
-              variant: "destructive"
-            });
-            return;
-          }
-        }
-      }
-      
-      if (editandoParametroId) {
-        // Atualizar existente
-        const parametroRef = doc(db, 'revisaoSistemas', editandoParametroId);
-        await updateDoc(parametroRef, {
-          ...formParametro,
-          updatedAt: serverTimestamp()
-        });
-        
-        toast({
-          title: "Parâmetro atualizado",
-          description: `${formParametro.nome} foi atualizado com sucesso.`
-        });
-        
-        // Atualizar lista
-        setParametros(prev => 
-          prev.map(p => p.id === editandoParametroId ? {...formParametro, id: editandoParametroId, updatedAt: new Date() as any} : p)
-        );
-      } else {
-        // Criar novo
-        const novoParametro = {
-          ...formParametro,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        };
-        
-        const docRef = await addDoc(collection(db, 'revisaoSistemas'), novoParametro);
-        
-        toast({
-          title: "Parâmetro criado",
-          description: `${formParametro.nome} foi criado com sucesso.`
-        });
-        
-        // Adicionar à lista
-        setParametros(prev => [...prev, {...novoParametro, id: docRef.id, createdAt: new Date() as any, updatedAt: new Date() as any}]);
-      }
-      
-      setModalParametroAberto(false);
+      await deleteSistemaCorporal(id);
+      setSistemasCorporais(prev => prev.filter(s => s.id !== id));
+      toast({ title: "Sistema excluído com sucesso!" });
     } catch (error) {
-      console.error("Erro ao salvar parâmetro:", error);
+      console.error("Erro ao excluir sistema:", error);
       toast({
-        title: "Erro ao salvar",
-        description: "Ocorreu um erro ao salvar o parâmetro de revisão.",
-        variant: "destructive"
+        title: "Erro ao excluir sistema",
+        description: "Ocorreu um erro ao excluir o sistema. Por favor, tente novamente.",
+        variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  // Excluir parâmetro
-  const excluirParametro = async (id: string) => {
-    if (confirm("Tem certeza que deseja excluir este parâmetro? Esta ação não pode ser desfeita.")) {
-      try {
-        await deleteDoc(doc(db, 'revisaoSistemas', id));
-        
-        toast({
-          title: "Parâmetro excluído",
-          description: "O parâmetro foi excluído com sucesso."
-        });
-        
-        // Remover da lista
-        setParametros(prev => prev.filter(p => p.id !== id));
-      } catch (error) {
-        console.error("Erro ao excluir parâmetro:", error);
-        toast({
-          title: "Erro ao excluir",
-          description: "Ocorreu um erro ao excluir o parâmetro.",
-          variant: "destructive"
-        });
+
+  // Handlers for Revisao Sistema
+  const handleOpenRevisaoModal = () => {
+    setRevisaoEmEdicao(null);
+    setIsRevisaoModalOpen(true);
+  };
+
+  const handleEditRevisao = (revisao: RevisaoSistema) => {
+    setRevisaoEmEdicao(revisao);
+    setIsRevisaoModalOpen(true);
+    setValoresReferencia(revisao.valoresReferencia || []);
+  };
+
+  const handleCloseRevisaoModal = () => {
+    setIsRevisaoModalOpen(false);
+    setRevisaoEmEdicao(null);
+    setValoresReferencia([]);
+  };
+
+  const handleSaveRevisao = async (revisao: RevisaoSistema) => {
+    setIsLoading(true);
+    try {
+      const revisaoToSave = { ...revisao, sistemaId: selectedSistema || '', valoresReferencia };
+      if (revisao.id) {
+        await updateRevisaoSistema(revisao.id, revisaoToSave);
+        setRevisoesSistema(prev => prev.map(r => r.id === revisao.id ? revisaoToSave : r));
+        toast({ title: "Revisão atualizada com sucesso!" });
+      } else {
+        const novaRevisao = await createRevisaoSistema(revisaoToSave);
+        setRevisoesSistema(prev => [...prev, novaRevisao]);
+        toast({ title: "Revisão criada com sucesso!" });
       }
+      handleCloseRevisaoModal();
+    } catch (error) {
+      console.error("Erro ao salvar revisão:", error);
+      toast({
+        title: "Erro ao salvar revisão",
+        description: "Ocorreu um erro ao salvar a revisão. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
+  const handleDeleteRevisao = async (id: string) => {
+    setIsLoading(true);
+    try {
+      await deleteRevisaoSistema(id);
+      setRevisoesSistema(prev => prev.filter(r => r.id !== id));
+      toast({ title: "Revisão excluída com sucesso!" });
+    } catch (error) {
+      console.error("Erro ao excluir revisão:", error);
+      toast({
+        title: "Erro ao excluir revisão",
+        description: "Ocorreu um erro ao excluir a revisão. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Valor Referencia Handlers
+  const adicionarValorReferencia = () => {
+    setValoresReferencia(prev => [...prev, {
+      unidade: '',
+      representaAlteracao: false,
+      variacaoPor: 'Nenhum',
+      tipoValor: 'Numérico',
+    }]);
+  };
+
+  const removerValorReferencia = (index: number) => {
+    setValoresReferencia(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaSistema, valor: any) => {
+    const novosValoresReferencia = [...valoresReferencia];
+    novosValoresReferencia[index][campo] = valor;
+    setValoresReferencia(novosValoresReferencia);
+  };
+
+  // Replace these functions with updated versions accepting arrays
+  const handleNhbChange = (index: number, nhbIds: string[]) => {
+    // Implementation to handle multiple NHB selection
+    const novosValoresReferencia = [...valoresReferencia];
+    novosValoresReferencia[index].nhbIds = nhbIds;
+    setValoresReferencia(novosValoresReferencia);
+  };
+
+  const handleDiagnosticoChange = (index: number, diagnosticoIds: string[]) => {
+    // Implementation to handle multiple diagnostico selection
+    const novosValoresReferencia = [...valoresReferencia];
+    novosValoresReferencia[index].diagnosticoIds = diagnosticoIds;
+    setValoresReferencia(novosValoresReferencia);
+  };
+
+  // Fix the subconjuntoId reference to use subconjuntoIds
+  const diagnosticosFiltrados = diagnosticos.filter(diag => 
+    diag.subconjuntoIds && diag.subconjuntoIds.some(id => nhbSelecionadas.includes(id))
+  );
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gerenciamento de Revisão de Sistemas</CardTitle>
-        <CardDescription>
-          Cadastre e gerencie os sistemas corporais e seus parâmetros de avaliação.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-2 mb-6">
-            <TabsTrigger value="sistemas">Sistemas Corporais</TabsTrigger>
-            <TabsTrigger value="parametros">Parâmetros de Avaliação</TabsTrigger>
-          </TabsList>
-          
-          {/* Aba de Sistemas Corporais */}
-          <TabsContent value="sistemas">
-            <div className="flex justify-end mb-4">
-              <Button onClick={abrirModalCriarSistema} className="bg-csae-green-600 hover:bg-csae-green-700">
-                <Plus className="mr-2 h-4 w-4" /> Novo Sistema Corporal
-              </Button>
-            </div>
-            
-            {carregando ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
-              </div>
-            ) : sistemas.length === 0 ? (
-              <div className="text-center py-6 text-gray-500">
-                Nenhum sistema corporal cadastrado. Clique em "Novo Sistema Corporal" para começar.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Sistema</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Parâmetros Vinculados</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sistemas.map((sistema) => (
-                    <TableRow key={sistema.id}>
-                      <TableCell className="font-medium">{sistema.nome}</TableCell>
-                      <TableCell>{sistema.descricao || "-"}</TableCell>
-                      <TableCell>
-                        {parametros.filter(p => p.sistemaId === sistema.id).length}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditarSistema(sistema)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => excluirSistema(sistema.id!)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </TabsContent>
-          
-          {/* Aba de Parâmetros de Avaliação */}
-          <TabsContent value="parametros">
-            <div className="flex justify-end mb-4">
-              <Button onClick={abrirModalCriarParametro} className="bg-csae-green-600 hover:bg-csae-green-700">
-                <Plus className="mr-2 h-4 w-4" /> Novo Parâmetro
-              </Button>
-            </div>
-            
-            {carregando ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
-              </div>
-            ) : parametros.length === 0 ? (
-              <div className="text-center py-6 text-gray-500">
-                Nenhum parâmetro de avaliação cadastrado. Clique em "Novo Parâmetro" para começar.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome do Parâmetro</TableHead>
-                    <TableHead>Sistema Corporal</TableHead>
-                    <TableHead>Valores de Referência</TableHead>
-                    <TableHead>Valores com Alteração</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {parametros.map((parametro) => (
-                    <TableRow key={parametro.id}>
-                      <TableCell className="font-medium">{parametro.nome}</TableCell>
-                      <TableCell>{parametro.sistemaNome}</TableCell>
-                      <TableCell>{parametro.valoresReferencia.length} valores configurados</TableCell>
-                      <TableCell>
-                        {parametro.valoresReferencia.filter(v => v.representaAlteracao).length} valores
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" className="mr-2" onClick={() => abrirModalEditarParametro(parametro)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => excluirParametro(parametro.id!)}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-      
-      {/* Modal para criar/editar sistema corporal */}
-      <Dialog open={modalSistemaAberto} onOpenChange={setModalSistemaAberto}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editandoSistemaId ? 'Editar' : 'Novo'} Sistema Corporal</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {editandoSistemaId ? 'atualizar o' : 'cadastrar um novo'} sistema corporal.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="nome-sistema">Nome do Sistema</Label>
-              <Input
-                id="nome-sistema"
-                value={formSistema.nome}
-                onChange={(e) => setFormSistema({...formSistema, nome: e.target.value})}
-                placeholder="Ex: Sistema Respiratório"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label htmlFor="descricao-sistema">Descrição (opcional)</Label>
-              <Input
-                id="descricao-sistema"
-                value={formSistema.descricao || ''}
-                onChange={(e) => setFormSistema({...formSistema, descricao: e.target.value})}
-                placeholder="Descreva brevemente este sistema corporal"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalSistemaAberto(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={salvarSistema} className="bg-csae-green-600 hover:bg-csae-green-700">
-              {editandoSistemaId ? 'Atualizar' : 'Cadastrar'} Sistema
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal para criar/editar parâmetro de revisão */}
-      <Dialog open={modalParametroAberto} onOpenChange={setModalParametroAberto}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editandoParametroId ? 'Editar' : 'Novo'} Parâmetro de Avaliação</DialogTitle>
-            <DialogDescription>
-              Preencha os campos abaixo para {editandoParametroId ? 'atualizar o' : 'cadastrar um novo'} parâmetro de avaliação.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="nome-parametro">Nome do Parâmetro</Label>
-              <Input
-                id="nome-parametro"
-                value={formParametro.nome}
-                onChange={(e) => setFormParametro({...formParametro, nome: e.target.value})}
-                placeholder="Ex: Frequência Respiratória"
-              />
-            </div>
-            
-            <div className="grid gap-2">
-              <Label>Sistema Corporal</Label>
-              <Select
-                value={formParametro.sistemaId}
-                onValueChange={handleSistemaChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um sistema corporal" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sistemas.map((sistema) => (
-                    <SelectItem key={sistema.id} value={sistema.id!}>
-                      {sistema.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid gap-2">
-              <div className="flex justify-between items-center">
-                <Label>Valores de Referência</Label>
-                <Button type="button" variant="outline" size="sm" onClick={adicionarValorReferencia}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar Valor
-                </Button>
-              </div>
-              
-              {formParametro.valoresReferencia.map((valor, index) => (
-                <ValorReferenciaCard
-                  key={index}
-                  valor={valor}
-                  index={index}
-                  removerValorReferencia={removerValorReferencia}
-                  atualizarValorReferencia={atualizarValorReferencia}
-                  handleNhbChange={handleNhbChange}
-                  handleDiagnosticoChange={handleDiagnosticoChange}
-                  subconjuntos={subconjuntos}
-                  diagnosticosFiltrados={diagnosticosFiltrados}
-                />
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold text-csae-green-700 mb-4">Gerenciador de Revisão de Sistemas</h1>
+
+      {/* Sistemas Corporais Section */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold text-csae-green-600">Sistemas Corporais</h2>
+          <Button variant="outline" size="sm" onClick={handleOpenSistemaModal}>
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Sistema
+          </Button>
+        </div>
+        <ScrollArea className="h-[200px] w-full rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Nome</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sistemasCorporais.map(sistema => (
+                <TableRow key={sistema.id} className="cursor-pointer hover:bg-gray-100">
+                  <TableCell className="font-medium">{sistema.nome}</TableCell>
+                  <TableCell>{sistema.descricao}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditSistema(sistema)}>
+                      <Edit2 className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteSistema(sistema.id || '')}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                    </Button>
+                  </TableCell>
+                </TableRow>
               ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </section>
+
+      {/* Revisões de Sistemas Section */}
+      <section>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold text-csae-green-600">Revisões de Sistemas</h2>
+          <div className="flex gap-2">
+            <Select value={selectedSistema} onValueChange={setSelectedSistema}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Selecione um Sistema" />
+              </SelectTrigger>
+              <SelectContent>
+                {sistemasCorporais.map(sistema => (
+                  <SelectItem key={sistema.id} value={sistema.id || ''}>
+                    {sistema.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" onClick={handleOpenRevisaoModal} disabled={!selectedSistema}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Revisão
+            </Button>
+          </div>
+        </div>
+        <ScrollArea className="h-[300px] w-full rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Título</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {revisoesSistema
+                .filter(revisao => revisao.sistemaId === selectedSistema)
+                .map(revisao => (
+                  <TableRow key={revisao.id} className="cursor-pointer hover:bg-gray-100">
+                    <TableCell className="font-medium">{revisao.titulo}</TableCell>
+                    <TableCell>{revisao.descricao}</TableCell>
+                    <TableCell>{revisao.tipoAlteracao}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditRevisao(revisao)}>
+                        <Edit2 className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteRevisao(revisao.id || '')}>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </section>
+
+      {/* Modals */}
+      <SistemaCorporalModal
+        isOpen={isSistemaModalOpen}
+        onClose={handleCloseSistemaModal}
+        onSave={handleSaveSistema}
+        sistema={sistemaEmEdicao}
+      />
+      <RevisaoSistemaModal
+        isOpen={isRevisaoModalOpen}
+        onClose={handleCloseRevisaoModal}
+        onSave={handleSaveRevisao}
+        revisao={revisaoEmEdicao}
+        sistemasCorporais={sistemasCorporais}
+        selectedSistema={selectedSistema}
+        valoresReferencia={valoresReferencia}
+        adicionarValorReferencia={adicionarValorReferencia}
+        removerValorReferencia={removerValorReferencia}
+        atualizarValorReferencia={atualizarValorReferencia}
+        handleNhbChange={handleNhbChange}
+        handleDiagnosticoChange={handleDiagnosticoChange}
+        subconjuntos={subconjuntos}
+        diagnosticosFiltrados={diagnosticosFiltrados}
+      />
+    </div>
+  );
+};
+
+interface SistemaCorporalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (sistema: SistemaCorporal) => void;
+  sistema?: SistemaCorporal | null;
+}
+
+const SistemaCorporalModal: React.FC<SistemaCorporalModalProps> = ({ isOpen, onClose, onSave, sistema }) => {
+  const [nome, setNome] = useState(sistema?.nome || '');
+  const [descricao, setDescricao] = useState(sistema?.descricao || '');
+  const [ativo, setAtivo] = useState(sistema?.ativo !== false);
+
+  useEffect(() => {
+    setNome(sistema?.nome || '');
+    setDescricao(sistema?.descricao || '');
+    setAtivo(sistema?.ativo !== false);
+  }, [sistema]);
+
+  const handleSubmit = () => {
+    const sistemaToSave = {
+      id: sistema?.id,
+      nome,
+      descricao,
+      ativo,
+    };
+    onSave(sistemaToSave);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>{sistema ? "Editar Sistema Corporal" : "Novo Sistema Corporal"}</DialogTitle>
+          <DialogDescription>
+            Preencha os campos abaixo para {sistema ? "editar" : "criar"} um sistema corporal.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="name" className="text-right">
+              Nome
+            </Label>
+            <Input type="text" id="name" value={nome} onChange={(e) => setNome(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="description" className="text-right">
+              Descrição
+            </Label>
+            <Textarea id="description" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="active" className="text-right">
+              Ativo
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <Switch id="active" checked={ativo} onCheckedChange={setAtivo} />
             </div>
           </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalParametroAberto(false)}>
-              Cancelar
+        </div>
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit}>
+            Salvar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+interface RevisaoSistemaModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (revisao: RevisaoSistema) => void;
+  revisao?: RevisaoSistema | null;
+  sistemasCorporais: SistemaCorporal[];
+  selectedSistema: string | null;
+  valoresReferencia: ValorReferenciaSistema[];
+  adicionarValorReferencia: () => void;
+  removerValorReferencia: (index: number) => void;
+  atualizarValorReferencia: (index: number, campo: keyof ValorReferenciaSistema, valor: any) => void;
+  handleNhbChange: (index: number, nhbIds: string[]) => void;
+  handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
+  subconjuntos: SubconjuntoDiagnostico[];
+  diagnosticosFiltrados: DiagnosticoCompleto[];
+}
+
+const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  revisao,
+  sistemasCorporais,
+  selectedSistema,
+  valoresReferencia,
+  adicionarValorReferencia,
+  removerValorReferencia,
+  atualizarValorReferencia,
+  handleNhbChange,
+  handleDiagnosticoChange,
+  subconjuntos,
+  diagnosticosFiltrados
+}) => {
+  const [sistemaId, setSistemaId] = useState(selectedSistema || '');
+  const [titulo, setTitulo] = useState(revisao?.titulo || '');
+  const [descricao, setDescricao] = useState(revisao?.descricao || '');
+  const [tipoAlteracao, setTipoAlteracao] = useState<"Objetiva" | "Subjetiva" | "Ambas">(revisao?.tipoAlteracao || "Objetiva");
+  const [padrao, setPadrao] = useState(revisao?.padrao || '');
+  const [ativo, setAtivo] = useState(revisao?.ativo !== false);
+  const [diferencaSexoIdade, setDiferencaSexoIdade] = useState(revisao?.diferencaSexoIdade || false);
+
+  useEffect(() => {
+    setSistemaId(selectedSistema || '');
+    setTitulo(revisao?.titulo || '');
+    setDescricao(revisao?.descricao || '');
+    setTipoAlteracao(revisao?.tipoAlteracao || "Objetiva");
+    setPadrao(revisao?.padrao || '');
+    setAtivo(revisao?.ativo !== false);
+    setDiferencaSexoIdade(revisao?.diferencaSexoIdade || false);
+  }, [revisao, selectedSistema]);
+
+  const handleSubmit = () => {
+    const revisaoToSave = {
+      id: revisao?.id,
+      sistemaId,
+      titulo,
+      descricao,
+      tipoAlteracao,
+      padrao,
+      ativo,
+      diferencaSexoIdade,
+    };
+    onSave(revisaoToSave);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[700px]">
+        <DialogHeader>
+          <DialogTitle>{revisao ? "Editar Revisão de Sistema" : "Nova Revisão de Sistema"}</DialogTitle>
+          <DialogDescription>
+            Preencha os campos abaixo para {revisao ? "editar" : "criar"} uma revisão de sistema.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="sistema" className="text-right">
+              Sistema
+            </Label>
+            <Select value={sistemaId} onValueChange={setSistemaId} disabled>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Selecione um Sistema" />
+              </SelectTrigger>
+              <SelectContent>
+                {sistemasCorporais.map(sistema => (
+                  <SelectItem key={sistema.id} value={sistema.id || ''}>
+                    {sistema.nome}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="titulo" className="text-right">
+              Título
+            </Label>
+            <Input type="text" id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="descricao" className="text-right">
+              Descrição
+            </Label>
+            <Textarea id="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="tipoAlteracao" className="text-right">
+              Tipo de Alteração
+            </Label>
+            <Select value={tipoAlteracao} onValueChange={setTipoAlteracao}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Selecione o Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Objetiva">Objetiva</SelectItem>
+                <SelectItem value="Subjetiva">Subjetiva</SelectItem>
+                <SelectItem value="Ambas">Ambas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="padrao" className="text-right">
+              Padrão
+            </Label>
+            <Input type="text" id="padrao" value={padrao} onChange={(e) => setPadrao(e.target.value)} className="col-span-3" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="ativo" className="text-right">
+              Ativo
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <Switch id="ativo" checked={ativo} onCheckedChange={setAtivo} />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="diferencaSexoIdade" className="text-right">
+              Difere por Sexo/Idade
+            </Label>
+            <div className="col-span-3 flex items-center">
+              <Switch id="diferencaSexoIdade" checked={diferencaSexoIdade} onCheckedChange={setDiferencaSexoIdade} />
+            </div>
+          </div>
+        </div>
+
+        {/* Valores de Referência Section */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-csae-green-600">Valores de Referência</h3>
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">
+              Defina os valores de referência para esta revisão de sistema.
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={adicionarValorReferencia}>
+              <Plus className="h-4 w-4 mr-2" />
+              Adicionar Valor
             </Button>
-            <Button onClick={salvarParametro} className="bg-csae-green-600 hover:bg-csae-green-700">
-              {editandoParametroId ? 'Atualizar' : 'Cadastrar'} Parâmetro
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+          </div>
+
+          {valoresReferencia.map((valor, index) => (
+            <ValorReferenciaCard
+              key={index}
+              valor={valor}
+              index={index}
+              removerValorReferencia={removerValorReferencia}
+              atualizarValorReferencia={atualizarValorReferencia}
+              handleNhbChange={handleNhbChange}
+              handleDiagnosticoChange={handleDiagnosticoChange}
+              subconjuntos={subconjuntos}
+              diagnosticosFiltrados={diagnosticosFiltrados}
+            />
+          ))}
+        </div>
+
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit}>
+            Salvar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

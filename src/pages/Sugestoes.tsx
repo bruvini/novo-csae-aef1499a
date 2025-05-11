@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { useAutenticacao } from '@/services/autenticacao';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { useToast } from '@/hooks/use-toast';
 import Header from '@/components/Header';
 import MainFooter from '@/components/MainFooter';

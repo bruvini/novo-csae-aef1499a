@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         const sessao = await verificarAutenticacao();
         setUsuario(sessao);
-        setEhAdmin(!!sessao?.admin);
+        setEhAdmin(!!sessao?.ehAdmin);
         setEhGestorConteudos(!!sessao?.gestorConteudos);
       } else {
         setUsuario(null);
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const sessao = await realizarLogin(email, senha);
       setUsuario(sessao);
-      setEhAdmin(!!sessao.admin);
+      setEhAdmin(!!sessao.ehAdmin);
       setEhGestorConteudos(!!sessao.gestorConteudos);
       return sessao;
     } finally {

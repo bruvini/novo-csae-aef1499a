@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAutenticacao } from '@/services/autenticacao';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { motion } from 'framer-motion';
 import { obterHistoricoAcessos } from '@/services/bancodados/logAcessosDB';
 import { buscarModulosDisponiveis } from '@/services/bancodados/modulosDB';
