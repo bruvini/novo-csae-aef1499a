@@ -1,36 +1,35 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, FileText, ChevronDown, ChevronUp, InfoIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useParametrosAvaliacao } from '@/hooks/use-parametros-avaliacao';
+import { Paciente } from '@/types/paciente';
 
 interface AvaliacaoEnfermagemProps {
   valor: string;
   onChange: (valor: string) => void;
+  paciente?: Paciente;
+  onNhbsAlteradas?: (nhbs: string[]) => void;
+  onDiagnosticosAlterados?: (diagnosticos: string[]) => void;
 }
 
-export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProps) {
+export function AvaliacaoEnfermagem({
+  valor,
+  onChange,
+  paciente,
+  onNhbsAlteradas,
+  onDiagnosticosAlterados
+}: AvaliacaoEnfermagemProps) {
   const [activeTab, setActiveTab] = useState('entrevista');
   const [entrevista, setEntrevista] = useState('');
   
-  // Estado para os outros campos
-  const [sinaisVitais, setSinaisVitais] = useState<Record<string, string>>({
-    'Temperatura': '',
-    'Frequência Cardíaca': '', 
-    'Pressão Arterial': '',
-    'Frequência Respiratória': '',
-    'Saturação de O2': '',
-    'Glicemia Capilar': '',
-  });
-
-  const [exames, setExames] = useState<Record<string, string>>({});
-  const [sistemas, setSistemas] = useState<Record<string, string>>({});
-
   // Estado para controle dos collapsibles
   const [openSections, setOpenSections] = useState({
     sinaisVitais: true,
@@ -38,7 +37,7 @@ export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProp
     sistemas: false
   });
 
-  // NHBs sugeridas com base nos campos preenchidos
+  // NHBs sugeridas com base nos parâmetros alterados
   const [nhbsSelecionadas, setNhbsSelecionadas] = useState<string[]>([]);
 
   // Lista de possíveis NHBs
@@ -57,26 +56,66 @@ export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProp
     'Espaço',
     'Regulação'
   ];
+  
+  // Uso do hook para buscar os parâmetros
+  const {
+    sinaisVitais,
+    examesLaboratoriais,
+    sistemasCorporais,
+    revisoesSystem,
+    loading,
+    error,
+    atualizarValor,
+    valoresPreenchidos,
+    getValoresAlterados
+  } = useParametrosAvaliacao();
 
   // Preenche o valor do textarea quando o componente monta ou quando o valor é alterado externamente
-  React.useEffect(() => {
+  useEffect(() => {
     if (valor && entrevista === '') {
       setEntrevista(valor);
     }
   }, [valor]);
 
   // Atualiza o valor externo quando a entrevista é alterada
-  React.useEffect(() => {
+  useEffect(() => {
     onChange(entrevista);
   }, [entrevista, onChange]);
-
-  // Função para atualizar os sinais vitais
-  const handleSinalVitalChange = (nome: string, valor: string) => {
-    setSinaisVitais(prev => ({
-      ...prev,
-      [nome]: valor
-    }));
-  };
+  
+  // Atualiza as NHBs sugeridas quando os valores alterados mudam
+  useEffect(() => {
+    // Obter todos os valores alterados
+    const alterados = getValoresAlterados();
+    
+    // Extrair todas as NHBs relacionadas aos valores alterados
+    const todasNhbs = alterados.flatMap(val => val.nhbIds || []);
+    
+    // Remover duplicatas
+    const nhbsUnicas = [...new Set(todasNhbs)];
+    
+    // Atualizar NHBs selecionadas
+    setNhbsSelecionadas(prev => {
+      // Manter NHBs que foram selecionadas manualmente e adicionar as novas
+      const combinadas = [...prev, ...nhbsUnicas];
+      return [...new Set(combinadas)];
+    });
+    
+    // Notificar componente pai (se callback existir)
+    if (onNhbsAlteradas) {
+      onNhbsAlteradas(nhbsUnicas);
+    }
+    
+    // Extrair todos os diagnósticos relacionados aos valores alterados
+    const todosDiagnosticos = alterados.flatMap(val => val.diagnosticoIds || []);
+    
+    // Remover duplicatas
+    const diagnosticosUnicos = [...new Set(todosDiagnosticos)];
+    
+    // Notificar componente pai (se callback existir)
+    if (onDiagnosticosAlterados) {
+      onDiagnosticosAlterados(diagnosticosUnicos);
+    }
+  }, [valoresPreenchidos, getValoresAlterados, onNhbsAlteradas, onDiagnosticosAlterados]);
 
   // Função para adicionar/remover NHBs da lista de selecionadas
   const toggleNHB = (nhb: string) => {
@@ -84,6 +123,76 @@ export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProp
       prev.includes(nhb) 
         ? prev.filter(item => item !== nhb)
         : [...prev, nhb]
+    );
+    
+    // Notificar componente pai (se callback existir)
+    if (onNhbsAlteradas) {
+      onNhbsAlteradas(
+        nhbsSelecionadas.includes(nhb)
+          ? nhbsSelecionadas.filter(item => item !== nhb)
+          : [...nhbsSelecionadas, nhb]
+      );
+    }
+  };
+
+  // Função para verificar se um valor está alterado
+  const isValorAlterado = (id: string) => {
+    return valoresPreenchidos[id]?.alterado || false;
+  };
+
+  // Função para renderizar um campo de parâmetro
+  const renderParametroInput = (
+    parametro: any,
+    id: string,
+    tipoParametro: 'sinalVital' | 'exame' | 'revisaoSistema'
+  ) => {
+    const tipoValor = parametro.tipoValor || 'Numérico';
+    const unidade = parametro.unidade || '';
+    const valorPreenchido = valoresPreenchidos[id]?.valor || '';
+    const alterado = isValorAlterado(id);
+    
+    // Função para atualizar o valor do parâmetro
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const novoValor = e.target.value;
+      atualizarValor(
+        id,
+        parametro.id,
+        parametro.nome,
+        novoValor,
+        tipoValor,
+        unidade,
+        paciente,
+        parametro
+      );
+    };
+    
+    return (
+      <div key={id} className="space-y-2">
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium">
+            {parametro.nome}:
+            {alterado && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="ml-2">
+                    <AlertCircle className="h-4 w-4 text-red-500" />
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-red-50 border border-red-200 text-red-800">
+                    <p>{valoresPreenchidos[id]?.tituloAlteracao || 'Valor alterado'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </label>
+        </div>
+        <Input
+          type={tipoValor === 'Numérico' ? 'number' : 'text'}
+          placeholder={unidade ? `Digite o valor (${unidade})` : 'Digite o valor'}
+          value={valorPreenchido}
+          onChange={handleChange}
+          className={alterado ? 'border-red-500 focus:border-red-500' : ''}
+        />
+      </div>
     );
   };
 
@@ -162,79 +271,149 @@ export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProp
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Sinais Vitais */}
-              <Collapsible
-                open={openSections.sinaisVitais}
-                onOpenChange={() => setOpenSections(prev => ({ ...prev, sinaisVitais: !prev.sinaisVitais }))}
-                className="border rounded-md overflow-hidden"
-              >
-                <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                  <h3 className="font-medium">Sinais Vitais</h3>
-                  {openSections.sinaisVitais ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 border-t">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {Object.keys(sinaisVitais).map(nome => (
-                      <div key={nome} className="space-y-2">
-                        <label className="text-sm font-medium">{nome}:</label>
-                        <Input
-                          value={sinaisVitais[nome]}
-                          onChange={(e) => handleSinalVitalChange(nome, e.target.value)}
-                          placeholder={`Digite o valor de ${nome}`}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
+                </div>
+              ) : (
+                <>
+                  {/* Sinais Vitais */}
+                  <Collapsible
+                    open={openSections.sinaisVitais}
+                    onOpenChange={() => setOpenSections(prev => ({ ...prev, sinaisVitais: !prev.sinaisVitais }))}
+                    className="border rounded-md overflow-hidden"
+                  >
+                    <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                      <h3 className="font-medium">Sinais Vitais</h3>
+                      {openSections.sinaisVitais ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 border-t">
+                      {sinaisVitais.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {sinaisVitais.map((sinal) => (
+                            renderParametroInput(
+                              sinal,
+                              `sinal-${sinal.id}`,
+                              'sinalVital'
+                            )
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Não há sinais vitais cadastrados no sistema.
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  {/* Exames Laboratoriais/Imagem */}
+                  <Collapsible
+                    open={openSections.exames}
+                    onOpenChange={() => setOpenSections(prev => ({ ...prev, exames: !prev.exames }))}
+                    className="border rounded-md overflow-hidden"
+                  >
+                    <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                      <h3 className="font-medium">Exames Laboratoriais/Imagem</h3>
+                      {openSections.exames ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 border-t">
+                      {examesLaboratoriais.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {examesLaboratoriais.map((exame) => (
+                            <div key={exame.id} className="mb-4">
+                              <h4 className="font-medium text-sm mb-2">{exame.nome}</h4>
+                              <div className="grid grid-cols-1 gap-3">
+                                {exame.valoresReferencia?.map((valor, index) => (
+                                  renderParametroInput(
+                                    valor,
+                                    `exame-${exame.id}-${index}`,
+                                    'exame'
+                                  )
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Não há exames laboratoriais/imagem cadastrados no sistema.
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  {/* Revisão por Sistemas */}
+                  <Collapsible
+                    open={openSections.sistemas}
+                    onOpenChange={() => setOpenSections(prev => ({ ...prev, sistemas: !prev.sistemas }))}
+                    className="border rounded-md overflow-hidden"
+                  >
+                    <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                      <h3 className="font-medium">Revisão por Sistemas</h3>
+                      {openSections.sistemas ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="p-4 border-t">
+                      {sistemasCorporais.length > 0 ? (
+                        <div className="space-y-6">
+                          {sistemasCorporais.map(sistema => {
+                            // Filtrar revisões para este sistema
+                            const revisoesSistema = revisoesSystem?.filter(
+                              r => r.sistemaId === sistema.id
+                            ) || [];
+                            
+                            if (revisoesSistema.length === 0) return null;
+                            
+                            return (
+                              <div key={sistema.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                                <h3 className="font-medium mb-3">{sistema.nome}</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                  {revisoesSistema.map(revisao => (
+                                    <div key={revisao.id}>
+                                      <h4 className="text-sm font-medium mb-2">{revisao.titulo || revisao.nome}</h4>
+                                      {revisao.valoresReferencia?.map((valor, idx) => (
+                                        renderParametroInput(
+                                          valor,
+                                          `revisao-${revisao.id}-${idx}`,
+                                          'revisaoSistema'
+                                        )
+                                      ))}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4 text-gray-500">
+                          Não há sistemas corporais cadastrados no sistema.
+                        </div>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </>
+              )}
               
-              {/* Exames Laboratoriais/Imagem */}
-              <Collapsible
-                open={openSections.exames}
-                onOpenChange={() => setOpenSections(prev => ({ ...prev, exames: !prev.exames }))}
-                className="border rounded-md overflow-hidden"
-              >
-                <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                  <h3 className="font-medium">Exames Laboratoriais/Imagem</h3>
-                  {openSections.exames ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 border-t">
-                  <div className="text-center py-4 text-gray-500">
-                    Não há campos cadastrados para esta seção. 
-                    Os exames serão configurados pelo administrador posteriormente.
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-              
-              {/* Revisão por Sistemas */}
-              <Collapsible
-                open={openSections.sistemas}
-                onOpenChange={() => setOpenSections(prev => ({ ...prev, sistemas: !prev.sistemas }))}
-                className="border rounded-md overflow-hidden"
-              >
-                <CollapsibleTrigger className="flex w-full justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer">
-                  <h3 className="font-medium">Revisão por Sistemas</h3>
-                  {openSections.sistemas ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-4 border-t">
-                  <div className="text-center py-4 text-gray-500">
-                    Não há campos cadastrados para esta seção. 
-                    Os sistemas serão configurados pelo administrador posteriormente.
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              {error && (
+                <div className="p-4 border border-red-200 bg-red-50 text-red-800 rounded-md">
+                  <p className="flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2" /> 
+                    {error}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -264,6 +443,18 @@ export function AvaliacaoEnfermagem({ valor, onChange }: AvaliacaoEnfermagemProp
                   </Badge>
                 ))}
               </div>
+              
+              {getValoresAlterados().length > 0 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-100 rounded-md mb-6">
+                  <p className="text-sm text-yellow-800 flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 text-yellow-600 flex-shrink-0" />
+                    <span>
+                      <strong className="font-medium">NHBs sugeridas com base em alterações:</strong> As NHBs destacadas 
+                      foram sugeridas automaticamente com base nas alterações identificadas durante a avaliação.
+                    </span>
+                  </p>
+                </div>
+              )}
               
               {nhbsSelecionadas.length > 0 ? (
                 <div className="mt-6">
