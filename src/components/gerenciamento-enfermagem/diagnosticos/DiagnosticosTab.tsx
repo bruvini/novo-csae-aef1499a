@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Card,
@@ -25,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Edit, Trash2, Eye, Search, Plus } from "lucide-react";
-import { DiagnosticoCompleto, Subconjunto } from "@/services/bancodados/tipos";
+import { DiagnosticoCompleto, Subconjunto } from "@/types/diagnosticos";
 
 interface DiagnosticosTabProps {
   subconjuntos: Subconjunto[];
@@ -43,6 +44,7 @@ interface DiagnosticosTabProps {
   excluirDiagnostico: (id: string) => void;
   getNomeSubconjunto: (id: string) => string;
   getTipoSubconjunto: (id: string) => string;
+  getSubconjuntosNomes: (ids: string[]) => string;
 }
 
 const DiagnosticosTab = ({
@@ -61,6 +63,7 @@ const DiagnosticosTab = ({
   excluirDiagnostico,
   getNomeSubconjunto,
   getTipoSubconjunto,
+  getSubconjuntosNomes,
 }: DiagnosticosTabProps) => {
   // Filtrar diagnósticos baseado nos filtros selecionados
   const getDiagnosticosFiltrados = () => {
@@ -69,7 +72,7 @@ const DiagnosticosTab = ({
     // Filtrar por subconjunto
     if (filtroSubconjunto) {
       filtrados = filtrados.filter(
-        (d) => d.subconjuntoId === filtroSubconjunto
+        (d) => d.subconjuntoIds && d.subconjuntoIds.includes(filtroSubconjunto)
       );
     }
 
@@ -143,7 +146,6 @@ const DiagnosticosTab = ({
                 onValueChange={(v) =>
                   setFiltroDiagnostico(v === "placeholder" ? "" : v)
                 }
-                disabled={filtroSubconjunto === ""}
               >
                 <SelectTrigger id="filtroDiagnostico">
                   <SelectValue placeholder="Todos os diagnósticos" />
@@ -156,7 +158,7 @@ const DiagnosticosTab = ({
                     .filter(
                       (d) =>
                         filtroSubconjunto === "" ||
-                        d.subconjuntoId === filtroSubconjunto
+                        (d.subconjuntoIds && d.subconjuntoIds.includes(filtroSubconjunto))
                     )
                     .map((diagnostico) => (
                       <SelectItem key={diagnostico.id} value={diagnostico.id!}>
@@ -198,7 +200,7 @@ const DiagnosticosTab = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Subconjunto</TableHead>
+                <TableHead>Subconjuntos</TableHead>
                 <TableHead>Diagnóstico</TableHead>
                 <TableHead>Resultados Esperados</TableHead>
                 <TableHead>Intervenções</TableHead>
@@ -213,18 +215,27 @@ const DiagnosticosTab = ({
                     0
                   );
 
+                // Get the primary subconjunto for display (first one)
+                const primarySubconjuntoId = diagnostico.subconjuntoIds && 
+                  diagnostico.subconjuntoIds.length > 0 ? 
+                  diagnostico.subconjuntoIds[0] : "";
+                
+                const primarySubconjuntoTipo = primarySubconjuntoId ? 
+                  getTipoSubconjunto(primarySubconjuntoId) : "Desconhecido";
+
                 return (
                   <TableRow key={diagnostico.id}>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded-full text-xs ${
-                          getTipoSubconjunto(diagnostico.subconjuntoId) ===
-                          "Protocolo"
+                          primarySubconjuntoTipo === "Protocolo"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-green-100 text-green-800"
                         }`}
                       >
-                        {getNomeSubconjunto(diagnostico.subconjuntoId)}
+                        {diagnostico.subconjuntoIds && diagnostico.subconjuntoIds.length > 0 
+                          ? getSubconjuntosNomes(diagnostico.subconjuntoIds)
+                          : "Nenhum"}
                       </span>
                     </TableCell>
                     <TableCell className="font-medium">
