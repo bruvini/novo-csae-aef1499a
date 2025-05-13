@@ -17,6 +17,22 @@ import {
   obterTotalAcessos,
   obterUltimosAcessosTodosUsuarios
 } from './logAcessosDB';
+import {
+  fetchSubconjuntos,
+  fetchDiagnosticos,
+  fetchDiagnosticoPorId,
+  fetchDiagnosticosPorSubconjunto
+} from './diagnosticosDB';
+import {
+  fetchSistemasCorporais,
+  createSistemaCorporal,
+  updateSistemaCorporal,
+  deleteSistemaCorporal,
+  fetchRevisoesSistema,
+  createRevisaoSistema,
+  updateRevisaoSistema,
+  deleteRevisaoSistema
+} from './sistemasDB';
 
 // Re-export all types from the types directory
 export * from '../../types';
@@ -42,5 +58,21 @@ export {
   registrarAcesso,
   obterHistoricoAcessos,
   obterTotalAcessos,
-  obterUltimosAcessosTodosUsuarios
+  obterUltimosAcessosTodosUsuarios,
+  
+  // Diagnósticos
+  fetchSubconjuntos,
+  fetchDiagnosticos,
+  fetchDiagnosticoPorId,
+  fetchDiagnosticosPorSubconjunto,
+  
+  // Sistemas Corporais
+  fetchSistemasCorporais,
+  createSistemaCorporal,
+  updateSistemaCorporal,
+  deleteSistemaCorporal,
+  fetchRevisoesSistema,
+  createRevisaoSistema,
+  updateRevisaoSistema,
+  deleteRevisaoSistema
 };
