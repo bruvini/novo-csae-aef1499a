@@ -5,12 +5,10 @@ import { Timestamp } from "firebase/firestore";
 export interface Paciente {
   id?: string;
   nome: string;
-  nomeCompleto?: string;
   dataNascimento: string;
   sexo: 'Feminino' | 'Masculino';
   profissionalUid: string;
   ultimaConsulta?: string;
   criadoEm?: Timestamp;
   atualizadoEm?: Timestamp;
-  evolucoes?: any[];
 }

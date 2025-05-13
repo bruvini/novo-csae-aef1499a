@@ -1,94 +1,200 @@
 
-import { collection, addDoc, doc, getDoc, query, where, getDocs, updateDoc, Timestamp, setDoc, orderBy } from 'firebase/firestore';
+import { 
+  doc, 
+  updateDoc, 
+  arrayUnion,
+  getDoc,
+  Timestamp,
+  arrayRemove,
+  serverTimestamp 
+} from 'firebase/firestore';
 import { db } from '../firebase';
-import { Evolucao } from '@/types/evolucao';
+import { Evolucao } from './tipos';
 
-// Buscar evolução por ID
-export const buscarEvolucaoPorId = async (evolucaoId: string): Promise<Evolucao | null> => {
+/**
+ * Inicia uma nova evolução para o paciente
+ * @param pacienteId ID do paciente
+ * @returns Objeto contendo o ID da evolução e sucesso da operação
+ */
+export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: string, sucesso: boolean}> {
   try {
-    const evolucaoRef = doc(db, 'evolucoes', evolucaoId);
-    const evolucaoDoc = await getDoc(evolucaoRef);
+    console.log("Iniciando evolução para paciente ID:", pacienteId);
+    const pacienteRef = doc(db, 'pacientes', pacienteId);
     
-    if (evolucaoDoc.exists()) {
-      return { id: evolucaoDoc.id, ...evolucaoDoc.data() } as Evolucao;
-    } else {
-      return null;
+    // Verificar se o paciente existe
+    const docSnap = await getDoc(pacienteRef);
+    if (!docSnap.exists()) {
+      console.error("Paciente não encontrado com ID:", pacienteId);
+      return { evolucaoId: "", sucesso: false };
     }
-  } catch (error) {
-    console.error('Erro ao buscar evolução:', error);
-    throw error;
-  }
-};
-
-// Buscar todas as evoluções de um paciente
-export const buscarEvolucoesPorPaciente = async (pacienteId: string): Promise<Evolucao[]> => {
-  try {
-    const evolucaoPorPacienteQuery = query(
-      collection(db, 'evolucoes'), 
-      where('pacienteId', '==', pacienteId),
-      orderBy('dataInicio', 'desc')
-    );
     
-    const evolucoesDocs = await getDocs(evolucaoPorPacienteQuery);
-    return evolucoesDocs.docs.map(doc => ({ id: doc.id, ...doc.data() } as Evolucao));
-  } catch (error) {
-    console.error('Erro ao buscar evoluções do paciente:', error);
-    throw error;
-  }
-};
-
-// Criar ou atualizar uma evolução
-export const salvarEvolucao = async (evolucao: Evolucao): Promise<string> => {
-  try {
-    const agora = Timestamp.now();
-    const evolucaoAtualizada = {
-      ...evolucao,
-      dataAtualizacao: agora,
-      statusConclusao: evolucao.statusConclusao || 'Em andamento'
+    // Gerar ID único para a evolução (timestamp + random)
+    const timestamp = new Date().getTime();
+    const random = Math.floor(Math.random() * 10000);
+    const evolucaoId = `evolucao_${timestamp}_${random}`;
+    
+    // Criar nova evolução
+    const novaEvolucao: Evolucao = {
+      id: evolucaoId,
+      dataInicio: Timestamp.now(),
+      dataAtualizacao: Timestamp.now(), // Using actual Timestamp instead of serverTimestamp
+      status: 'iniciada',
+      statusConclusao: 'Em andamento',
+      avaliacao: '',
+      diagnosticos: [],
+      planejamento: [],
+      implementacao: [],
+      evolucaoFinal: '',
+      pacienteId: pacienteId,
+      profissionalUid: '',
+      dados: {}
     };
-
-    let evolucaoId = evolucao.id;
     
-    if (evolucaoId) {
-      // Atualizar evolução existente
-      await updateDoc(doc(db, 'evolucoes', evolucaoId), evolucaoAtualizada);
-    } else {
-      // Criar nova evolução
-      const evolucaoRef = await addDoc(collection(db, 'evolucoes'), evolucaoAtualizada);
-      evolucaoId = evolucaoRef.id;
+    // Adicionar evolução ao array de evoluções do paciente
+    await updateDoc(pacienteRef, {
+      evolucoes: arrayUnion(novaEvolucao)
+    });
+    
+    console.log("Evolução iniciada com sucesso. ID:", evolucaoId);
+    return { evolucaoId, sucesso: true };
+  } catch (error) {
+    console.error("Erro ao iniciar evolução:", error);
+    return { evolucaoId: "", sucesso: false };
+  }
+}
+
+/**
+ * Salva o progresso de uma evolução em andamento
+ * @param pacienteId ID do paciente
+ * @param evolucaoId ID da evolução
+ * @param dadosAtualizados Dados parciais da evolução para atualização
+ * @returns Sucesso da operação
+ */
+export async function salvarProgressoEvolucao(
+  pacienteId: string, 
+  evolucaoId: string, 
+  dadosAtualizados: Partial<Evolucao>
+): Promise<boolean> {
+  try {
+    console.log("Salvando progresso da evolução:", { pacienteId, evolucaoId });
+    
+    if (!evolucaoId) {
+      console.error("ID de evolução não informado");
+      return false;
     }
     
-    return evolucaoId;
-  } catch (error) {
-    console.error('Erro ao salvar evolução:', error);
-    throw error;
-  }
-};
-
-// Concluir uma evolução
-export const concluirEvolucao = async (evolucaoId: string): Promise<void> => {
-  try {
-    const evolucaoRef = doc(db, 'evolucoes', evolucaoId);
-    await updateDoc(evolucaoRef, {
-      dataConclusao: Timestamp.now(),
-      statusConclusao: 'Concluído'
+    const pacienteRef = doc(db, 'pacientes', pacienteId);
+    
+    // Buscar paciente para encontrar a evolução atual
+    const docSnap = await getDoc(pacienteRef);
+    if (!docSnap.exists()) {
+      console.error("Paciente não encontrado com ID:", pacienteId);
+      return false;
+    }
+    
+    const pacienteData = docSnap.data();
+    const evolucoes = pacienteData.evolucoes || [];
+    
+    // Encontrar o índice da evolução que está sendo atualizada
+    const evolucaoIndex = evolucoes.findIndex((e: Evolucao) => e.id === evolucaoId);
+    
+    if (evolucaoIndex === -1) {
+      console.error("Evolução não encontrada com ID:", evolucaoId);
+      return false;
+    }
+    
+    // Remover a evolução antiga
+    const evolucaoAntiga = evolucoes[evolucaoIndex];
+    await updateDoc(pacienteRef, {
+      evolucoes: arrayRemove(evolucaoAntiga)
     });
-  } catch (error) {
-    console.error('Erro ao concluir evolução:', error);
-    throw error;
-  }
-};
-
-// Interromper uma evolução
-export const interromperEvolucao = async (evolucaoId: string): Promise<void> => {
-  try {
-    const evolucaoRef = doc(db, 'evolucoes', evolucaoId);
-    await updateDoc(evolucaoRef, {
-      dataConclusao: Timestamp.now(),
-      statusConclusao: 'Interrompido'
+    
+    // Criar evolução atualizada
+    const evolucaoAtualizada = {
+      ...evolucaoAntiga,
+      ...dadosAtualizados,
+      dataAtualizacao: serverTimestamp()
+    };
+    
+    // Adicionar evolução atualizada
+    await updateDoc(pacienteRef, {
+      evolucoes: arrayUnion(evolucaoAtualizada)
     });
+    
+    console.log("Progresso da evolução salvo com sucesso");
+    return true;
   } catch (error) {
-    console.error('Erro ao interromper evolução:', error);
-    throw error;
+    console.error("Erro ao salvar progresso da evolução:", error);
+    return false;
   }
-};
+}
+
+/**
+ * Finaliza uma evolução em andamento
+ * @param pacienteId ID do paciente
+ * @param evolucaoId ID da evolução
+ * @param dadosFinais Dados finais da evolução
+ * @param statusFinal Status final da evolução (Concluído ou Interrompido)
+ * @returns Sucesso da operação
+ */
+export async function finalizarEvolucao(
+  pacienteId: string, 
+  evolucaoId: string, 
+  dadosFinais: Partial<Evolucao>,
+  statusFinal: 'Concluído' | 'Interrompido' = 'Concluído'
+): Promise<boolean> {
+  try {
+    console.log("Finalizando evolução:", { pacienteId, evolucaoId, statusFinal });
+    
+    if (!evolucaoId) {
+      console.error("ID de evolução não informado");
+      return false;
+    }
+    
+    const pacienteRef = doc(db, 'pacientes', pacienteId);
+    
+    // Buscar paciente para encontrar a evolução atual
+    const docSnap = await getDoc(pacienteRef);
+    if (!docSnap.exists()) {
+      console.error("Paciente não encontrado com ID:", pacienteId);
+      return false;
+    }
+    
+    const pacienteData = docSnap.data();
+    const evolucoes = pacienteData.evolucoes || [];
+    
+    // Encontrar o índice da evolução que está sendo finalizada
+    const evolucaoIndex = evolucoes.findIndex((e: Evolucao) => e.id === evolucaoId);
+    
+    if (evolucaoIndex === -1) {
+      console.error("Evolução não encontrada com ID:", evolucaoId);
+      return false;
+    }
+    
+    // Remover a evolução antiga
+    const evolucaoAntiga = evolucoes[evolucaoIndex];
+    await updateDoc(pacienteRef, {
+      evolucoes: arrayRemove(evolucaoAntiga)
+    });
+    
+    // Criar evolução finalizada
+    const evolucaoFinalizada = {
+      ...evolucaoAntiga,
+      ...dadosFinais,
+      statusConclusao: statusFinal,
+      dataConclusao: serverTimestamp(),
+      dataAtualizacao: serverTimestamp()
+    };
+    
+    // Adicionar evolução finalizada
+    await updateDoc(pacienteRef, {
+      evolucoes: arrayUnion(evolucaoFinalizada)
+    });
+    
+    console.log("Evolução finalizada com sucesso");
+    return true;
+  } catch (error) {
+    console.error("Erro ao finalizar evolução:", error);
+    return false;
+  }
+}

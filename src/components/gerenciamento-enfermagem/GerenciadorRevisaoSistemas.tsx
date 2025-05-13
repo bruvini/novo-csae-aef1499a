@@ -35,8 +35,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { HelpCircle, Plus, Trash2, X, Edit } from "lucide-react";
-import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sistemas";
+import { HelpCircle, Plus, Trash2, X } from "lucide-react";
+import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sinais-vitais";
 import { useToast } from "@/hooks/use-toast";
 import {
   createRevisaoSistema,
@@ -47,16 +47,12 @@ import {
   createSistemaCorporal,
   updateSistemaCorporal,
   deleteSistemaCorporal
-} from "@/services/bancodados/sistemasDB";
+} from "@/services/bancodados";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import ValorReferenciaCard from "@/components/gerenciamento-enfermagem/sinais-vitais/ValorReferenciaCard";
 import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
-import { 
-  fetchDiagnosticosBySubconjunto,
-  fetchSubconjuntosDiagnostico as fetchSubconjuntos,
-  fetchDiagnosticos 
-} from "@/services/bancodados/diagnosticosDB";
+import { fetchSubconjuntos, fetchDiagnosticos } from "@/services/bancodados/diagnosticosDB";
 
 const GerenciadorRevisaoSistemas = () => {
   const [sistemasCorporais, setSistemasCorporais] = useState<SistemaCorporal[]>([]);
@@ -266,7 +262,7 @@ const GerenciadorRevisaoSistemas = () => {
     setValoresReferencia(novosValoresReferencia);
   };
 
-  // Fix the diagnosticos filtering to use subconjuntoIds
+  // Fix the subconjuntoId reference to use subconjuntoIds
   const diagnosticosFiltrados = diagnosticos.filter(diag => 
     diag.subconjuntoIds && diag.subconjuntoIds.some(id => nhbSelecionadas.includes(id))
   );
@@ -300,7 +296,7 @@ const GerenciadorRevisaoSistemas = () => {
                   <TableCell>{sistema.descricao}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEditSistema(sistema)}>
-                      <Edit className="h-4 w-4 mr-2" />
+                      <Edit2 className="h-4 w-4 mr-2" />
                       Editar
                     </Button>
                     <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteSistema(sistema.id || '')}>
@@ -358,7 +354,7 @@ const GerenciadorRevisaoSistemas = () => {
                     <TableCell>{revisao.tipoAlteracao}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleEditRevisao(revisao)}>
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit2 className="h-4 w-4 mr-2" />
                         Editar
                       </Button>
                       <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteRevisao(revisao.id || '')}>
@@ -580,10 +576,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
             <Label htmlFor="tipoAlteracao" className="text-right">
               Tipo de Alteração
             </Label>
-            <Select 
-              value={tipoAlteracao} 
-              onValueChange={(value) => setTipoAlteracao(value as "Objetiva" | "Subjetiva" | "Ambas")}
-            >
+            <Select value={tipoAlteracao} onValueChange={setTipoAlteracao}>
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Selecione o Tipo" />
               </SelectTrigger>

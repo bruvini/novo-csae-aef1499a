@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Paciente, Evolucao, iniciarEvolucao, salvarProgressoEvolucao, finalizarEvolucao } from '@/services/bancodados';
@@ -30,8 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { AlertCircle, Save, ArrowLeft, Home, ArrowRight, Copy, CheckCircle } from 'lucide-react';
-import { Info } from 'lucide-react';
+import { InfoIcon, Save, ArrowLeft, Home, ArrowRight, Copy, CheckCircle } from 'lucide-react';
 
 // Componentes para cada etapa do processo
 import { AvaliacaoEnfermagem } from './etapas/AvaliacaoEnfermagem';
@@ -70,15 +70,6 @@ export function EnfermageWizard({
   const [planejamento, setPlanejamento] = useState<any[]>([]);
   const [implementacao, setImplementacao] = useState<any[]>([]);
   const [evolucaoFinal, setEvolucaoFinal] = useState('');
-  
-  // Estado para armazenar as NHBs afetadas identificadas na avaliação
-  const [nhbsAfetadas, setNhbsAfetadas] = useState<string[]>([]);
-  
-  // Estado para armazenar os diagnósticos sugeridos identificados na avaliação
-  const [diagnosticosSugeridos, setDiagnosticosSugeridos] = useState<string[]>([]);
-  
-  // Estado para armazenar os parâmetros alterados
-  const [parametrosAlterados, setParametrosAlterados] = useState<any[]>([]);
 
   // Verificar se existe evolução para retomar
   useEffect(() => {
@@ -368,16 +359,6 @@ export function EnfermageWizard({
       });
   };
 
-  // Função para lidar com as NHBs alteradas pela avaliação
-  const handleNhbsAlteradas = (nhbs: string[]) => {
-    setNhbsAfetadas(nhbs);
-  };
-  
-  // Função para lidar com os diagnósticos sugeridos pela avaliação
-  const handleDiagnosticosSugeridos = (diagnosticos: string[]) => {
-    setDiagnosticosSugeridos(diagnosticos);
-  };
-
   // Conteúdo das tooltips para cada etapa
   const tooltips = {
     avaliacao: "Compreende a coleta de dados subjetivos (entrevista) e objetivos (exame físico) inicial e contínua pertinentes à saúde da pessoa, da família, coletividade e grupos especiais, realizada mediante auxílio de técnicas (laboratorial e de imagem, testes clínicos, escalas de avaliação validadas, protocolos institucionais e outros) para a obtenção de informações sobre as necessidades do cuidado de Enfermagem e saúde relevantes para a prática;",
@@ -393,7 +374,7 @@ export function EnfermageWizard({
         <div className="p-4 flex justify-between items-center">
           <div>
             <h2 className="text-lg font-semibold text-csae-green-700">
-              Processo de Enfermagem - {paciente.nomeCompleto || paciente.nome}
+              Processo de Enfermagem - {paciente.nomeCompleto}
             </h2>
             <p className="text-sm text-gray-500">
               {isRetomando ? 'Retomando evolução' : 'Nova evolução'} - {new Date().toLocaleDateString()}
@@ -426,7 +407,7 @@ export function EnfermageWizard({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <Info className="h-4 w-4 mr-1" />
+                      <InfoIcon className="h-4 w-4 opacity-60" />
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-sm text-xs">
                       {tooltip}
@@ -440,19 +421,14 @@ export function EnfermageWizard({
           <TabsContent value="avaliacao" className="p-6">
             <AvaliacaoEnfermagem 
               valor={avaliacao} 
-              onChange={setAvaliacao}
-              paciente={paciente}
-              onNhbsAlteradas={handleNhbsAlteradas}
-              onDiagnosticosAlterados={handleDiagnosticosSugeridos}
+              onChange={setAvaliacao} 
             />
           </TabsContent>
           
           <TabsContent value="diagnostico" className="p-6">
             <DiagnosticoEnfermagem 
               diagnosticos={diagnosticos} 
-              setDiagnosticos={setDiagnosticos}
-              nhbsAfetadas={nhbsAfetadas}
-              diagnosticosSugeridos={diagnosticosSugeridos}
+              setDiagnosticos={setDiagnosticos} 
             />
           </TabsContent>
           

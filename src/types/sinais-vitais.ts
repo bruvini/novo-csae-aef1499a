@@ -64,8 +64,8 @@ export interface ValorReferencia {
   diagnosticoId?: string;
 }
 
-// Re-export these types from sistemas.ts
-export type { RevisaoSistema, SistemaCorporal, ValorReferenciaSistema } from './sistemas';
-
-// Re-export types from diagnosticos.ts
+// Import the SubconjuntoDiagnostico interface from diagnósticos
 export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
+
+// Re-export these types from sistemas.ts
+export { RevisaoSistema, SistemaCorporal, ValorReferenciaSistema } from './sistemas';

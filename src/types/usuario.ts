@@ -1,23 +1,60 @@
 
 import { Timestamp } from "firebase/firestore";
 
-// Tipo para status de aprovação do usuário
-export type StatusAprovacao = 'Aprovado' | 'Pendente' | 'Reprovado';
-
-// Usuário autenticado com dados vindos do Firebase
+// Tipos de usuário
 export interface UsuarioAutenticado {
   uid: string;
   email: string;
   nome: string;
+  tipoUsuario: "Administrador" | "Enfermeiro" | "Técnico" | "Estudante";
+  coren?: string;
+  unidade?: string;
   ehAdmin: boolean;
-  createdAt?: Date | Timestamp;
-  statusAprovacao: StatusAprovacao;
+  atuaSMS?: boolean;
+  statusAcesso?: "Aprovado" | "Aguardando" | "Negado" | "Revogado" | "Cancelado";
+  dadosPessoais?: {
+    nomeCompleto: string;
+    cpf: string;
+    telefone: string;
+  };
+  dataCriacao?: Timestamp;
+  ultimoAcesso?: Timestamp;
+  contadorAcessos?: number;
+  id?: string;
+  sobrenome?: string;
+  createdAt?: Timestamp;
+  gestorConteudos?: boolean;
+  totens?: boolean;
+  instituicao?: string;
+  statusAprovacao?: string;
 }
 
-// Sessão do usuário (dados mantidos no frontend)
+// Alias for backward compatibility
+export type Usuario = UsuarioAutenticado;
+
 export interface SessaoUsuario {
   uid: string;
   email: string;
-  nome: string;
-  ehAdmin: boolean;
+  nomeUsuario: string;
+  tipoUsuario: string;
+  statusAcesso?: string;
+  ehAdmin?: boolean;
+  gestorConteudos?: boolean;
+  totens?: boolean;
+  usuario?: {
+    atuaSMS?: boolean;
+    contadorAcessos?: number;
+    [key: string]: any;
+  };
+}
+
+// Histórico de acessos
+export interface LogAcesso {
+  id?: string;
+  usuarioUid: string;
+  usuarioEmail: string;
+  usuarioNome: string;
+  dataHora?: Timestamp;
+  pagina?: string;
+  acao?: string;
 }
