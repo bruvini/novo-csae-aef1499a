@@ -1,84 +1,92 @@
 
 import { 
   collection, 
-  addDoc, 
-  getDocs, 
   query, 
   where, 
-  serverTimestamp,
-  DocumentData,
-  QuerySnapshot
+  getDocs, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  deleteDoc, 
+  addDoc,
+  setDoc 
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Usuario } from './tipos';
+import { UsuarioAutenticado } from '@/types/usuario';
 
-export async function verificarUsuarioExistente(email: string, numeroCoren?: string, ufCoren?: string, matricula?: string): Promise<boolean> {
-  const verificacoes = [];
-
-  // Verificar e-mail
-  const emailQuery = query(collection(db, 'usuarios'), where('email', '==', email));
-  verificacoes.push(getDocs(emailQuery));
-  
-  // Verificar COREN se fornecido
-  if (numeroCoren && ufCoren) {
-    const corenQuery = query(
-      collection(db, 'usuarios'),
-      where('dadosProfissionais.numeroCoren', '==', numeroCoren),
-      where('dadosProfissionais.ufCoren', '==', ufCoren)
-    );
-    verificacoes.push(getDocs(corenQuery));
-  }
-
-  // Verificar matrícula se fornecida
-  if (matricula) {
-    const matriculaQuery = query(
-      collection(db, 'usuarios'),
-      where('dadosProfissionais.matricula', '==', matricula)
-    );
-    verificacoes.push(getDocs(matriculaQuery));
-  }
-
-  // Executar todas as verificações
-  const resultados = await Promise.all(verificacoes);
-  
-  // Verificar se alguma consulta retornou resultados
-  return resultados.some((querySnapshot: QuerySnapshot<DocumentData>) => !querySnapshot.empty);
-}
-
-export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'>): Promise<string> {
-  const usuarioCompleto = {
-    ...usuario,
-    dataCadastro: serverTimestamp(),
-    statusAcesso: 'Aguardando' as const
-  };
-
-  const docRef = await addDoc(collection(db, 'usuarios'), usuarioCompleto);
-  return docRef.id;
-}
-
-export async function buscarUsuarioPorUid(uid: string): Promise<Usuario | null> {
+// Buscar usuário pelo ID (uid)
+export const buscarUsuarioPorUid = async (uid: string): Promise<UsuarioAutenticado | null> => {
   try {
-    // Buscar pelo uid nos documentos da coleção usuarios
-    const q = query(collection(db, 'usuarios'), where('uid', '==', uid));
-    const querySnapshot = await getDocs(q);
+    const userRef = doc(db, 'usuarios', uid);
+    const userDoc = await getDoc(userRef);
     
-    if (querySnapshot.empty) {
-      return null;
+    if (userDoc.exists()) {
+      return { id: userDoc.id, ...userDoc.data() } as UsuarioAutenticado;
     }
     
-    // Retornar o primeiro documento encontrado (deve ser único)
-    const docData = querySnapshot.docs[0].data();
-    const userId = querySnapshot.docs[0].id;
-    
-    // Conversão segura usando o operador spread para garantir que todos os campos estejam presentes
-    const usuario: Usuario = {
-      ...docData as Omit<Usuario, 'id'>,
-      id: userId
-    };
-    
-    return usuario;
-  } catch (error) {
-    console.error("Erro ao buscar usuário por uid:", error);
     return null;
+  } catch (error) {
+    console.error("Erro ao buscar usuário:", error);
+    throw error;
   }
-}
+};
+
+// Buscar todos os usuários
+export const fetchAllUsuarios = async (): Promise<UsuarioAutenticado[]> => {
+  try {
+    const q = query(collection(db, 'usuarios'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UsuarioAutenticado));
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    throw error;
+  }
+};
+
+// Atualizar usuário
+export const updateUsuario = async (userId: string, data: Partial<UsuarioAutenticado>): Promise<void> => {
+  try {
+    await updateDoc(doc(db, 'usuarios', userId), data);
+  } catch (error) {
+    console.error("Erro ao atualizar usuário:", error);
+    throw error;
+  }
+};
+
+// Excluir usuário
+export const deleteUsuario = async (userId: string): Promise<void> => {
+  try {
+    await deleteDoc(doc(db, 'usuarios', userId));
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+    throw error;
+  }
+};
+
+// Buscar usuário por email
+export const buscarUsuarioPorEmail = async (email: string): Promise<UsuarioAutenticado | null> => {
+  try {
+    const q = query(collection(db, 'usuarios'), where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      return { id: doc.id, ...doc.data() } as UsuarioAutenticado;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Erro ao buscar usuário por email:", error);
+    throw error;
+  }
+};
+
+// Criar usuário
+export const criarUsuario = async (uid: string, userData: Partial<UsuarioAutenticado>): Promise<void> => {
+  try {
+    await setDoc(doc(db, 'usuarios', uid), userData);
+  } catch (error) {
+    console.error("Erro ao criar usuário:", error);
+    throw error;
+  }
+};

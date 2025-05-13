@@ -15,7 +15,13 @@ const Header = () => {
   useEffect(() => {
     const sessao = obterSessao();
     if (sessao) {
-      setNomeUsuario('Enf. ' + (sessao.nomeUsuario.split(' ')[0] || 'Usuário'));
+      // Safely extract the first name with null checks
+      let primeiroNome = "Usuário";
+      if (sessao.nome) {
+        const partesNome = sessao.nome.split(' ');
+        primeiroNome = partesNome[0] || 'Usuário';
+      }
+      setNomeUsuario('Enf. ' + primeiroNome);
     }
   }, [obterSessao]);
 
