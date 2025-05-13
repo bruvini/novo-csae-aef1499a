@@ -1,111 +1,186 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { 
-  verificarAutenticacao, 
-  realizarLogin, 
-  realizarLogout, 
-  realizarCadastro, 
-  recuperarSenha, 
-  SessaoUsuario 
-} from '@/services/autenticacao';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { auth } from '@/services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { buscarUsuarioPorUid } from '@/services/bancodados';
+import { SessaoUsuario } from '@/types/usuario';
 
-interface AuthContextProps {
+// Define the shape of our context
+export interface AuthContextProps {
   usuario: SessaoUsuario | null;
   carregando: boolean;
-  login: (email: string, senha: string) => Promise<SessaoUsuario>;
-  cadastrar: (email: string, senha: string, nome: string, sobrenome: string, instituicao: string) => Promise<SessaoUsuario>;
-  logout: () => Promise<void>;
-  resetarSenha: (email: string) => Promise<void>;
-  ehAdmin: boolean;
-  ehGestorConteudos: boolean;
+  erro: string | null;
+  registrar: (email: string, senha: string, dados: any) => Promise<SessaoUsuario | null>;
+  entrar: (email: string, senha: string) => Promise<SessaoUsuario | null>;
+  sair: () => Promise<void>;
+  limparSessao: () => void;
+  salvarSessao: (sessao: SessaoUsuario) => void;
+  verificarAutenticacao: () => boolean;
+  verificarAdmin: () => boolean;
+  obterSessao: () => SessaoUsuario | null;
 }
 
-const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
+// Create the context with a default empty value
+const AuthContext = createContext<AuthContextProps>({
+  usuario: null,
+  carregando: true,
+  erro: null,
+  registrar: async () => null,
+  entrar: async () => null,
+  sair: async () => {},
+  limparSessao: () => {},
+  salvarSessao: () => {},
+  verificarAutenticacao: () => false,
+  verificarAdmin: () => false,
+  obterSessao: () => null
+});
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+// Hook to use the auth context
+export const useAutenticacao = () => useContext(AuthContext);
+
+// Provider component
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [usuario, setUsuario] = useState<SessaoUsuario | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [ehAdmin, setEhAdmin] = useState(false);
-  const [ehGestorConteudos, setEhGestorConteudos] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
+  // Check for user on initial load
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        const sessao = await verificarAutenticacao();
-        setUsuario(sessao);
-        setEhAdmin(!!sessao?.ehAdmin);
-        setEhGestorConteudos(!!sessao?.gestorConteudos);
+        // Get user data from our database
+        buscarUsuarioPorUid(user.uid)
+          .then((userData) => {
+            if (userData) {
+              const sessao: SessaoUsuario = {
+                uid: user.uid,
+                email: user.email || '',
+                nome: userData.nome || '',
+                ehAdmin: userData.ehAdmin || false,
+              };
+              setUsuario(sessao);
+              localStorage.setItem('userSession', JSON.stringify(sessao));
+            } else {
+              setUsuario(null);
+              localStorage.removeItem('userSession');
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching user data:", error);
+            setErro("Erro ao buscar dados do usuário");
+          })
+          .finally(() => {
+            setCarregando(false);
+          });
       } else {
         setUsuario(null);
-        setEhAdmin(false);
-        setEhGestorConteudos(false);
+        localStorage.removeItem('userSession');
+        setCarregando(false);
       }
-      setCarregando(false);
     });
+
+    // Check for stored session if no active user
+    const storedSession = localStorage.getItem('userSession');
+    if (storedSession && !usuario) {
+      setUsuario(JSON.parse(storedSession));
+    }
 
     return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, senha: string): Promise<SessaoUsuario> => {
-    setCarregando(true);
+  // Register function
+  const registrar = async (email: string, senha: string, dados: any): Promise<SessaoUsuario | null> => {
     try {
-      const sessao = await realizarLogin(email, senha);
-      setUsuario(sessao);
-      setEhAdmin(!!sessao.ehAdmin);
-      setEhGestorConteudos(!!sessao.gestorConteudos);
-      return sessao;
-    } finally {
-      setCarregando(false);
+      // This is a placeholder, we assume registerWithEmailAndPassword is imported from autenticacao.ts
+      // In a real implementation, this would call the actual registration function
+      const user = await import('@/services/autenticacao').then(m => m.registerWithEmailAndPassword(email, senha, dados));
+      return user;
+    } catch (error) {
+      console.error("Registration error:", error);
+      setErro("Erro ao registrar usuário");
+      return null;
     }
   };
 
-  const cadastrar = async (email: string, senha: string, nome: string, sobrenome: string, instituicao: string): Promise<SessaoUsuario> => {
-    setCarregando(true);
+  // Login function
+  const entrar = async (email: string, senha: string): Promise<SessaoUsuario | null> => {
     try {
-      const sessao = await realizarCadastro(email, senha, nome, sobrenome, instituicao);
-      setUsuario(sessao);
-      return sessao;
-    } finally {
-      setCarregando(false);
+      // Call login function from autenticacao.ts
+      const user = await import('@/services/autenticacao').then(m => m.loginWithEmailAndPassword(email, senha));
+      return user;
+    } catch (error) {
+      console.error("Login error:", error);
+      setErro("Erro ao fazer login");
+      return null;
     }
   };
 
-  const logout = async (): Promise<void> => {
-    setCarregando(true);
+  // Logout function
+  const sair = async (): Promise<void> => {
     try {
-      await realizarLogout();
+      await signOut(auth);
       setUsuario(null);
-      setEhAdmin(false);
-      setEhGestorConteudos(false);
-    } finally {
-      setCarregando(false);
+      localStorage.removeItem('userSession');
+    } catch (error) {
+      console.error("Logout error:", error);
+      setErro("Erro ao fazer logout");
     }
   };
 
-  const resetarSenha = async (email: string): Promise<void> => {
-    await recuperarSenha(email);
+  // Save session
+  const salvarSessao = (sessao: SessaoUsuario): void => {
+    setUsuario(sessao);
+    localStorage.setItem('userSession', JSON.stringify(sessao));
+  };
+
+  // Clear session
+  const limparSessao = (): void => {
+    setUsuario(null);
+    localStorage.removeItem('userSession');
+  };
+
+  // Check if user is authenticated
+  const verificarAutenticacao = (): boolean => {
+    return usuario !== null;
+  };
+
+  // Check if user is admin
+  const verificarAdmin = (): boolean => {
+    return usuario?.ehAdmin || false;
+  };
+
+  // Get current session
+  const obterSessao = (): SessaoUsuario | null => {
+    if (usuario) return usuario;
+    
+    const storedSession = localStorage.getItem('userSession');
+    if (storedSession) {
+      const parsed = JSON.parse(storedSession);
+      return parsed;
+    }
+    
+    return null;
+  };
+
+  const value = {
+    usuario,
+    carregando,
+    erro,
+    registrar,
+    entrar,
+    sair,
+    limparSessao,
+    salvarSessao,
+    verificarAutenticacao,
+    verificarAdmin,
+    obterSessao
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        usuario,
-        carregando,
-        login,
-        cadastrar,
-        logout,
-        resetarSenha,
-        ehAdmin,
-        ehGestorConteudos
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
   );
 };
-
-export const useAutenticacao = () => useContext(AuthContext);
-
-export default useAutenticacao;

@@ -35,7 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { HelpCircle, Plus, Trash2, X } from "lucide-react";
+import { HelpCircle, Plus, Trash2, X, Edit } from "lucide-react";
 import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sinais-vitais";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -296,7 +296,7 @@ const GerenciadorRevisaoSistemas = () => {
                   <TableCell>{sistema.descricao}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEditSistema(sistema)}>
-                      <Edit2 className="h-4 w-4 mr-2" />
+                      <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </Button>
                     <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteSistema(sistema.id || '')}>
@@ -354,7 +354,7 @@ const GerenciadorRevisaoSistemas = () => {
                     <TableCell>{revisao.tipoAlteracao}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleEditRevisao(revisao)}>
-                        <Edit2 className="h-4 w-4 mr-2" />
+                        <Edit className="h-4 w-4 mr-2" />
                         Editar
                       </Button>
                       <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteRevisao(revisao.id || '')}>

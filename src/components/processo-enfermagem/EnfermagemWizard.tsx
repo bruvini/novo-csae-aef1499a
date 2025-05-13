@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { AlertCircle, Save, ArrowLeft, Home, ArrowRight, Copy, CheckCircle } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 // Componentes para cada etapa do processo
 import { AvaliacaoEnfermagem } from './etapas/AvaliacaoEnfermagem';
@@ -425,7 +426,7 @@ export function EnfermageWizard({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
-                      <InfoIcon className="h-4 w-4 opacity-60" />
+                      <Info className="h-4 w-4 mr-1" />
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-sm text-xs">
                       {tooltip}

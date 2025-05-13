@@ -90,7 +90,12 @@ export function useParametrosAvaliacao() {
   ) => {
     // Se não possui valores de referência, retorna sem alteração
     if (!parametro.valoresReferencia || parametro.valoresReferencia.length === 0) {
-      return { alterado: false };
+      return { 
+        alterado: false,
+        tituloAlteracao: '',
+        nhbIds: [] as string[],
+        diagnosticoIds: [] as string[]
+      };
     }
 
     // Encontrar o valor de referência que se aplica ao paciente
@@ -113,50 +118,37 @@ export function useParametrosAvaliacao() {
     });
 
     if (!valorReferencia || !valorReferencia.representaAlteracao) {
-      return { alterado: false };
-    }
-
-    // Verificar se o valor está alterado
-    if (valorReferencia.tipoValor === 'Numérico' && typeof valor === 'number') {
-      if (valorReferencia.condicao === 'abaixo') {
-        return {
-          alterado: valor < (valorReferencia.valorMinimo || 0),
-          tituloAlteracao: valorReferencia.tituloAlteracao,
-          nhbIds: valorReferencia.nhbIds || [],
-          diagnosticoIds: valorReferencia.diagnosticoIds || []
-        };
-      } else if (valorReferencia.condicao === 'acima') {
-        return {
-          alterado: valor > (valorReferencia.valorMaximo || 0),
-          tituloAlteracao: valorReferencia.tituloAlteracao,
-          nhbIds: valorReferencia.nhbIds || [],
-          diagnosticoIds: valorReferencia.diagnosticoIds || []
-        };
-      } else if (valorReferencia.condicao === 'entre') {
-        return {
-          alterado: valor < (valorReferencia.valorMinimo || 0) || valor > (valorReferencia.valorMaximo || 0),
-          tituloAlteracao: valorReferencia.tituloAlteracao,
-          nhbIds: valorReferencia.nhbIds || [],
-          diagnosticoIds: valorReferencia.diagnosticoIds || []
-        };
-      } else if (valorReferencia.condicao === 'igual') {
-        return {
-          alterado: valor === valorReferencia.valorReferencia,
-          tituloAlteracao: valorReferencia.tituloAlteracao,
-          nhbIds: valorReferencia.nhbIds || [],
-          diagnosticoIds: valorReferencia.diagnosticoIds || []
-        };
-      }
-    } else if (valorReferencia.tipoValor === 'Texto' && typeof valor === 'string') {
-      return {
-        alterado: valor === valorReferencia.valorTexto,
-        tituloAlteracao: valorReferencia.tituloAlteracao,
-        nhbIds: valorReferencia.nhbIds || [],
-        diagnosticoIds: valorReferencia.diagnosticoIds || []
+      return { 
+        alterado: false,
+        tituloAlteracao: '',
+        nhbIds: [] as string[],
+        diagnosticoIds: [] as string[]
       };
     }
 
-    return { alterado: false };
+    // Verificar se o valor está alterado
+    let resultadoAlteracao = {
+      alterado: false,
+      tituloAlteracao: valorReferencia.tituloAlteracao || '',
+      nhbIds: valorReferencia.nhbIds || [] as string[],
+      diagnosticoIds: valorReferencia.diagnosticoIds || [] as string[]
+    };
+
+    if (valorReferencia.tipoValor === 'Numérico' && typeof valor === 'number') {
+      if (valorReferencia.condicao === 'abaixo') {
+        resultadoAlteracao.alterado = valor < (valorReferencia.valorMinimo || 0);
+      } else if (valorReferencia.condicao === 'acima') {
+        resultadoAlteracao.alterado = valor > (valorReferencia.valorMaximo || 0);
+      } else if (valorReferencia.condicao === 'entre') {
+        resultadoAlteracao.alterado = valor < (valorReferencia.valorMinimo || 0) || valor > (valorReferencia.valorMaximo || 0);
+      } else if (valorReferencia.condicao === 'igual') {
+        resultadoAlteracao.alterado = valor === valorReferencia.valorReferencia;
+      }
+    } else if (valorReferencia.tipoValor === 'Texto' && typeof valor === 'string') {
+      resultadoAlteracao.alterado = valor === valorReferencia.valorTexto;
+    }
+
+    return resultadoAlteracao;
   };
 
   // Função para atualizar um valor
@@ -171,7 +163,12 @@ export function useParametrosAvaliacao() {
     parametro?: any
   ) => {
     // Se temos dados do paciente e o parâmetro, verificamos alteração
-    let alteracaoInfo = { alterado: false, tituloAlteracao: '', nhbIds: [] as string[], diagnosticoIds: [] as string[] };
+    let alteracaoInfo = { 
+      alterado: false, 
+      tituloAlteracao: '', 
+      nhbIds: [] as string[], 
+      diagnosticoIds: [] as string[] 
+    };
     
     if (paciente && parametro) {
       // Calcular idade do paciente
