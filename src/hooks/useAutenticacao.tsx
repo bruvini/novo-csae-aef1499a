@@ -20,6 +20,15 @@ interface AuthContextProps {
   resetarSenha: (email: string) => Promise<void>;
   ehAdmin: boolean;
   ehGestorConteudos: boolean;
+  // Add missing methods
+  entrar: (email: string, senha: string) => Promise<SessaoUsuario>;
+  sair: () => Promise<void>;
+  registrar: (email: string, senha: string, nome: string, sobrenome: string, instituicao: string) => Promise<SessaoUsuario>;
+  verificarAutenticacao: () => SessaoUsuario | null;
+  verificarAdmin: () => boolean;
+  obterSessao: () => SessaoUsuario | null;
+  limparSessao: () => void;
+  salvarSessao: (sessao: SessaoUsuario) => void;
 }
 
 const AuthContext = createContext<AuthContextProps>({} as AuthContextProps);
@@ -88,6 +97,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await recuperarSenha(email);
   };
 
+  // Implementation of missing methods
+  const verificarAutenticacaoLocal = (): SessaoUsuario | null => {
+    return usuario;
+  };
+
+  const verificarAdminLocal = (): boolean => {
+    return ehAdmin;
+  };
+
+  const obterSessao = (): SessaoUsuario | null => {
+    const sessaoArmazenada = localStorage.getItem('sessaoUsuario');
+    if (sessaoArmazenada) {
+      try {
+        return JSON.parse(sessaoArmazenada);
+      } catch (error) {
+        console.error('Erro ao obter sessão:', error);
+        return null;
+      }
+    }
+    return usuario;
+  };
+
+  const limparSessao = (): void => {
+    localStorage.removeItem('sessaoUsuario');
+    localStorage.removeItem('usuario');
+    setUsuario(null);
+    setEhAdmin(false);
+    setEhGestorConteudos(false);
+  };
+
+  const salvarSessao = (sessao: SessaoUsuario): void => {
+    localStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
+    setUsuario(sessao);
+    setEhAdmin(!!sessao.ehAdmin);
+    setEhGestorConteudos(!!sessao.gestorConteudos);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -98,7 +144,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         resetarSenha,
         ehAdmin,
-        ehGestorConteudos
+        ehGestorConteudos,
+        // Add missing method implementations
+        entrar: login,
+        sair: logout,
+        registrar: cadastrar,
+        verificarAutenticacao: verificarAutenticacaoLocal,
+        verificarAdmin: verificarAdminLocal,
+        obterSessao,
+        limparSessao,
+        salvarSessao
       }}
     >
       {children}

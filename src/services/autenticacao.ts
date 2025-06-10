@@ -1,4 +1,3 @@
-
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -44,6 +43,14 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
 
     const dadosUsuario = userDoc.data() as UsuarioAutenticado;
 
+    // Map status values from database to interface
+    let statusAprovacao: 'Pendente' | 'Aprovado' | 'Reprovado' = 'Pendente';
+    if (dadosUsuario.statusAcesso === 'Aprovado') {
+      statusAprovacao = 'Aprovado';
+    } else if (dadosUsuario.statusAcesso === 'Negado') {
+      statusAprovacao = 'Reprovado';
+    }
+
     return {
       uid: usuario.uid,
       email: usuario.email!,
@@ -54,7 +61,7 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
       gestorConteudos: dadosUsuario.gestorConteudos || false,
       totens: dadosUsuario.totens || false,
       instituicao: dadosUsuario.unidade,
-      statusAprovacao: dadosUsuario.statusAcesso
+      statusAprovacao
     };
   } catch (error) {
     console.error("Erro ao verificar autenticação:", error);
@@ -92,6 +99,14 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
       console.error("Erro ao registrar acesso:", error);
     }
 
+    // Map status values from database to interface
+    let statusAprovacao: 'Pendente' | 'Aprovado' | 'Reprovado' = 'Pendente';
+    if (dadosUsuario.statusAcesso === 'Aprovado') {
+      statusAprovacao = 'Aprovado';
+    } else if (dadosUsuario.statusAcesso === 'Negado') {
+      statusAprovacao = 'Reprovado';
+    }
+
     return {
       uid: usuario.uid,
       email: usuario.email!,
@@ -101,7 +116,7 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
       gestorConteudos: dadosUsuario.gestorConteudos || false,
       totens: dadosUsuario.totens || false,
       instituicao: dadosUsuario.unidade,
-      statusAprovacao: dadosUsuario.statusAcesso
+      statusAprovacao
     };
   } catch (error: any) {
     if (error.code === "auth/invalid-credential") {

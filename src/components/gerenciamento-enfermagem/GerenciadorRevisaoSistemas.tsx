@@ -242,9 +242,9 @@ const GerenciadorRevisaoSistemas = () => {
     setValoresReferencia(prev => prev.filter((_, i) => i !== index));
   };
 
-  const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaSistema, valor: any) => {
+  const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaSistema, valor: unknown) => {
     const novosValoresReferencia = [...valoresReferencia];
-    novosValoresReferencia[index][campo] = valor;
+    (novosValoresReferencia[index] as any)[campo] = valor;
     setValoresReferencia(novosValoresReferencia);
   };
 

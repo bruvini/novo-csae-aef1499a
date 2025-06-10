@@ -5,6 +5,7 @@ import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
+import { buscarUsuarioPorUid } from "@/services/bancodados";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -114,9 +115,12 @@ const LoginForm = () => {
         const dadosSessao = {
           uid: usuarioFirestore.uid,
           email: usuarioFirestore.email,
-          nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-          tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-          statusAcesso: usuarioFirestore.statusAcesso
+          nome: usuarioFirestore.dadosPessoais?.nomeCompleto || usuarioFirestore.nome,
+          sobrenome: usuarioFirestore.sobrenome || '',
+          ehAdmin: usuarioFirestore.ehAdmin || false,
+          gestorConteudos: usuarioFirestore.gestorConteudos || false,
+          statusAprovacao: "Aprovado" as const,
+          instituicao: usuarioFirestore.unidade
         };
         
         console.log("Salvando sessão:", dadosSessao);
