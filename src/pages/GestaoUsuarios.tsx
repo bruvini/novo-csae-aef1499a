@@ -183,39 +183,68 @@ const GestaoUsuarios = () => {
 
   useEffect(() => {
     const fetchUsuarios = async () => {
-      try {
-        const usuariosRef = collection(db, "usuarios");
-        const snapshot = await getDocs(usuariosRef);
-        const fetchedUsuarios = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Usuario[];
+  try {
+    const usuariosRef = collection(db, "usuarios");
+    const snapshot = await getDocs(usuariosRef);
+    const fetchedUsuarios = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Usuario[];
 
-        setUsuarios(fetchedUsuarios);
+    // Buscar logs de acessos com acao === "login"
+    const logsRef = collection(db, "logAcessos");
+    const logsSnapshot = await getDocs(logsRef);
 
-        // Identificar residentes com acesso vencido
-        const residentes = fetchedUsuarios.filter(
-          (usuario) =>
-            usuario.dadosProfissionais.formacao === "Residente de Enfermagem" &&
-            usuario.statusAcesso === "Aprovado" &&
-            isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
-        );
+    const logs = logsSnapshot.docs
+      .map((doc) => doc.data())
+      .filter((log) => log.acao === "login");
 
-        setResidentesVencidos(residentes);
+    // Agrupar acessos por usuarioId
+    const acessoPorUsuario: Record<string, Timestamp[]> = {};
 
-        // Aplicar filtros iniciais
-        filterUsuarios(fetchedUsuarios, currentTab, searchTerm);
-        setLoading(false);
-      } catch (error) {
-        console.error("Erro ao buscar usuários:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Não foi possível carregar os usuários.",
-        });
-        setLoading(false);
+    logs.forEach((log) => {
+      const id = log.usuarioId;
+      if (!acessoPorUsuario[id]) {
+        acessoPorUsuario[id] = [];
       }
-    };
+      if (log.timestamp instanceof Timestamp) {
+        acessoPorUsuario[id].push(log.timestamp);
+      }
+    });
+
+    // Adicionar dados de acesso a cada usuário
+    const usuariosComAcessos = fetchedUsuarios.map((usuario) => {
+      const acessos = acessoPorUsuario[usuario.uid] || [];
+      return {
+        ...usuario,
+        logAcessos: acessos,
+      };
+    });
+
+    setUsuarios(usuariosComAcessos);
+
+    // Atualizar residentes com acesso vencido
+    const residentes = usuariosComAcessos.filter(
+      (usuario) =>
+        usuario.dadosProfissionais.formacao === "Residente de Enfermagem" &&
+        usuario.statusAcesso === "Aprovado" &&
+        isResidenteExpirado(usuario.dadosProfissionais.dataInicioResidencia)
+    );
+
+    setResidentesVencidos(residentes);
+
+    filterUsuarios(usuariosComAcessos, currentTab, searchTerm);
+    setLoading(false);
+  } catch (error) {
+    console.error("Erro ao buscar usuários:", error);
+    toast({
+      variant: "destructive",
+      title: "Erro",
+      description: "Não foi possível carregar os usuários.",
+    });
+    setLoading(false);
+  }
+};
 
     fetchUsuarios();
   }, []);
@@ -1049,7 +1078,7 @@ const GestaoUsuarios = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
+                      {usuariosFiltrados.map((usuario: Usuario) => (
                         <TableRow key={usuario.id}>
                           <TableCell className="font-medium">
                             {usuario.dadosPessoais.nomeCompleto}
@@ -1123,7 +1152,7 @@ const GestaoUsuarios = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
+                      {usuariosFiltrados.map((usuario: Usuario) => (
                         <TableRow key={usuario.id}>
                           <TableCell className="font-medium">
                             {usuario.dadosPessoais.nomeCompleto}
@@ -1195,7 +1224,7 @@ const GestaoUsuarios = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {usuariosFiltrados.map((usuario) => (
+                      {usuariosFiltrados.map((usuario: Usuario) => (
                         <TableRow key={usuario.id}>
                           <TableCell className="font-medium">
                             {usuario.dadosPessoais.nomeCompleto}
