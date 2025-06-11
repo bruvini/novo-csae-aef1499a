@@ -22,7 +22,6 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      external: ['html2pdf.js'], // só isso aqui já basta
     },
   },
 }));

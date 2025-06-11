@@ -99,17 +99,15 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
     setIsGeneratingPdf(true);
 
     try {
-      // Obter o elemento do termo para conversão em PDF
       const elemento = document.getElementById("termo-responsabilidade");
 
       if (!elemento) {
         throw new Error("Elemento do termo não encontrado");
       }
 
-      // Import dinâmico do html2pdf para evitar problemas com Vite
-      const { default: html2pdf } = await import("html2pdf.js");
+      // Importar corretamente com Vite
+      const html2pdf = (await import("html2pdf.js")).default;
 
-      // Configurações do PDF
       const opcoes = {
         margin: 1,
         filename: `termo-responsabilidade-${dadosUsuario.nomeCompleto.replace(
@@ -121,16 +119,13 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
         jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
       };
 
-      // Gerar PDF e abrir em nova aba
       const pdfOutput = await html2pdf()
         .set(opcoes)
         .from(elemento)
         .output("bloburl");
 
-      // Abrir PDF em nova aba
       window.open(pdfOutput, "_blank");
 
-      // Chamar callback para continuar com o cadastro
       onAccept();
 
       toast({
