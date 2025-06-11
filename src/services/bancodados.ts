@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -158,11 +157,12 @@ export async function verificarUsuarioExistente(email: string, numeroCoren?: str
   return resultados.some((querySnapshot: QuerySnapshot<DocumentData>) => !querySnapshot.empty);
 }
 
-export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'>): Promise<string> {
+export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'> & { termoResponsabilidadeAceito: boolean; termoResponsabilidadeData: any }): Promise<string> {
   const usuarioCompleto = {
     ...usuario,
     dataCadastro: serverTimestamp(),
-    statusAcesso: 'Aguardando' as const
+    statusAcesso: 'Aguardando' as const,
+    termoResponsabilidadeData: serverTimestamp()
   };
 
   const docRef = await addDoc(collection(db, 'usuarios'), usuarioCompleto);
