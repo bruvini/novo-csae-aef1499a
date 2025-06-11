@@ -124,7 +124,6 @@ export const realizarCadastro = async (email: string, senha: string, nome: strin
       nome,
       sobrenome,
       email,
-      instituicao,
       ehAdmin: false,
       gestorConteudos: false,
       statusAcesso: "Aguardando",
