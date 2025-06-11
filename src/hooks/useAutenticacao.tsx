@@ -43,9 +43,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const sessao = await verificarAutenticacao();
-        setUsuario(sessao);
-        setEhAdmin(sessao?.tipoUsuario === 'Administrador' || !!sessao?.usuario?.ehAdmin);
-        setEhGestorConteudos(!!sessao?.usuario?.gestorConteudos);
+        if (sessao) {
+          setUsuario(sessao);
+          setEhAdmin(sessao.tipoUsuario === 'Administrador' || !!sessao.usuario?.ehAdmin);
+          setEhGestorConteudos(!!sessao.usuario?.gestorConteudos);
+        }
       } else {
         setUsuario(null);
         setEhAdmin(false);
@@ -129,10 +131,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const salvarSessao = (sessao: SessaoUsuario): void => {
     localStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
-    setUsuario(sessao);
-    setEhAdmin(sessao.tipoUsuario === 'Administrador' || !!sessao.usuario?.ehAdmin);
-    setEhGestorConteudos(!!sessao.usuario?.gestorConteudos);
+    localStorage.setItem('usuario', JSON.stringify(sessao.usuario));
   };
+
+  // Use useEffect to update state safely
+  useEffect(() => {
+    const sessaoArmazenada = obterSessao();
+    if (sessaoArmazenada && !usuario) {
+      setUsuario(sessaoArmazenada);
+      setEhAdmin(sessaoArmazenada.tipoUsuario === 'Administrador' || !!sessaoArmazenada.usuario?.ehAdmin);
+      setEhGestorConteudos(!!sessaoArmazenada.usuario?.gestorConteudos);
+    }
+  }, [usuario]);
 
   return (
     <AuthContext.Provider

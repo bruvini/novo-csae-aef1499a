@@ -138,7 +138,7 @@ const Dashboard = () => {
       >
         <DashboardBanner userName={userName} />
 
-        {sessao && sessao.tipoUsuario === "Administrador" && (
+        {sessao?.tipoUsuario === 'Administrador' && (
           <AdminPanel />
         )}
 
