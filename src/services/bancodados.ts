@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   addDoc, 
@@ -68,7 +69,9 @@ export interface Usuario {
   dataUltimoAcesso?: Timestamp;
   historico_logs?: Log[];
   id?: string;
-  termoResponsabilidadeUrl?: string;
+  termoResponsabilidadeAceito?: boolean;
+  termoResponsabilidadeData?: Timestamp;
+  termoResponsabilidadeUrl?: string; // Legacy property for backward compatibility
   // Legacy properties for backward compatibility
   nome?: string;
   sobrenome?: string;
