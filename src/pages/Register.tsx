@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import {
   verificarUsuarioExistente,
   cadastrarUsuario,
 } from "@/services/bancodados";
+import { serverTimestamp } from "firebase/firestore";
 import SimpleFooter from "@/components/SimpleFooter";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 
@@ -329,7 +331,7 @@ const Register = () => {
           localCargo: !atuaSMS ? localCargo : undefined,
         },
         termoResponsabilidadeAceito: true,
-        termoResponsabilidadeData: new Date()
+        termoResponsabilidadeData: serverTimestamp()
       });
 
       toast({
