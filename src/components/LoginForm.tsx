@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,8 @@ import { UserCheck, Heart, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
-import { serverTimestamp, Timestamp } from "firebase/firestore";
+import { serverTimestamp, Timestamp, addDoc, collection } from "firebase/firestore";
+import { db } from "@/services/firebase";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -20,7 +20,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !senha) {
       toast({
         title: "Campos obrigatórios",
@@ -31,14 +31,14 @@ const LoginForm = () => {
     }
 
     setCarregando(true);
-    
+
     try {
       // Primeiro, limpar qualquer sessão anterior
       await limparSessao();
-      
+
       // Tentar fazer login com Firebase Auth
       const usuarioAuth = await entrar(email, senha);
-      
+
       if (!usuarioAuth) {
         toast({
           title: "Erro de autenticação",
@@ -50,7 +50,7 @@ const LoginForm = () => {
 
       // Buscar dados completos do usuário no Firestore
       const dadosUsuario = await buscarUsuarioPorUid(usuarioAuth.uid);
-      
+
       if (!dadosUsuario) {
         toast({
           title: "Usuário não encontrado",
@@ -61,25 +61,28 @@ const LoginForm = () => {
       }
 
       // Verificar status de acesso
-      if (dadosUsuario.statusAcesso !== 'Aprovado') {
+      if (dadosUsuario.statusAcesso !== "Aprovado") {
         let mensagem = "";
         switch (dadosUsuario.statusAcesso) {
-          case 'Aguardando':
-            mensagem = "Seu cadastro ainda está aguardando aprovação. Você receberá um e-mail quando for aprovado.";
+          case "Aguardando":
+            mensagem =
+              "Seu cadastro ainda está aguardando aprovação. Você receberá um e-mail quando for aprovado.";
             break;
-          case 'Negado':
-            mensagem = "Seu cadastro foi negado. Entre em contato com o suporte para mais informações.";
+          case "Negado":
+            mensagem =
+              "Seu cadastro foi negado. Entre em contato com o suporte para mais informações.";
             break;
-          case 'Revogado':
-            mensagem = "Seu acesso foi revogado. Entre em contato com o administrador.";
+          case "Revogado":
+            mensagem =
+              "Seu acesso foi revogado. Entre em contato com o administrador.";
             break;
-          case 'Cancelado':
+          case "Cancelado":
             mensagem = "Seu cadastro foi cancelado.";
             break;
           default:
             mensagem = "Seu acesso não está ativo no momento.";
         }
-        
+
         toast({
           title: "Acesso não autorizado",
           description: mensagem,
@@ -89,29 +92,44 @@ const LoginForm = () => {
       }
 
       // Preparar dados da sessão
-      const nomeCompleto = dadosUsuario.dadosPessoais?.nomeCompleto || 
-                          `${dadosUsuario.nome || ''} ${dadosUsuario.sobrenome || ''}`.trim() ||
-                          'Usuário';
-      
+      const nomeCompleto =
+        dadosUsuario.dadosPessoais?.nomeCompleto ||
+        `${dadosUsuario.nome || ""} ${dadosUsuario.sobrenome || ""}`.trim() ||
+        "Usuário";
+
       // Create a consistent timestamp to avoid re-render issues
       const currentTimestamp = Timestamp.now();
-      
+
       const sessaoUsuario = {
         uid: usuarioAuth.uid,
         email: usuarioAuth.email || email,
         nomeUsuario: nomeCompleto,
-        tipoUsuario: (dadosUsuario.tipoUsuario || 
-                     (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum')) as 'Administrador' | 'Comum',
+        tipoUsuario: (dadosUsuario.tipoUsuario ||
+          (dadosUsuario.ehAdmin ? "Administrador" : "Comum")) as
+          | "Administrador"
+          | "Comum",
         usuario: {
           ...dadosUsuario,
-          unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
+          unidade:
+            dadosUsuario.unidade ||
+            dadosUsuario.dadosProfissionais?.lotacao ||
+            "",
           // Use existing timestamp or create a consistent one
-          termoResponsabilidadeData: dadosUsuario.termoResponsabilidadeData || currentTimestamp,
-        }
+          termoResponsabilidadeData:
+            dadosUsuario.termoResponsabilidadeData || currentTimestamp,
+        },
       };
 
       // Salvar sessão
       await salvarSessao(sessaoUsuario);
+
+      await addDoc(collection(db, "historicoAcessos"), {
+        dataHora: serverTimestamp(),
+        descricaoAcao: "Login realizado com sucesso",
+        emailUsuario: sessaoUsuario.email,
+        nomeUsuario: sessaoUsuario.nomeUsuario,
+        usuarioId: sessaoUsuario.uid,
+      });
 
       toast({
         title: "Login realizado com sucesso!",
@@ -120,13 +138,12 @@ const LoginForm = () => {
 
       // Redirecionar para o dashboard
       navigate("/dashboard");
-
     } catch (error) {
       console.error("Erro durante o login:", error);
-      
+
       // Tratamento de erros específicos do Firebase
       let mensagem = "Ocorreu um erro durante o login. Tente novamente.";
-      
+
       if (error instanceof Error) {
         if (error.message.includes("user-not-found")) {
           mensagem = "Usuário não encontrado. Verifique seu e-mail.";
@@ -138,7 +155,7 @@ const LoginForm = () => {
           mensagem = "Muitas tentativas de login. Tente novamente mais tarde.";
         }
       }
-      
+
       toast({
         title: "Erro no login",
         description: mensagem,
@@ -163,7 +180,10 @@ const LoginForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             E-mail
           </label>
           <Input
@@ -178,7 +198,10 @@ const LoginForm = () => {
         </div>
 
         <div>
-          <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="senha"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Senha
           </label>
           <div className="relative">
