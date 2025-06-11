@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -115,7 +116,7 @@ const LoginForm = () => {
         const dadosSessao = {
           uid: usuarioFirestore.uid,
           email: usuarioFirestore.email,
-          nome: usuarioFirestore.dadosPessoais?.nomeCompleto || usuarioFirestore.nome,
+          nome: usuarioFirestore.dadosPessoais?.nomeCompleto || usuarioFirestore.nome || '',
           sobrenome: usuarioFirestore.sobrenome || '',
           ehAdmin: usuarioFirestore.ehAdmin || false,
           gestorConteudos: usuarioFirestore.gestorConteudos || false,

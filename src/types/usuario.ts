@@ -16,6 +16,25 @@ export interface UsuarioAutenticado {
     nomeCompleto: string;
     cpf: string;
     telefone: string;
+    rg?: string;
+    rua?: string;
+    numero?: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
+    cep?: string;
+  };
+  dadosProfissionais?: {
+    formacao: string;
+    numeroCoren?: string;
+    ufCoren?: string;
+    dataInicioResidencia?: string;
+    iesEnfermagem?: string;
+    atuaSMS?: boolean;
+    lotacao?: string;
+    matricula?: string;
+    cidadeTrabalho?: string;
+    localCargo?: string;
   };
   dataCriacao?: Timestamp;
   ultimoAcesso?: Timestamp;
@@ -27,6 +46,7 @@ export interface UsuarioAutenticado {
   totens?: boolean;
   instituicao?: string;
   statusAprovacao?: string;
+  termoResponsabilidadeUrl?: string;
 }
 
 // Alias for backward compatibility
@@ -35,12 +55,17 @@ export type Usuario = UsuarioAutenticado;
 export interface SessaoUsuario {
   uid: string;
   email: string;
-  nomeUsuario: string;
-  tipoUsuario: string;
+  nome: string;
+  nomeUsuario?: string;
+  sobrenome?: string;
+  tipoUsuario?: string;
   statusAcesso?: string;
+  statusAprovacao?: "Pendente" | "Aprovado" | "Reprovado";
   ehAdmin?: boolean;
   gestorConteudos?: boolean;
   totens?: boolean;
+  instituicao?: string;
+  createdAt?: Date;
   usuario?: {
     atuaSMS?: boolean;
     contadorAcessos?: number;

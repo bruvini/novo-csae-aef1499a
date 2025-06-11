@@ -11,6 +11,7 @@ import {
   cadastrarUsuario,
 } from "@/services/bancodados";
 import SimpleFooter from "@/components/SimpleFooter";
+import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 
 const estadosBrasileiros = [
   "AC",
@@ -139,6 +140,8 @@ const Register = () => {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
+  const [modalTermoAberto, setModalTermoAberto] = useState(false);
+
   useEffect(() => {
     if (
       formacao !== "Enfermeiro" &&
@@ -238,7 +241,23 @@ const Register = () => {
       return;
     }
 
+    // Verificar se atua na SMS
+    if (!atuaSMS) {
+      toast({
+        title: "Acesso restrito",
+        description: "Este portal é exclusivo para profissionais que atuam na Secretaria Municipal de Saúde de Florianópolis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Abrir modal do termo de responsabilidade
+    setModalTermoAberto(true);
+  };
+
+  const handleTermoAceito = async (pdfUrl: string) => {
     setCarregando(true);
+    setModalTermoAberto(false);
 
     try {
       const usuarioExiste = await verificarUsuarioExistente(
@@ -266,7 +285,7 @@ const Register = () => {
         return;
       }
 
-      const usuarioAuth = await registrar(email, senha);
+      const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
@@ -308,6 +327,7 @@ const Register = () => {
           cidadeTrabalho: !atuaSMS ? cidadeTrabalho : null,
           localCargo: !atuaSMS ? localCargo : null,
         },
+        termoResponsabilidadeUrl: pdfUrl
       });
 
       toast({
@@ -328,6 +348,24 @@ const Register = () => {
     } finally {
       setCarregando(false);
     }
+  };
+
+  const dadosParaTermo = {
+    nomeCompleto,
+    formacao,
+    numeroCoren: formacao === "Enfermeiro" ||
+      formacao === "Residente de Enfermagem" ||
+      formacao === "Técnico de Enfermagem" ? numeroCoren : undefined,
+    ufCoren: formacao === "Enfermeiro" ||
+      formacao === "Residente de Enfermagem" ||
+      formacao === "Técnico de Enfermagem" ? ufCoren : undefined,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    uf,
+    rg,
+    cpf,
   };
 
   return (
@@ -794,8 +832,17 @@ const Register = () => {
       </main>
 
       <SimpleFooter />
+
+      <TermoResponsabilidadeModal
+        isOpen={modalTermoAberto}
+        onClose={() => setModalTermoAberto(false)}
+        onAccept={handleTermoAceito}
+        dadosUsuario={dadosParaTermo}
+      />
     </div>
   );
 };
 
 export default Register;
+
+</edits_to_apply>
