@@ -7,6 +7,7 @@ import { UserCheck, Heart, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
+import { serverTimestamp } from "firebase/firestore";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -101,6 +102,8 @@ const LoginForm = () => {
         usuario: {
           ...dadosUsuario,
           unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
+          // Ensure termoResponsabilidadeData is included
+          termoResponsabilidadeData: dadosUsuario.termoResponsabilidadeData || serverTimestamp(),
         }
       };
 
