@@ -87,15 +87,24 @@ const Dashboard = () => {
       setCarregando(true);
       try {
         const modulosData = await buscarModulosDisponiveis();
-        setModulos(modulosData);
+        
+        // Garantir que modulosData é um array válido
+        const modulosValidos = Array.isArray(modulosData) ? modulosData : [];
+        setModulos(modulosValidos);
 
-        // Separar módulos ativos e inativos
-        const ativos = modulosData.filter(m => m.ativo);
-        const inativos = modulosData.filter(m => !m.ativo);
+        // Separar módulos ativos e inativos com proteção
+        const ativos = modulosValidos.filter(m => m && m.ativo === true);
+        const inativos = modulosValidos.filter(m => m && m.ativo === false);
         setModulosAtivos(ativos);
         setModulosInativos(inativos);
       } catch (error) {
         console.error("Erro ao carregar módulos:", error);
+        
+        // Em caso de erro, definir arrays vazios para evitar undefined
+        setModulos([]);
+        setModulosAtivos([]);
+        setModulosInativos([]);
+        
         toast({
           title: "Erro",
           description: "Não foi possível carregar as funcionalidades do sistema.",
@@ -110,10 +119,13 @@ const Dashboard = () => {
 
   // Filtrar módulos com base na visibilidade e permissões do usuário
   const filtrarModulosPorVisibilidade = (modulos: ModuloDisponivel[]) => {
-    if (!sessao) return [];
+    if (!sessao || !Array.isArray(modulos)) return [];
     
     const isAdmin = sessao.tipoUsuario === "Administrador";
     return modulos.filter(modulo => {
+      // Verificar se o módulo é válido
+      if (!modulo || typeof modulo !== 'object') return false;
+      
       // Administradores podem ver tudo
       if (isAdmin) return true;
 
@@ -124,9 +136,57 @@ const Dashboard = () => {
     });
   };
 
-  // Filtrar módulos para exibição no dashboard
+  // Filtrar módulos para exibição no dashboard com proteções
   const modulosParaDashboard = filtrarModulosPorVisibilidade(modulosAtivos)
-    .filter(modulo => modulo.exibirNoDashboard !== false);
+    .filter(modulo => modulo && modulo.exibirNoDashboard !== false);
+
+  // Função para renderizar módulos com proteção contra arrays vazios
+  const renderizarModulos = (modulosFiltrados: ModuloDisponivel[], categoria?: string) => {
+    if (!Array.isArray(modulosFiltrados)) {
+      return (
+        <div className="text-center py-10 text-gray-500">
+          <p>Erro ao carregar módulos</p>
+        </div>
+      );
+    }
+
+    const modulosParaRender = categoria 
+      ? modulosFiltrados.filter(modulo => modulo && modulo.categoria === categoria)
+      : modulosFiltrados;
+
+    if (modulosParaRender.length === 0) {
+      return (
+        <div className="text-center py-10 text-gray-500">
+          <p>Nenhum módulo disponível nesta categoria</p>
+        </div>
+      );
+    }
+
+    return (
+      <motion.div 
+        variants={containerVariants} 
+        initial="hidden" 
+        animate="visible" 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+      >
+        {modulosParaRender.map(modulo => {
+          // Verificar se o módulo é válido antes de renderizar
+          if (!modulo || !modulo.id) {
+            console.warn('Módulo inválido encontrado:', modulo);
+            return null;
+          }
+          
+          return (
+            <ModuloCard 
+              key={modulo.id} 
+              modulo={modulo} 
+              isAdmin={sessao?.tipoUsuario === "Administrador"} 
+            />
+          );
+        })}
+      </motion.div>
+    );
+  };
 
   // Show loading spinner while modules are being loaded
   if (carregando) {
@@ -153,7 +213,7 @@ const Dashboard = () => {
       >
         <DashboardBanner userName={userName} />
 
-        {sessao.tipoUsuario === 'Administrador' && (
+        {sessao?.tipoUsuario === 'Administrador' && (
           <AdminPanel />
         )}
 
@@ -170,83 +230,33 @@ const Dashboard = () => {
               <TabsTrigger value="educational">Educacionais</TabsTrigger>
               <TabsTrigger value="management">Gestão</TabsTrigger>
               
-              {(modulosInativos.length > 0 || carregando) && (
+              {(Array.isArray(modulosInativos) && modulosInativos.length > 0) && (
                 <TabsTrigger value="coming-soon">
                   Atualizações Futuras{" "}
-                  {modulosInativos.length > 0 && (
-                    <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">
-                      {modulosInativos.length}
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-200">
+                    {modulosInativos.length}
+                  </Badge>
                 </TabsTrigger>
               )}
             </TabsList>
 
             <TabsContent value="all">
-              <motion.div 
-                variants={containerVariants} 
-                initial="hidden" 
-                animate="visible" 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosParaDashboard
-                  .filter(modulo => modulo.categoria === "clinico" || modulo.categoria === "educacional" || modulo.categoria === "gestao")
-                  .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
-                  ))
-                }
-              </motion.div>
+              {renderizarModulos(modulosParaDashboard)}
             </TabsContent>
 
             <TabsContent value="clinical">
-              <motion.div 
-                variants={containerVariants} 
-                initial="hidden" 
-                animate="visible" 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosParaDashboard
-                  .filter(modulo => modulo.categoria === "clinico")
-                  .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
-                  ))
-                }
-              </motion.div>
+              {renderizarModulos(modulosParaDashboard, "clinico")}
             </TabsContent>
 
             <TabsContent value="educational">
-              <motion.div 
-                variants={containerVariants} 
-                initial="hidden" 
-                animate="visible" 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosParaDashboard
-                  .filter(modulo => modulo.categoria === "educacional")
-                  .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
-                  ))
-                }
-              </motion.div>
+              {renderizarModulos(modulosParaDashboard, "educacional")}
             </TabsContent>
 
             <TabsContent value="management">
-              <motion.div 
-                variants={containerVariants} 
-                initial="hidden" 
-                animate="visible" 
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              >
-                {modulosParaDashboard
-                  .filter(modulo => modulo.categoria === "gestao")
-                  .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
-                  ))
-                }
-              </motion.div>
+              {renderizarModulos(modulosParaDashboard, "gestao")}
             </TabsContent>
             
-            {(modulosInativos.length > 0 || carregando) && (
+            {(Array.isArray(modulosInativos) && modulosInativos.length > 0) && (
               <TabsContent value="coming-soon">
                 <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start">
@@ -265,9 +275,15 @@ const Dashboard = () => {
                   animate="visible" 
                   className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                 >
-                  {modulosInativos.map(modulo => (
-                    <ModuloInativoCard key={modulo.id} modulo={modulo} />
-                  ))}
+                  {modulosInativos.map(modulo => {
+                    if (!modulo || !modulo.id) {
+                      console.warn('Módulo inativo inválido encontrado:', modulo);
+                      return null;
+                    }
+                    return (
+                      <ModuloInativoCard key={modulo.id} modulo={modulo} />
+                    );
+                  })}
                 </motion.div>
               </TabsContent>
             )}

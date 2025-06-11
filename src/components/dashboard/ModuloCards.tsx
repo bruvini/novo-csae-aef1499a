@@ -17,19 +17,38 @@ interface ModuloCardProps {
 }
 
 export const ModuloCard: React.FC<ModuloCardProps> = ({ modulo, isAdmin }) => {
-  // Função para renderizar ícones dinamicamente
+  // Função para renderizar ícones dinamicamente com fallback seguro
   const renderIcon = () => {
-    if (!modulo.icone) return <FileText className="h-6 w-6" />;
+    if (!modulo?.icone) {
+      return <FileText className="h-6 w-6" />;
+    }
 
-    // @ts-ignore - Ignorar erro de tipagem para acessar dinamicamente os ícones
-    const IconComponent = LucideIcons[modulo.icone] || LucideIcons.FileText;
-    return <IconComponent className="h-6 w-6" />;
+    try {
+      // Garantir que o ícone existe antes de renderizar
+      const IconComponent = (LucideIcons as any)[modulo.icone];
+      
+      // Se o ícone não existir, usar FileText como fallback
+      if (!IconComponent || typeof IconComponent !== 'function') {
+        console.warn(`Ícone '${modulo.icone}' não encontrado, usando FileText como fallback`);
+        return <FileText className="h-6 w-6" />;
+      }
+      
+      return <IconComponent className="h-6 w-6" />;
+    } catch (error) {
+      console.error(`Erro ao renderizar ícone '${modulo.icone}':`, error);
+      return <FileText className="h-6 w-6" />;
+    }
   };
+
+  // Verificar se o módulo está válido
+  if (!modulo || !modulo.titulo) {
+    return null;
+  }
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
     "clinico": "bg-green-50 text-green-700",
-    "educacional": "bg-blue-50 text-blue-700",
+    "educacional": "bg-blue-50 text-blue-700", 
     "gestao": "bg-amber-50 text-amber-700"
   };
   
@@ -85,14 +104,31 @@ export const ModuloCard: React.FC<ModuloCardProps> = ({ modulo, isAdmin }) => {
 };
 
 export const ModuloInativoCard: React.FC<{modulo: ModuloDisponivel}> = ({ modulo }) => {
-  // Função para renderizar ícones dinamicamente
+  // Função para renderizar ícones dinamicamente com fallback seguro
   const renderIcon = () => {
-    if (!modulo.icone) return <FileText className="h-6 w-6" />;
+    if (!modulo?.icone) {
+      return <FileText className="h-6 w-6" />;
+    }
 
-    // @ts-ignore - Ignorar erro de tipagem para acessar dinamicamente os ícones
-    const IconComponent = LucideIcons[modulo.icone] || LucideIcons.FileText;
-    return <IconComponent className="h-6 w-6" />;
+    try {
+      const IconComponent = (LucideIcons as any)[modulo.icone];
+      
+      if (!IconComponent || typeof IconComponent !== 'function') {
+        console.warn(`Ícone '${modulo.icone}' não encontrado, usando FileText como fallback`);
+        return <FileText className="h-6 w-6" />;
+      }
+      
+      return <IconComponent className="h-6 w-6" />;
+    } catch (error) {
+      console.error(`Erro ao renderizar ícone '${modulo.icone}':`, error);
+      return <FileText className="h-6 w-6" />;
+    }
   };
+
+  // Verificar se o módulo está válido
+  if (!modulo || !modulo.titulo) {
+    return null;
+  }
 
   // Definir as cores do card com base na categoria
   const colorsByCategory: Record<string, string> = {
