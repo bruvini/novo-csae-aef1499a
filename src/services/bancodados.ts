@@ -157,7 +157,7 @@ export async function verificarUsuarioExistente(email: string, numeroCoren?: str
   return resultados.some((querySnapshot: QuerySnapshot<DocumentData>) => !querySnapshot.empty);
 }
 
-export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso'> & { termoResponsabilidadeAceito: boolean; termoResponsabilidadeData: any }): Promise<string> {
+export async function cadastrarUsuario(usuario: Omit<Usuario, 'dataCadastro' | 'statusAcesso' | 'termoResponsabilidadeData'> & { termoResponsabilidadeAceito: boolean; termoResponsabilidadeData: FieldValue | Timestamp }): Promise<string> {
   const usuarioCompleto = {
     ...usuario,
     dataCadastro: serverTimestamp(),
