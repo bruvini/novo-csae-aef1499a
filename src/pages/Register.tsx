@@ -255,7 +255,7 @@ const Register = () => {
     setModalTermoAberto(true);
   };
 
-  const handleTermoAceito = async (pdfUrl: string) => {
+  const handleTermoAceito = async () => {
     setCarregando(true);
     setModalTermoAberto(false);
 
@@ -287,7 +287,7 @@ const Register = () => {
 
       const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
-      // Salvar dados completos no Firestore
+      // Salvar dados completos no Firestore com aceite do termo
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
         email,
@@ -328,7 +328,8 @@ const Register = () => {
           cidadeTrabalho: !atuaSMS ? cidadeTrabalho : undefined,
           localCargo: !atuaSMS ? localCargo : undefined,
         },
-        termoResponsabilidadeUrl: pdfUrl
+        termoResponsabilidadeAceito: true,
+        termoResponsabilidadeData: new Date()
       });
 
       toast({
@@ -845,3 +846,5 @@ const Register = () => {
 };
 
 export default Register;
+
+}

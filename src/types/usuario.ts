@@ -51,7 +51,8 @@ export interface Usuario {
   dataUltimoAcesso?: Timestamp;
   historico_logs?: Log[];
   id?: string;
-  termoResponsabilidadeUrl?: string;
+  termoResponsabilidadeAceito?: boolean;
+  termoResponsabilidadeData?: Timestamp;
   // Legacy properties for backward compatibility
   nome?: string;
   sobrenome?: string;

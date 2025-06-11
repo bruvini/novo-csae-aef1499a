@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,12 +6,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2pdf from "html2pdf.js";
-import { uploadTermoResponsabilidade } from "@/services/storageService";
 
 interface TermoResponsabilidadeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAccept: (pdfUrl: string) => void;
+  onAccept: () => void;
   dadosUsuario: {
     nomeCompleto: string;
     formacao: string;
@@ -94,34 +94,31 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
       // Configurações do PDF
       const opcoes = {
         margin: 1,
-        filename: `termo-responsabilidade-${Date.now()}.pdf`,
+        filename: `termo-responsabilidade-${dadosUsuario.nomeCompleto.replace(/\s+/g, '-')}-${Date.now()}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      // Gerar PDF como blob
-      const pdfBlob = await html2pdf().set(opcoes).from(elemento).outputPdf('blob');
+      // Gerar PDF e abrir em nova aba
+      const pdfOutput = await html2pdf().set(opcoes).from(elemento).output('bloburl');
       
-      // Gerar UID temporário para o upload (será substituído pelo UID real após criação do usuário)
-      const tempUid = `temp-${Date.now()}`;
+      // Abrir PDF em nova aba
+      window.open(pdfOutput, '_blank');
       
-      // Upload do PDF para Firebase Storage
-      const downloadURL = await uploadTermoResponsabilidade(pdfBlob, tempUid);
-      
-      // Chamar callback com a URL do PDF
-      onAccept(downloadURL);
+      // Chamar callback para continuar com o cadastro
+      onAccept();
       
       toast({
         title: "Termo aceito com sucesso!",
-        description: "O PDF foi salvo e seu cadastro será processado.",
+        description: "O PDF foi gerado e aberto em uma nova aba. Seu cadastro será processado.",
       });
       
     } catch (error) {
-      console.error("Erro ao gerar e salvar PDF:", error);
+      console.error("Erro ao gerar PDF:", error);
       toast({
         title: "Erro ao processar termo",
-        description: "Ocorreu um erro ao gerar e salvar o termo. Tente novamente.",
+        description: "Ocorreu um erro ao gerar o termo. Tente novamente.",
         variant: "destructive"
       });
     } finally {
