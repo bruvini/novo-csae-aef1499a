@@ -68,6 +68,13 @@ export interface Usuario {
   dataUltimoAcesso?: Timestamp;
   historico_logs?: Log[];
   id?: string;
+  termoResponsabilidadeUrl?: string;
+  // Legacy properties for backward compatibility
+  nome?: string;
+  sobrenome?: string;
+  ehAdmin?: boolean;
+  gestorConteudos?: boolean;
+  unidade?: string;
 }
 
 export interface Paciente {

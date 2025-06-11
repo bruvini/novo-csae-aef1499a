@@ -26,6 +26,7 @@ import {
   deleteSistemaCorporal,
 } from './sistemasDB';
 
+// Re-export everything explicitly to ensure availability
 export {
   fetchSubconjuntos,
   fetchDiagnosticos,
