@@ -1,3 +1,4 @@
+
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -7,21 +8,15 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
-import { UsuarioAutenticado } from '@/types/usuario';
+import { Usuario } from '@/types/usuario';
 import { useAutenticacao } from '@/hooks/useAutenticacao'; // Import the hook
 
 export interface SessaoUsuario {
   uid: string;
   email: string;
-  nome: string;
-  sobrenome: string;
-  instituicao?: string;
-  ehAdmin: boolean;
-  gestorConteudos: boolean;
-  posFaculdade?: boolean;
-  totens?: boolean;
-  statusAprovacao?: 'Pendente' | 'Aprovado' | 'Reprovado';
-  createdAt?: Date;
+  nomeUsuario: string;
+  tipoUsuario: 'Administrador' | 'Comum';
+  usuario: Usuario;
 }
 
 export const auth = getAuth();
@@ -41,27 +36,21 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
       return null;
     }
 
-    const dadosUsuario = userDoc.data() as UsuarioAutenticado;
+    const dadosUsuario = userDoc.data() as Usuario;
 
-    // Map status values from database to interface
-    let statusAprovacao: 'Pendente' | 'Aprovado' | 'Reprovado' = 'Pendente';
-    if (dadosUsuario.statusAcesso === 'Aprovado') {
-      statusAprovacao = 'Aprovado';
-    } else if (dadosUsuario.statusAcesso === 'Negado') {
-      statusAprovacao = 'Reprovado';
-    }
+    const nomeUsuario = dadosUsuario.dadosPessoais?.nomeCompleto || 
+                        `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim() ||
+                        'Usuário';
 
     return {
       uid: usuario.uid,
       email: usuario.email!,
-      nome: dadosUsuario.nome,
-      sobrenome: dadosUsuario.dadosPessoais?.nomeCompleto || '',
-      createdAt: dadosUsuario.dataCriacao?.toDate(),
-      ehAdmin: dadosUsuario.ehAdmin || false,
-      gestorConteudos: dadosUsuario.gestorConteudos || false,
-      totens: dadosUsuario.totens || false,
-      instituicao: dadosUsuario.unidade,
-      statusAprovacao
+      nomeUsuario,
+      tipoUsuario: dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum'),
+      usuario: {
+        ...dadosUsuario,
+        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
+      }
     };
   } catch (error) {
     console.error("Erro ao verificar autenticação:", error);
@@ -81,11 +70,11 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
       throw new Error("Usuário não encontrado no banco de dados.");
     }
     
-    const dadosUsuario = userDoc.data() as UsuarioAutenticado;
+    const dadosUsuario = userDoc.data() as Usuario;
 
     // Registrar data de último login
     await updateDoc(doc(db, "usuarios", usuario.uid), {
-      ultimoLogin: serverTimestamp()
+      dataUltimoAcesso: serverTimestamp()
     });
     
     // Registrar acesso em log-acessos
@@ -99,24 +88,19 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
       console.error("Erro ao registrar acesso:", error);
     }
 
-    // Map status values from database to interface
-    let statusAprovacao: 'Pendente' | 'Aprovado' | 'Reprovado' = 'Pendente';
-    if (dadosUsuario.statusAcesso === 'Aprovado') {
-      statusAprovacao = 'Aprovado';
-    } else if (dadosUsuario.statusAcesso === 'Negado') {
-      statusAprovacao = 'Reprovado';
-    }
+    const nomeUsuario = dadosUsuario.dadosPessoais?.nomeCompleto || 
+                        `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim() ||
+                        'Usuário';
 
     return {
       uid: usuario.uid,
       email: usuario.email!,
-      nome: dadosUsuario.nome,
-      sobrenome: dadosUsuario.dadosPessoais?.nomeCompleto || '',
-      ehAdmin: dadosUsuario.ehAdmin || false,
-      gestorConteudos: dadosUsuario.gestorConteudos || false,
-      totens: dadosUsuario.totens || false,
-      instituicao: dadosUsuario.unidade,
-      statusAprovacao
+      nomeUsuario,
+      tipoUsuario: dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum'),
+      usuario: {
+        ...dadosUsuario,
+        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
+      }
     };
   } catch (error: any) {
     if (error.code === "auth/invalid-credential") {
@@ -163,15 +147,34 @@ export const realizarCadastro = async (email: string, senha: string, nome: strin
       console.error("Erro ao registrar acesso:", error);
     }
 
+    const nomeUsuario = `${nome} ${sobrenome}`.trim();
+
     return {
       uid: usuario.uid,
       email,
-      nome,
-      sobrenome,
-      instituicao,
-      ehAdmin: false,
-      gestorConteudos: false,
-      statusAprovacao: "Pendente"
+      nomeUsuario,
+      tipoUsuario: 'Comum',
+      usuario: {
+        ...dadosUsuario,
+        uid: usuario.uid,
+        dataCadastro: serverTimestamp(),
+        statusAcesso: 'Aguardando',
+        dadosPessoais: {
+          nomeCompleto: nomeUsuario,
+          rg: '',
+          cpf: '',
+          rua: '',
+          numero: '',
+          bairro: '',
+          cidade: '',
+          uf: '',
+          cep: ''
+        },
+        dadosProfissionais: {
+          formacao: 'Acadêmico de Enfermagem',
+          atuaSMS: false
+        }
+      } as Usuario
     };
   } catch (error: any) {
     if (error.code === "auth/email-already-in-use") {

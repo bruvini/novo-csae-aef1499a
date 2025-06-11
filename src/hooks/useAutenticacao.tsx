@@ -44,8 +44,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         const sessao = await verificarAutenticacao();
         setUsuario(sessao);
-        setEhAdmin(!!sessao?.ehAdmin);
-        setEhGestorConteudos(!!sessao?.gestorConteudos);
+        setEhAdmin(sessao?.tipoUsuario === 'Administrador' || !!sessao?.usuario?.ehAdmin);
+        setEhGestorConteudos(!!sessao?.usuario?.gestorConteudos);
       } else {
         setUsuario(null);
         setEhAdmin(false);
@@ -62,8 +62,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const sessao = await realizarLogin(email, senha);
       setUsuario(sessao);
-      setEhAdmin(!!sessao.ehAdmin);
-      setEhGestorConteudos(!!sessao.gestorConteudos);
+      setEhAdmin(sessao.tipoUsuario === 'Administrador' || !!sessao.usuario?.ehAdmin);
+      setEhGestorConteudos(!!sessao.usuario?.gestorConteudos);
       return sessao;
     } finally {
       setCarregando(false);
@@ -130,8 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const salvarSessao = (sessao: SessaoUsuario): void => {
     localStorage.setItem('sessaoUsuario', JSON.stringify(sessao));
     setUsuario(sessao);
-    setEhAdmin(!!sessao.ehAdmin);
-    setEhGestorConteudos(!!sessao.gestorConteudos);
+    setEhAdmin(sessao.tipoUsuario === 'Administrador' || !!sessao.usuario?.ehAdmin);
+    setEhGestorConteudos(!!sessao.usuario?.gestorConteudos);
   };
 
   return (

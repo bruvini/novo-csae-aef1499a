@@ -375,3 +375,130 @@ export async function finalizarEvolucao(pacienteId: string, evolucaoId: string, 
     return false;
   }
 }
+
+// Add missing functions for sistema management
+export async function createRevisaoSistema(revisao: any): Promise<any> {
+  try {
+    const docRef = await addDoc(collection(db, 'revisoesSistema'), revisao);
+    return {
+      ...revisao,
+      id: docRef.id
+    };
+  } catch (error) {
+    console.error("Erro ao criar revisão de sistema:", error);
+    throw error;
+  }
+}
+
+export async function updateRevisaoSistema(id: string, revisao: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'revisoesSistema', id);
+    await updateDoc(docRef, { ...revisao });
+    return true;
+  } catch (error) {
+    console.error("Erro ao atualizar revisão de sistema:", error);
+    throw error;
+  }
+}
+
+export async function deleteRevisaoSistema(id: string): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'revisoesSistema', id);
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error("Erro ao excluir revisão de sistema:", error);
+    throw error;
+  }
+}
+
+export async function fetchSistemasCorporais(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'sistemasCorporais'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar sistemas corporais:", error);
+    return [];
+  }
+}
+
+export async function fetchRevisoesSistema(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'revisoesSistema'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar revisões de sistema:", error);
+    return [];
+  }
+}
+
+export async function createSistemaCorporal(sistema: any): Promise<any> {
+  try {
+    const docRef = await addDoc(collection(db, 'sistemasCorporais'), sistema);
+    return {
+      ...sistema,
+      id: docRef.id
+    };
+  } catch (error) {
+    console.error("Erro ao criar sistema corporal:", error);
+    throw error;
+  }
+}
+
+export async function updateSistemaCorporal(id: string, sistema: any): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'sistemasCorporais', id);
+    await updateDoc(docRef, {
+      nome: sistema.nome,
+      descricao: sistema.descricao,
+      ativo: sistema.ativo
+    });
+    return true;
+  } catch (error) {
+    console.error("Erro ao atualizar sistema corporal:", error);
+    throw error;
+  }
+}
+
+export async function deleteSistemaCorporal(id: string): Promise<boolean> {
+  try {
+    const docRef = doc(db, 'sistemasCorporais', id);
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error("Erro ao excluir sistema corporal:", error);
+    throw error;
+  }
+}
+
+export async function fetchSubconjuntos(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'subconjuntos'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar subconjuntos:", error);
+    return [];
+  }
+}
+
+export async function fetchDiagnosticos(): Promise<any[]> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'diagnosticos'));
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar diagnósticos:", error);
+    return [];
+  }
+}
