@@ -126,7 +126,13 @@ const Register = () => {
   const [uf, setUf] = useState("");
   const [cep, setCep] = useState("");
 
-  const [formacao, setFormacao] = useState<"Enfermeiro" | "Residente de Enfermagem" | "Técnico de Enfermagem" | "Acadêmico de Enfermagem" | "">("");
+  const [formacao, setFormacao] = useState<
+    | "Enfermeiro"
+    | "Residente de Enfermagem"
+    | "Técnico de Enfermagem"
+    | "Acadêmico de Enfermagem"
+    | ""
+  >("");
   const [numeroCoren, setNumeroCoren] = useState("");
   const [ufCoren, setUfCoren] = useState("");
   const [dataInicioResidencia, setDataInicioResidencia] = useState("");
@@ -324,6 +330,9 @@ const Register = () => {
         dadosProfissionais,
         termoResponsabilidadeAceito: true,
         termoResponsabilidadeData: serverTimestamp(),
+        ehAdmin: false,
+        gestorConteudos: false,
+        tipoUsuario: "Comum",
       });
 
       toast({
@@ -546,7 +555,9 @@ const Register = () => {
                   </label>
                   <select
                     value={formacao}
-                    onChange={(e) => setFormacao(e.target.value as typeof formacao)}
+                    onChange={(e) =>
+                      setFormacao(e.target.value as typeof formacao)
+                    }
                     className={`w-full h-10 px-3 py-2 rounded-md border ${
                       camposComErro.has("formacao")
                         ? "border-red-500"
