@@ -287,6 +287,7 @@ const Register = () => {
 
       const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
+      // Salvar dados completos no Firestore
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
         email,
@@ -302,30 +303,30 @@ const Register = () => {
           cep,
         },
         dadosProfissionais: {
-          formacao: formacao as any,
+          formacao: formacao as 'Enfermeiro' | 'Residente de Enfermagem' | 'Técnico de Enfermagem' | 'Acadêmico de Enfermagem',
           numeroCoren:
             formacao === "Enfermeiro" ||
             formacao === "Residente de Enfermagem" ||
             formacao === "Técnico de Enfermagem"
               ? numeroCoren
-              : null,
+              : undefined,
           ufCoren:
             formacao === "Enfermeiro" ||
             formacao === "Residente de Enfermagem" ||
             formacao === "Técnico de Enfermagem"
               ? ufCoren
-              : null,
+              : undefined,
           dataInicioResidencia:
             formacao === "Residente de Enfermagem"
               ? dataInicioResidencia
-              : null,
+              : undefined,
           iesEnfermagem:
-            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : null,
+            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : undefined,
           atuaSMS,
-          lotacao: atuaSMS ? lotacao : null,
-          matricula: atuaSMS ? matricula : null,
-          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : null,
-          localCargo: !atuaSMS ? localCargo : null,
+          lotacao: atuaSMS ? lotacao : undefined,
+          matricula: atuaSMS ? matricula : undefined,
+          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : undefined,
+          localCargo: !atuaSMS ? localCargo : undefined,
         },
         termoResponsabilidadeUrl: pdfUrl
       });

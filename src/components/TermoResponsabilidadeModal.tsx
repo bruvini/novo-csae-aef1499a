@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2pdf from "html2pdf.js";
+import { uploadTermoResponsabilidade } from "@/services/storageService";
 
 interface TermoResponsabilidadeModalProps {
   isOpen: boolean;
@@ -100,28 +100,28 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      // Gerar PDF
-      const pdf = await html2pdf().set(opcoes).from(elemento).outputPdf('blob');
+      // Gerar PDF como blob
+      const pdfBlob = await html2pdf().set(opcoes).from(elemento).outputPdf('blob');
       
-      // Criar URL temporária para o PDF
-      const pdfUrl = URL.createObjectURL(pdf);
+      // Gerar UID temporário para o upload (será substituído pelo UID real após criação do usuário)
+      const tempUid = `temp-${Date.now()}`;
       
-      // Abrir PDF em nova aba
-      window.open(pdfUrl, '_blank');
+      // Upload do PDF para Firebase Storage
+      const downloadURL = await uploadTermoResponsabilidade(pdfBlob, tempUid);
       
-      // Chamar callback com o PDF blob
-      onAccept(pdfUrl);
+      // Chamar callback com a URL do PDF
+      onAccept(downloadURL);
       
       toast({
         title: "Termo aceito com sucesso!",
-        description: "O PDF foi gerado e seu cadastro será processado.",
+        description: "O PDF foi salvo e seu cadastro será processado.",
       });
       
     } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
+      console.error("Erro ao gerar e salvar PDF:", error);
       toast({
-        title: "Erro ao gerar PDF",
-        description: "Ocorreu um erro ao gerar o termo. Tente novamente.",
+        title: "Erro ao processar termo",
+        description: "Ocorreu um erro ao gerar e salvar o termo. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -210,7 +210,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
             disabled={isGeneratingPdf}
           >
             <FileText className="h-4 w-4" />
-            {isGeneratingPdf ? "Gerando PDF..." : "Aceitar e Prosseguir"}
+            {isGeneratingPdf ? "Processando..." : "Aceitar e Prosseguir"}
           </Button>
         </div>
       </DialogContent>

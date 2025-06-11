@@ -58,6 +58,7 @@ export interface Usuario {
   ehAdmin?: boolean;
   gestorConteudos?: boolean;
   unidade?: string;
+  atuaSMS?: boolean; // Adding this property to resolve Dashboard error
 }
 
 export interface SessaoUsuario {

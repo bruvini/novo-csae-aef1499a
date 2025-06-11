@@ -1,4 +1,3 @@
-
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
@@ -6,10 +5,9 @@ import {
   sendPasswordResetEmail,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { Usuario } from '@/types/usuario';
-import { useAutenticacao } from '@/hooks/useAutenticacao'; // Import the hook
 
 export interface SessaoUsuario {
   uid: string;
@@ -122,16 +120,16 @@ export const realizarCadastro = async (email: string, senha: string, nome: strin
     const usuario = resultado.user;
 
     // Criar documento do usuário no Firestore
-    const dadosUsuario = {
+    const dadosUsuario: Partial<Usuario> = {
       nome,
       sobrenome,
       email,
       instituicao,
       ehAdmin: false,
       gestorConteudos: false,
-      statusAprovacao: "Pendente",
-      createdAt: serverTimestamp(),
-      ultimoLogin: serverTimestamp()
+      statusAcesso: "Aguardando",
+      dataCadastro: Timestamp.now(),
+      dataUltimoAcesso: Timestamp.now()
     };
 
     await setDoc(doc(db, "usuarios", usuario.uid), dadosUsuario);
@@ -157,8 +155,6 @@ export const realizarCadastro = async (email: string, senha: string, nome: strin
       usuario: {
         ...dadosUsuario,
         uid: usuario.uid,
-        dataCadastro: serverTimestamp(),
-        statusAcesso: 'Aguardando',
         dadosPessoais: {
           nomeCompleto: nomeUsuario,
           rg: '',
@@ -222,5 +218,4 @@ export const verificarUsuarioExistente = async (email: string): Promise<boolean>
   }
 };
 
-// Export for back-compatibility
 export { useAutenticacao } from '@/hooks/useAutenticacao';
