@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import * as LucideIcons from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAutenticacao } from "@/services/autenticacao";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarModulosAtivos } from "@/services/bancodados/modulosDB";
 import { ModuloDisponivel } from "@/types/modulos";
 import { Loader } from "lucide-react";

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Play, User, Edit2, Trash2, Clock, ArrowRight, UserPlus, ArrowLeft, Copy, Save, Home } from 'lucide-react';
-import { useAutenticacao } from '@/services/autenticacao';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';

@@ -1,6 +1,13 @@
 
 import { Timestamp } from "firebase/firestore";
 
+export interface DocumentoApoio {
+  id?: string;
+  nome: string;
+  arquivo: string; // URL do arquivo no Firebase Storage
+  tipo: string;    // PDF, JPEG, JPG, PNG
+}
+
 export interface Intervencao {
   id?: string;
   titulo: string;
@@ -14,8 +21,7 @@ export interface Intervencao {
   descricaoRestante?: string;
   intervencaoEnfermeiro?: string;
   intervencaoInfinitivo?: string;
-  nomeDocumento?: string;
-  linkDocumento?: string;
+  documentosApoio?: DocumentoApoio[];
 }
 
 export interface ResultadoEsperado {

@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAutenticacao } from "@/services/autenticacao";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 import {
   verificarUsuarioExistente,
   cadastrarUsuario,
-} from "@/services/bancodados";
+} from "@/services/bancodados/usuariosDB";
+import { serverTimestamp } from "firebase/firestore";
 import SimpleFooter from "@/components/SimpleFooter";
+import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 
 const estadosBrasileiros = [
   "AC",
@@ -139,6 +141,8 @@ const Register = () => {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
 
+  const [modalTermoAberto, setModalTermoAberto] = useState(false);
+
   useEffect(() => {
     if (
       formacao !== "Enfermeiro" &&
@@ -238,7 +242,23 @@ const Register = () => {
       return;
     }
 
+    // Verificar se atua na SMS
+    if (!atuaSMS) {
+      toast({
+        title: "Acesso restrito",
+        description: "Este portal é exclusivo para profissionais que atuam na Secretaria Municipal de Saúde de Florianópolis.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Abrir modal do termo de responsabilidade
+    setModalTermoAberto(true);
+  };
+
+  const handleTermoAceito = async () => {
     setCarregando(true);
+    setModalTermoAberto(false);
 
     try {
       const usuarioExiste = await verificarUsuarioExistente(
@@ -266,8 +286,9 @@ const Register = () => {
         return;
       }
 
-      const usuarioAuth = await registrar(email, senha);
+      const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
+      // Salvar dados completos no Firestore com aceite do termo
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
         email,
@@ -283,31 +304,33 @@ const Register = () => {
           cep,
         },
         dadosProfissionais: {
-          formacao: formacao as any,
+          formacao: formacao as 'Enfermeiro' | 'Residente de Enfermagem' | 'Técnico de Enfermagem' | 'Acadêmico de Enfermagem',
           numeroCoren:
             formacao === "Enfermeiro" ||
             formacao === "Residente de Enfermagem" ||
             formacao === "Técnico de Enfermagem"
               ? numeroCoren
-              : null,
+              : undefined,
           ufCoren:
             formacao === "Enfermeiro" ||
             formacao === "Residente de Enfermagem" ||
             formacao === "Técnico de Enfermagem"
               ? ufCoren
-              : null,
+              : undefined,
           dataInicioResidencia:
             formacao === "Residente de Enfermagem"
               ? dataInicioResidencia
-              : null,
+              : undefined,
           iesEnfermagem:
-            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : null,
+            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : undefined,
           atuaSMS,
-          lotacao: atuaSMS ? lotacao : null,
-          matricula: atuaSMS ? matricula : null,
-          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : null,
-          localCargo: !atuaSMS ? localCargo : null,
+          lotacao: atuaSMS ? lotacao : undefined,
+          matricula: atuaSMS ? matricula : undefined,
+          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : undefined,
+          localCargo: !atuaSMS ? localCargo : undefined,
         },
+        termoResponsabilidadeAceito: true,
+        termoResponsabilidadeData: serverTimestamp()
       });
 
       toast({
@@ -328,6 +351,24 @@ const Register = () => {
     } finally {
       setCarregando(false);
     }
+  };
+
+  const dadosParaTermo = {
+    nomeCompleto,
+    formacao,
+    numeroCoren: formacao === "Enfermeiro" ||
+      formacao === "Residente de Enfermagem" ||
+      formacao === "Técnico de Enfermagem" ? numeroCoren : undefined,
+    ufCoren: formacao === "Enfermeiro" ||
+      formacao === "Residente de Enfermagem" ||
+      formacao === "Técnico de Enfermagem" ? ufCoren : undefined,
+    rua,
+    numero,
+    bairro,
+    cidade,
+    uf,
+    rg,
+    cpf,
   };
 
   return (
@@ -794,6 +835,13 @@ const Register = () => {
       </main>
 
       <SimpleFooter />
+
+      <TermoResponsabilidadeModal
+        isOpen={modalTermoAberto}
+        onClose={() => setModalTermoAberto(false)}
+        onAccept={handleTermoAceito}
+        dadosUsuario={dadosParaTermo}
+      />
     </div>
   );
 };

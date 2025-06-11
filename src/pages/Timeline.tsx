@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
@@ -7,7 +6,7 @@ import { TimelineEvent } from "@/types/timeline";
 import Header from "@/components/Header";
 import NavigationMenu from "@/components/NavigationMenu";
 import MainFooter from "@/components/MainFooter";
-import { useAutenticacao } from "@/services/autenticacao";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 import TimelineEventCard from "@/components/timeline/TimelineEventCard";
 import TimelineAdmin from "@/components/timeline/TimelineAdmin";
 import { PlusCircle } from "lucide-react";

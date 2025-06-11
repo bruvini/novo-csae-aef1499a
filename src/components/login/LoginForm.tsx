@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLoginHandler } from "./LoginUtils";
+import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -54,15 +54,30 @@ const LoginForm = () => {
     setLoading(true);
     setRegistrarAtivo(false);
     
-    const result = await realizarLogin(email, password);
-    
-    // Use the correct property names from the result object
-    const success = result.success || false;
-    // Use optional chaining to safely check for error message
-    const shouldRegisterActive = !success && !result.error?.includes("senha");
-    
-    setRegistrarAtivo(shouldRegisterActive);
-    setLoading(false);
+    try {
+      const result = await realizarLogin(email, password);
+      
+      // Use the correct property names from the result object
+      const success = result.success || false;
+      // Use optional chaining to safely check for error message
+      const shouldRegisterActive = !success && !result.error?.includes("senha");
+      
+      setRegistrarAtivo(shouldRegisterActive);
+      
+      // Log failed login attempts (without exposing sensitive information)
+      if (!success) {
+        console.log("Tentativa de login falhou:", result.error);
+      }
+    } catch (error) {
+      console.error("Erro ao processar login:", error);
+      toast({
+        title: "Erro de sistema",
+        description: "Ocorreu um erro ao processar seu login. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

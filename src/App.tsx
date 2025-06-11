@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,10 +17,11 @@ import Timeline from "./pages/Timeline";
 import NotFound from "./pages/NotFound";
 import RotaProtegida from "./components/RotaProtegida";
 import LoadingOverlay from "./components/LoadingOverlay";
+import { AuthProvider } from './hooks/useAutenticacao';
 
 const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Simular carregamento inicial do aplicativo
@@ -39,62 +39,64 @@ const App = () => {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/registrar" element={<Register />} />
-            <Route path="/timeline" element={<Timeline />} />
-            
-            {/* Rotas protegidas - exigem autenticação */}
-            <Route path="/dashboard" element={
-              <RotaProtegida>
-                <Dashboard />
-              </RotaProtegida>
-            } />
-            <Route path="/sugestoes" element={
-              <RotaProtegida>
-                <Sugestoes />
-              </RotaProtegida>
-            } />
-            <Route path="/processo-enfermagem" element={
-              <RotaProtegida>
-                <ProcessoEnfermagem />
-              </RotaProtegida>
-            } />
-            <Route path="/protocolos" element={
-              <RotaProtegida>
-                <ProtocolosEnfermagem />
-              </RotaProtegida>
-            } />
-            <Route path="/pops" element={
-              <RotaProtegida moduloNome="pops">
-                <POPs />
-              </RotaProtegida>
-            } />
-            
-            {/* Rotas protegidas apenas para administradores */}
-            <Route path="/gestao-usuarios" element={
-              <RotaProtegida apenasAdmin>
-                <GestaoUsuarios />
-              </RotaProtegida>
-            } />
-            <Route path="/gerenciamento-enfermagem" element={
-              <RotaProtegida apenasAdmin>
-                <GerenciamentoEnfermagem />
-              </RotaProtegida>
-            } />
-            
-            {/* Rota 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/registrar" element={<Register />} />
+              <Route path="/timeline" element={<Timeline />} />
+              
+              {/* Rotas protegidas - exigem autenticação */}
+              <Route path="/dashboard" element={
+                <RotaProtegida>
+                  <Dashboard />
+                </RotaProtegida>
+              } />
+              <Route path="/sugestoes" element={
+                <RotaProtegida>
+                  <Sugestoes />
+                </RotaProtegida>
+              } />
+              <Route path="/processo-enfermagem" element={
+                <RotaProtegida>
+                  <ProcessoEnfermagem />
+                </RotaProtegida>
+              } />
+              <Route path="/protocolos" element={
+                <RotaProtegida>
+                  <ProtocolosEnfermagem />
+                </RotaProtegida>
+              } />
+              <Route path="/pops" element={
+                <RotaProtegida moduloNome="pops">
+                  <POPs />
+                </RotaProtegida>
+              } />
+              
+              {/* Rotas protegidas apenas para administradores */}
+              <Route path="/gestao-usuarios" element={
+                <RotaProtegida apenasAdmin>
+                  <GestaoUsuarios />
+                </RotaProtegida>
+              } />
+              <Route path="/gerenciamento-enfermagem" element={
+                <RotaProtegida apenasAdmin>
+                  <GerenciamentoEnfermagem />
+                </RotaProtegida>
+              } />
+              
+              {/* Rota 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
-};
+}
 
 export default App;

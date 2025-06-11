@@ -1,103 +1,149 @@
 
 import React from 'react';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from '@/components/ui/button';
-import { DialogFooter } from '@/components/ui/dialog';
-import { DiagnosticoCompleto } from '@/services/bancodados/tipos';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DiagnosticoCompleto, Subconjunto } from '@/types/diagnosticos';
+import { Badge } from "@/components/ui/badge";
 
 interface DiagnosticoVisualizerProps {
   diagnostico: DiagnosticoCompleto;
-  onClose: () => void;
-  getNomeSubconjunto: (id: string) => string;
-  getTipoSubconjunto: (id: string) => string;
+  subconjuntos: Subconjunto[];
 }
 
-const DiagnosticoVisualizer = ({
-  diagnostico,
-  onClose,
-  getNomeSubconjunto,
-  getTipoSubconjunto
-}: DiagnosticoVisualizerProps) => {
-  return (
-    <div className="space-y-4 py-2">
-      <div className="flex items-center space-x-2">
-        <span className={`px-2 py-1 rounded-full text-xs ${
-          getTipoSubconjunto(diagnostico.subconjuntoId) === 'Protocolo' 
-            ? 'bg-blue-100 text-blue-800' 
-            : 'bg-green-100 text-green-800'
-        }`}>
-          {getNomeSubconjunto(diagnostico.subconjuntoId)}
-        </span>
-        <h3 className="text-lg font-semibold">{diagnostico.nome}</h3>
-      </div>
-      
-      {diagnostico.explicacao && (
-        <div className="bg-gray-50 p-3 rounded-md">
-          <p className="text-gray-700">{diagnostico.explicacao}</p>
-        </div>
-      )}
-      
-      <div className="space-y-4 mt-4">
-        <h4 className="font-semibold text-csae-green-700">Resultados Esperados e Intervenções</h4>
-        
-        <Accordion type="single" collapsible className="w-full">
-          {diagnostico.resultadosEsperados.map((resultado, index) => (
-            <AccordionItem key={index} value={`item-${index}`}>
-              <AccordionTrigger className="hover:bg-gray-50 px-3 rounded-md">
-                <span className="text-left">{resultado.descricao}</span>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="pl-4 pt-2 space-y-2">
-                  <h5 className="text-sm font-medium text-gray-700">Intervenções:</h5>
-                  
-                  <div className="space-y-1 pl-2">
-                    {resultado.intervencoes.map((intervencao, i) => (
-                      <div key={i} className="bg-gray-50 p-2 rounded">
-                        <div className="text-sm">
-                          <span className="font-medium">Enfermeiro:</span> 
-                          <span className="text-green-700"> {intervencao.verboPrimeiraEnfermeiro}</span> {intervencao.descricaoRestante}
-                        </div>
-                        <div className="text-sm">
-                          <span className="font-medium">Outra pessoa:</span> 
-                          <span className="text-blue-700"> {intervencao.verboOutraPessoa}</span> {intervencao.descricaoRestante}
-                        </div>
-                        {(intervencao.nomeDocumento || intervencao.linkDocumento) && (
-                          <div className="text-sm mt-1 pt-1 border-t border-gray-200">
-                            <span className="font-medium">Documento de apoio:</span> 
-                            {intervencao.linkDocumento ? (
-                              <a 
-                                href={intervencao.linkDocumento} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                              >
-                                {intervencao.nomeDocumento || intervencao.linkDocumento}
-                              </a>
-                            ) : (
-                              <span> {intervencao.nomeDocumento}</span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
+const DiagnosticoVisualizer = ({ diagnostico, subconjuntos }: DiagnosticoVisualizerProps) => {
+  // Get subconjunto names
+  const getSubconjuntoInfo = (ids: string[] = []) => {
+    return ids.map(id => {
+      const subconjunto = subconjuntos.find(s => s.id === id);
+      return {
+        nome: subconjunto?.nome || "Desconhecido",
+        tipo: subconjunto?.tipo || "Desconhecido"
+      };
+    });
+  };
 
-      <DialogFooter>
-        <Button onClick={onClose}>
-          Fechar
-        </Button>
-      </DialogFooter>
+  const subconjuntosInfo = getSubconjuntoInfo(diagnostico.subconjuntoIds);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="bg-gray-50">
+          <CardTitle className="text-csae-green-700">{diagnostico.nome}</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {diagnostico.explicacao && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold mb-1">Explicação:</h4>
+              <p className="text-sm">{diagnostico.explicacao}</p>
+            </div>
+          )}
+
+          <div className="mb-4">
+            <h4 className="text-sm font-semibold mb-1">Subconjuntos:</h4>
+            <div className="flex flex-wrap gap-2">
+              {subconjuntosInfo.length > 0 ? (
+                subconjuntosInfo.map((info, index) => (
+                  <Badge key={index} variant="outline">
+                    {info.nome} ({info.tipo})
+                  </Badge>
+                ))
+              ) : (
+                <span className="text-sm text-gray-500">Nenhum subconjunto associado</span>
+              )}
+            </div>
+          </div>
+          
+          {diagnostico.caracteristicasDefinidoras && diagnostico.caracteristicasDefinidoras.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold mb-1">Características Definidoras:</h4>
+              <ul className="list-disc pl-5 text-sm">
+                {diagnostico.caracteristicasDefinidoras.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {diagnostico.fatoresRelacionados && diagnostico.fatoresRelacionados.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold mb-1">Fatores Relacionados:</h4>
+              <ul className="list-disc pl-5 text-sm">
+                {diagnostico.fatoresRelacionados.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {diagnostico.populacaoRisco && diagnostico.populacaoRisco.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold mb-1">População de Risco:</h4>
+              <ul className="list-disc pl-5 text-sm">
+                {diagnostico.populacaoRisco.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {diagnostico.condicoesAssociadas && diagnostico.condicoesAssociadas.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold mb-1">Condições Associadas:</h4>
+              <ul className="list-disc pl-5 text-sm">
+                {diagnostico.condicoesAssociadas.map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Resultados Esperados e Intervenções */}
+      <h3 className="text-lg font-semibold text-csae-green-700 mt-6">Resultados Esperados e Intervenções</h3>
+      
+      {diagnostico.resultadosEsperados && diagnostico.resultadosEsperados.map((resultado, rIndex) => (
+        <Card key={rIndex} className="mb-4">
+          <CardHeader className="bg-gray-50 py-3">
+            <CardTitle className="text-base">{resultado.descricao}</CardTitle>
+          </CardHeader>
+          <CardContent className="py-3">
+            <h4 className="text-sm font-semibold mb-2">Intervenções:</h4>
+            <ul className="list-disc pl-5 space-y-3">
+              {resultado.intervencoes.map((intervencao, iIndex) => (
+                <li key={iIndex} className="text-sm">
+                  <div>
+                    <span className="font-medium">Enfermeiro:</span> {" "}
+                    <span className="text-green-700">{intervencao.verboPrimeiraEnfermeiro}</span> {intervencao.descricaoRestante}
+                  </div>
+                  <div>
+                    <span className="font-medium">Outra pessoa:</span> {" "}
+                    <span className="text-blue-700">{intervencao.verboOutraPessoa}</span> {intervencao.descricaoRestante}
+                  </div>
+                  
+                  {intervencao.documentosApoio && intervencao.documentosApoio.length > 0 && (
+                    <div className="mt-1">
+                      <span className="font-medium text-xs">Documentos de apoio:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {intervencao.documentosApoio.map((doc, dIndex) => (
+                          <a 
+                            key={dIndex}
+                            href={doc.arquivo}
+                            target="_blank"
+                            rel="noopener noreferrer" 
+                            className="text-xs px-2 py-0.5 bg-gray-100 rounded hover:bg-gray-200 text-blue-600"
+                          >
+                            {doc.nome}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

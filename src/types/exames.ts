@@ -1,5 +1,6 @@
 
 import { Timestamp } from "firebase/firestore";
+import type { SubconjuntoDiagnostico, DiagnosticoCompleto } from "./diagnosticos";
 
 // Exames Laboratoriais
 export interface ExameLaboratorial {
@@ -25,7 +26,13 @@ export interface ValorReferenciaExame {
   idadeMaxima?: number;
   sexo?: 'Todos' | 'Masculino' | 'Feminino';
   tituloAlteracao?: string;
+  nhbIds?: string[];
+  diagnosticoIds?: string[];
+  tipoExame?: 'Laboratorial' | 'Imagem';
+  // Legacy fields for backward compatibility
   nhbId?: string;
   diagnosticoId?: string;
-  tipoExame?: 'Laboratorial' | 'Imagem';
 }
+
+// Re-export types from diagnosticos.ts to fix import errors using 'export type'
+export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from "./diagnosticos";

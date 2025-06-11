@@ -1,63 +1,84 @@
 
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, serverTimestamp } from 'firebase/firestore';
-import { db } from '../firebase';
+import { collection, addDoc, Timestamp, getDocs, query, where, limit, orderBy } from "firebase/firestore";
+import { db } from "../firebase";
 
-export interface HistoricoAcesso {
-  id?: string;
-  usuarioId: string;
-  nomeUsuario?: string;
-  emailUsuario?: string;
-  dataHora: Timestamp;
-  tipoAcao: "login" | "logout" | "visualizacao" | "acao";
-  descricaoAcao?: string;
-  recursoAcessado?: string;
-}
-
+// Function to register a user access
 export const registrarAcesso = async (
-  usuarioId: string, 
-  nomeUsuario: string, 
-  emailUsuario: string, 
-  tipoAcao: "login" | "logout" | "visualizacao" | "acao", 
-  descricaoAcao?: string, 
-  recursoAcessado?: string
-): Promise<string | null> => {
+  userId: string,
+  userName?: string,
+  userEmail?: string,
+  action?: string,
+  details?: string,
+  platform?: string
+): Promise<void> => {
   try {
-    const acesso = {
-      usuarioId,
-      nomeUsuario,
-      emailUsuario,
-      dataHora: serverTimestamp(),
-      tipoAcao,
-      descricaoAcao,
-      recursoAcessado
-    };
-
-    const docRef = await addDoc(collection(db, "historicoAcessos"), acesso);
-    return docRef.id;
+    await addDoc(collection(db, "logAcessos"), {
+      usuarioId: userId,
+      usuarioNome: userName || "",
+      usuarioEmail: userEmail || "",
+      acao: action || "login",
+      detalhes: details || "Login realizado com sucesso",
+      plataforma: platform || "web",
+      timestamp: Timestamp.now()
+    });
   } catch (error) {
     console.error("Erro ao registrar acesso:", error);
-    return null;
   }
 };
 
-export const obterHistoricoAcessos = async (usuarioId: string): Promise<HistoricoAcesso[]> => {
+// Function to get access history for a user
+export const obterHistoricoAcessos = async (userId: string, limit_count = 10) => {
   try {
     const q = query(
-      collection(db, "historicoAcessos"),
-      where("usuarioId", "==", usuarioId),
-      orderBy("dataHora", "desc")
+      collection(db, "logAcessos"),
+      where("usuarioId", "==", userId),
+      orderBy("timestamp", "desc"),
+      limit(limit_count)
     );
     
-    const querySnapshot = await getDocs(q);
-    const acessos: HistoricoAcesso[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      acessos.push({ id: doc.id, ...doc.data() } as HistoricoAcesso);
-    });
-    
-    return acessos;
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
   } catch (error) {
     console.error("Erro ao obter histórico de acessos:", error);
+    return [];
+  }
+};
+
+// Function to get total access count for a user
+export const obterTotalAcessos = async (userId: string) => {
+  try {
+    const q = query(
+      collection(db, "logAcessos"),
+      where("usuarioId", "==", userId)
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.size;
+  } catch (error) {
+    console.error("Erro ao obter total de acessos:", error);
+    return 0;
+  }
+};
+
+// Function to get recent accesses for all users
+export const obterUltimosAcessosTodosUsuarios = async (limit_count = 50) => {
+  try {
+    const q = query(
+      collection(db, "logAcessos"),
+      orderBy("timestamp", "desc"),
+      limit(limit_count)
+    );
+    
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Erro ao obter últimos acessos:", error);
     return [];
   }
 };

@@ -19,8 +19,8 @@ export interface RevisaoSistema {
   descricao?: string;
   tipoAlteracao: 'Objetiva' | 'Subjetiva' | 'Ambas';
   padrao?: string;
-  diagnosticoId?: string;
-  nhbId?: string;
+  diagnosticoIds?: string[];
+  nhbIds?: string[];
   ativo: boolean;
   ordem?: number;
   valoresReferencia?: ValorReferenciaSistema[];
@@ -41,8 +41,11 @@ export interface ValorReferenciaSistema {
   idadeMaxima?: number;
   sexo?: 'Todos' | 'Masculino' | 'Feminino';
   tituloAlteracao?: string;
-  nhbId?: string;
-  diagnosticoId?: string;
+  nhbIds?: string[];
+  diagnosticoIds?: string[];
   titulo?: string;
   condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
+  // Legacy fields for backward compatibility
+  nhbId?: string;
+  diagnosticoId?: string;
 }

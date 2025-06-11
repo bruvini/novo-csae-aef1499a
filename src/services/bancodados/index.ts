@@ -1,42 +1,41 @@
 
-import { verificarUsuarioExistente, cadastrarUsuario, buscarUsuarioPorUid } from './usuariosDB';
-import { 
-  cadastrarPaciente, 
-  buscarPacientesPorProfissional, 
-  atualizarPaciente, 
-  excluirPaciente 
-} from './pacientesDB';
-import {
-  iniciarEvolucao,
-  salvarProgressoEvolucao,
-  finalizarEvolucao
-} from './evolucoesDB';
-import {
-  registrarAcesso,
-  obterHistoricoAcessos
-} from './logAcessosDB';
+// Re-export all the functions from specific database modules
+export * from './usuariosDB';
+export * from './diagnosticosDB';
+export * from './sistemasDB';
+export * from './pacientesDB';
+export * from './evolucoesDB';
+export * from './logAcessosDB';
+export * from './modulosDB';
+export * from './popsDB';
 
-// Re-export all types from the types directory
-export * from '../../types';
+// Import and re-export specific functions that might be missing
+import {
+  fetchSubconjuntos,
+  fetchDiagnosticos,
+} from './diagnosticosDB';
 
+import {
+  createRevisaoSistema,
+  updateRevisaoSistema,
+  deleteRevisaoSistema,
+  fetchSistemasCorporais,
+  fetchRevisoesSistema,
+  createSistemaCorporal,
+  updateSistemaCorporal,
+  deleteSistemaCorporal,
+} from './sistemasDB';
+
+// Re-export everything explicitly to ensure availability
 export {
-  // Usuários
-  verificarUsuarioExistente,
-  cadastrarUsuario,
-  buscarUsuarioPorUid,
-  
-  // Pacientes
-  cadastrarPaciente,
-  buscarPacientesPorProfissional,
-  atualizarPaciente,
-  excluirPaciente,
-  
-  // Evoluções
-  iniciarEvolucao,
-  salvarProgressoEvolucao,
-  finalizarEvolucao,
-  
-  // Log de acessos
-  registrarAcesso,
-  obterHistoricoAcessos
+  fetchSubconjuntos,
+  fetchDiagnosticos,
+  createRevisaoSistema,
+  updateRevisaoSistema,
+  deleteRevisaoSistema,
+  fetchSistemasCorporais,
+  fetchRevisoesSistema,
+  createSistemaCorporal,
+  updateSistemaCorporal,
+  deleteSistemaCorporal,
 };

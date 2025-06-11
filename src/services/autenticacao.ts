@@ -1,260 +1,220 @@
-
-import { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  User, 
-  createUserWithEmailAndPassword, 
+  getAuth, 
   signInWithEmailAndPassword, 
-  onAuthStateChanged, 
-  signOut,
+  createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  sendEmailVerification,
-  Auth
+  signOut
 } from 'firebase/auth';
-import { auth } from './firebase';
-import { buscarUsuarioPorUid } from './bancodados';
-import { registrarAcesso } from './bancodados/logAcessosDB';
-
-export interface UsuarioAutenticado {
-  uid: string;
-  email: string | null;
-  nome?: string;
-  tipoUsuario?: 'Administrador' | 'Comum';
-  lotacao?: string;
-  matricula?: string;
-  observacoes?: string;
-}
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { db } from './firebase';
+import { Usuario } from '@/types/usuario';
 
 export interface SessaoUsuario {
   uid: string;
-  nomeUsuario: string;
   email: string;
-  tipoUsuario?: 'Administrador' | 'Comum';
-  dataExpiracao?: number;
-  lotacao?: string;
-  matricula?: string;
-  observacoes?: string;
-  id?: string;
-  statusAcesso?: 'Aguardando' | 'Aprovado' | 'Negado' | 'Revogado' | 'Cancelado';
+  nomeUsuario: string;
+  tipoUsuario: 'Administrador' | 'Comum';
+  usuario: Usuario;
 }
 
-export function useAutenticacao() {
-  const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+export const auth = getAuth();
 
-  const obterSessao = (): SessaoUsuario | null => {
-    const sessao = localStorage.getItem('sessaoUsuario');
-    const resultado = sessao ? JSON.parse(sessao) : null;
-    console.log("Sessão obtida do localStorage:", resultado);
-    return resultado;
-  };
+// Verificar se o usuário está autenticado
+export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => {
+  const auth = getAuth();
+  const usuario = auth.currentUser;
 
-  const salvarSessao = (dados: SessaoUsuario) => {
-    console.log("Salvando sessão do usuário com tipo:", dados.tipoUsuario);
-    // Definir um valor padrão para dataExpiracao se não for fornecido
-    const dadosCompletos = {
-      ...dados,
-      dataExpiracao: dados.dataExpiracao || Date.now() + 24 * 60 * 60 * 1000 // 24 horas por padrão
-    };
-    localStorage.setItem('sessaoUsuario', JSON.stringify(dadosCompletos));
-    
-    const sessaoSalva = localStorage.getItem('sessaoUsuario');
-    console.log("Verificação da sessão salva:", sessaoSalva ? JSON.parse(sessaoSalva) : null);
-  };
+  if (!usuario) {
+    return null;
+  }
 
-  const limparSessao = () => {
-    console.log("Limpando dados de sessão do localStorage");
-    localStorage.removeItem('sessaoUsuario');
-    localStorage.removeItem('usuario');
-  };
+  try {
+    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    if (!userDoc.exists()) {
+      return null;
+    }
 
-  useEffect(() => {
-    console.log("Inicializando listener de autenticação");
-    const unsubscribe = onAuthStateChanged(auth, (usuarioFirebase: User | null) => {
-      console.log("Estado de autenticação alterado:", usuarioFirebase ? "Autenticado" : "Não autenticado");
-      
-      if (usuarioFirebase) {
-        setUsuario({
-          uid: usuarioFirebase.uid,
-          email: usuarioFirebase.email
-        });
-        
-        const sessaoExistente = obterSessao();
-        console.log("Sessão existente:", sessaoExistente);
-        
-        if (!sessaoExistente) {
-          buscarUsuarioPorUid(usuarioFirebase.uid)
-            .then(usuarioFirestore => {
-              if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-                const dadosSessao: SessaoUsuario = {
-                  uid: usuarioFirestore.uid,
-                  email: usuarioFirestore.email,
-                  nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-                  tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-                  statusAcesso: usuarioFirestore.statusAcesso,
-                  dataExpiracao: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
-                  id: usuarioFirestore.id
-                };
-                
-                if (usuarioFirestore.dadosPessoais.lotacao) {
-                  dadosSessao.lotacao = usuarioFirestore.dadosPessoais.lotacao;
-                }
-                
-                if (usuarioFirestore.dadosPessoais.matricula) {
-                  dadosSessao.matricula = usuarioFirestore.dadosPessoais.matricula;
-                }
-                
-                if (usuarioFirestore.dadosPessoais.observacoes) {
-                  dadosSessao.observacoes = usuarioFirestore.dadosPessoais.observacoes;
-                }
-                
-                salvarSessao(dadosSessao);
-                console.log("Sessão criada automaticamente:", dadosSessao);
-                
-                localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-              } else {
-                console.log("Usuário não aprovado ou não encontrado no Firestore, não criando sessão");
-                if (usuarioFirestore) {
-                  console.log("Status de acesso:", usuarioFirestore.statusAcesso);
-                }
-              }
-            })
-            .catch(erro => {
-              console.error("Erro ao buscar dados do usuário:", erro);
-            });
-        }
-      } else {
-        console.log("Usuário não autenticado, limpando estado e sessão");
-        setUsuario(null);
-        limparSessao();
+    const dadosUsuario = userDoc.data() as Usuario;
+
+    const nomeUsuario = dadosUsuario.dadosPessoais?.nomeCompleto || 
+                        `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim() ||
+                        'Usuário';
+
+    return {
+      uid: usuario.uid,
+      email: usuario.email!,
+      nomeUsuario,
+      tipoUsuario: dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum'),
+      usuario: {
+        ...dadosUsuario,
+        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
       }
-      setAuthLoading(false);
+    };
+  } catch (error) {
+    console.error("Erro ao verificar autenticação:", error);
+    return null;
+  }
+};
+
+// Realizar login do usuário
+export const realizarLogin = async (email: string, senha: string): Promise<SessaoUsuario> => {
+  try {
+    const resultado = await signInWithEmailAndPassword(auth, email, senha);
+    const usuario = resultado.user;
+
+    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    
+    if (!userDoc.exists()) {
+      throw new Error("Usuário não encontrado no banco de dados.");
+    }
+    
+    const dadosUsuario = userDoc.data() as Usuario;
+
+    // Registrar data de último login
+    await updateDoc(doc(db, "usuarios", usuario.uid), {
+      dataUltimoAcesso: serverTimestamp()
     });
-
-    return () => {
-      console.log("Desativando listener de autenticação");
-      unsubscribe();
-    };
-  }, []);
-
-  const registrar = async (email: string, senha: string) => {
-    console.log("Iniciando processo de registro para:", email);
-    const resultado = await createUserWithEmailAndPassword(auth, email, senha);
-    console.log("Registro bem-sucedido:", resultado.user.uid);
-    return resultado.user;
-  };
-
-  const entrar = async (email: string, password: string) => {
+    
+    // Registrar acesso em log-acessos
     try {
-      console.log("Iniciando processo de login para:", email);
-      const resultado = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Login bem-sucedido. UID:", resultado.user.uid);
-      return resultado.user;
+      await addDoc(collection(db, "logAcessos"), {
+        usuarioId: usuario.uid,
+        timestamp: serverTimestamp(),
+        plataforma: "web"
+      });
     } catch (error) {
-      console.error("Erro no processo de login:", error);
-      throw error;
-    }
-  };
-
-  const sair = async () => {
-    console.log("Iniciando processo de logout");
-    await signOut(auth);
-    setUsuario(null);
-    limparSessao();
-    console.log("Logout completo, sessão removida");
-  };
-
-  const verificarAutenticacao = async () => {
-    console.log("Verificando autenticação. Estado atual:", usuario ? "Autenticado" : "Não autenticado");
-    
-    if (authLoading) {
-      console.log("Ainda carregando o estado de autenticação...");
-      return false;
-    }
-    
-    if (!usuario) {
-      console.log("Usuário não autenticado no Firebase");
-      return false;
+      console.error("Erro ao registrar acesso:", error);
     }
 
-    const sessao = obterSessao();
-    console.log("Sessão encontrada:", sessao);
-    
-    if (!sessao) {
-      console.log("Sessão não encontrada no localStorage, tentando criar");
-      try {
-        console.log("Buscando usuário no Firestore. UID:", usuario.uid);
-        const usuarioFirestore = await buscarUsuarioPorUid(usuario.uid);
-        console.log("Resposta do Firestore:", usuarioFirestore);
-        
-        if (usuarioFirestore && usuarioFirestore.statusAcesso === 'Aprovado') {
-          console.log("Usuário aprovado, criando sessão");
-          console.log("Tipo de usuário:", usuarioFirestore.tipoUsuario || 'Comum');
-          
-          const dadosSessao: SessaoUsuario = {
-            uid: usuarioFirestore.uid,
-            email: usuarioFirestore.email,
-            nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-            tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-            statusAcesso: usuarioFirestore.statusAcesso,
-            dataExpiracao: Date.now() + 24 * 60 * 60 * 1000, // 24 horas
-            id: usuarioFirestore.id
-          };
-          
-          if (usuarioFirestore.dadosPessoais.lotacao) {
-            dadosSessao.lotacao = usuarioFirestore.dadosPessoais.lotacao;
-          }
-          
-          if (usuarioFirestore.dadosPessoais.matricula) {
-            dadosSessao.matricula = usuarioFirestore.dadosPessoais.matricula;
-          }
-          
-          if (usuarioFirestore.dadosPessoais.observacoes) {
-            dadosSessao.observacoes = usuarioFirestore.dadosPessoais.observacoes;
-          }
-          
-          salvarSessao(dadosSessao);
-          localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-          console.log("Sessão criada durante verificação");
-          return true;
-        } else {
-          console.log("Usuário não aprovado ou não encontrado");
-          if (usuarioFirestore) {
-            console.log("Status:", usuarioFirestore.statusAcesso);
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao buscar dados do usuário:", error);
+    const nomeUsuario = dadosUsuario.dadosPessoais?.nomeCompleto || 
+                        `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim() ||
+                        'Usuário';
+
+    return {
+      uid: usuario.uid,
+      email: usuario.email!,
+      nomeUsuario,
+      tipoUsuario: dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum'),
+      usuario: {
+        ...dadosUsuario,
+        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
       }
-      return false;
+    };
+  } catch (error: any) {
+    if (error.code === "auth/invalid-credential") {
+      throw new Error("E-mail ou senha incorretos.");
+    } else if (error.code === "auth/user-not-found") {
+      throw new Error("Usuário não encontrado.");
+    } else if (error.code === "auth/wrong-password") {
+      throw new Error("Senha incorreta.");
+    } else {
+      throw new Error("Erro ao fazer login: " + error.message);
+    }
+  }
+};
+
+// Realizar cadastro de usuário
+export const realizarCadastro = async (email: string, senha: string, nome: string, sobrenome: string, instituicao: string): Promise<SessaoUsuario> => {
+  try {
+    const resultado = await createUserWithEmailAndPassword(auth, email, senha);
+    const usuario = resultado.user;
+
+    // Criar documento do usuário no Firestore
+    const dadosUsuario: Partial<Usuario> = {
+      nome,
+      sobrenome,
+      email,
+      ehAdmin: false,
+      gestorConteudos: false,
+      statusAcesso: "Aguardando",
+      dataCadastro: Timestamp.now(),
+      dataUltimoAcesso: Timestamp.now()
+    };
+
+    await setDoc(doc(db, "usuarios", usuario.uid), dadosUsuario);
+
+    // Registrar acesso em log-acessos
+    try {
+      await addDoc(collection(db, "logAcessos"), {
+        usuarioId: usuario.uid,
+        timestamp: serverTimestamp(),
+        plataforma: "web"
+      });
+    } catch (error) {
+      console.error("Erro ao registrar acesso:", error);
     }
 
-    if (sessao.statusAcesso !== 'Aprovado') {
-      console.log("Status de acesso inválido:", sessao.statusAcesso);
-      return false;
+    const nomeUsuario = `${nome} ${sobrenome}`.trim();
+
+    return {
+      uid: usuario.uid,
+      email,
+      nomeUsuario,
+      tipoUsuario: 'Comum',
+      usuario: {
+        ...dadosUsuario,
+        uid: usuario.uid,
+        dadosPessoais: {
+          nomeCompleto: nomeUsuario,
+          rg: '',
+          cpf: '',
+          rua: '',
+          numero: '',
+          bairro: '',
+          cidade: '',
+          uf: '',
+          cep: ''
+        },
+        dadosProfissionais: {
+          formacao: 'Acadêmico de Enfermagem',
+          atuaSMS: false
+        }
+      } as Usuario
+    };
+  } catch (error: any) {
+    if (error.code === "auth/email-already-in-use") {
+      throw new Error("Este e-mail já está sendo utilizado.");
+    } else if (error.code === "auth/weak-password") {
+      throw new Error("A senha deve ter pelo menos 6 caracteres.");
+    } else {
+      throw new Error("Erro ao criar conta: " + error.message);
     }
+  }
+};
 
-    console.log("Verificação completa: usuário autenticado e com acesso aprovado");
-    return true;
-  };
+// Realizar logout
+export const realizarLogout = async (): Promise<void> => {
+  try {
+    await signOut(auth);
+  } catch (error: any) {
+    throw new Error("Erro ao fazer logout: " + error.message);
+  }
+};
 
-  const verificarAdmin = () => {
-    const sessao = obterSessao();
-    const resultado = sessao?.tipoUsuario === 'Administrador';
-    console.log("Verificação de permissão admin:", resultado);
-    console.log("Detalhes da sessão para verificação admin:", sessao);
-    return resultado;
-  };
+// Recuperar senha
+export const recuperarSenha = async (email: string): Promise<void> => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error: any) {
+    if (error.code === "auth/user-not-found") {
+      throw new Error("E-mail não encontrado.");
+    } else {
+      throw new Error("Erro ao recuperar senha: " + error.message);
+    }
+  }
+};
 
-  return {
-    usuario,
-    authLoading,
-    registrar,
-    entrar,
-    sair,
-    salvarSessao,
-    obterSessao,
-    limparSessao,
-    verificarAutenticacao,
-    verificarAdmin
-  };
-}
+// Verificar se usuário já existe
+export const verificarUsuarioExistente = async (email: string): Promise<boolean> => {
+  try {
+    const usuariosRef = collection(db, "usuarios");
+    const q = query(usuariosRef, where("email", "==", email));
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("Erro ao verificar usuário:", error);
+    return false;
+  }
+};
+
+export { useAutenticacao } from '@/hooks/useAutenticacao';

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useAutenticacao } from '@/services/autenticacao';
+import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { verificarModuloAtivo } from '@/services/bancodados/modulosDB';
 
 interface RotaProtegidaProps {

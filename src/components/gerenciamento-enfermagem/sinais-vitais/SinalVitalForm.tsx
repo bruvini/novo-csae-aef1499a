@@ -27,8 +27,8 @@ interface SinalVitalFormProps {
     campo: keyof ValorReferencia,
     valor: any
   ) => void;
-  handleNhbChange: (index: number, nhbId: string) => void;
-  handleDiagnosticoChange: (index: number, diagnosticoId: string) => void;
+  handleNhbChange: (index: number, nhbIds: string[]) => void;
+  handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
   subconjuntos: SubconjuntoDiagnostico[];
   diagnosticosFiltrados: DiagnosticoCompleto[];
 }

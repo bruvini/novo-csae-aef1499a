@@ -1,278 +1,231 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { UserCheck, Heart, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAutenticacao } from "@/services/autenticacao";
+import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [registrarAtivo, setRegistrarAtivo] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { entrar, limparSessao, salvarSessao } = useAutenticacao();
-  const navigate = useNavigate();
-  const registrarBtnRef = React.useRef<HTMLButtonElement>(null);
-
-  // Efeito para destacar o botão de registrar quando necessário
-  React.useEffect(() => {
-    if (registrarAtivo && registrarBtnRef.current) {
-      registrarBtnRef.current.focus();
-      registrarBtnRef.current.classList.add('animate-pulse');
-      
-      const timer = setTimeout(() => {
-        if (registrarBtnRef.current) {
-          registrarBtnRef.current.classList.remove('animate-pulse');
-        }
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [registrarAtivo]);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Iniciando processo de login");
-
-    if (!email || !password) {
+    
+    if (!email || !senha) {
       toast({
         title: "Campos obrigatórios",
-        description: "Preencha todos os campos para continuar",
-        variant: "destructive"
+        description: "Por favor, preencha seu e-mail e senha.",
+        variant: "destructive",
       });
       return;
     }
 
-    try {
-      setLoading(true);
-      setRegistrarAtivo(false);
-      
-      // Limpar qualquer sessão existente antes de iniciar o processo
-      limparSessao();
-      console.log("Sessões anteriores limpas");
-
-      // 1. Autenticar no Firebase Authentication
-      console.log("Tentando autenticar com email:", email);
-      const usuarioAuth = await entrar(email, password);
-      console.log("Resposta da autenticação:", usuarioAuth);
-
-      if (!usuarioAuth) {
-        console.error("Falha na autenticação: usuarioAuth é null ou undefined");
-        throw new Error("Credenciais inválidas.");
-      }
-
-      console.log("Autenticação bem-sucedida. UID:", usuarioAuth.uid);
-
-      // 2. Buscar o usuário no Firestore
-      console.log("Buscando dados do usuário no Firestore. UID:", usuarioAuth.uid);
-      const usuarioFirestore = await buscarUsuarioPorUid(usuarioAuth.uid);
-      console.log("Dados do Firestore:", usuarioFirestore);
-
-      if (!usuarioFirestore) {
-        // Usuário autenticado mas sem cadastro no Firestore
-        console.error("Usuário autenticado, mas não encontrado no Firestore");
-        setRegistrarAtivo(true);
-        toast({
-          title: "Cadastro não encontrado",
-          description: "Usuário autenticado mas sem cadastro no sistema. Clique em 'Registrar' para se cadastrar.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // 3. Verificar o status de acesso
-      console.log("Status do usuário:", usuarioFirestore.statusAcesso);
-      if (usuarioFirestore.statusAcesso === "Aguardando") {
-        toast({
-          title: "Cadastro em análise",
-          description: "Recebemos seu cadastro e ele está em análise pela equipe CSAE. Tente novamente mais tarde.",
-          variant: "default"
-        });
-        return;
-      }
-
-      if (usuarioFirestore.statusAcesso === "Negado" || 
-          usuarioFirestore.statusAcesso === "Revogado" || 
-          usuarioFirestore.statusAcesso === "Cancelado") {
-        toast({
-          title: "Acesso bloqueado",
-          description: "O acesso ao seu perfil está bloqueado. Entre em contato pelo e-mail: gerenf.sms.pmf@gmail.com",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (usuarioFirestore.statusAcesso === "Aprovado") {
-        // 4. Salvar a sessão do usuário
-        const dadosSessao = {
-          uid: usuarioFirestore.uid,
-          email: usuarioFirestore.email,
-          nomeUsuario: usuarioFirestore.dadosPessoais.nomeCompleto,
-          tipoUsuario: usuarioFirestore.tipoUsuario || 'Comum',
-          statusAcesso: usuarioFirestore.statusAcesso
-        };
-        
-        console.log("Salvando sessão:", dadosSessao);
-        salvarSessao(dadosSessao);
-        
-        // Verificar se a sessão foi realmente salva
-        const sessaoAtual = localStorage.getItem('sessaoUsuario');
-        console.log("Sessão salva no localStorage:", sessaoAtual);
-
-        // Manter compatibilidade com o código existente
-        localStorage.setItem("usuario", JSON.stringify(usuarioFirestore));
-        console.log("Dados do usuário salvos no localStorage");
-
-        toast({
-          title: "Acesso liberado",
-          description: "Bem-vindo de volta!",
-        });
-
-        // 5. Redirecionar para o dashboard
-        console.log("Redirecionando para o dashboard");
-        navigate("/dashboard");
-      } else {
-        console.error("Status de acesso não reconhecido:", usuarioFirestore.statusAcesso);
-        toast({
-          title: "Erro de acesso",
-          description: "Status de acesso não reconhecido. Entre em contato com o suporte.",
-          variant: "destructive"
-        });
-      }
-
-    } catch (error: any) {
-      console.error("Erro durante o login:", error);
-      handleAuthError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAuthError = (error: any) => {
-    console.error("Detalhes do erro de autenticação:", error);
+    setCarregando(true);
     
-    if (error.code === "auth/user-not-found") {
+    try {
+      // Primeiro, limpar qualquer sessão anterior
+      await limparSessao();
+      
+      // Tentar fazer login com Firebase Auth
+      const usuarioAuth = await entrar(email, senha);
+      
+      if (!usuarioAuth) {
+        toast({
+          title: "Erro de autenticação",
+          description: "E-mail ou senha incorretos.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Buscar dados completos do usuário no Firestore
+      const dadosUsuario = await buscarUsuarioPorUid(usuarioAuth.uid);
+      
+      if (!dadosUsuario) {
+        toast({
+          title: "Usuário não encontrado",
+          description: "Não foi possível encontrar os dados do usuário.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar status de acesso
+      if (dadosUsuario.statusAcesso !== 'Aprovado') {
+        let mensagem = "";
+        switch (dadosUsuario.statusAcesso) {
+          case 'Aguardando':
+            mensagem = "Seu cadastro ainda está aguardando aprovação. Você receberá um e-mail quando for aprovado.";
+            break;
+          case 'Negado':
+            mensagem = "Seu cadastro foi negado. Entre em contato com o suporte para mais informações.";
+            break;
+          case 'Revogado':
+            mensagem = "Seu acesso foi revogado. Entre em contato com o administrador.";
+            break;
+          case 'Cancelado':
+            mensagem = "Seu cadastro foi cancelado.";
+            break;
+          default:
+            mensagem = "Seu acesso não está ativo no momento.";
+        }
+        
+        toast({
+          title: "Acesso não autorizado",
+          description: mensagem,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Preparar dados da sessão
+      const nomeCompleto = dadosUsuario.dadosPessoais?.nomeCompleto || 
+                          `${dadosUsuario.nome || ''} ${dadosUsuario.sobrenome || ''}`.trim() ||
+                          'Usuário';
+      
+      const sessaoUsuario = {
+        uid: usuarioAuth.uid,
+        email: usuarioAuth.email || email,
+        nomeUsuario: nomeCompleto,
+        tipoUsuario: (dadosUsuario.tipoUsuario || 
+                     (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum')) as 'Administrador' | 'Comum',
+        usuario: {
+          ...dadosUsuario,
+          unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
+        }
+      };
+
+      // Salvar sessão
+      await salvarSessao(sessaoUsuario);
+
       toast({
-        title: "Usuário não encontrado",
-        description: "Não encontramos uma conta com esse e-mail. Que tal se registrar?",
-        variant: "destructive"
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo(a), ${nomeCompleto}!`,
       });
-      setRegistrarAtivo(true);
-    } else if (error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
+
+      // Redirecionar para o dashboard
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Erro durante o login:", error);
+      
+      // Tratamento de erros específicos do Firebase
+      let mensagem = "Ocorreu um erro durante o login. Tente novamente.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes("user-not-found")) {
+          mensagem = "Usuário não encontrado. Verifique seu e-mail.";
+        } else if (error.message.includes("wrong-password")) {
+          mensagem = "Senha incorreta. Tente novamente.";
+        } else if (error.message.includes("invalid-email")) {
+          mensagem = "E-mail inválido. Verifique o formato.";
+        } else if (error.message.includes("too-many-requests")) {
+          mensagem = "Muitas tentativas de login. Tente novamente mais tarde.";
+        }
+      }
+      
       toast({
-        title: "Senha incorreta",
-        description: "A senha que você inseriu está errada. Tente novamente.",
-        variant: "destructive"
+        title: "Erro no login",
+        description: mensagem,
+        variant: "destructive",
       });
-    } else if (error.code === "auth/invalid-email") {
-      toast({
-        title: "E-mail inválido",
-        description: "O e-mail inserido não é válido.",
-        variant: "destructive"
-      });
-    } else {
-      toast({
-        title: "Erro ao acessar",
-        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
+    } finally {
+      setCarregando(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg animate-fade-in flex flex-col h-full">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-csae-green-800">
-          Acesse o portal
-        </h1>
-        <p className="text-sm text-gray-500">
-          Insira suas credenciais para acessar nossas ferramentas
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <div className="text-center mb-6">
+        <UserCheck className="mx-auto h-12 w-12 text-csae-green-600 mb-3" />
+        <h2 className="text-2xl font-bold text-csae-green-800">
+          Acesse sua conta
+        </h2>
+        <p className="text-gray-600 mt-2">
+          Entre com suas credenciais para continuar
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 flex-grow flex flex-col">
-        <div className="space-y-2">
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-csae-green-500">
-              <Mail className="h-5 w-5" />
-            </div>
-            <Input
-              type="email"
-              placeholder="Seu e-mail"
-              className="pl-10"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            E-mail
+          </label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="seu.email@exemplo.com"
+            className="w-full"
+            disabled={carregando}
+          />
         </div>
 
-        <div className="space-y-2">
+        <div>
+          <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
+            Senha
+          </label>
           <div className="relative">
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-csae-green-500">
-              <Lock className="h-5 w-5" />
-            </div>
             <Input
-              type={showPassword ? "text" : "password"}
-              placeholder="Sua senha"
-              className="pl-10 pr-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
+              id="senha"
+              type={mostrarSenha ? "text" : "password"}
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Digite sua senha"
+              className="w-full pr-10"
+              disabled={carregando}
             />
             <button
               type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-csae-green-500"
-              onClick={togglePasswordVisibility}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              onClick={() => setMostrarSenha(!mostrarSenha)}
+              disabled={carregando}
             >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
+              {mostrarSenha ? (
+                <EyeOff className="h-4 w-4 text-gray-400" />
               ) : (
-                <Eye className="h-5 w-5" />
+                <Eye className="h-4 w-4 text-gray-400" />
               )}
             </button>
           </div>
-          <div className="text-right">
-            <a href="#" className="text-xs csae-link">
-              Esqueceu sua senha?
-            </a>
-          </div>
         </div>
 
-        <div className="mt-auto pt-4">
-          <div className="flex flex-col gap-3">
-            <Button type="submit" className="csae-btn-primary" disabled={loading}>
-              <LogIn className="mr-2 h-4 w-4" />
-              {loading ? "Acessando..." : "Acessar"}
-            </Button>
-
-            <Button
-              ref={registrarBtnRef}
-              type="button"
-              className={`csae-btn-secondary ${registrarAtivo ? 'ring-2 ring-csae-green-500 ring-offset-2' : ''}`}
-              onClick={() => navigate("/registrar")}
-              disabled={loading}
-              asChild
-            >
-              <Link to="/registrar">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Registrar
-              </Link>
-            </Button>
-          </div>
-        </div>
+        <Button
+          type="submit"
+          className="w-full csae-btn-primary"
+          disabled={carregando}
+        >
+          {carregando ? "Entrando..." : "Entrar"}
+        </Button>
       </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Não tem uma conta?{" "}
+          <button
+            onClick={() => navigate("/registrar")}
+            className="text-csae-green-600 hover:text-csae-green-800 font-medium"
+            disabled={carregando}
+          >
+            Cadastre-se aqui
+          </button>
+        </p>
+      </div>
+
+      <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
+        <Heart className="h-3 w-3 mr-1" />
+        <span>Feito com ♥ pela equipe CSAE</span>
+      </div>
     </div>
   );
 };
