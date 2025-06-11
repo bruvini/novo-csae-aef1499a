@@ -832,5 +832,3 @@ const Register = () => {
 };
 
 export default Register;
-
-</edits_to_apply>
