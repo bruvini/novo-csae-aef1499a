@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/hooks/useAutenticacao';
@@ -25,8 +25,8 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   const autenticado = verificarAutenticacao();
   const admin = verificarAdmin();
   
-  // Verificar se o usuário atua na SMS
-  const verificarAtuaSMS = () => {
+  // Memoize the SMS check to avoid recalculating on every render
+  const atuaSMS = useMemo(() => {
     try {
       const dadosUsuario = localStorage.getItem('usuario');
       if (dadosUsuario) {
@@ -38,9 +38,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
       console.error("Erro ao verificar atuaSMS:", error);
       return false;
     }
-  };
-  
-  const atuaSMS = verificarAtuaSMS();
+  }, []);
   
   useEffect(() => {
     const checarModulo = async () => {

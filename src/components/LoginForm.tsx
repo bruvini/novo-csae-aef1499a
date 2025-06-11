@@ -7,7 +7,7 @@ import { UserCheck, Heart, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
-import { serverTimestamp } from "firebase/firestore";
+import { serverTimestamp, Timestamp } from "firebase/firestore";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -93,6 +93,9 @@ const LoginForm = () => {
                           `${dadosUsuario.nome || ''} ${dadosUsuario.sobrenome || ''}`.trim() ||
                           'Usuário';
       
+      // Create a consistent timestamp to avoid re-render issues
+      const currentTimestamp = Timestamp.now();
+      
       const sessaoUsuario = {
         uid: usuarioAuth.uid,
         email: usuarioAuth.email || email,
@@ -102,8 +105,8 @@ const LoginForm = () => {
         usuario: {
           ...dadosUsuario,
           unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
-          // Ensure termoResponsabilidadeData is included
-          termoResponsabilidadeData: dadosUsuario.termoResponsabilidadeData || serverTimestamp(),
+          // Use existing timestamp or create a consistent one
+          termoResponsabilidadeData: dadosUsuario.termoResponsabilidadeData || currentTimestamp,
         }
       };
 
