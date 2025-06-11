@@ -9,7 +9,7 @@ import { useAutenticacao } from "@/hooks/useAutenticacao";
 import {
   verificarUsuarioExistente,
   cadastrarUsuario,
-} from "@/services/bancodados";
+} from "@/services/bancodados/usuariosDB";
 import { serverTimestamp } from "firebase/firestore";
 import SimpleFooter from "@/components/SimpleFooter";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
