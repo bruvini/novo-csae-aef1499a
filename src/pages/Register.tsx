@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, CheckCircle, UserPlus, Heart } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
 import {
   verificarUsuarioExistente,
@@ -268,31 +268,6 @@ const Register = () => {
     setModalTermoAberto(false);
 
     try {
-      const usuarioExiste = await verificarUsuarioExistente(
-        email,
-        formacao === "Enfermeiro" ||
-          formacao === "Residente de Enfermagem" ||
-          formacao === "Técnico de Enfermagem"
-          ? numeroCoren
-          : undefined,
-        formacao === "Enfermeiro" ||
-          formacao === "Residente de Enfermagem" ||
-          formacao === "Técnico de Enfermagem"
-          ? ufCoren
-          : undefined,
-        atuaSMS ? matricula : undefined
-      );
-
-      if (usuarioExiste) {
-        toast({
-          title: "Usuário já cadastrado",
-          description:
-            "Já existe um cadastro com esses dados. Verifique seu e-mail, COREN ou matrícula.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
       if (!usuarioAuth?.uid) {
@@ -857,3 +832,5 @@ const Register = () => {
 };
 
 export default Register;
+
+</edits_to_apply>
