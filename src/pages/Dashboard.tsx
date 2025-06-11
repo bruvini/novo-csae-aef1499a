@@ -1,9 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/hooks/useAutenticacao';
@@ -25,8 +25,8 @@ import { ClipboardCheck, FileText, BookOpen } from 'lucide-react';
 const Dashboard = () => {
   const { obterSessao } = useAutenticacao();
   const { toast } = useToast();
-  const sessao = obterSessao();
   
+  const [sessao, setSessao] = useState(null);
   const [userName, setUserName] = useState<string>("");
   const [showFeedback, setShowFeedback] = useState(false);
   const [showNPSPopup, setShowNPSPopup] = useState(false);
@@ -37,26 +37,31 @@ const Dashboard = () => {
   const [carregando, setCarregando] = useState(true);
   const [atuaSMS, setAtuaSMS] = useState(false);
 
+  // Gerenciar sessão de forma controlada
   useEffect(() => {
-    const sessao = obterSessao();
-    if (sessao?.nomeUsuario) {
-      const firstName = sessao.nomeUsuario.split(" ")[0];
-      setUserName(firstName);
-    }
-
-    // Verificar se usuário atua na SMS
     try {
-      if (sessao && sessao.usuario) {
-        setAtuaSMS(!!sessao.usuario.atuaSMS);
+      const sessaoAtual = obterSessao();
+      setSessao(sessaoAtual);
+      
+      if (sessaoAtual?.nomeUsuario) {
+        const firstName = sessaoAtual.nomeUsuario.split(" ")[0];
+        setUserName(firstName);
+      }
+
+      // Verificar se usuário atua na SMS
+      if (sessaoAtual?.usuario?.atuaSMS) {
+        setAtuaSMS(true);
       }
     } catch (error) {
-      console.error("Erro ao verificar atuaSMS:", error);
+      console.error("Erro ao obter sessão:", error);
     }
-    
+  }, [obterSessao]);
+
+  // Gerenciar contagem de acessos
+  useEffect(() => {
     const checkAccessCount = async () => {
       if (sessao?.uid) {
         try {
-          // Obter o histórico de acessos para contar
           const acessos = await obterHistoricoAcessos(sessao.uid);
           const count = acessos.length;
           setAccessCount(count);
@@ -71,9 +76,12 @@ const Dashboard = () => {
       }
     };
     
-    checkAccessCount();
-  }, [obterSessao]);
+    if (sessao) {
+      checkAccessCount();
+    }
+  }, [sessao]);
 
+  // Carregar módulos
   useEffect(() => {
     const carregarModulos = async () => {
       setCarregando(true);
@@ -102,7 +110,9 @@ const Dashboard = () => {
 
   // Filtrar módulos com base na visibilidade e permissões do usuário
   const filtrarModulosPorVisibilidade = (modulos: ModuloDisponivel[]) => {
-    const isAdmin = sessao?.tipoUsuario === "Administrador";
+    if (!sessao) return [];
+    
+    const isAdmin = sessao.tipoUsuario === "Administrador";
     return modulos.filter(modulo => {
       // Administradores podem ver tudo
       if (isAdmin) return true;
@@ -123,11 +133,16 @@ const Dashboard = () => {
     return <LoadingOverlay />;
   }
 
+  // Se não há sessão, retornar null para evitar renderização
+  if (!sessao) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
 
-      {showFeedback && sessao && <FeedbackPopup />}
+      {showFeedback && <FeedbackPopup />}
       {showNPSPopup && <NPSPopup onClose={() => setShowNPSPopup(false)} accessCount={accessCount} />}
 
       <motion.main 
@@ -138,7 +153,7 @@ const Dashboard = () => {
       >
         <DashboardBanner userName={userName} />
 
-        {sessao?.tipoUsuario === 'Administrador' && (
+        {sessao.tipoUsuario === 'Administrador' && (
           <AdminPanel />
         )}
 
@@ -177,7 +192,7 @@ const Dashboard = () => {
                 {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "clinico" || modulo.categoria === "educacional" || modulo.categoria === "gestao")
                   .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
                   ))
                 }
               </motion.div>
@@ -193,7 +208,7 @@ const Dashboard = () => {
                 {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "clinico")
                   .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
                   ))
                 }
               </motion.div>
@@ -209,7 +224,7 @@ const Dashboard = () => {
                 {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "educacional")
                   .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
                   ))
                 }
               </motion.div>
@@ -225,7 +240,7 @@ const Dashboard = () => {
                 {modulosParaDashboard
                   .filter(modulo => modulo.categoria === "gestao")
                   .map(modulo => (
-                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao?.tipoUsuario === "Administrador"} />
+                    <ModuloCard key={modulo.id} modulo={modulo} isAdmin={sessao.tipoUsuario === "Administrador"} />
                   ))
                 }
               </motion.div>

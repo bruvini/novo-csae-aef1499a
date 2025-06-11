@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, FileText } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+
 interface TermoResponsabilidadeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -105,6 +106,9 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
         throw new Error("Elemento do termo não encontrado");
       }
 
+      // Import dinâmico do html2pdf para evitar problemas com Vite
+      const { default: html2pdf } = await import("html2pdf.js");
+
       // Configurações do PDF
       const opcoes = {
         margin: 1,
@@ -118,8 +122,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
       };
 
       // Gerar PDF e abrir em nova aba
-      const pdfOutput = await (window as any)
-        .html2pdf()
+      const pdfOutput = await html2pdf()
         .set(opcoes)
         .from(elemento)
         .output("bloburl");
