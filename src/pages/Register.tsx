@@ -126,7 +126,7 @@ const Register = () => {
   const [uf, setUf] = useState("");
   const [cep, setCep] = useState("");
 
-  const [formacao, setFormacao] = useState("");
+  const [formacao, setFormacao] = useState<"Enfermeiro" | "Residente de Enfermagem" | "Técnico de Enfermagem" | "Acadêmico de Enfermagem" | "">("");
   const [numeroCoren, setNumeroCoren] = useState("");
   const [ufCoren, setUfCoren] = useState("");
   const [dataInicioResidencia, setDataInicioResidencia] = useState("");
@@ -246,7 +246,8 @@ const Register = () => {
     if (!atuaSMS) {
       toast({
         title: "Acesso restrito",
-        description: "Este portal é exclusivo para profissionais que atuam na Secretaria Municipal de Saúde de Florianópolis.",
+        description:
+          "Este portal é exclusivo para profissionais que atuam na Secretaria Municipal de Saúde de Florianópolis.",
         variant: "destructive",
       });
       return;
@@ -288,49 +289,41 @@ const Register = () => {
 
       const usuarioAuth = await registrar(email, senha, nomeCompleto, "", "");
 
-      // Salvar dados completos no Firestore com aceite do termo
+      if (!usuarioAuth?.uid) {
+        throw new Error("Falha na autenticação: UID inválido.");
+      }
+
+      const dadosPessoais = {
+        nomeCompleto,
+        rg,
+        cpf,
+        rua,
+        numero,
+        bairro,
+        cidade,
+        uf,
+        cep,
+      };
+
+      const dadosProfissionais = {
+        formacao,
+        ...(numeroCoren && { numeroCoren }),
+        ...(ufCoren && { ufCoren }),
+        ...(formacao === "Residente de Enfermagem" &&
+          dataInicioResidencia && { dataInicioResidencia }),
+        ...(formacao === "Acadêmico de Enfermagem" &&
+          iesEnfermagem && { iesEnfermagem }),
+        atuaSMS,
+        ...(atuaSMS ? { lotacao, matricula } : { cidadeTrabalho, localCargo }),
+      };
+
       await cadastrarUsuario({
         uid: usuarioAuth.uid,
         email,
-        dadosPessoais: {
-          nomeCompleto,
-          rg,
-          cpf,
-          rua,
-          numero,
-          bairro,
-          cidade,
-          uf,
-          cep,
-        },
-        dadosProfissionais: {
-          formacao: formacao as 'Enfermeiro' | 'Residente de Enfermagem' | 'Técnico de Enfermagem' | 'Acadêmico de Enfermagem',
-          numeroCoren:
-            formacao === "Enfermeiro" ||
-            formacao === "Residente de Enfermagem" ||
-            formacao === "Técnico de Enfermagem"
-              ? numeroCoren
-              : undefined,
-          ufCoren:
-            formacao === "Enfermeiro" ||
-            formacao === "Residente de Enfermagem" ||
-            formacao === "Técnico de Enfermagem"
-              ? ufCoren
-              : undefined,
-          dataInicioResidencia:
-            formacao === "Residente de Enfermagem"
-              ? dataInicioResidencia
-              : undefined,
-          iesEnfermagem:
-            formacao === "Acadêmico de Enfermagem" ? iesEnfermagem : undefined,
-          atuaSMS,
-          lotacao: atuaSMS ? lotacao : undefined,
-          matricula: atuaSMS ? matricula : undefined,
-          cidadeTrabalho: !atuaSMS ? cidadeTrabalho : undefined,
-          localCargo: !atuaSMS ? localCargo : undefined,
-        },
+        dadosPessoais,
+        dadosProfissionais,
         termoResponsabilidadeAceito: true,
-        termoResponsabilidadeData: serverTimestamp()
+        termoResponsabilidadeData: serverTimestamp(),
       });
 
       toast({
@@ -356,12 +349,18 @@ const Register = () => {
   const dadosParaTermo = {
     nomeCompleto,
     formacao,
-    numeroCoren: formacao === "Enfermeiro" ||
+    numeroCoren:
+      formacao === "Enfermeiro" ||
       formacao === "Residente de Enfermagem" ||
-      formacao === "Técnico de Enfermagem" ? numeroCoren : undefined,
-    ufCoren: formacao === "Enfermeiro" ||
+      formacao === "Técnico de Enfermagem"
+        ? numeroCoren
+        : undefined,
+    ufCoren:
+      formacao === "Enfermeiro" ||
       formacao === "Residente de Enfermagem" ||
-      formacao === "Técnico de Enfermagem" ? ufCoren : undefined,
+      formacao === "Técnico de Enfermagem"
+        ? ufCoren
+        : undefined,
     rua,
     numero,
     bairro,
@@ -547,7 +546,7 @@ const Register = () => {
                   </label>
                   <select
                     value={formacao}
-                    onChange={(e) => setFormacao(e.target.value)}
+                    onChange={(e) => setFormacao(e.target.value as typeof formacao)}
                     className={`w-full h-10 px-3 py-2 rounded-md border ${
                       camposComErro.has("formacao")
                         ? "border-red-500"

@@ -1,6 +1,5 @@
 
-import { Timestamp } from "firebase/firestore";
-
+import { Timestamp, FieldValue } from "firebase/firestore";
 export interface DadosPessoais {
   nomeCompleto: string;
   rg: string;
@@ -17,7 +16,7 @@ export interface DadosPessoais {
 }
 
 export interface DadosProfissionais {
-  formacao: 'Enfermeiro' | 'Residente de Enfermagem' | 'Técnico de Enfermagem' | 'Acadêmico de Enfermagem';
+  formacao: "" | "Enfermeiro" | "Residente de Enfermagem" | "Técnico de Enfermagem" | "Acadêmico de Enfermagem";
   numeroCoren?: string;
   ufCoren?: string;
   dataInicioResidencia?: string;
@@ -52,7 +51,7 @@ export interface Usuario {
   historico_logs?: Log[];
   id?: string;
   termoResponsabilidadeAceito?: boolean;
-  termoResponsabilidadeData?: Timestamp;
+  termoResponsabilidadeData: Timestamp | FieldValue;
   // Legacy properties for backward compatibility
   nome?: string;
   sobrenome?: string;
