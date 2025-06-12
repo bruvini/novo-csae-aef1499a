@@ -38,9 +38,41 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
   }
 
   try {
-    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    let userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
     if (!userDoc.exists()) {
-      return null;
+      const q = query(collection(db, "usuarios"), where("uid", "==", usuario.uid));
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        userDoc = snapshot.docs[0];
+      } else {
+        const novoUsuario: Usuario = {
+          uid: usuario.uid,
+          email: usuario.email || "",
+          nome: usuario.displayName || "",
+          dadosPessoais: {
+            nomeCompleto: usuario.displayName || "",
+            rg: "",
+            cpf: "",
+            rua: "",
+            numero: "",
+            bairro: "",
+            cidade: "",
+            uf: "",
+            cep: "",
+          },
+          dadosProfissionais: {
+            formacao: "",
+            atuaSMS: false,
+          },
+          statusAcesso: "Aprovado",
+          tipoUsuario: "Comum",
+          dataCadastro: Timestamp.now(),
+          termoResponsabilidadeData: Timestamp.now(),
+        };
+        await setDoc(doc(db, "usuarios", usuario.uid), novoUsuario);
+        console.log("Usuário criado automaticamente ao verificar autenticação:", usuario.uid);
+        userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+      }
     }
 
     const dadosUsuario = userDoc.data() as Usuario;
@@ -100,13 +132,44 @@ export const realizarLogin = async (
     let userDoc;
     try {
       userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+      if (!userDoc.exists()) {
+        const q = query(collection(db, "usuarios"), where("uid", "==", usuario.uid));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          userDoc = snapshot.docs[0];
+        } else {
+          const novoUsuario: Usuario = {
+            uid: usuario.uid,
+            email: usuario.email || "",
+            nome: usuario.displayName || "",
+            dadosPessoais: {
+              nomeCompleto: usuario.displayName || "",
+              rg: "",
+              cpf: "",
+              rua: "",
+              numero: "",
+              bairro: "",
+              cidade: "",
+              uf: "",
+              cep: "",
+            },
+            dadosProfissionais: {
+              formacao: "",
+              atuaSMS: false,
+            },
+            statusAcesso: "Aprovado",
+            tipoUsuario: "Comum",
+            dataCadastro: Timestamp.now(),
+            termoResponsabilidadeData: Timestamp.now(),
+          };
+          await setDoc(doc(db, "usuarios", usuario.uid), novoUsuario);
+          console.log("Usuário criado automaticamente após login:", usuario.uid);
+          userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+        }
+      }
     } catch (error) {
       console.error("Erro ao buscar usuário no Firestore:", error);
       throw new Error("Não foi possível recuperar os dados do usuário.");
-    }
-
-    if (!userDoc.exists()) {
-      throw new Error("Usuário não encontrado no banco de dados.");
     }
 
     const dadosUsuario = userDoc.data() as Usuario;
