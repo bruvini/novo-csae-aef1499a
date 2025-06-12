@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAutenticacao } from '@/hooks/useAutenticacao';
 import { verificarModuloAtivo } from '@/services/bancodados/modulosDB';
@@ -16,8 +16,9 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   apenasAdmin = false,
   moduloNome
 }) => {
-  const { verificarAutenticacao, verificarAdmin } = useAutenticacao();
+  const { verificarAutenticacao, verificarAdmin, carregando } = useAutenticacao();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [verificando, setVerificando] = useState(true);
   const [moduloAtivo, setModuloAtivo] = useState(true);
   const [moduloVisibilidade, setModuloVisibilidade] = useState<'todos' | 'admin' | 'sms'>('todos');
@@ -39,7 +40,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
       return false;
     }
   }, []);
-  
+
   useEffect(() => {
     const checarModulo = async () => {
       if (!moduloNome) {
@@ -64,61 +65,68 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
     checarModulo();
   }, [moduloNome]);
 
-  // Enquanto verifica o módulo, não renderiza nada
-  if (verificando) {
+  useEffect(() => {
+    if (verificando || carregando) return;
+
+    if (!autenticado) {
+      toast({
+        title: "Acesso negado",
+        description: "É necessário fazer login para acessar esta página.",
+        variant: "destructive",
+      });
+      navigate("/", { replace: true });
+      return;
+    }
+
+    if (apenasAdmin && !admin) {
+      toast({
+        title: "Acesso restrito",
+        description: "Esta página é restrita para administradores.",
+        variant: "destructive",
+      });
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    if (moduloNome && !admin) {
+      if (!moduloAtivo) {
+        toast({
+          title: "Módulo indisponível",
+          description:
+            "Este recurso está em desenvolvimento e estará disponível em breve.",
+          variant: "destructive",
+        });
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
+      if (moduloVisibilidade === "admin") {
+        toast({
+          title: "Acesso restrito",
+          description: "Este recurso é restrito para administradores.",
+          variant: "destructive",
+        });
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+
+      if (moduloVisibilidade === "sms" && !atuaSMS) {
+        toast({
+          title: "Acesso restrito",
+          description: "Este recurso é restrito para usuários que atuam na SMS.",
+          variant: "destructive",
+        });
+        navigate("/dashboard", { replace: true });
+        return;
+      }
+    }
+  }, [autenticado, admin, moduloAtivo, moduloVisibilidade, atuaSMS, carregando]);
+
+  // Enquanto verifica o módulo ou a autenticação, não renderiza nada
+  if (verificando || carregando) {
     return null;
   }
 
-  if (!autenticado) {
-    toast({
-      title: "Acesso negado",
-      description: "É necessário fazer login para acessar esta página.",
-      variant: "destructive",
-    });
-    return <Navigate to="/" replace />;
-  }
-
-  // Verificar acesso baseado em apenasAdmin (prop de mais alto nível)
-  if (apenasAdmin && !admin) {
-    toast({
-      title: "Acesso restrito",
-      description: "Esta página é restrita para administradores.",
-      variant: "destructive",
-    });
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  // Verificar acesso baseado na visibilidade do módulo
-  if (moduloNome && !admin) {
-    // Verificar se o módulo está ativo
-    if (!moduloAtivo) {
-      toast({
-        title: "Módulo indisponível",
-        description: "Este recurso está em desenvolvimento e estará disponível em breve.",
-        variant: "destructive",
-      });
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    // Verificar visibilidade específica
-    if (moduloVisibilidade === 'admin') {
-      toast({
-        title: "Acesso restrito",
-        description: "Este recurso é restrito para administradores.",
-        variant: "destructive",
-      });
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    if (moduloVisibilidade === 'sms' && !atuaSMS) {
-      toast({
-        title: "Acesso restrito",
-        description: "Este recurso é restrito para usuários que atuam na SMS.",
-        variant: "destructive",
-      });
-      return <Navigate to="/dashboard" replace />;
-    }
-  }
 
   return <>{children}</>;
 };
