@@ -66,12 +66,44 @@ export const verificarAutenticacao = async (): Promise<SessaoUsuario | null> => 
 };
 
 // Realizar login do usuário
-export const realizarLogin = async (email: string, senha: string): Promise<SessaoUsuario> => {
+export const realizarLogin = async (
+  email: string,
+  senha: string
+): Promise<SessaoUsuario> => {
   try {
-    const resultado = await signInWithEmailAndPassword(auth, email, senha);
+    let resultado;
+    try {
+      resultado = await signInWithEmailAndPassword(auth, email, senha);
+    } catch (error) {
+      console.error("Erro de autenticação Firebase:", error);
+      if (isFirebaseError(error)) {
+        switch (error.code) {
+          case "auth/invalid-email":
+          case "auth/invalid-credential":
+          case "auth/user-disabled":
+            throw new Error("E-mail ou senha incorretos.");
+          case "auth/user-not-found":
+            throw new Error("Usuário não encontrado.");
+          case "auth/wrong-password":
+            throw new Error("Senha incorreta.");
+          case "auth/network-request-failed":
+            throw new Error("Erro de rede ao tentar logar.");
+          default:
+            throw new Error("Erro ao fazer login: " + error.message);
+        }
+      }
+      throw new Error("Erro desconhecido ao fazer login.");
+    }
+
     const usuario = resultado.user;
 
-    const userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    let userDoc;
+    try {
+      userDoc = await getDoc(doc(db, "usuarios", usuario.uid));
+    } catch (error) {
+      console.error("Erro ao buscar usuário no Firestore:", error);
+      throw new Error("Não foi possível recuperar os dados do usuário.");
+    }
 
     if (!userDoc.exists()) {
       throw new Error("Usuário não encontrado no banco de dados.");
@@ -79,51 +111,45 @@ export const realizarLogin = async (email: string, senha: string): Promise<Sessa
 
     const dadosUsuario = userDoc.data() as Usuario;
 
-    // Registrar data de último login
-    await updateDoc(doc(db, "usuarios", usuario.uid), {
-      dataUltimoAcesso: serverTimestamp()
-    });
+    try {
+      await updateDoc(doc(db, "usuarios", usuario.uid), {
+        dataUltimoAcesso: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar último acesso:", error);
+    }
 
-    // Registrar acesso em log-acessos
     try {
       await addDoc(collection(db, "logAcessos"), {
         usuarioId: usuario.uid,
         timestamp: serverTimestamp(),
-        plataforma: "web"
+        plataforma: "web",
       });
     } catch (error) {
       console.error("Erro ao registrar acesso:", error);
     }
 
-    const nomeUsuario = dadosUsuario.dadosPessoais?.nomeCompleto ||
+    const nomeUsuario =
+      dadosUsuario.dadosPessoais?.nomeCompleto ||
       `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim() ||
-      'Usuário';
+      "Usuário";
 
     return {
       uid: usuario.uid,
       email: usuario.email!,
       nomeUsuario,
-      tipoUsuario: dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? 'Administrador' : 'Comum'),
+      tipoUsuario:
+        dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? "Administrador" : "Comum"),
       usuario: {
         ...dadosUsuario,
-        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || '',
-      }
+        unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || "",
+      },
     };
   } catch (error: unknown) {
-    if (isFirebaseError(error)) {
-      switch (error.code) {
-        case "auth/invalid-credential":
-          throw new Error("E-mail ou senha incorretos.");
-        case "auth/user-not-found":
-          throw new Error("Usuário não encontrado.");
-        case "auth/wrong-password":
-          throw new Error("Senha incorreta.");
-        default:
-          throw new Error("Erro ao fazer login: " + error.message);
-      }
-    } else {
-      throw new Error("Erro desconhecido ao fazer login.");
+    if (error instanceof Error) {
+      throw error;
     }
+    throw new Error("Erro desconhecido ao fazer login.");
   }
 };
 
