@@ -124,7 +124,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
         .from(elemento)
         .output("bloburl");
 
-      window.open(pdfOutput, "_blank");
+      window.open(pdfOutput, "_blank"); 
 
       onAccept();
 
