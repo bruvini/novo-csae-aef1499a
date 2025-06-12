@@ -120,7 +120,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
         return;
       }
     }
-  }, [autenticado, admin, moduloAtivo, moduloVisibilidade, atuaSMS]);
+  }, [verificando, autenticado, admin, moduloAtivo, moduloVisibilidade, atuaSMS]);
 
   // Enquanto verifica o módulo, não renderiza nada
   if (verificando) {
