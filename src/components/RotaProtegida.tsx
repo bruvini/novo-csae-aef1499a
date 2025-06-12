@@ -68,6 +68,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   useEffect(() => {
     if (verificando || carregando) return;
 
+
     if (!autenticado) {
       toast({
         title: "Acesso negado",
