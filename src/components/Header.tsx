@@ -17,7 +17,7 @@ const Header = () => {
     if (sessao) {
       setNomeUsuario('Enf. ' + (sessao.nomeUsuario.split(' ')[0] || 'Usuário'));
     }
-  }, [obterSessao]);
+  }, [obterSessao, usuario]);
 
   const handleSair = async () => {
     try {
