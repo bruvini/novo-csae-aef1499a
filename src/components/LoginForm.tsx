@@ -6,8 +6,8 @@ import { UserCheck, Heart, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
-import { serverTimestamp, Timestamp, addDoc, collection } from "firebase/firestore";
-import { db } from "@/services/firebase";
+import { Timestamp } from "firebase/firestore";
+import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -123,13 +123,14 @@ const LoginForm = () => {
       // Salvar sessão
       await salvarSessao(sessaoUsuario);
 
-      await addDoc(collection(db, "historicoAcessos"), {
-        dataHora: serverTimestamp(),
-        descricaoAcao: "Login realizado com sucesso",
-        emailUsuario: sessaoUsuario.email,
-        nomeUsuario: sessaoUsuario.nomeUsuario,
-        usuarioId: sessaoUsuario.uid,
-      });
+      await registrarAcesso(
+        sessaoUsuario.uid,
+        sessaoUsuario.nomeUsuario,
+        sessaoUsuario.email,
+        "login",
+        "Login realizado com sucesso",
+        "sistema"
+      );
 
       toast({
         title: "Login realizado com sucesso!",

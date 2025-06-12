@@ -5,7 +5,8 @@ import {
   sendPasswordResetEmail,
   signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { registrarAcesso } from './bancodados/logAcessosDB';
 import { db } from './firebase';
 import { Usuario } from '@/types/usuario';
 
@@ -183,13 +184,16 @@ export const realizarLogin = async (
     }
 
     try {
-      await addDoc(collection(db, "logAcessos"), {
-        usuarioId: usuario.uid,
-        timestamp: serverTimestamp(),
-        plataforma: "web",
-      });
+      await registrarAcesso(
+        usuario.uid,
+        dadosUsuario.dadosPessoais?.nomeCompleto || `${dadosUsuario.nome ?? ''} ${dadosUsuario.sobrenome ?? ''}`.trim(),
+        usuario.email || '',
+        'login',
+        'Login realizado com sucesso',
+        'sistema'
+      );
     } catch (error) {
-      console.error("Erro ao registrar acesso:", error);
+      console.error('Erro ao registrar acesso:', error);
     }
 
     const nomeUsuario =
@@ -224,13 +228,16 @@ export const realizarCadastro = async (email: string, senha: string, nome: strin
 
     // Registrar acesso em log-acessos
     try {
-      await addDoc(collection(db, "logAcessos"), {
-        usuarioId: usuario.uid,
-        timestamp: serverTimestamp(),
-        plataforma: "web"
-      });
+      await registrarAcesso(
+        usuario.uid,
+        nome.trim() ? `${nome} ${sobrenome}`.trim() : '',
+        email,
+        'login',
+        'Login realizado com sucesso',
+        'sistema'
+      );
     } catch (error) {
-      console.error("Erro ao registrar acesso:", error);
+      console.error('Erro ao registrar acesso:', error);
     }
 
     const nomeUsuario = `${nome} ${sobrenome}`.trim();
