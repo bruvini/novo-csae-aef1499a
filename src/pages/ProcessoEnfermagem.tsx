@@ -49,7 +49,7 @@ const ProcessoEnfermagem = () => {
       setLoading(false);
     };
     carregarPacientes();
-  }, [obterSessao, toast]);
+  }, [obterSessao, toast, usuario]);
   const handleIniciarEvolucao = () => {
     if (pacientes.length === 0) {
       toast({
