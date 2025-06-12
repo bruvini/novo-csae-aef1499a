@@ -16,7 +16,7 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   apenasAdmin = false,
   moduloNome
 }) => {
-  const { verificarAutenticacao, verificarAdmin } = useAutenticacao();
+  const { verificarAutenticacao, verificarAdmin, carregando } = useAutenticacao();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [verificando, setVerificando] = useState(true);
@@ -66,7 +66,8 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
   }, [moduloNome]);
 
   useEffect(() => {
-    if (verificando) return;
+    if (verificando || carregando) return;
+
 
     if (!autenticado) {
       toast({
@@ -120,10 +121,10 @@ const RotaProtegida: React.FC<RotaProtegidaProps> = ({
         return;
       }
     }
-  }, [verificando, autenticado, admin, moduloAtivo, moduloVisibilidade, atuaSMS]);
+  }, [autenticado, admin, moduloAtivo, moduloVisibilidade, atuaSMS, carregando]);
 
-  // Enquanto verifica o módulo, não renderiza nada
-  if (verificando) {
+  // Enquanto verifica o módulo ou a autenticação, não renderiza nada
+  if (verificando || carregando) {
     return null;
   }
 
