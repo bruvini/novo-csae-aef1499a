@@ -134,6 +134,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('usuario', JSON.stringify(sessao.usuario));
   };
 
+  // Sincronizar o estado da sessão com o localStorage
+  useEffect(() => {
+    if (usuario) {
+      salvarSessao(usuario);
+    }
+  }, [usuario]);
+
   // Use useEffect to update state safely
   useEffect(() => {
     const sessaoArmazenada = obterSessao();
