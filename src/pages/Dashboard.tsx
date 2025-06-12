@@ -32,7 +32,7 @@ import { containerVariants } from "@/components/dashboard/animations";
 import { ClipboardCheck, FileText, BookOpen } from "lucide-react";
 
 const Dashboard = () => {
-  const { obterSessao } = useAutenticacao();
+  const { obterSessao, usuario } = useAutenticacao();
   const { toast } = useToast();
 
   const [sessao, setSessao] = useState(null);
@@ -66,7 +66,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Erro ao obter sessão:", error);
     }
-  }, []);
+  }, [usuario]);
 
   // Gerenciar contagem de acessos
   useEffect(() => {
