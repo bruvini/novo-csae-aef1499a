@@ -53,6 +53,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import ValorReferenciaCard from "@/components/gerenciamento-enfermagem/sinais-vitais/ValorReferenciaCard";
+import ValorReferenciaSistemaCard from "@/components/gerenciamento-enfermagem/revisao-sistemas/ValorReferenciaSistemaCard";
 import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
 
 const GerenciadorRevisaoSistemas = () => {
@@ -68,7 +69,6 @@ const GerenciadorRevisaoSistemas = () => {
   const [valoresReferencia, setValoresReferencia] = useState<ValorReferenciaSistema[]>([]);
   const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
-  const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
 
   // Load data
   useEffect(() => {
@@ -231,10 +231,13 @@ const GerenciadorRevisaoSistemas = () => {
   // Valor Referencia Handlers
   const adicionarValorReferencia = () => {
     setValoresReferencia(prev => [...prev, {
+      titulo: '',
       unidade: '',
       representaAlteracao: false,
       variacaoPor: 'Nenhum',
-      tipoValor: 'Numérico',
+      tipoValor: 'Texto',
+      nhbIds: [],
+      diagnosticoIds: [],
     }]);
   };
 
@@ -250,23 +253,16 @@ const GerenciadorRevisaoSistemas = () => {
 
   // Replace these functions with updated versions accepting arrays
   const handleNhbChange = (index: number, nhbIds: string[]) => {
-    // Implementation to handle multiple NHB selection
     const novosValoresReferencia = [...valoresReferencia];
     novosValoresReferencia[index].nhbIds = nhbIds;
     setValoresReferencia(novosValoresReferencia);
   };
 
   const handleDiagnosticoChange = (index: number, diagnosticoIds: string[]) => {
-    // Implementation to handle multiple diagnostico selection
     const novosValoresReferencia = [...valoresReferencia];
     novosValoresReferencia[index].diagnosticoIds = diagnosticoIds;
     setValoresReferencia(novosValoresReferencia);
   };
-
-  // Fix the subconjuntoId reference to use subconjuntoIds
-  const diagnosticosFiltrados = diagnosticos.filter(diag => 
-    diag.subconjuntoIds && diag.subconjuntoIds.some(id => nhbSelecionadas.includes(id))
-  );
 
   return (
     <div className="container mx-auto py-6">
@@ -391,7 +387,7 @@ const GerenciadorRevisaoSistemas = () => {
         handleNhbChange={handleNhbChange}
         handleDiagnosticoChange={handleDiagnosticoChange}
         subconjuntos={subconjuntos}
-        diagnosticosFiltrados={diagnosticosFiltrados}
+        diagnosticos={diagnosticos}
       />
     </div>
   );
@@ -483,7 +479,7 @@ interface RevisaoSistemaModalProps {
   handleNhbChange: (index: number, nhbIds: string[]) => void;
   handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
   subconjuntos: SubconjuntoDiagnostico[];
-  diagnosticosFiltrados: DiagnosticoCompleto[];
+  diagnosticos: DiagnosticoCompleto[];
 }
 
 const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
@@ -500,7 +496,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
   handleNhbChange,
   handleDiagnosticoChange,
   subconjuntos,
-  diagnosticosFiltrados
+  diagnosticos
 }) => {
   const [sistemaId, setSistemaId] = useState(selectedSistema || '');
   const [titulo, setTitulo] = useState(revisao?.titulo || '');
@@ -531,18 +527,19 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
       ativo,
       diferencaSexoIdade,
     };
-    onSave(revisaoToSave);
+    onSave(revisaoToSave as RevisaoSistema);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{revisao ? "Editar Revisão de Sistema" : "Nova Revisão de Sistema"}</DialogTitle>
           <DialogDescription>
             Preencha os campos abaixo para {revisao ? "editar" : "criar"} uma revisão de sistema.
           </DialogDescription>
         </DialogHeader>
+        <ScrollArea className="flex-grow pr-6 -mr-6">
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="sistema" className="text-right">
@@ -563,7 +560,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="titulo" className="text-right">
-              Título
+              Propedêutica
             </Label>
             <Input type="text" id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="col-span-3" />
           </div>
@@ -616,34 +613,36 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
         </div>
 
         {/* Valores de Referência Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-csae-green-600">Valores de Referência</h3>
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="text-lg font-semibold text-csae-green-600">Achados do Exame Físico</h3>
           <div className="flex justify-between items-center">
             <p className="text-sm text-gray-500">
-              Defina os valores de referência para esta revisão de sistema.
+              Adicione os achados e, se representarem uma alteração, vincule a um diagnóstico.
             </p>
             <Button type="button" variant="outline" size="sm" onClick={adicionarValorReferencia}>
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Valor
+              Adicionar Achado
             </Button>
           </div>
 
-          {valoresReferencia.map((valor, index) => (
-            <ValorReferenciaCard
-              key={index}
-              valor={valor}
-              index={index}
-              removerValorReferencia={removerValorReferencia}
-              atualizarValorReferencia={atualizarValorReferencia}
-              handleNhbChange={handleNhbChange}
-              handleDiagnosticoChange={handleDiagnosticoChange}
-              subconjuntos={subconjuntos}
-              diagnosticosFiltrados={diagnosticosFiltrados}
-            />
-          ))}
+            <div className="space-y-4">
+              {valoresReferencia.map((valor, index) => (
+                <ValorReferenciaSistemaCard
+                  key={index}
+                  valor={valor}
+                  index={index}
+                  removerValorReferencia={removerValorReferencia}
+                  atualizarValorReferencia={atualizarValorReferencia}
+                  handleNhbChange={handleNhbChange}
+                  handleDiagnosticoChange={handleDiagnosticoChange}
+                  subconjuntos={subconjuntos}
+                  diagnosticos={diagnosticos}
+                />
+              ))}
+            </div>
         </div>
-
-        <div className="flex justify-end space-x-2">
+        </ScrollArea>
+        <div className="flex justify-end space-x-2 pt-4 border-t">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
