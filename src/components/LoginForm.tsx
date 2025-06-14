@@ -8,54 +8,53 @@ import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { buscarUsuarioPorUid } from "@/services/bancodados";
 import { Timestamp } from "firebase/firestore";
 import { registrarAcesso } from "@/services/bancodados/logAcessosDB";
-
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { entrar, limparSessao, salvarSessao } = useAutenticacao();
-
+  const {
+    toast
+  } = useToast();
+  const {
+    entrar,
+    limparSessao,
+    salvarSessao
+  } = useAutenticacao();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!email || !senha) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha seu e-mail e senha.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setCarregando(true);
-
     try {
       // Primeiro, limpar qualquer sessão anterior
       await limparSessao();
 
       // Tentar fazer login com Firebase Auth
       const usuarioAuth = await entrar(email, senha);
-
       if (!usuarioAuth) {
         toast({
           title: "Erro de autenticação",
           description: "E-mail ou senha incorretos.",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
 
       // Buscar dados completos do usuário no Firestore
       const dadosUsuario = await buscarUsuarioPorUid(usuarioAuth.uid);
-
       if (!dadosUsuario) {
         toast({
           title: "Usuário não encontrado",
           description: "Não foi possível encontrar os dados do usuário.",
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
@@ -65,16 +64,13 @@ const LoginForm = () => {
         let mensagem = "";
         switch (dadosUsuario.statusAcesso) {
           case "Aguardando":
-            mensagem =
-              "Seu cadastro ainda está aguardando aprovação. Você receberá um e-mail quando for aprovado.";
+            mensagem = "Seu cadastro ainda está aguardando aprovação. Você receberá um e-mail quando for aprovado.";
             break;
           case "Negado":
-            mensagem =
-              "Seu cadastro foi negado. Entre em contato com o suporte para mais informações.";
+            mensagem = "Seu cadastro foi negado. Entre em contato com o suporte para mais informações.";
             break;
           case "Revogado":
-            mensagem =
-              "Seu acesso foi revogado. Entre em contato com o administrador.";
+            mensagem = "Seu acesso foi revogado. Entre em contato com o administrador.";
             break;
           case "Cancelado":
             mensagem = "Seu cadastro foi cancelado.";
@@ -82,59 +78,38 @@ const LoginForm = () => {
           default:
             mensagem = "Seu acesso não está ativo no momento.";
         }
-
         toast({
           title: "Acesso não autorizado",
           description: mensagem,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
 
       // Preparar dados da sessão
-      const nomeCompleto =
-        dadosUsuario.dadosPessoais?.nomeCompleto ||
-        `${dadosUsuario.nome || ""} ${dadosUsuario.sobrenome || ""}`.trim() ||
-        "Usuário";
+      const nomeCompleto = dadosUsuario.dadosPessoais?.nomeCompleto || `${dadosUsuario.nome || ""} ${dadosUsuario.sobrenome || ""}`.trim() || "Usuário";
 
       // Create a consistent timestamp to avoid re-render issues
       const currentTimestamp = Timestamp.now();
-
       const sessaoUsuario = {
         uid: usuarioAuth.uid,
         email: usuarioAuth.email || email,
         nomeUsuario: nomeCompleto,
-        tipoUsuario: (dadosUsuario.tipoUsuario ||
-          (dadosUsuario.ehAdmin ? "Administrador" : "Comum")) as
-          | "Administrador"
-          | "Comum",
+        tipoUsuario: (dadosUsuario.tipoUsuario || (dadosUsuario.ehAdmin ? "Administrador" : "Comum")) as "Administrador" | "Comum",
         usuario: {
           ...dadosUsuario,
-          unidade:
-            dadosUsuario.unidade ||
-            dadosUsuario.dadosProfissionais?.lotacao ||
-            "",
+          unidade: dadosUsuario.unidade || dadosUsuario.dadosProfissionais?.lotacao || "",
           // Use existing timestamp or create a consistent one
-          termoResponsabilidadeData:
-            dadosUsuario.termoResponsabilidadeData || currentTimestamp,
-        },
+          termoResponsabilidadeData: dadosUsuario.termoResponsabilidadeData || currentTimestamp
+        }
       };
 
       // Salvar sessão
       await salvarSessao(sessaoUsuario);
-
-      await registrarAcesso(
-        sessaoUsuario.uid,
-        sessaoUsuario.nomeUsuario,
-        sessaoUsuario.email,
-        "login",
-        "Login realizado com sucesso",
-        "sistema"
-      );
-
+      await registrarAcesso(sessaoUsuario.uid, sessaoUsuario.nomeUsuario, sessaoUsuario.email, "login", "Login realizado com sucesso", "sistema");
       toast({
         title: "Login realizado com sucesso!",
-        description: `Bem-vindo(a), ${nomeCompleto}!`,
+        description: `Bem-vindo(a), ${nomeCompleto}!`
       });
 
       // Redirecionar para o dashboard
@@ -144,7 +119,6 @@ const LoginForm = () => {
 
       // Tratamento de erros específicos do Firebase
       let mensagem = "Ocorreu um erro durante o login. Tente novamente.";
-
       if (error instanceof Error) {
         if (error.message.includes("user-not-found")) {
           mensagem = "Usuário não encontrado. Verifique seu e-mail.";
@@ -156,19 +130,16 @@ const LoginForm = () => {
           mensagem = "Muitas tentativas de login. Tente novamente mais tarde.";
         }
       }
-
       toast({
         title: "Erro no login",
         description: mensagem,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setCarregando(false);
     }
   };
-
-  return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+  return <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
       <div className="text-center mb-6">
         <UserCheck className="mx-auto h-12 w-12 text-csae-green-600 mb-3" />
         <h2 className="text-2xl font-bold text-csae-green-800">
@@ -181,60 +152,25 @@ const LoginForm = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
             E-mail
           </label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="seu.email@exemplo.com"
-            className="w-full"
-            disabled={carregando}
-          />
+          <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seu.email@exemplo.com" className="w-full" disabled={carregando} />
         </div>
 
         <div>
-          <label
-            htmlFor="senha"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+          <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
             Senha
           </label>
           <div className="relative">
-            <Input
-              id="senha"
-              type={mostrarSenha ? "text" : "password"}
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="Digite sua senha"
-              className="w-full pr-10"
-              disabled={carregando}
-            />
-            <button
-              type="button"
-              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onClick={() => setMostrarSenha(!mostrarSenha)}
-              disabled={carregando}
-            >
-              {mostrarSenha ? (
-                <EyeOff className="h-4 w-4 text-gray-400" />
-              ) : (
-                <Eye className="h-4 w-4 text-gray-400" />
-              )}
+            <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={e => setSenha(e.target.value)} placeholder="Digite sua senha" className="w-full pr-10" disabled={carregando} />
+            <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center" onClick={() => setMostrarSenha(!mostrarSenha)} disabled={carregando}>
+              {mostrarSenha ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
             </button>
           </div>
         </div>
 
-        <Button
-          type="submit"
-          className="w-full csae-btn-primary"
-          disabled={carregando}
-        >
+        <Button type="submit" className="w-full csae-btn-primary" disabled={carregando}>
           {carregando ? "Entrando..." : "Entrar"}
         </Button>
       </form>
@@ -242,22 +178,13 @@ const LoginForm = () => {
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
           Não tem uma conta?{" "}
-          <button
-            onClick={() => navigate("/registrar")}
-            className="text-csae-green-600 hover:text-csae-green-800 font-medium"
-            disabled={carregando}
-          >
+          <button onClick={() => navigate("/registrar")} className="text-csae-green-600 hover:text-csae-green-800 font-medium" disabled={carregando}>
             Cadastre-se aqui
           </button>
         </p>
       </div>
 
-      <div className="mt-4 flex items-center justify-center text-xs text-gray-500">
-        <Heart className="h-3 w-3 mr-1" />
-        <span>Feito com ♥ pela equipe CSAE</span>
-      </div>
-    </div>
-  );
+      
+    </div>;
 };
-
 export default LoginForm;
