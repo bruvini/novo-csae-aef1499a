@@ -10,7 +10,11 @@ export interface DocumentoApoio {
 
 export interface Intervencao {
   id?: string;
-  titulo: string;
+  /**
+   * Campo "titulo" era utilizado na versão antiga das intervenções.
+   * Mantido como opcional para compatibilidade com registros antigos.
+   */
+  titulo?: string;
   definicao?: string;
   codigoCipe?: string;
   diagnosticoIds: string[];
