@@ -29,14 +29,20 @@ export const useDiagnosticos = () => {
   const [formDiagnostico, setFormDiagnostico] = useState<DiagnosticoCompleto>({
     nome: "",
     subconjuntoIds: [],
-    resultadosEsperados: [{
-      descricao: "",
-      intervencoes: [{
-        titulo: "",
-        ativo: true,
-        diagnosticoIds: []
-      }]
-    }]
+    resultadosEsperados: [
+      {
+        descricao: "",
+        intervencoes: [
+          {
+            verboPrimeiraEnfermeiro: "",
+            verboOutraPessoa: "",
+            descricaoRestante: "",
+            ativo: true,
+            diagnosticoIds: []
+          }
+        ]
+      }
+    ]
   });
   const [diagnosticoVisualizar, setDiagnosticoVisualizar] = useState<DiagnosticoCompleto | null>(null);
   
@@ -174,14 +180,20 @@ export const useDiagnosticos = () => {
     setFormDiagnostico({
       nome: "",
       subconjuntoIds: [],
-      resultadosEsperados: [{
-        descricao: "",
-        intervencoes: [{
-          titulo: "",
-          ativo: true,
-          diagnosticoIds: []
-        }]
-      }]
+      resultadosEsperados: [
+        {
+          descricao: "",
+          intervencoes: [
+            {
+              verboPrimeiraEnfermeiro: "",
+              verboOutraPessoa: "",
+              descricaoRestante: "",
+              ativo: true,
+              diagnosticoIds: []
+            }
+          ]
+        }
+      ]
     });
     setEditandoDiagnostico(false);
     setModalDiagnosticoAberto(true);
@@ -232,13 +244,19 @@ export const useDiagnosticos = () => {
       // Validate intervenções
       for (let j = 0; j < resultado.intervencoes.length; j++) {
         const intervencao = resultado.intervencoes[j];
-        if (!intervencao.titulo.trim()) {
-          toast.error(`O título da intervenção ${j+1} no resultado esperado ${i+1} é obrigatório.`);
+
+        if (!intervencao.verboPrimeiraEnfermeiro || !intervencao.verboPrimeiraEnfermeiro.trim()) {
+          toast.error(`O verbo em 1ª pessoa da intervenção ${j+1} no resultado esperado ${i+1} é obrigatório.`);
           return;
         }
-        
-        if (!intervencao.verboPrimeiraEnfermeiro && !intervencao.verboOutraPessoa && intervencao.titulo) {
-          toast.error(`Os verbos da intervenção ${j+1} no resultado esperado ${i+1} são obrigatórios.`);
+
+        if (!intervencao.verboOutraPessoa || !intervencao.verboOutraPessoa.trim()) {
+          toast.error(`O verbo no infinitivo da intervenção ${j+1} no resultado esperado ${i+1} é obrigatório.`);
+          return;
+        }
+
+        if (!intervencao.descricaoRestante || !intervencao.descricaoRestante.trim()) {
+          toast.error(`A descrição da intervenção ${j+1} no resultado esperado ${i+1} é obrigatória.`);
           return;
         }
       }
@@ -303,11 +321,15 @@ export const useDiagnosticos = () => {
         ...formDiagnostico.resultadosEsperados,
         {
           descricao: "",
-          intervencoes: [{
-            titulo: "",
-            ativo: true,
-            diagnosticoIds: []
-          }]
+          intervencoes: [
+            {
+              verboPrimeiraEnfermeiro: "",
+              verboOutraPessoa: "",
+              descricaoRestante: "",
+              ativo: true,
+              diagnosticoIds: []
+            }
+          ]
         }
       ]
     });
@@ -338,7 +360,9 @@ export const useDiagnosticos = () => {
   const adicionarIntervencao = useCallback((resultadoIndex: number) => {
     const novosResultados = [...formDiagnostico.resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes.push({
-      titulo: "",
+      verboPrimeiraEnfermeiro: "",
+      verboOutraPessoa: "",
+      descricaoRestante: "",
       ativo: true,
       diagnosticoIds: []
     });

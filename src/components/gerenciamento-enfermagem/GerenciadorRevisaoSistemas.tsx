@@ -68,7 +68,6 @@ const GerenciadorRevisaoSistemas = () => {
   const [valoresReferencia, setValoresReferencia] = useState<ValorReferenciaSistema[]>([]);
   const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
-  const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
 
   // Load data
   useEffect(() => {
@@ -263,10 +262,6 @@ const GerenciadorRevisaoSistemas = () => {
     setValoresReferencia(novosValoresReferencia);
   };
 
-  // Fix the subconjuntoId reference to use subconjuntoIds
-  const diagnosticosFiltrados = diagnosticos.filter(diag => 
-    diag.subconjuntoIds && diag.subconjuntoIds.some(id => nhbSelecionadas.includes(id))
-  );
 
   return (
     <div className="container mx-auto py-6">
@@ -391,7 +386,7 @@ const GerenciadorRevisaoSistemas = () => {
         handleNhbChange={handleNhbChange}
         handleDiagnosticoChange={handleDiagnosticoChange}
         subconjuntos={subconjuntos}
-        diagnosticosFiltrados={diagnosticosFiltrados}
+        diagnosticos={diagnosticos}
       />
     </div>
   );
@@ -483,7 +478,7 @@ interface RevisaoSistemaModalProps {
   handleNhbChange: (index: number, nhbIds: string[]) => void;
   handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
   subconjuntos: SubconjuntoDiagnostico[];
-  diagnosticosFiltrados: DiagnosticoCompleto[];
+  diagnosticos: DiagnosticoCompleto[];
 }
 
 const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
@@ -500,7 +495,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
   handleNhbChange,
   handleDiagnosticoChange,
   subconjuntos,
-  diagnosticosFiltrados
+  diagnosticos
 }) => {
   const [sistemaId, setSistemaId] = useState(selectedSistema || '');
   const [titulo, setTitulo] = useState(revisao?.titulo || '');
@@ -628,19 +623,24 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
             </Button>
           </div>
 
-          {valoresReferencia.map((valor, index) => (
-            <ValorReferenciaCard
-              key={index}
-              valor={valor}
-              index={index}
-              removerValorReferencia={removerValorReferencia}
-              atualizarValorReferencia={atualizarValorReferencia}
-              handleNhbChange={handleNhbChange}
-              handleDiagnosticoChange={handleDiagnosticoChange}
-              subconjuntos={subconjuntos}
-              diagnosticosFiltrados={diagnosticosFiltrados}
-            />
-          ))}
+          {valoresReferencia.map((valor, index) => {
+            const diagnosticosFiltrados = diagnosticos.filter(diag =>
+              valor.nhbIds?.some(id => diag.subconjuntoIds?.includes(id))
+            );
+            return (
+              <ValorReferenciaCard
+                key={index}
+                valor={valor}
+                index={index}
+                removerValorReferencia={removerValorReferencia}
+                atualizarValorReferencia={atualizarValorReferencia}
+                handleNhbChange={handleNhbChange}
+                handleDiagnosticoChange={handleDiagnosticoChange}
+                subconjuntos={subconjuntos}
+                diagnosticosFiltrados={diagnosticosFiltrados}
+              />
+            );
+          })}
         </div>
 
         <div className="flex justify-end space-x-2">
