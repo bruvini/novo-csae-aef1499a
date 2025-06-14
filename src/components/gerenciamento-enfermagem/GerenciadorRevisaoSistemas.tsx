@@ -1,42 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import { HelpCircle, Plus, Trash2, Edit, X } from "lucide-react";
-import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sinais-vitais";
+
+import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import {
   createRevisaoSistema,
@@ -50,11 +13,13 @@ import {
   fetchSubconjuntos,
   fetchDiagnosticos
 } from "@/services/bancodados";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import ValorReferenciaCard from "@/components/gerenciamento-enfermagem/sinais-vitais/ValorReferenciaCard";
-import ValorReferenciaSistemaCard from "@/components/gerenciamento-enfermagem/revisao-sistemas/ValorReferenciaSistemaCard";
+
+import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sistemas";
 import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
+import SistemaCorporalModal from "./revisao-sistemas/SistemaCorporalModal";
+import RevisaoSistemaModal from "./revisao-sistemas/RevisaoSistemaModal";
+import SistemasCorporaisSection from './revisao-sistemas/SistemasCorporaisSection';
+import RevisoesSistemaSection from './revisao-sistemas/RevisoesSistemaSection';
 
 const GerenciadorRevisaoSistemas = () => {
   const [sistemasCorporais, setSistemasCorporais] = useState<SistemaCorporal[]>([]);
@@ -169,13 +134,14 @@ const GerenciadorRevisaoSistemas = () => {
   // Handlers for Revisao Sistema
   const handleOpenRevisaoModal = () => {
     setRevisaoEmEdicao(null);
+    setValoresReferencia([]);
     setIsRevisaoModalOpen(true);
   };
 
   const handleEditRevisao = (revisao: RevisaoSistema) => {
     setRevisaoEmEdicao(revisao);
-    setIsRevisaoModalOpen(true);
     setValoresReferencia(revisao.valoresReferencia || []);
+    setIsRevisaoModalOpen(true);
   };
 
   const handleCloseRevisaoModal = () => {
@@ -268,103 +234,22 @@ const GerenciadorRevisaoSistemas = () => {
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-bold text-csae-green-700 mb-4">Gerenciador de Revisão de Sistemas</h1>
 
-      {/* Sistemas Corporais Section */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-csae-green-600">Sistemas Corporais</h2>
-          <Button variant="outline" size="sm" onClick={handleOpenSistemaModal}>
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Sistema
-          </Button>
-        </div>
-        <ScrollArea className="h-[200px] w-full rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Nome</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sistemasCorporais.map(sistema => (
-                <TableRow key={sistema.id} className="cursor-pointer hover:bg-gray-100">
-                  <TableCell className="font-medium">{sistema.nome}</TableCell>
-                  <TableCell>{sistema.descricao}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditSistema(sistema)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Editar
-                    </Button>
-                    <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteSistema(sistema.id || '')}>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Excluir
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </section>
+      <SistemasCorporaisSection
+        sistemasCorporais={sistemasCorporais}
+        handleOpenSistemaModal={handleOpenSistemaModal}
+        handleEditSistema={handleEditSistema}
+        handleDeleteSistema={handleDeleteSistema}
+      />
 
-      {/* Revisões de Sistemas Section */}
-      <section>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-csae-green-600">Revisões de Sistemas</h2>
-          <div className="flex gap-2">
-            <Select value={selectedSistema} onValueChange={setSelectedSistema}>
-              <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Selecione um Sistema" />
-              </SelectTrigger>
-              <SelectContent>
-                {sistemasCorporais.map(sistema => (
-                  <SelectItem key={sistema.id} value={sistema.id || ''}>
-                    {sistema.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="sm" onClick={handleOpenRevisaoModal} disabled={!selectedSistema}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Revisão
-            </Button>
-          </div>
-        </div>
-        <ScrollArea className="h-[300px] w-full rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">Título</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {revisoesSistema
-                .filter(revisao => revisao.sistemaId === selectedSistema)
-                .map(revisao => (
-                  <TableRow key={revisao.id} className="cursor-pointer hover:bg-gray-100">
-                    <TableCell className="font-medium">{revisao.titulo}</TableCell>
-                    <TableCell>{revisao.descricao}</TableCell>
-                    <TableCell>{revisao.tipoAlteracao}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditRevisao(revisao)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500" onClick={() => handleDeleteRevisao(revisao.id || '')}>
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </section>
+      <RevisoesSistemaSection
+        revisoesSistema={revisoesSistema}
+        sistemasCorporais={sistemasCorporais}
+        selectedSistema={selectedSistema}
+        setSelectedSistema={setSelectedSistema}
+        handleOpenRevisaoModal={handleOpenRevisaoModal}
+        handleEditRevisao={handleEditRevisao}
+        handleDeleteRevisao={handleDeleteRevisao}
+      />
 
       {/* Modals */}
       <SistemaCorporalModal
@@ -390,227 +275,6 @@ const GerenciadorRevisaoSistemas = () => {
         diagnosticos={diagnosticos}
       />
     </div>
-  );
-};
-
-interface SistemaCorporalModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (sistema: SistemaCorporal) => void;
-  sistema?: SistemaCorporal | null;
-}
-
-const SistemaCorporalModal: React.FC<SistemaCorporalModalProps> = ({ isOpen, onClose, onSave, sistema }) => {
-  const [nome, setNome] = useState(sistema?.nome || '');
-  const [descricao, setDescricao] = useState(sistema?.descricao || '');
-  const [ativo, setAtivo] = useState(sistema?.ativo !== false);
-
-  useEffect(() => {
-    setNome(sistema?.nome || '');
-    setDescricao(sistema?.descricao || '');
-    setAtivo(sistema?.ativo !== false);
-  }, [sistema]);
-
-  const handleSubmit = () => {
-    const sistemaToSave = {
-      id: sistema?.id,
-      nome,
-      descricao,
-      ativo,
-    };
-    onSave(sistemaToSave);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{sistema ? "Editar Sistema Corporal" : "Novo Sistema Corporal"}</DialogTitle>
-          <DialogDescription>
-            Preencha os campos abaixo para {sistema ? "editar" : "criar"} um sistema corporal.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Nome
-            </Label>
-            <Input type="text" id="name" value={nome} onChange={(e) => setNome(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="description" className="text-right">
-              Descrição
-            </Label>
-            <Textarea id="description" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="active" className="text-right">
-              Ativo
-            </Label>
-            <div className="col-span-3 flex items-center">
-              <Switch id="active" checked={ativo} onCheckedChange={setAtivo} />
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            Salvar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-interface RevisaoSistemaModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (revisao: RevisaoSistema) => void;
-  revisao?: RevisaoSistema | null;
-  sistemasCorporais: SistemaCorporal[];
-  selectedSistema: string | null;
-  valoresReferencia: ValorReferenciaSistema[];
-  adicionarValorReferencia: () => void;
-  removerValorReferencia: (index: number) => void;
-  atualizarValorReferencia: (index: number, campo: keyof ValorReferenciaSistema, valor: any) => void;
-  handleNhbChange: (index: number, nhbIds: string[]) => void;
-  handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
-  subconjuntos: SubconjuntoDiagnostico[];
-  diagnosticos: DiagnosticoCompleto[];
-}
-
-const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
-  isOpen,
-  onClose,
-  onSave,
-  revisao,
-  sistemasCorporais,
-  selectedSistema,
-  valoresReferencia,
-  adicionarValorReferencia,
-  removerValorReferencia,
-  atualizarValorReferencia,
-  handleNhbChange,
-  handleDiagnosticoChange,
-  subconjuntos,
-  diagnosticos
-}) => {
-  const [sistemaId, setSistemaId] = useState(selectedSistema || '');
-  const [titulo, setTitulo] = useState(revisao?.titulo || '');
-  const [descricao, setDescricao] = useState(revisao?.descricao || '');
-  const [ativo, setAtivo] = useState(revisao?.ativo !== false);
-
-  useEffect(() => {
-    setSistemaId(selectedSistema || '');
-    setTitulo(revisao?.titulo || '');
-    setDescricao(revisao?.descricao || '');
-    setAtivo(revisao?.ativo !== false);
-  }, [revisao, selectedSistema]);
-
-  const handleSubmit = () => {
-    const revisaoToSave = {
-      id: revisao?.id,
-      sistemaId,
-      titulo,
-      descricao,
-      ativo,
-    };
-    onSave(revisaoToSave as RevisaoSistema);
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{revisao ? "Editar Revisão de Sistema" : "Nova Revisão de Sistema"}</DialogTitle>
-          <DialogDescription>
-            Preencha os campos abaixo para {revisao ? "editar" : "criar"} uma revisão de sistema.
-          </DialogDescription>
-        </DialogHeader>
-        <ScrollArea className="flex-grow pr-6 -mr-6">
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="sistema" className="text-right">
-              Sistema
-            </Label>
-            <Select value={sistemaId} onValueChange={setSistemaId} disabled>
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Selecione um Sistema" />
-              </SelectTrigger>
-              <SelectContent>
-                {sistemasCorporais.map(sistema => (
-                  <SelectItem key={sistema.id} value={sistema.id || ''}>
-                    {sistema.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="titulo" className="text-right">
-              Propedêutica
-            </Label>
-            <Input type="text" id="titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="descricao" className="text-right">
-              Descrição
-            </Label>
-            <Textarea id="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="ativo" className="text-right">
-              Ativo
-            </Label>
-            <div className="col-span-3 flex items-center">
-              <Switch id="ativo" checked={ativo} onCheckedChange={setAtivo} />
-            </div>
-          </div>
-        </div>
-
-        {/* Valores de Referência Section */}
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="text-lg font-semibold text-csae-green-600">Achados do Exame Físico</h3>
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">
-              Adicione os achados e, se representarem uma alteração, vincule a um diagnóstico.
-            </p>
-            <Button type="button" variant="outline" size="sm" onClick={adicionarValorReferencia}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Achado
-            </Button>
-          </div>
-
-            <div className="space-y-4">
-              {valoresReferencia.map((valor, index) => (
-                <ValorReferenciaSistemaCard
-                  key={index}
-                  valor={valor}
-                  index={index}
-                  removerValorReferencia={removerValorReferencia}
-                  atualizarValorReferencia={atualizarValorReferencia}
-                  handleNhbChange={handleNhbChange}
-                  handleDiagnosticoChange={handleDiagnosticoChange}
-                  subconjuntos={subconjuntos}
-                  diagnosticos={diagnosticos}
-                />
-              ))}
-            </div>
-        </div>
-        </ScrollArea>
-        <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="submit" onClick={handleSubmit}>
-            Salvar
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
   );
 };
 
