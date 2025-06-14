@@ -501,19 +501,13 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
   const [sistemaId, setSistemaId] = useState(selectedSistema || '');
   const [titulo, setTitulo] = useState(revisao?.titulo || '');
   const [descricao, setDescricao] = useState(revisao?.descricao || '');
-  const [tipoAlteracao, setTipoAlteracao] = useState<"Objetiva" | "Subjetiva" | "Ambas">(revisao?.tipoAlteracao || "Objetiva");
-  const [padrao, setPadrao] = useState(revisao?.padrao || '');
   const [ativo, setAtivo] = useState(revisao?.ativo !== false);
-  const [diferencaSexoIdade, setDiferencaSexoIdade] = useState(revisao?.diferencaSexoIdade || false);
 
   useEffect(() => {
     setSistemaId(selectedSistema || '');
     setTitulo(revisao?.titulo || '');
     setDescricao(revisao?.descricao || '');
-    setTipoAlteracao(revisao?.tipoAlteracao || "Objetiva");
-    setPadrao(revisao?.padrao || '');
     setAtivo(revisao?.ativo !== false);
-    setDiferencaSexoIdade(revisao?.diferencaSexoIdade || false);
   }, [revisao, selectedSistema]);
 
   const handleSubmit = () => {
@@ -522,10 +516,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
       sistemaId,
       titulo,
       descricao,
-      tipoAlteracao,
-      padrao,
       ativo,
-      diferencaSexoIdade,
     };
     onSave(revisaoToSave as RevisaoSistema);
   };
@@ -571,43 +562,11 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
             <Textarea id="descricao" value={descricao} onChange={(e) => setDescricao(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="tipoAlteracao" className="text-right">
-              Tipo de Alteração
-            </Label>
-            <Select 
-              value={tipoAlteracao} 
-              onValueChange={(value: "Objetiva" | "Subjetiva" | "Ambas") => setTipoAlteracao(value)}
-            >
-              <SelectTrigger className="col-span-3">
-                <SelectValue placeholder="Selecione o Tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Objetiva">Objetiva</SelectItem>
-                <SelectItem value="Subjetiva">Subjetiva</SelectItem>
-                <SelectItem value="Ambas">Ambas</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="padrao" className="text-right">
-              Padrão
-            </Label>
-            <Input type="text" id="padrao" value={padrao} onChange={(e) => setPadrao(e.target.value)} className="col-span-3" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="ativo" className="text-right">
               Ativo
             </Label>
             <div className="col-span-3 flex items-center">
               <Switch id="ativo" checked={ativo} onCheckedChange={setAtivo} />
-            </div>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="diferencaSexoIdade" className="text-right">
-              Difere por Sexo/Idade
-            </Label>
-            <div className="col-span-3 flex items-center">
-              <Switch id="diferencaSexoIdade" checked={diferencaSexoIdade} onCheckedChange={setDiferencaSexoIdade} />
             </div>
           </div>
         </div>

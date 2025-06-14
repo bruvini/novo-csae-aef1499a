@@ -17,7 +17,7 @@ export interface RevisaoSistema {
   titulo: string;
   nome?: string;
   descricao?: string;
-  tipoAlteracao: 'Objetiva' | 'Subjetiva' | 'Ambas';
+  tipoAlteracao?: 'Objetiva' | 'Subjetiva' | 'Ambas';
   padrao?: string;
   diagnosticoIds?: string[];
   nhbIds?: string[];
