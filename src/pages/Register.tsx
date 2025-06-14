@@ -20,13 +20,27 @@ import PersonalInfoForm from "@/components/register/PersonalInfoForm";
 import ProfessionalInfoForm from "@/components/register/ProfessionalInfoForm";
 import AccessInfoForm from "@/components/register/AccessInfoForm";
 
+interface TermoData {
+  nomeCompleto: string;
+  formacao: string;
+  numeroCoren?: string;
+  ufCoren?: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  rg: string;
+  cpf: string;
+}
+
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { registrar } = useAutenticacao();
   const [carregando, setCarregando] = useState(false);
   const [modalTermoAberto, setModalTermoAberto] = useState(false);
-  const [dadosParaTermo, setDadosParaTermo] = useState<any>(null);
+  const [dadosParaTermo, setDadosParaTermo] = useState<TermoData | null>(null);
 
   const form = useForm<RegistrationSchema>({
     resolver: zodResolver(registrationSchema),

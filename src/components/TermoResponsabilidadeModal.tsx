@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -26,7 +27,7 @@ interface TermoResponsabilidadeModalProps {
     uf: string;
     rg: string;
     cpf: string;
-  };
+  } | null;
 }
 
 const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
@@ -37,6 +38,23 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
 }) => {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { toast } = useToast();
+
+  // Early return if dadosUsuario is null to prevent runtime errors.
+  if (!dadosUsuario) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-csae-green-800">
+              <FileText className="h-5 w-5" />
+              Termo de Responsabilidade
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-6 text-center">Carregando dados...</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const formatarDataExtenso = () => {
     const hoje = new Date();
