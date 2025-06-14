@@ -9,13 +9,11 @@ import {
   fetchRevisoesSistema,
   createSistemaCorporal,
   updateSistemaCorporal,
-  deleteSistemaCorporal,
-  fetchSubconjuntos,
-  fetchDiagnosticos
+  deleteSistemaCorporal
 } from "@/services/bancodados";
 
 import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sistemas";
-import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
+
 import SistemaCorporalModal from "./revisao-sistemas/SistemaCorporalModal";
 import RevisaoSistemaModal from "./revisao-sistemas/RevisaoSistemaModal";
 import SistemasCorporaisSection from './revisao-sistemas/SistemasCorporaisSection';
@@ -32,8 +30,6 @@ const GerenciadorRevisaoSistemas = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [valoresReferencia, setValoresReferencia] = useState<ValorReferenciaSistema[]>([]);
-  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
-  const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
 
   // Load data
   useEffect(() => {
@@ -47,10 +43,6 @@ const GerenciadorRevisaoSistemas = () => {
         }
         const revisoes = await fetchRevisoesSistema();
         setRevisoesSistema(revisoes);
-        const subconjuntosData = await fetchSubconjuntos();
-        setSubconjuntos(subconjuntosData);
-        const diagnosticosData = await fetchDiagnosticos();
-        setDiagnosticos(diagnosticosData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
         toast({
@@ -271,8 +263,6 @@ const GerenciadorRevisaoSistemas = () => {
         atualizarValorReferencia={atualizarValorReferencia}
         handleNhbChange={handleNhbChange}
         handleDiagnosticoChange={handleDiagnosticoChange}
-        subconjuntos={subconjuntos}
-        diagnosticos={diagnosticos}
       />
     </div>
   );

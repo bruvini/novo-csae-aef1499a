@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sistemas";
 import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
+import { fetchSubconjuntos, fetchDiagnosticos } from "@/services/bancodados";
 import ValorReferenciaSistemaCard from "@/components/gerenciamento-enfermagem/revisao-sistemas/ValorReferenciaSistemaCard";
 
 interface RevisaoSistemaModalProps {
@@ -38,8 +39,6 @@ interface RevisaoSistemaModalProps {
   atualizarValorReferencia: (index: number, campo: keyof ValorReferenciaSistema, valor: any) => void;
   handleNhbChange: (index: number, nhbIds: string[]) => void;
   handleDiagnosticoChange: (index: number, diagnosticoIds: string[]) => void;
-  subconjuntos: SubconjuntoDiagnostico[];
-  diagnosticos: DiagnosticoCompleto[];
 }
 
 const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
@@ -54,14 +53,14 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
   removerValorReferencia,
   atualizarValorReferencia,
   handleNhbChange,
-  handleDiagnosticoChange,
-  subconjuntos,
-  diagnosticos
+  handleDiagnosticoChange
 }) => {
   const [sistemaId, setSistemaId] = useState(selectedSistema || '');
   const [titulo, setTitulo] = useState(revisao?.titulo || '');
   const [descricao, setDescricao] = useState(revisao?.descricao || '');
   const [ativo, setAtivo] = useState(revisao?.ativo !== false);
+  const [subconjuntos, setSubconjuntos] = useState<SubconjuntoDiagnostico[]>([]);
+  const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
 
   useEffect(() => {
     setSistemaId(selectedSistema || '');
@@ -69,6 +68,17 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
     setDescricao(revisao?.descricao || '');
     setAtivo(revisao?.ativo !== false);
   }, [revisao, selectedSistema]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const loadData = async () => {
+      const subs = await fetchSubconjuntos();
+      setSubconjuntos(subs.filter(s => s.tipo === 'NHB'));
+      const diags = await fetchDiagnosticos();
+      setDiagnosticos(diags);
+    };
+    loadData();
+  }, [isOpen]);
 
   const handleSubmit = () => {
     const revisaoToSave = {
