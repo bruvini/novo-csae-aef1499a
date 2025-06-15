@@ -1,11 +1,11 @@
+
 import { 
   doc, 
   updateDoc, 
   arrayUnion,
   getDoc,
   Timestamp,
-  arrayRemove,
-  serverTimestamp 
+  arrayRemove
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Evolucao } from '@/types';
@@ -96,7 +96,7 @@ export async function salvarProgressoEvolucao(
     const evolucaoAtualizada = {
       ...evolucoes[evolucaoIndex],
       ...dadosAtualizados,
-      dataAtualizacao: serverTimestamp()
+      dataAtualizacao: Timestamp.now()
     };
     
     // Substituir o objeto antigo pelo novo no array
