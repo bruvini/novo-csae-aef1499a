@@ -13,12 +13,13 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Evolucao, Paciente } from '@/types';
+import { Paciente } from '@/types';
 
 // Funções para gerenciar pacientes
-export async function cadastrarPaciente(paciente: Omit<Paciente, 'dataCadastro'>): Promise<string> {
+export async function cadastrarPaciente(paciente: Omit<Paciente, 'id' | 'statusPaciente' | 'dataCadastro' | 'dataAtualizacao' | 'evolucoes'>): Promise<string> {
   const pacienteCompleto = {
     ...paciente,
+    statusPaciente: 'NAO_ESTA_CONSULTANDO' as const,
     dataCadastro: serverTimestamp(),
     dataAtualizacao: serverTimestamp(),
     evolucoes: []
