@@ -6,9 +6,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useAutenticacao } from "@/hooks/useAutenticacao";
 import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
 import { serverTimestamp } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "@/services/firebase";
 import SimpleFooter from "@/components/SimpleFooter";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 import {
@@ -37,7 +38,6 @@ interface TermoData {
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { registrar } = useAutenticacao();
   const [carregando, setCarregando] = useState(false);
   const [modalTermoAberto, setModalTermoAberto] = useState(false);
   const [dadosParaTermo, setDadosParaTermo] = useState<TermoData | null>(null);
@@ -134,13 +134,9 @@ const Register = () => {
     const data = form.getValues();
 
     try {
-      const usuarioAuth = await registrar(
-        data.email,
-        data.senha,
-        data.nomeCompleto,
-        "",
-        ""
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.senha);
+      const usuarioAuth = userCredential.user;
+
       if (!usuarioAuth?.uid) {
         throw new Error("Falha na autenticação: UID inválido.");
       }
@@ -185,6 +181,8 @@ const Register = () => {
         tipoUsuario: "Comum",
       });
 
+      await signOut(auth);
+
       toast({
         title: "Cadastro realizado com sucesso!",
         description:
@@ -194,10 +192,18 @@ const Register = () => {
       navigate("/");
     } catch (error) {
       console.error("Erro ao cadastrar:", error);
+      let description = "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.";
+      if (error instanceof Error && 'code' in error) {
+        const firebaseError = error as { code: string };
+        if (firebaseError.code === 'auth/email-already-in-use') {
+            description = "Este e-mail já está em uso por outra conta.";
+        } else if (firebaseError.code === 'auth/weak-password') {
+            description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
+        }
+      }
       toast({
         title: "Erro no cadastro",
-        description:
-          "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.",
+        description,
         variant: "destructive",
       });
     } finally {
