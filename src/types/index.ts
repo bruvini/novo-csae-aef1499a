@@ -9,7 +9,6 @@ export * from './intervencoes';
 export * from './sinais-vitais';
 export * from './pops';
 export * from './protocolos';
-export * from './sistemas';
 export * from './configuracao';
 export * from './sugestoes';
 export * from './cipe';
