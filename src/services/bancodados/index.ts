@@ -2,8 +2,6 @@
 // Re-export all the functions from specific database modules
 export * from './usuariosDB';
 export * from './diagnosticosDB';
-export * from './pacientesDB';
-export * from './evolucoesDB';
 export * from './logAcessosDB';
 export * from './modulosDB';
 export * from './popsDB';

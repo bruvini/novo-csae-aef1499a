@@ -1,9 +1,7 @@
 
 // Re-export all types for backward compatibility
 export * from './usuario';
-export * from './paciente';
 export * from './exames';
-export * from './evolucao';
 export * from './diagnosticos';
 export * from './intervencoes';
 export * from './sinais-vitais';
