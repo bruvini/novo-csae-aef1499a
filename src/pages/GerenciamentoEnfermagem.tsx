@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from '@/components/Header';
@@ -6,7 +5,6 @@ import SimpleFooter from '@/components/SimpleFooter';
 import NavigationMenu from '@/components/NavigationMenu';
 import GerenciadorSinaisVitais from '@/components/gerenciamento-enfermagem/GerenciadorSinaisVitais';
 import GerenciadorExamesLaboratoriais from '@/components/gerenciamento-enfermagem/GerenciadorExamesLaboratoriais';
-import GerenciadorRevisaoSistemas from '@/components/gerenciamento-enfermagem/GerenciadorRevisaoSistemas';
 import GerenciadorDiagnosticos from '@/components/gerenciamento-enfermagem/GerenciadorDiagnosticos';
 import GerenciadorProtocolos from '@/components/gerenciamento-enfermagem/GerenciadorProtocolos';
 import GerenciadorModulos from '@/components/gerenciamento-enfermagem/GerenciadorModulos';
@@ -34,7 +32,6 @@ const GerenciamentoEnfermagem = () => {
             <TabsList className="inline-flex min-w-max">
               <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
               <TabsTrigger value="exames-laboratoriais">Exames Laboratoriais</TabsTrigger>
-              <TabsTrigger value="revisao-sistemas">Revisão de Sistemas</TabsTrigger>
               <TabsTrigger value="diagnosticos">Diagnósticos</TabsTrigger>
               <TabsTrigger value="protocolos">Protocolos de Enfermagem</TabsTrigger>
               <TabsTrigger value="pops">POPs</TabsTrigger>
@@ -50,9 +47,6 @@ const GerenciamentoEnfermagem = () => {
             <GerenciadorExamesLaboratoriais />
           </TabsContent>
           
-          <TabsContent value="revisao-sistemas">
-            <GerenciadorRevisaoSistemas />
-          </TabsContent>
           
           <TabsContent value="diagnosticos">
             <GerenciadorDiagnosticos />
