@@ -1,6 +1,5 @@
 
 import { Timestamp } from "firebase/firestore";
-import { DiagnosticoSelecionado } from "./diagnosticos";
 
 // Registro de Evolução
 export interface Evolucao {
@@ -11,18 +10,7 @@ export interface Evolucao {
   statusEvolucao: 'EM_ANDAMENTO' | 'FINALIZADO';
   dataFim?: Timestamp;
   dadosAvaliacao?: {
-    queixaPrincipal: string;
-    historiaDoenca?: string;
-    comorbidades?: string[];
-    alergias?: string[];
-    medicamentosUso?: string[];
+    queixaPrincipal?: string;
   };
-  dados?: Record<string, any>;
-  diagnosticosSelecionados?: DiagnosticoSelecionado[];
   dataAtualizacao?: Timestamp;
-  avaliacao?: string;
-  diagnosticos?: any[];
-  planejamento?: any[];
-  implementacao?: any[];
-  evolucaoFinal?: string;
 }
