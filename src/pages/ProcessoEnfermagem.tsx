@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import NavigationMenu from '@/components/NavigationMenu';
@@ -70,8 +69,7 @@ const ProcessoEnfermagem = () => {
     },
     onSuccess: () => {
       toast({
-        title: "💾 Progresso salvo com sucesso!",
-        description: "Pode continuar sem se preocupar.",
+        title: "✅ Progresso da evolução atualizado com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
     },
@@ -108,8 +106,8 @@ const ProcessoEnfermagem = () => {
                     }
                 };
                 delete (dadosParaAvaliar.dadosAvaliacao as any).queixaPrincipal;
-                delete (dadosParaAvaliar.dadosAvaliacao as any).sinaisVitais;
-                delete (dadosParaAvaliar.dadosAvaliacao as any).nhbsSelecionadasIds;
+                delete (dadosParaAvaliacao.dadosAvaliacao as any).sinaisVitais;
+                delete (dadosParaAvaliacao.dadosAvaliacao as any).nhbsSelecionadasIds;
             }
             
             setDadosEvolucao(dadosParaAvaliar);

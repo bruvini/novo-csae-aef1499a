@@ -82,7 +82,7 @@ export async function salvarProgressoEvolucao(
     }
     
     const pacienteData = docSnap.data();
-    const evolucoes = pacienteData.evolucoes || [];
+    const evolucoes = pacienteData.evolucoes ? [...pacienteData.evolucoes] : [];
     
     // Encontrar o índice da evolução que está sendo atualizada
     const evolucaoIndex = evolucoes.findIndex((e: Evolucao) => e.id === evolucaoId);
@@ -92,22 +92,19 @@ export async function salvarProgressoEvolucao(
       return false;
     }
     
-    // Remover a evolução antiga
-    const evolucaoAntiga = evolucoes[evolucaoIndex];
-    await updateDoc(pacienteRef, {
-      evolucoes: arrayRemove(evolucaoAntiga)
-    });
-    
     // Criar evolução atualizada
     const evolucaoAtualizada = {
-      ...evolucaoAntiga,
+      ...evolucoes[evolucaoIndex],
       ...dadosAtualizados,
       dataAtualizacao: serverTimestamp()
     };
     
-    // Adicionar evolução atualizada
+    // Substituir o objeto antigo pelo novo no array
+    evolucoes[evolucaoIndex] = evolucaoAtualizada;
+    
+    // Atualizar o array 'evolucoes' inteiro no Firestore
     await updateDoc(pacienteRef, {
-      evolucoes: arrayUnion(evolucaoAtualizada)
+      evolucoes: evolucoes
     });
     
     console.log("Progresso da evolução salvo com sucesso");
