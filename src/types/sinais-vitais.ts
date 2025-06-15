@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 
 // Sinal Vitais
@@ -66,6 +65,3 @@ export interface ValorReferencia {
 
 // Import the SubconjuntoDiagnostico interface from diagnósticos
 export type { SubconjuntoDiagnostico, DiagnosticoCompleto } from './diagnosticos';
-
-// Re-export these types from sistemas.ts using 'export type'
-export type { RevisaoSistema, SistemaCorporal, ValorReferenciaSistema } from './sistemas';
