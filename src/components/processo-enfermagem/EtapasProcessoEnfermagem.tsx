@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Info } from 'lucide-react';
+import SinaisVitaisForm from './etapas/SinaisVitaisForm';
 
 interface EtapasProcessoEnfermagemProps {
   paciente: Paciente;
@@ -116,9 +117,11 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                                 <CardTitle className="text-base font-semibold">Sinais Vitais</CardTitle>
                                                             </CardHeader>
                                                             <CardContent>
-                                                                <div className="flex justify-center items-center text-sm text-gray-500 py-8">
-                                                                    Em desenvolvimento
-                                                                </div>
+                                                                <SinaisVitaisForm
+                                                                    paciente={paciente}
+                                                                    dadosEvolucao={dadosEvolucao}
+                                                                    onDadosChange={onDadosChange}
+                                                                />
                                                             </CardContent>
                                                         </Card>
                                                         <Card>
