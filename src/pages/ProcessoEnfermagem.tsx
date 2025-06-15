@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import NavigationMenu from '@/components/NavigationMenu';
@@ -68,19 +67,6 @@ const ProcessoEnfermagem = () => {
         throw new Error("Ocorreu um erro ao salvar o progresso no banco de dados.");
       }
     },
-    onSuccess: () => {
-      toast({
-        title: "✅ Progresso da evolução atualizado com sucesso.",
-      });
-      queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao Salvar",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
   });
 
   const handleSelecionarPaciente = (paciente: Paciente) => {
@@ -123,8 +109,27 @@ const ProcessoEnfermagem = () => {
     }
   };
 
-  const handleSalvarProgresso = () => {
-    salvarProgresso();
+  const handleSalvarProgresso = (options?: { fecharAposSalvar?: boolean }) => {
+    salvarProgresso(undefined, {
+      onSuccess: () => {
+        toast({
+          title: "✅ Progresso salvo com sucesso!",
+        });
+        queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
+        if (options?.fecharAposSalvar) {
+          setPacienteEmConsulta(null);
+          setEvolucaoAtivaId(null);
+          setDadosEvolucao({});
+        }
+      },
+      onError: (error) => {
+        toast({
+          title: "Erro ao Salvar",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleDadosEvolucaoChange = (novosDados: Partial<Evolucao>) => {

@@ -12,7 +12,7 @@ import HistoricoEnfermagem from './etapas/HistoricoEnfermagem';
 interface EtapasProcessoEnfermagemProps {
   paciente: Paciente;
   evolucaoId: string;
-  onSalvarProgresso: () => void;
+  onSalvarProgresso: (options?: { fecharAposSalvar?: boolean }) => void;
   dadosEvolucao: Partial<Evolucao>;
   onDadosChange: (novosDados: Partial<Evolucao>) => void;
   isSaving: boolean;
@@ -144,7 +144,7 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                             {index > 0 && <Button variant="outline" onClick={handlePrev}>Voltar</Button>}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="secondary" onClick={onSalvarProgresso} disabled={isSaving}>
+                                            <Button variant="secondary" onClick={() => onSalvarProgresso({ fecharAposSalvar: true })} disabled={isSaving}>
                                                 {isSaving ? 'Salvando...' : 'Salvar Progresso'}
                                             </Button>
                                             {index < etapas.length - 1 && <Button onClick={handleNext} disabled={coletaDadosVazia}>Avançar</Button>}
