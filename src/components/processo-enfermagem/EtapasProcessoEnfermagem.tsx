@@ -56,9 +56,38 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                     {etapas.map((etapa, index) => (
                         <TabsContent key={etapa} value={etapa}>
                             <Card>
-                                <CardContent className="pt-6 min-h-[300px] flex flex-col justify-center items-center relative">
-                                    <p className="text-gray-500">Em desenvolvimento</p>
-                                    <div className="absolute bottom-6 left-6 right-6 flex justify-between">
+                                <CardContent className="pt-6 min-h-[300px] flex flex-col relative">
+                                    <div className="flex-grow">
+                                        {etapa === 'historico' ? (
+                                            <Tabs defaultValue="coleta-dados" className="w-full">
+                                                <TabsList className="grid w-full grid-cols-3">
+                                                    <TabsTrigger value="coleta-dados">Coleta de Dados</TabsTrigger>
+                                                    <TabsTrigger value="exame-fisico">Exame Físico</TabsTrigger>
+                                                    <TabsTrigger value="necessidades-humanas">Necessidades Humanas Básicas</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="coleta-dados">
+                                                    <div className="min-h-[200px] flex justify-center items-center">
+                                                        <p className="text-gray-500">Em desenvolvimento</p>
+                                                    </div>
+                                                </TabsContent>
+                                                <TabsContent value="exame-fisico">
+                                                    <div className="min-h-[200px] flex justify-center items-center">
+                                                        <p className="text-gray-500">Em desenvolvimento</p>
+                                                    </div>
+                                                </TabsContent>
+                                                <TabsContent value="necessidades-humanas">
+                                                    <div className="min-h-[200px] flex justify-center items-center">
+                                                        <p className="text-gray-500">Em desenvolvimento</p>
+                                                    </div>
+                                                </TabsContent>
+                                            </Tabs>
+                                        ) : (
+                                            <div className="flex h-full justify-center items-center">
+                                                <p className="text-gray-500">Em desenvolvimento</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-auto pt-4 flex justify-between">
                                         <div>
                                             {index > 0 && <Button variant="outline" onClick={handlePrev}>Voltar</Button>}
                                         </div>
