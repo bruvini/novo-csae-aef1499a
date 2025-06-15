@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import {
   collection,
@@ -52,7 +51,7 @@ export const useSinaisVitais = () => {
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoCompleto[]>([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [carregando, setCarregando] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [nhbSelecionadas, setNhbSelecionadas] = useState<string[]>([]);
   const [diagnosticosFiltrados, setDiagnosticosFiltrados] = useState<DiagnosticoCompleto[]>([]);
 
@@ -132,7 +131,7 @@ export const useSinaisVitais = () => {
         variant: "destructive",
       });
     } finally {
-      setCarregando(false);
+      setIsLoading(false);
     }
   };
 
@@ -539,7 +538,7 @@ export const useSinaisVitais = () => {
     modalAberto,
     setModalAberto,
     editandoId,
-    carregando,
+    isLoading,
     nhbSelecionadas,
     diagnosticosFiltrados,
     formSinal,
