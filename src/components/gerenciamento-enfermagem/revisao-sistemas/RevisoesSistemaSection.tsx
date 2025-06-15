@@ -66,9 +66,8 @@ const RevisoesSistemaSection: React.FC<RevisoesSistemaSectionProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[100px]">Título</TableHead>
+              <TableHead>Propedêutica</TableHead>
               <TableHead>Descrição</TableHead>
-              <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -79,7 +78,6 @@ const RevisoesSistemaSection: React.FC<RevisoesSistemaSectionProps> = ({
                 <TableRow key={revisao.id} className="cursor-pointer hover:bg-gray-100">
                   <TableCell className="font-medium">{revisao.titulo}</TableCell>
                   <TableCell>{revisao.descricao}</TableCell>
-                  <TableCell>{revisao.tipoAlteracao}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleEditRevisao(revisao)}>
                       <Edit className="h-4 w-4 mr-2" />

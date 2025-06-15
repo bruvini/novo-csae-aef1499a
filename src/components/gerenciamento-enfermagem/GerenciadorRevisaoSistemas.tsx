@@ -38,7 +38,7 @@ const GerenciadorRevisaoSistemas = () => {
       try {
         const sistemas = await fetchSistemasCorporais();
         setSistemasCorporais(sistemas);
-        if (sistemas.length > 0) {
+        if (sistemas.length > 0 && !selectedSistema) {
           setSelectedSistema(sistemas[0].id || null);
         }
         const revisoes = await fetchRevisoesSistema();
@@ -55,14 +55,7 @@ const GerenciadorRevisaoSistemas = () => {
       }
     };
     loadData();
-  }, [toast]);
-
-  // Load revisões when selectedSistema changes
-  useEffect(() => {
-    if (selectedSistema) {
-      setValoresReferencia(revisoesSistema.find(r => r.sistemaId === selectedSistema)?.valoresReferencia || []);
-    }
-  }, [selectedSistema, revisoesSistema]);
+  }, [toast, selectedSistema]);
 
   // Handlers for Sistema Corporal
   const handleOpenSistemaModal = () => {
@@ -110,6 +103,9 @@ const GerenciadorRevisaoSistemas = () => {
     try {
       await deleteSistemaCorporal(id);
       setSistemasCorporais(prev => prev.filter(s => s.id !== id));
+      if (selectedSistema === id) {
+        setSelectedSistema(sistemasCorporais.length > 1 ? sistemasCorporais.find(s => s.id !== id)?.id || null : null)
+      }
       toast({ title: "Sistema excluído com sucesso!" });
     } catch (error) {
       console.error("Erro ao excluir sistema:", error);
@@ -142,13 +138,13 @@ const GerenciadorRevisaoSistemas = () => {
     setValoresReferencia([]);
   };
 
-  const handleSaveRevisao = async (revisao: RevisaoSistema) => {
+  const handleSaveRevisao = async (revisaoData: Omit<RevisaoSistema, 'valoresReferencia'>) => {
     setIsLoading(true);
     try {
-      const revisaoToSave = { ...revisao, sistemaId: selectedSistema || '', valoresReferencia };
-      if (revisao.id) {
-        await updateRevisaoSistema(revisao.id, revisaoToSave);
-        setRevisoesSistema(prev => prev.map(r => r.id === revisao.id ? revisaoToSave : r));
+      const revisaoToSave: RevisaoSistema = { ...revisaoData, sistemaId: selectedSistema || '', valoresReferencia };
+      if (revisaoToSave.id) {
+        await updateRevisaoSistema(revisaoToSave.id, revisaoToSave);
+        setRevisoesSistema(prev => prev.map(r => r.id === revisaoToSave.id ? { ...revisaoToSave } : r));
         toast({ title: "Revisão atualizada com sucesso!" });
       } else {
         const novaRevisao = await createRevisaoSistema(revisaoToSave);
@@ -190,10 +186,7 @@ const GerenciadorRevisaoSistemas = () => {
   const adicionarValorReferencia = () => {
     setValoresReferencia(prev => [...prev, {
       titulo: '',
-      unidade: '',
       representaAlteracao: false,
-      variacaoPor: 'Nenhum',
-      tipoValor: 'Texto',
       nhbIds: [],
       diagnosticoIds: [],
     }]);
@@ -209,7 +202,6 @@ const GerenciadorRevisaoSistemas = () => {
     setValoresReferencia(novosValoresReferencia);
   };
 
-  // Replace these functions with updated versions accepting arrays
   const handleNhbChange = (index: number, nhbIds: string[]) => {
     const novosValoresReferencia = [...valoresReferencia];
     novosValoresReferencia[index].nhbIds = nhbIds;

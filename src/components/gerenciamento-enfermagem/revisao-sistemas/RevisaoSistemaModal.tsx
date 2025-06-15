@@ -29,7 +29,7 @@ import ValorReferenciaSistemaCard from "@/components/gerenciamento-enfermagem/re
 interface RevisaoSistemaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (revisao: RevisaoSistema) => void;
+  onSave: (revisao: Omit<RevisaoSistema, 'valoresReferencia'>) => void;
   revisao?: RevisaoSistema | null;
   sistemasCorporais: SistemaCorporal[];
   selectedSistema: string | null;
@@ -88,7 +88,7 @@ const RevisaoSistemaModal: React.FC<RevisaoSistemaModalProps> = ({
       descricao,
       ativo,
     };
-    onSave(revisaoToSave as RevisaoSistema);
+    onSave(revisaoToSave as Omit<RevisaoSistema, 'valoresReferencia'>);
   };
 
   return (

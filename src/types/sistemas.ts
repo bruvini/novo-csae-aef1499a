@@ -13,39 +13,17 @@ export interface SistemaCorporal {
 export interface RevisaoSistema {
   id?: string;
   sistemaId: string;
-  sistemaNome?: string;
-  titulo: string;
-  nome?: string;
+  titulo: string; // Usado para "Propedêutica"
   descricao?: string;
-  tipoAlteracao?: 'Objetiva' | 'Subjetiva' | 'Ambas';
-  padrao?: string;
-  diagnosticoIds?: string[];
-  nhbIds?: string[];
   ativo: boolean;
-  ordem?: number;
   valoresReferencia?: ValorReferenciaSistema[];
-  diferencaSexoIdade?: boolean;
 }
 
-// Adding a dedicated interface for ValorReferenciaSistema
+// Simplificado para "Achados do Exame Físico"
 export interface ValorReferenciaSistema {
   id?: string;
-  unidade: string;
+  titulo: string; // Usado para "Descrição do Achado"
   representaAlteracao: boolean;
-  variacaoPor: 'Nenhum' | 'Sexo' | 'Idade' | 'Ambos';
-  tipoValor: 'Numérico' | 'Texto';
-  valorMinimo?: number;
-  valorMaximo?: number;
-  valorTexto?: string;
-  idadeMinima?: number;
-  idadeMaxima?: number;
-  sexo?: 'Todos' | 'Masculino' | 'Feminino';
-  tituloAlteracao?: string;
   nhbIds?: string[];
   diagnosticoIds?: string[];
-  titulo?: string;
-  condicao?: 'abaixo' | 'acima' | 'entre' | 'igual';
-  // Legacy fields for backward compatibility
-  nhbId?: string;
-  diagnosticoId?: string;
 }

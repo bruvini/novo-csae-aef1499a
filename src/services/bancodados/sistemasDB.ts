@@ -1,7 +1,6 @@
-
 import { collection, getDocs, query, addDoc, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { SistemaCorporal, RevisaoSistema } from '../../types/sinais-vitais';
+import { SistemaCorporal, RevisaoSistema } from '../../types/sistemas';
 
 /**
  * Busca todos os sistemas corporais
@@ -99,10 +98,7 @@ export const fetchRevisoesSistema = async (): Promise<RevisaoSistema[]> => {
         sistemaId: data.sistemaId,
         titulo: data.titulo,
         descricao: data.descricao,
-        tipoAlteracao: data.tipoAlteracao,
-        padrao: data.padrao,
         ativo: data.ativo !== false,
-        diferencaSexoIdade: data.diferencaSexoIdade,
         valoresReferencia: data.valoresReferencia || []
       };
     });
