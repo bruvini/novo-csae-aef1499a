@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -82,7 +81,7 @@ const CadastrarPacienteModal: React.FC<CadastrarPacienteModalProps> = ({ isOpen,
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!usuario) {
+    if (!usuario || !usuario.usuario) {
       toast({
         title: 'Erro',
         description: 'Você precisa estar autenticado para cadastrar um paciente.',
@@ -92,10 +91,11 @@ const CadastrarPacienteModal: React.FC<CadastrarPacienteModalProps> = ({ isOpen,
     }
 
     const novoPaciente = {
-      ...values,
+      nome: values.nome,
       dataNascimento: format(new Date(values.dataNascimento), 'yyyy-MM-dd'),
+      sexo: values.sexo,
       profissionalUid: usuario.uid,
-      nomeProfissional: usuario.dadosPessoais.nomeCompleto,
+      nomeProfissional: usuario.usuario.dadosPessoais.nomeCompleto,
     };
     
     mutate(novoPaciente);
