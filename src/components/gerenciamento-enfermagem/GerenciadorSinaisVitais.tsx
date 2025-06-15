@@ -21,7 +21,7 @@ const GerenciadorSinaisVitais = () => {
     modalAberto,
     setModalAberto,
     editandoId,
-    carregando,
+    isLoading,
     diagnosticosFiltrados,
     formSinal,
     setFormSinal,
@@ -54,7 +54,7 @@ const GerenciadorSinaisVitais = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {carregando ? (
+        {isLoading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600"></div>
           </div>
