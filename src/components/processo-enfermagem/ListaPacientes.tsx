@@ -35,7 +35,12 @@ import {
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
 
-const ListaPacientes: React.FC = () => {
+interface ListaPacientesProps {
+  onSelecionarPaciente: (paciente: Paciente) => void;
+  isProcessing: boolean;
+}
+
+const ListaPacientes: React.FC<ListaPacientesProps> = ({ onSelecionarPaciente, isProcessing }) => {
   const { usuario } = useAutenticacao();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -96,7 +101,16 @@ const ListaPacientes: React.FC = () => {
                     <TableCell className="text-right space-x-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                           <Button variant="outline" size="icon" disabled>
+                           <Button 
+                             size="icon" 
+                             onClick={() => onSelecionarPaciente(paciente)}
+                             disabled={isProcessing}
+                             className={
+                               paciente.statusPaciente === 'NAO_ESTA_CONSULTANDO' 
+                               ? 'bg-green-600 text-white hover:bg-green-700' 
+                               : ''
+                             }
+                           >
                              <ArrowRight className="h-4 w-4" />
                            </Button>
                         </TooltipTrigger>
