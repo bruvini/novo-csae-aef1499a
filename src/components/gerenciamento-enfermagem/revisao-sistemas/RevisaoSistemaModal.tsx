@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus } from "lucide-react";
 import { SistemaCorporal, RevisaoSistema, ValorReferenciaSistema } from "@/types/sistemas";
 import { SubconjuntoDiagnostico, DiagnosticoCompleto } from "@/types/diagnosticos";
-import { fetchSubconjuntos, fetchDiagnosticos } from "@/services/bancodados";
+import { fetchSubconjuntos, fetchDiagnosticos } from "@/services/bancodados/diagnosticosDB";
 import ValorReferenciaSistemaCard from "@/components/gerenciamento-enfermagem/revisao-sistemas/ValorReferenciaSistemaCard";
 
 interface RevisaoSistemaModalProps {
