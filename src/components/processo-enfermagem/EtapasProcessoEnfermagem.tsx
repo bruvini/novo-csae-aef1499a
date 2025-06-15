@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Evolucao, Paciente } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
@@ -28,8 +29,14 @@ const etapaLabels: Record<Etapa, string> = {
     evolucao: 'Evolução',
 };
 
+interface AlteredParam {
+  id: string;
+  titulo: string;
+}
+
 const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ paciente, evolucaoId, onSalvarEFechar, dadosEvolucao, onDadosChange, isSaving }) => {
     const [etapaAtual, setEtapaAtual] = useState<Etapa>('historico');
+    const [alteredParams, setAlteredParams] = useState<AlteredParam[]>([]);
 
     const currentIndex = etapas.indexOf(etapaAtual);
 
@@ -51,6 +58,17 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                 queixaPrincipal: event.target.value,
             },
         });
+    };
+
+    const handleScrollToParam = (id: string) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2', 'transition-shadow', 'duration-300');
+            setTimeout(() => {
+                element.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
+            }, 2000);
+        }
     };
 
     return (
@@ -121,6 +139,7 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                                     paciente={paciente}
                                                                     dadosEvolucao={dadosEvolucao}
                                                                     onDadosChange={onDadosChange}
+                                                                    onAlterationsChange={setAlteredParams}
                                                                 />
                                                             </CardContent>
                                                         </Card>
@@ -144,6 +163,28 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                                 </div>
                                                             </CardContent>
                                                         </Card>
+                                                        {alteredParams.length > 0 && (
+                                                            <Card className="border-yellow-400 bg-yellow-50">
+                                                                <CardHeader>
+                                                                    <CardTitle className="text-base font-semibold text-yellow-800">Parâmetros Alterados</CardTitle>
+                                                                    <CardDescription className="text-yellow-700">Valores que indicam necessidade de atenção.</CardDescription>
+                                                                </CardHeader>
+                                                                <CardContent>
+                                                                    <ul className="list-disc pl-5 space-y-2 text-yellow-900">
+                                                                        {alteredParams.map(param => (
+                                                                            <li key={param.id}>
+                                                                                <button
+                                                                                    onClick={() => handleScrollToParam(param.id)}
+                                                                                    className="text-left text-blue-600 hover:underline focus:outline-none"
+                                                                                >
+                                                                                    {param.titulo}
+                                                                                </button>
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </CardContent>
+                                                            </Card>
+                                                        )}
                                                     </div>
                                                 </TabsContent>
                                                 <TabsContent value="necessidades-humanas">
