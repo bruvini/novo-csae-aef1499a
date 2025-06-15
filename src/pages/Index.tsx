@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeartPulse } from 'lucide-react';
-import SimpleFooter from '@/components/SimpleFooter';
 
 const Index = () => {
   return (
@@ -37,7 +36,7 @@ const Index = () => {
           </Card>
         </div>
       </main>
-      <SimpleFooter />
+      {/* SimpleFooter removed */}
     </div>
   );
 };

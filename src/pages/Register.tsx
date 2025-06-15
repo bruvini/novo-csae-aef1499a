@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -10,7 +9,6 @@ import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
 import { serverTimestamp } from "firebase/firestore";
 import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "@/services/firebase";
-import SimpleFooter from "@/components/SimpleFooter";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 import {
   registrationSchema,
@@ -266,8 +264,6 @@ const Register = () => {
           </Form>
         </div>
       </main>
-
-      <SimpleFooter />
 
       <TermoResponsabilidadeModal
         isOpen={modalTermoAberto}
