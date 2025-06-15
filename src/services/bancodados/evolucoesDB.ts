@@ -13,43 +13,33 @@ import { Evolucao } from '@/types';
 /**
  * Inicia uma nova evolução para o paciente
  * @param pacienteId ID do paciente
+ * @param profissionalUid ID do profissional
  * @returns Objeto contendo o ID da evolução e sucesso da operação
  */
-export async function iniciarEvolucao(pacienteId: string): Promise<{evolucaoId: string, sucesso: boolean}> {
+export async function iniciarEvolucao(pacienteId: string, profissionalUid: string): Promise<{evolucaoId: string, sucesso: boolean}> {
   try {
     console.log("Iniciando evolução para paciente ID:", pacienteId);
     const pacienteRef = doc(db, 'pacientes', pacienteId);
     
-    // Verificar se o paciente existe
     const docSnap = await getDoc(pacienteRef);
     if (!docSnap.exists()) {
       console.error("Paciente não encontrado com ID:", pacienteId);
       return { evolucaoId: "", sucesso: false };
     }
     
-    // Gerar ID único para a evolução (timestamp + random)
     const timestamp = new Date().getTime();
     const random = Math.floor(Math.random() * 10000);
     const evolucaoId = `evolucao_${timestamp}_${random}`;
     
-    // Criar nova evolução
+    // Criar nova evolução simplificada
     const novaEvolucao: Evolucao = {
       id: evolucaoId,
-      dataInicio: Timestamp.now(),
-      dataAtualizacao: Timestamp.now(), // Using actual Timestamp instead of serverTimestamp
-      status: 'iniciada',
-      statusConclusao: 'Em andamento',
-      avaliacao: '',
-      diagnosticos: [],
-      planejamento: [],
-      implementacao: [],
-      evolucaoFinal: '',
       pacienteId: pacienteId,
-      profissionalUid: '',
-      dados: {}
+      profissionalUid: profissionalUid,
+      dataInicio: Timestamp.now(),
+      statusEvolucao: 'EM_ANDAMENTO',
     };
     
-    // Adicionar evolução ao array de evoluções do paciente
     await updateDoc(pacienteRef, {
       evolucoes: arrayUnion(novaEvolucao)
     });
@@ -133,17 +123,15 @@ export async function salvarProgressoEvolucao(
  * @param pacienteId ID do paciente
  * @param evolucaoId ID da evolução
  * @param dadosFinais Dados finais da evolução
- * @param statusFinal Status final da evolução (Concluído ou Interrompido)
  * @returns Sucesso da operação
  */
 export async function finalizarEvolucao(
   pacienteId: string, 
   evolucaoId: string, 
-  dadosFinais: Partial<Evolucao>,
-  statusFinal: 'Concluído' | 'Interrompido' = 'Concluído'
+  dadosFinais: Partial<Evolucao>
 ): Promise<boolean> {
   try {
-    console.log("Finalizando evolução:", { pacienteId, evolucaoId, statusFinal });
+    console.log("Finalizando evolução:", { pacienteId, evolucaoId });
     
     if (!evolucaoId) {
       console.error("ID de evolução não informado");
@@ -180,9 +168,9 @@ export async function finalizarEvolucao(
     const evolucaoFinalizada = {
       ...evolucaoAntiga,
       ...dadosFinais,
-      statusConclusao: statusFinal,
-      dataConclusao: serverTimestamp(),
-      dataAtualizacao: serverTimestamp()
+      statusEvolucao: 'FINALIZADO' as const,
+      dataFim: Timestamp.now(),
+      dataAtualizacao: Timestamp.now()
     };
     
     // Adicionar evolução finalizada

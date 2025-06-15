@@ -27,7 +27,8 @@ const ProcessoEnfermagem = () => {
 
   const { mutate: iniciarConsulta, isPending: isStartingConsulta } = useMutation({
     mutationFn: async (paciente: Paciente) => {
-      const { evolucaoId, sucesso } = await iniciarEvolucao(paciente.id!);
+      if (!usuario) throw new Error("Usuário não autenticado.");
+      const { evolucaoId, sucesso } = await iniciarEvolucao(paciente.id!, usuario.uid);
       if (!sucesso) {
         throw new Error("Não foi possível iniciar a evolução.");
       }
@@ -57,7 +58,7 @@ const ProcessoEnfermagem = () => {
 
   const handleSelecionarPaciente = (paciente: Paciente) => {
     if (paciente.statusPaciente === 'ESTA_CONSULTANDO') {
-        const evolucaoAberta = paciente.evolucoes?.find(e => e.status === 'iniciada' || e.status === 'em_andamento');
+        const evolucaoAberta = paciente.evolucoes?.find(e => e.statusEvolucao === 'EM_ANDAMENTO');
         if (evolucaoAberta && evolucaoAberta.id) {
             setPacienteEmConsulta(paciente);
             setEvolucaoAtivaId(evolucaoAberta.id);
