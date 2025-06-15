@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -92,7 +92,7 @@ const CadastrarPacienteModal: React.FC<CadastrarPacienteModalProps> = ({ isOpen,
 
     const novoPaciente = {
       nome: values.nome,
-      dataNascimento: format(new Date(values.dataNascimento), 'yyyy-MM-dd'),
+      dataNascimento: values.dataNascimento,
       sexo: values.sexo,
       profissionalUid: usuario.uid,
       nomeProfissional: usuario.usuario.dadosPessoais.nomeCompleto,
