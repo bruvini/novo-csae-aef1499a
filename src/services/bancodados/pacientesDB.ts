@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -14,7 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Evolucao, Paciente } from './tipos';
+import { Evolucao, Paciente } from '@/types';
 
 // Funções para gerenciar pacientes
 export async function cadastrarPaciente(paciente: Omit<Paciente, 'dataCadastro'>): Promise<string> {

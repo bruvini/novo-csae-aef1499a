@@ -1,4 +1,3 @@
-
 import { 
   doc, 
   updateDoc, 
@@ -9,7 +8,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Evolucao } from './tipos';
+import { Evolucao } from '@/types';
 
 /**
  * Inicia uma nova evolução para o paciente

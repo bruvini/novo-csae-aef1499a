@@ -10,6 +10,8 @@ export * from './protocolos';
 export * from './configuracao';
 export * from './sugestoes';
 export * from './cipe';
+export * from './paciente';
+export * from './evolucao';
 
 // Re-export the existing modulos, pop, timeline types
 export * from './modulos';
