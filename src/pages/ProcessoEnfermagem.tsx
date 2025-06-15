@@ -11,8 +11,8 @@ import ListaPacientes from '@/components/processo-enfermagem/ListaPacientes';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/use-toast';
 import { useAutenticacao } from '@/hooks/useAutenticacao';
-import { Paciente } from '@/types';
-import { iniciarEvolucao } from '@/services/bancodados/evolucoesDB';
+import { Evolucao, Paciente } from '@/types';
+import { iniciarEvolucao, salvarProgressoEvolucao } from '@/services/bancodados/evolucoesDB';
 import { atualizarPaciente } from '@/services/bancodados/pacientesDB';
 import EtapasProcessoEnfermagem from '@/components/processo-enfermagem/EtapasProcessoEnfermagem';
 
@@ -20,6 +20,7 @@ const ProcessoEnfermagem = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [pacienteEmConsulta, setPacienteEmConsulta] = useState<Paciente | null>(null);
   const [evolucaoAtivaId, setEvolucaoAtivaId] = useState<string | null>(null);
+  const [dadosEvolucao, setDadosEvolucao] = useState<Partial<Evolucao>>({});
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -46,11 +47,41 @@ const ProcessoEnfermagem = () => {
       queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
       setPacienteEmConsulta(paciente);
       setEvolucaoAtivaId(evolucaoId);
+      setDadosEvolucao({ id: evolucaoId, statusEvolucao: 'EM_ANDAMENTO' });
     },
     onError: (error) => {
       toast({
         title: "Erro",
         description: `Não foi possível iniciar a consulta: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const { mutate: salvarEFechar, isPending: isSaving } = useMutation({
+    mutationFn: async () => {
+      if (!pacienteEmConsulta?.id || !evolucaoAtivaId) {
+        throw new Error("Não foi possível identificar o paciente ou a consulta ativa.");
+      }
+      const sucesso = await salvarProgressoEvolucao(pacienteEmConsulta.id, evolucaoAtivaId, dadosEvolucao);
+      if (!sucesso) {
+        throw new Error("Ocorreu um erro ao salvar o progresso no banco de dados.");
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Progresso Salvo!",
+        description: "A consulta foi salva e você pode continuar depois.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
+      setPacienteEmConsulta(null);
+      setEvolucaoAtivaId(null);
+      setDadosEvolucao({});
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao Salvar",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -62,6 +93,7 @@ const ProcessoEnfermagem = () => {
         if (evolucaoAberta && evolucaoAberta.id) {
             setPacienteEmConsulta(paciente);
             setEvolucaoAtivaId(evolucaoAberta.id);
+            setDadosEvolucao(evolucaoAberta);
             toast({ title: 'Continuando consulta', description: `Continuando a consulta para o paciente ${paciente.nome}` });
         } else {
             console.error("Inconsistência: Paciente com status 'ESTA_CONSULTANDO' mas sem evolução aberta.");
@@ -74,12 +106,18 @@ const ProcessoEnfermagem = () => {
   };
 
   const handleSalvarEFechar = () => {
-    setPacienteEmConsulta(null);
-    setEvolucaoAtivaId(null);
-    toast({
-        title: "Progresso Salvo!",
-        description: "A consulta foi salva e você pode continuar depois.",
-    });
+    salvarEFechar();
+  };
+
+  const handleDadosEvolucaoChange = (novosDados: Partial<Evolucao>) => {
+    setDadosEvolucao(prev => ({
+        ...prev,
+        ...novosDados,
+        dadosAvaliacao: {
+            ...(prev.dadosAvaliacao || {}),
+            ...(novosDados.dadosAvaliacao || {}),
+        },
+    }));
   };
 
   return (
@@ -94,6 +132,9 @@ const ProcessoEnfermagem = () => {
               paciente={pacienteEmConsulta}
               evolucaoId={evolucaoAtivaId}
               onSalvarEFechar={handleSalvarEFechar}
+              dadosEvolucao={dadosEvolucao}
+              onDadosChange={handleDadosEvolucaoChange}
+              isSaving={isSaving}
             />
           ) : (
             <div className="flex flex-col gap-8">

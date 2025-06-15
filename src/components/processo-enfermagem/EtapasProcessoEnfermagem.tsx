@@ -1,14 +1,19 @@
-
 import React, { useState } from 'react';
-import { Paciente } from '@/types';
+import { Evolucao, Paciente } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
+import { Info } from 'lucide-react';
 
 interface EtapasProcessoEnfermagemProps {
   paciente: Paciente;
   evolucaoId: string;
   onSalvarEFechar: () => void;
+  dadosEvolucao: Partial<Evolucao>;
+  onDadosChange: (novosDados: Partial<Evolucao>) => void;
+  isSaving: boolean;
 }
 
 type Etapa = 'historico' | 'diagnostico' | 'planejamento' | 'implementacao' | 'evolucao';
@@ -22,7 +27,7 @@ const etapaLabels: Record<Etapa, string> = {
     evolucao: 'Evolução',
 };
 
-const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ paciente, evolucaoId, onSalvarEFechar }) => {
+const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ paciente, evolucaoId, onSalvarEFechar, dadosEvolucao, onDadosChange, isSaving }) => {
     const [etapaAtual, setEtapaAtual] = useState<Etapa>('historico');
 
     const currentIndex = etapas.indexOf(etapaAtual);
@@ -37,6 +42,14 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
         if (currentIndex > 0) {
             setEtapaAtual(etapas[currentIndex - 1]);
         }
+    };
+
+    const handleQueixaPrincipalChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        onDadosChange({
+            dadosAvaliacao: {
+                queixaPrincipal: event.target.value,
+            },
+        });
     };
 
     return (
@@ -66,8 +79,34 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                     <TabsTrigger value="necessidades-humanas">Necessidades Humanas Básicas</TabsTrigger>
                                                 </TabsList>
                                                 <TabsContent value="coleta-dados">
-                                                    <div className="min-h-[200px] flex justify-center items-center">
-                                                        <p className="text-gray-500">Em desenvolvimento</p>
+                                                    <div className="space-y-6">
+                                                        <div className="space-y-2">
+                                                            <Label htmlFor="queixa-principal" className="text-base font-semibold">Queixa Principal / História da Doença Atual</Label>
+                                                            <Textarea
+                                                                id="queixa-principal"
+                                                                placeholder="Descreva aqui a queixa principal do paciente, suas palavras, história da doença, etc."
+                                                                className="min-h-[150px]"
+                                                                value={dadosEvolucao.dadosAvaliacao?.queixaPrincipal || ''}
+                                                                onChange={handleQueixaPrincipalChange}
+                                                            />
+                                                        </div>
+                                                        <Card className="bg-blue-50 border-blue-200">
+                                                            <CardHeader className="pb-2">
+                                                                <CardTitle className="text-base text-blue-800 flex items-center gap-2">
+                                                                    <Info className="h-5 w-5" />
+                                                                    Dicas para uma Coleta de Dados eficaz
+                                                                </CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <ul className="list-disc pl-5 space-y-2 text-sm text-blue-700">
+                                                                    <li><strong>Escuta Ativa:</strong> Demonstre interesse genuíno, mantenha contato visual e evite interrupções.</li>
+                                                                    <li><strong>Perguntas Abertas:</strong> Use perguntas que incentivem o paciente a contar sua história, como "Fale-me mais sobre isso...".</li>
+                                                                    <li><strong>Empatia:</strong> Valide os sentimentos do paciente. Frases como "Imagino que isso seja difícil" podem ajudar.</li>
+                                                                    <li><strong>Ambiente Confortável:</strong> Garanta privacidade e um ambiente tranquilo para que o paciente se sinta à vontade para se expressar.</li>
+                                                                    <li><strong>Linguagem Clara:</strong> Evite jargões técnicos. Use uma linguagem que o paciente possa entender facilmente.</li>
+                                                                </ul>
+                                                            </CardContent>
+                                                        </Card>
                                                     </div>
                                                 </TabsContent>
                                                 <TabsContent value="exame-fisico">
@@ -92,7 +131,9 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                             {index > 0 && <Button variant="outline" onClick={handlePrev}>Voltar</Button>}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="secondary" onClick={onSalvarEFechar}>Salvar Progresso</Button>
+                                            <Button variant="secondary" onClick={onSalvarEFechar} disabled={isSaving}>
+                                                {isSaving ? 'Salvando...' : 'Salvar Progresso'}
+                                            </Button>
                                             {index < etapas.length - 1 && <Button onClick={handleNext}>Avançar</Button>}
                                             {etapa === 'evolucao' && <Button variant="destructive">Finalizar Consulta</Button>}
                                         </div>
