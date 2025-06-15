@@ -110,8 +110,37 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                     </div>
                                                 </TabsContent>
                                                 <TabsContent value="exame-fisico">
-                                                    <div className="min-h-[200px] flex justify-center items-center">
-                                                        <p className="text-gray-500">Em desenvolvimento</p>
+                                                    <div className="space-y-4">
+                                                        <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-base font-semibold">Sinais Vitais</CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <div className="flex justify-center items-center text-sm text-gray-500 py-8">
+                                                                    Em desenvolvimento
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                        <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-base font-semibold">Resultado de Exames</CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <div className="flex justify-center items-center text-sm text-gray-500 py-8">
+                                                                    Em desenvolvimento
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
+                                                        <Card>
+                                                            <CardHeader>
+                                                                <CardTitle className="text-base font-semibold">Revisão por Sistemas</CardTitle>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <div className="flex justify-center items-center text-sm text-gray-500 py-8">
+                                                                    Em desenvolvimento
+                                                                </div>
+                                                            </CardContent>
+                                                        </Card>
                                                     </div>
                                                 </TabsContent>
                                                 <TabsContent value="necessidades-humanas">
