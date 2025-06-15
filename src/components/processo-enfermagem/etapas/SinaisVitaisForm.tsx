@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Paciente, Evolucao, SinalVital } from '@/types';
 import { useSinaisVitais } from '@/hooks/use-sinais-vitais';
@@ -25,32 +26,6 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
     const activeSinaisVitais = useMemo(() => {
         return sinaisVitais.filter(sv => sv.ativo).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
     }, [sinaisVitais]);
-
-    useEffect(() => {
-        const alterationsList = Object.entries(alterations)
-            .filter(([, value]) => value && value.titulo)
-            .map(([id, value]) => ({ id, titulo: value.titulo, nhbIds: value.nhbIds }));
-        onAlterationsChange(alterationsList);
-    }, [alterations, onAlterationsChange]);
-
-    useEffect(() => {
-        // Run only after vital sign definitions are loaded and only once per component mount.
-        if (isLoading || initialValidationRun.current) {
-            return;
-        }
-
-        const savedSinaisVitais = dadosEvolucao.dadosAvaliacao?.etapaHistorico?.exameFisico?.sinaisVitais;
-
-        if (savedSinaisVitais && activeSinaisVitais.length > 0) {
-            activeSinaisVitais.forEach(sv => {
-                const currentValue = savedSinaisVitais[sv.id!];
-                if (currentValue) {
-                    validateAndCheckAlerts(sv, String(currentValue));
-                }
-            });
-            initialValidationRun.current = true;
-        }
-    }, [isLoading, activeSinaisVitais, dadosEvolucao, validateAndCheckAlerts]);
 
     const calculateAge = (dataNascimento: string): number => {
         try {
@@ -130,6 +105,31 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
         }
     }, [pacienteAge, paciente.sexo]);
 
+    useEffect(() => {
+        const alterationsList = Object.entries(alterations)
+            .filter(([, value]) => value && value.titulo)
+            .map(([id, value]) => ({ id, titulo: value.titulo, nhbIds: value.nhbIds }));
+        onAlterationsChange(alterationsList);
+    }, [alterations, onAlterationsChange]);
+
+    useEffect(() => {
+        // Run only after vital sign definitions are loaded and only once per component mount.
+        if (isLoading || initialValidationRun.current) {
+            return;
+        }
+
+        const savedSinaisVitais = dadosEvolucao.dadosAvaliacao?.etapaHistorico?.exameFisico?.sinaisVitais;
+
+        if (savedSinaisVitais && activeSinaisVitais.length > 0) {
+            activeSinaisVitais.forEach(sv => {
+                const currentValue = savedSinaisVitais[sv.id!];
+                if (currentValue) {
+                    validateAndCheckAlerts(sv, String(currentValue));
+                }
+            });
+            initialValidationRun.current = true;
+        }
+    }, [isLoading, activeSinaisVitais, dadosEvolucao, validateAndCheckAlerts]);
 
     const handleInputChange = (sinalVital: SinalVital, value: string) => {
         const newSinaisVitaisData = {
