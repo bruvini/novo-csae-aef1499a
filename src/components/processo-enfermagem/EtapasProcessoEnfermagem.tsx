@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Evolucao, Paciente, SubconjuntoDiagnostico } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import { Skeleton } from '../ui/skeleton';
 interface EtapasProcessoEnfermagemProps {
   paciente: Paciente;
   evolucaoId: string;
-  onSalvarEFechar: () => void;
+  onSalvarProgresso: () => void;
   dadosEvolucao: Partial<Evolucao>;
   onDadosChange: (novosDados: Partial<Evolucao>) => void;
   isSaving: boolean;
@@ -40,9 +39,11 @@ interface AlteredParam {
   nhbIds?: string[];
 }
 
-const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ paciente, evolucaoId, onSalvarEFechar, dadosEvolucao, onDadosChange, isSaving }) => {
+const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ paciente, evolucaoId, onSalvarProgresso, dadosEvolucao, onDadosChange, isSaving }) => {
     const [etapaAtual, setEtapaAtual] = useState<Etapa>('historico');
     const [alteredParams, setAlteredParams] = useState<AlteredParam[]>([]);
+
+    const coletaDadosVazia = !dadosEvolucao.dadosAvaliacao?.etapaHistorico?.coletaDados?.trim();
 
     const { data: todosSubconjuntos, isLoading: isLoadingSubconjuntos } = useQuery<SubconjuntoDiagnostico[]>({
       queryKey: ['subconjuntosDiagnosticos', 'NHB'],
@@ -59,7 +60,7 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
         return todosSubconjuntos.filter(sub => affectedNhbIds.includes(sub.id!));
     }, [affectedNhbIds, todosSubconjuntos]);
 
-    const selectedNhbIds = useMemo(() => dadosEvolucao.dadosAvaliacao?.nhbsSelecionadasIds || [], [dadosEvolucao.dadosAvaliacao?.nhbsSelecionadasIds]);
+    const selectedNhbIds = useMemo(() => dadosEvolucao.dadosAvaliacao?.etapaHistorico?.necessidadesHumanasBasicas || [], [dadosEvolucao.dadosAvaliacao?.etapaHistorico?.necessidadesHumanasBasicas]);
     
     const handleNhbSelectionChange = (nhbId: string, checked: boolean) => {
         const newSelectedIds = checked
@@ -69,7 +70,10 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
         onDadosChange({
             dadosAvaliacao: {
                 ...dadosEvolucao.dadosAvaliacao,
-                nhbsSelecionadasIds: newSelectedIds,
+                etapaHistorico: {
+                    ...(dadosEvolucao.dadosAvaliacao?.etapaHistorico || {}),
+                    necessidadesHumanasBasicas: newSelectedIds,
+                }
             },
         });
     };
@@ -77,13 +81,15 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
     const currentIndex = etapas.indexOf(etapaAtual);
 
     const handleNext = () => {
-        if (currentIndex < etapas.length - 1) {
+        if (currentIndex < etapas.length - 1 && !coletaDadosVazia) {
+            onSalvarProgresso();
             setEtapaAtual(etapas[currentIndex + 1]);
         }
     };
 
     const handlePrev = () => {
         if (currentIndex > 0) {
+            onSalvarProgresso();
             setEtapaAtual(etapas[currentIndex - 1]);
         }
     };
@@ -91,7 +97,11 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
     const handleQueixaPrincipalChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         onDadosChange({
             dadosAvaliacao: {
-                queixaPrincipal: event.target.value,
+                ...dadosEvolucao.dadosAvaliacao,
+                etapaHistorico: {
+                    ...(dadosEvolucao.dadosAvaliacao?.etapaHistorico || {}),
+                    coletaDados: event.target.value,
+                }
             },
         });
     };
@@ -118,7 +128,7 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                 <Tabs value={etapaAtual} onValueChange={(value) => setEtapaAtual(value as Etapa)} className="w-full">
                     <TabsList className="grid w-full grid-cols-5">
                         {etapas.map(etapa => (
-                             <TabsTrigger key={etapa} value={etapa}>{etapaLabels[etapa]}</TabsTrigger>
+                             <TabsTrigger key={etapa} value={etapa} disabled={etapa !== 'historico' && coletaDadosVazia}>{etapaLabels[etapa]}</TabsTrigger>
                         ))}
                     </TabsList>
                     {etapas.map((etapa, index) => (
@@ -141,7 +151,7 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                                                 id="queixa-principal"
                                                                 placeholder="Descreva aqui a queixa principal do paciente, suas palavras, história da doença, etc."
                                                                 className="min-h-[150px]"
-                                                                value={dadosEvolucao.dadosAvaliacao?.queixaPrincipal || ''}
+                                                                value={dadosEvolucao.dadosAvaliacao?.etapaHistorico?.coletaDados || ''}
                                                                 onChange={handleQueixaPrincipalChange}
                                                             />
                                                         </div>
@@ -277,10 +287,10 @@ const EtapasProcessoEnfermagem: React.FC<EtapasProcessoEnfermagemProps> = ({ pac
                                             {index > 0 && <Button variant="outline" onClick={handlePrev}>Voltar</Button>}
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="secondary" onClick={onSalvarEFechar} disabled={isSaving}>
+                                            <Button variant="secondary" onClick={onSalvarProgresso} disabled={isSaving}>
                                                 {isSaving ? 'Salvando...' : 'Salvar Progresso'}
                                             </Button>
-                                            {index < etapas.length - 1 && <Button onClick={handleNext}>Avançar</Button>}
+                                            {index < etapas.length - 1 && <Button onClick={handleNext} disabled={coletaDadosVazia}>Avançar</Button>}
                                             {etapa === 'evolucao' && <Button variant="destructive">Finalizar Consulta</Button>}
                                         </div>
                                     </div>

@@ -114,14 +114,20 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
 
     const handleInputChange = (sinalVital: SinalVital, value: string) => {
         const newSinaisVitaisData = {
-            ...(dadosEvolucao.dadosAvaliacao?.sinaisVitais || {}),
+            ...(dadosEvolucao.dadosAvaliacao?.etapaHistorico?.exameFisico?.sinaisVitais || {}),
             [sinalVital.id!]: value,
         };
 
         onDadosChange({
             dadosAvaliacao: {
                 ...dadosEvolucao.dadosAvaliacao,
-                sinaisVitais: newSinaisVitaisData,
+                etapaHistorico: {
+                    ...(dadosEvolucao.dadosAvaliacao?.etapaHistorico || {}),
+                    exameFisico: {
+                        ...(dadosEvolucao.dadosAvaliacao?.etapaHistorico?.exameFisico || {}),
+                        sinaisVitais: newSinaisVitaisData,
+                    },
+                },
             },
         });
 
@@ -145,7 +151,7 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
             {activeSinaisVitais.map(sv => {
                 const svId = sv.id!;
-                const currentValue = dadosEvolucao.dadosAvaliacao?.sinaisVitais?.[svId] || '';
+                const currentValue = dadosEvolucao.dadosAvaliacao?.etapaHistorico?.exameFisico?.sinaisVitais?.[svId] || '';
                 const alteration = alterations[svId]?.titulo;
                 
                 return (

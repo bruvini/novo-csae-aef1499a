@@ -58,7 +58,7 @@ const ProcessoEnfermagem = () => {
     },
   });
 
-  const { mutate: salvarEFechar, isPending: isSaving } = useMutation({
+  const { mutate: salvarProgresso, isPending: isSaving } = useMutation({
     mutationFn: async () => {
       if (!pacienteEmConsulta?.id || !evolucaoAtivaId) {
         throw new Error("Não foi possível identificar o paciente ou a consulta ativa.");
@@ -70,13 +70,10 @@ const ProcessoEnfermagem = () => {
     },
     onSuccess: () => {
       toast({
-        title: "Progresso Salvo!",
-        description: "A consulta foi salva e você pode continuar depois.",
+        title: "💾 Progresso salvo com sucesso!",
+        description: "Pode continuar sem se preocupar.",
       });
       queryClient.invalidateQueries({ queryKey: ['pacientes', usuario?.uid] });
-      setPacienteEmConsulta(null);
-      setEvolucaoAtivaId(null);
-      setDadosEvolucao({});
     },
     onError: (error) => {
       toast({
@@ -93,7 +90,29 @@ const ProcessoEnfermagem = () => {
         if (evolucaoAberta && evolucaoAberta.id) {
             setPacienteEmConsulta(paciente);
             setEvolucaoAtivaId(evolucaoAberta.id);
-            setDadosEvolucao(evolucaoAberta);
+
+            const dadosParaAvaliar = { ...evolucaoAberta };
+            const oldDadosAvaliacao = (dadosParaAvaliar as any).dadosAvaliacao;
+
+            if (oldDadosAvaliacao && !oldDadosAvaliacao.etapaHistorico) {
+                dadosParaAvaliar.dadosAvaliacao = {
+                    ...oldDadosAvaliacao,
+                    etapaHistorico: {
+                        coletaDados: oldDadosAvaliacao.queixaPrincipal || '',
+                        exameFisico: {
+                            sinaisVitais: oldDadosAvaliacao.sinaisVitais || {},
+                            resultadosExames: {},
+                            revisaoSistemas: {}
+                        },
+                        necessidadesHumanasBasicas: oldDadosAvaliacao.nhbsSelecionadasIds || []
+                    }
+                };
+                delete (dadosParaAvaliar.dadosAvaliacao as any).queixaPrincipal;
+                delete (dadosParaAvaliar.dadosAvaliacao as any).sinaisVitais;
+                delete (dadosParaAvaliar.dadosAvaliacao as any).nhbsSelecionadasIds;
+            }
+            
+            setDadosEvolucao(dadosParaAvaliar);
             toast({ title: 'Continuando consulta', description: `Continuando a consulta para o paciente ${paciente.nome}` });
         } else {
             console.error("Inconsistência: Paciente com status 'ESTA_CONSULTANDO' mas sem evolução aberta.");
@@ -105,8 +124,8 @@ const ProcessoEnfermagem = () => {
     }
   };
 
-  const handleSalvarEFechar = () => {
-    salvarEFechar();
+  const handleSalvarProgresso = () => {
+    salvarProgresso();
   };
 
   const handleDadosEvolucaoChange = (novosDados: Partial<Evolucao>) => {
@@ -131,7 +150,7 @@ const ProcessoEnfermagem = () => {
             <EtapasProcessoEnfermagem 
               paciente={pacienteEmConsulta}
               evolucaoId={evolucaoAtivaId}
-              onSalvarEFechar={handleSalvarEFechar}
+              onSalvarProgresso={handleSalvarProgresso}
               dadosEvolucao={dadosEvolucao}
               onDadosChange={handleDadosEvolucaoChange}
               isSaving={isSaving}

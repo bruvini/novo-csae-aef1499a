@@ -10,9 +10,15 @@ export interface Evolucao {
   statusEvolucao: 'EM_ANDAMENTO' | 'FINALIZADO';
   dataFim?: Timestamp;
   dadosAvaliacao?: {
-    queixaPrincipal?: string;
-    sinaisVitais?: { [key: string]: string | number };
-    nhbsSelecionadasIds?: string[];
+    etapaHistorico?: {
+      coletaDados?: string;
+      exameFisico?: {
+        sinaisVitais?: { [key: string]: string | number };
+        resultadosExames?: object;
+        revisaoSistemas?: object;
+      };
+      necessidadesHumanasBasicas?: string[];
+    };
   };
   dataAtualizacao?: Timestamp;
 }
