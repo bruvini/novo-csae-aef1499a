@@ -14,13 +14,13 @@ interface SinaisVitaisFormProps {
   paciente: Paciente;
   dadosEvolucao: Partial<Evolucao>;
   onDadosChange: (novosDados: Partial<Evolucao>) => void;
-  onAlterationsChange: (alterations: { id: string; titulo: string }[]) => void;
+  onAlterationsChange: (alterations: { id: string; titulo: string; nhbIds?: string[] }[]) => void;
 }
 
 const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvolucao, onDadosChange, onAlterationsChange }) => {
     const { sinaisVitais, isLoading } = useSinaisVitais();
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [alterations, setAlterations] = useState<Record<string, { titulo: string }>>({});
+    const [alterations, setAlterations] = useState<Record<string, { titulo: string; nhbIds?: string[] }>>({});
 
     const activeSinaisVitais = useMemo(() => {
         return sinaisVitais.filter(sv => sv.ativo).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
@@ -29,7 +29,7 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
     useEffect(() => {
         const alterationsList = Object.entries(alterations)
             .filter(([, value]) => value && value.titulo)
-            .map(([id, value]) => ({ id, titulo: value.titulo }));
+            .map(([id, value]) => ({ id, titulo: value.titulo, nhbIds: value.nhbIds }));
         onAlterationsChange(alterationsList);
     }, [alterations, onAlterationsChange]);
 
@@ -61,6 +61,7 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
 
         let isWithinAnyRange = false;
         let foundAlert: string | null = null;
+        let foundNhbIds: string[] | undefined = undefined;
 
         if (sinalVital.valoresReferencia) {
             for (const ref of sinalVital.valoresReferencia) {
@@ -90,6 +91,7 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
                     isWithinAnyRange = true;
                     if (ref.representaAlteracao && ref.tituloAlteracao) {
                         foundAlert = ref.tituloAlteracao;
+                        foundNhbIds = ref.nhbIds;
                     }
                     break;
                 }
@@ -102,7 +104,7 @@ const SinaisVitaisForm: React.FC<SinaisVitaisFormProps> = ({ paciente, dadosEvol
         } else {
             setErrors(prev => ({ ...prev, [sinalVital.id!]: '' }));
             if (foundAlert) {
-                setAlterations(prev => ({ ...prev, [sinalVital.id!]: { titulo: foundAlert } }));
+                setAlterations(prev => ({ ...prev, [sinalVital.id!]: { titulo: foundAlert, nhbIds: foundNhbIds } }));
             } else {
                 setAlterations(prev => ({ ...prev, [sinalVital.id!]: { titulo: '' } }));
             }
