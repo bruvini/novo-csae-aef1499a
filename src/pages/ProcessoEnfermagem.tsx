@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import NavigationMenu from '@/components/NavigationMenu';
@@ -106,8 +107,8 @@ const ProcessoEnfermagem = () => {
                     }
                 };
                 delete (dadosParaAvaliar.dadosAvaliacao as any).queixaPrincipal;
-                delete (dadosParaAvaliacao.dadosAvaliacao as any).sinaisVitais;
-                delete (dadosParaAvaliacao.dadosAvaliacao as any).nhbsSelecionadasIds;
+                delete (dadosParaAvaliar.dadosAvaliacao as any).sinaisVitais;
+                delete (dadosParaAvaliar.dadosAvaliacao as any).nhbsSelecionadasIds;
             }
             
             setDadosEvolucao(dadosParaAvaliar);
