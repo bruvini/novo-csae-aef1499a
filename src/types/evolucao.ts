@@ -12,6 +12,7 @@ export interface Evolucao {
   dadosAvaliacao?: {
     queixaPrincipal?: string;
     sinaisVitais?: { [key: string]: string | number };
+    nhbsSelecionadasIds?: string[];
   };
   dataAtualizacao?: Timestamp;
 }
