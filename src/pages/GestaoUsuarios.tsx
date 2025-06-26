@@ -1,19 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, UserCheck } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Users, UserCheck, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
 import ModalDetalhesUsuario from '@/components/gestao-usuarios/ModalDetalhesUsuario';
 import ModalConfirmacaoAprovacao from '@/components/gestao-usuarios/ModalConfirmacaoAprovacao';
+import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import {
   buscarUsuariosAguardando,
   buscarUsuariosAprovados,
   aprovarUsuario,
-  recusarUsuario
+  recusarUsuario,
+  excluirUsuario
 } from '@/services/bancodados';
 import { Usuario } from '@/types/usuario';
 import {
@@ -33,11 +37,16 @@ const GestaoUsuarios = () => {
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   
+  // Estados dos filtros
+  const [textoBusca, setTextoBusca] = useState('');
+  const [filtroFormacao, setFiltroFormacao] = useState('todos');
+  
   // Estados dos modais
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
   const [modalAprovacaoAberto, setModalAprovacaoAberto] = useState(false);
   const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
+  const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
 
   const carregarUsuarios = async () => {
     setCarregando(true);
@@ -65,6 +74,39 @@ const GestaoUsuarios = () => {
     carregarUsuarios();
   }, []);
 
+  // Função para filtrar usuários
+  const filtrarUsuarios = (usuarios: Usuario[]) => {
+    return usuarios.filter(usuario => {
+      // Filtro por texto de busca
+      const nomeCompleto = usuario.dadosPessoais?.nomeCompleto?.toLowerCase() || '';
+      const matricula = usuario.dadosProfissionais?.matricula?.toLowerCase() || '';
+      const numeroCoren = usuario.dadosProfissionais?.numeroCoren?.toLowerCase() || '';
+      const buscaLower = textoBusca.toLowerCase();
+      
+      const matchBusca = textoBusca === '' || 
+        nomeCompleto.includes(buscaLower) || 
+        matricula.includes(buscaLower) || 
+        numeroCoren.includes(buscaLower);
+      
+      // Filtro por formação
+      const matchFormacao = filtroFormacao === 'todos' || 
+        usuario.dadosProfissionais?.formacao === filtroFormacao;
+      
+      return matchBusca && matchFormacao;
+    });
+  };
+
+  // Memoização dos usuários filtrados
+  const usuariosAguardandoFiltrados = useMemo(() => 
+    filtrarUsuarios(usuariosAguardando), 
+    [usuariosAguardando, textoBusca, filtroFormacao]
+  );
+
+  const usuariosAprovadosFiltrados = useMemo(() => 
+    filtrarUsuarios(usuariosAprovados), 
+    [usuariosAprovados, textoBusca, filtroFormacao]
+  );
+
   const handleDetalhes = (usuario: Usuario) => {
     setUsuarioSelecionado(usuario);
     setModalDetalhesAberto(true);
@@ -78,6 +120,11 @@ const GestaoUsuarios = () => {
   const handleRecusar = (usuario: Usuario) => {
     setUsuarioSelecionado(usuario);
     setModalRecusaAberto(true);
+  };
+
+  const handleExcluir = (usuario: Usuario) => {
+    setUsuarioSelecionado(usuario);
+    setModalExclusaoAberto(true);
   };
 
   const confirmarAprovacao = async (isAdmin: boolean) => {
@@ -124,6 +171,28 @@ const GestaoUsuarios = () => {
     }
   };
 
+  const confirmarExclusao = async () => {
+    if (!usuarioSelecionado?.id || !usuarioSelecionado?.uid) return;
+    
+    try {
+      await excluirUsuario(usuarioSelecionado.id, usuarioSelecionado.uid);
+      toast({
+        title: 'Usuário excluído',
+        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi excluído permanentemente.`
+      });
+      setModalExclusaoAberto(false);
+      setUsuarioSelecionado(null);
+      carregarUsuarios();
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir o usuário.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (carregando) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -154,15 +223,57 @@ const GestaoUsuarios = () => {
           </p>
         </div>
 
+        {/* Filtros */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="busca" className="block text-sm font-medium mb-2">
+                  Buscar por nome, matrícula ou COREN
+                </label>
+                <Input
+                  id="busca"
+                  placeholder="Digite para buscar..."
+                  value={textoBusca}
+                  onChange={(e) => setTextoBusca(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="formacao" className="block text-sm font-medium mb-2">
+                  Filtrar por formação
+                </label>
+                <Select value={filtroFormacao} onValueChange={setFiltroFormacao}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma formação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="Enfermeiro">Enfermeiro</SelectItem>
+                    <SelectItem value="Residente de Enfermagem">Residente de Enfermagem</SelectItem>
+                    <SelectItem value="Técnico de Enfermagem">Técnico de Enfermagem</SelectItem>
+                    <SelectItem value="Acadêmico de Enfermagem">Acadêmico de Enfermagem</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="aguardando" className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="aguardando" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
-              Aguardando ({usuariosAguardando.length})
+              Aguardando ({usuariosAguardandoFiltrados.length})
             </TabsTrigger>
             <TabsTrigger value="aprovados" className="flex items-center gap-2">
               <UserCheck className="h-4 w-4" />
-              Aprovados ({usuariosAprovados.length})
+              Aprovados ({usuariosAprovadosFiltrados.length})
             </TabsTrigger>
           </TabsList>
 
@@ -173,11 +284,12 @@ const GestaoUsuarios = () => {
               </CardHeader>
               <CardContent>
                 <TabelaUsuarios
-                  usuarios={usuariosAguardando}
+                  usuarios={usuariosAguardandoFiltrados}
                   tipo="aguardando"
                   onDetalhes={handleDetalhes}
                   onAprovar={handleAprovar}
                   onRecusar={handleRecusar}
+                  onExcluir={handleExcluir}
                 />
               </CardContent>
             </Card>
@@ -190,9 +302,10 @@ const GestaoUsuarios = () => {
               </CardHeader>
               <CardContent>
                 <TabelaUsuarios
-                  usuarios={usuariosAprovados}
+                  usuarios={usuariosAprovadosFiltrados}
                   tipo="aprovados"
                   onDetalhes={handleDetalhes}
+                  onExcluir={handleExcluir}
                 />
               </CardContent>
             </Card>
@@ -217,6 +330,16 @@ const GestaoUsuarios = () => {
           setUsuarioSelecionado(null);
         }}
         onConfirm={confirmarAprovacao}
+        nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''}
+      />
+
+      <ModalConfirmacaoExclusao
+        isOpen={modalExclusaoAberto}
+        onClose={() => {
+          setModalExclusaoAberto(false);
+          setUsuarioSelecionado(null);
+        }}
+        onConfirm={confirmarExclusao}
         nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''}
       />
 

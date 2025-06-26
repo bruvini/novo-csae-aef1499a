@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   getDocs, 
@@ -6,10 +5,12 @@ import {
   where, 
   doc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   orderBy
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { deleteUser } from 'firebase/auth';
+import { db, auth } from '../firebase';
 import { Usuario } from '@/types/usuario';
 
 export async function buscarUsuariosAguardando(): Promise<Usuario[]> {
@@ -90,6 +91,29 @@ export async function recusarUsuario(userId: string): Promise<void> {
     });
   } catch (error) {
     console.error("Erro ao recusar usuário:", error);
+    throw error;
+  }
+}
+
+export async function excluirUsuario(userId: string, uid: string): Promise<void> {
+  try {
+    // Excluir documento do Firestore
+    const userRef = doc(db, 'usuarios', userId);
+    await deleteDoc(userRef);
+    
+    // Tentar excluir do Firebase Authentication
+    // Nota: Esta operação pode falhar se o usuário não estiver autenticado ou não tiver permissões
+    try {
+      const userAuth = auth.currentUser;
+      if (userAuth && userAuth.uid === uid) {
+        await deleteUser(userAuth);
+      }
+    } catch (authError) {
+      console.warn("Não foi possível excluir o usuário do Authentication:", authError);
+      // Continuamos mesmo se não conseguirmos excluir do Auth
+    }
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
     throw error;
   }
 }

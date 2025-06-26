@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Usuario } from '@/types/usuario';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, Check, X } from 'lucide-react';
+import { Eye, Check, X, Trash2 } from 'lucide-react';
 
 interface TabelaUsuariosProps {
   usuarios: Usuario[];
@@ -20,6 +20,7 @@ interface TabelaUsuariosProps {
   onDetalhes: (usuario: Usuario) => void;
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
+  onExcluir: (usuario: Usuario) => void;
 }
 
 const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
@@ -27,7 +28,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   tipo,
   onDetalhes,
   onAprovar,
-  onRecusar
+  onRecusar,
+  onExcluir
 }) => {
   const formatarData = (timestamp: any) => {
     if (!timestamp) return 'Não informado';
@@ -100,6 +102,15 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                       </Button>
                     </>
                   )}
+                  
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onExcluir(usuario)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Excluir
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
