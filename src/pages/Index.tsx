@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HeartPulse } from 'lucide-react';
-
+import { HeartPulse, Users } from 'lucide-react';
 const Index = () => {
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+  return <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex flex-col items-center justify-center flex-1 w-full px-4 py-12">
         <div className="text-center">
           <img src="/logo_csae.png" alt="Logo CSAE Floripa" className="mx-auto h-20 md:h-24 w-auto mb-8" />
@@ -27,18 +24,18 @@ const Index = () => {
               <p className="font-medium">
                 Enquanto isso, você já pode garantir seu acesso futuro fazendo o cadastro!
               </p>
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg" className="bg-csae-green-600 hover:bg-csae-green-700">
                   <Link to="/registrar">Fazer meu cadastro</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       </main>
-      {/* SimpleFooter removed */}
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
