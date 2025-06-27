@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -59,12 +58,32 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
   };
 
   const uploadImagem = async (file: File): Promise<string> => {
-    const timestamp = Date.now();
-    const fileName = `protocolos/${timestamp}_${file.name}`;
-    const storageRef = ref(storage, fileName);
-    
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    try {
+      console.log('Iniciando upload da imagem:', file.name);
+      
+      // Criar uma referência única para o arquivo
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `protocolos/capa_${timestamp}.${fileExtension}`;
+      
+      // Criar referência no Firebase Storage
+      const storageRef = ref(storage, fileName);
+      
+      console.log('Fazendo upload para:', fileName);
+      
+      // Upload do arquivo
+      const snapshot = await uploadBytes(storageRef, file);
+      console.log('Upload concluído:', snapshot);
+      
+      // Obter URL de download
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log('URL de download obtida:', downloadURL);
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('Erro detalhado no upload:', error);
+      throw new Error(`Falha no upload da imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
   };
 
   const validarCamposNhb = (): boolean => {
@@ -198,7 +217,20 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
         // Upload da imagem se fornecida
         let imagemCapaUrl = null;
         if (imagemCapa) {
-          imagemCapaUrl = await uploadImagem(imagemCapa);
+          try {
+            console.log('Iniciando processo de upload da imagem...');
+            imagemCapaUrl = await uploadImagem(imagemCapa);
+            console.log('Upload da imagem concluído com sucesso:', imagemCapaUrl);
+          } catch (error) {
+            console.error('Erro no upload da imagem:', error);
+            toast({
+              title: "Erro no upload",
+              description: `Falha ao fazer upload da imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
         }
 
         // Salvar Protocolo
