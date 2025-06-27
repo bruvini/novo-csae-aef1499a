@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/services/firebase';
 
@@ -159,6 +159,13 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
     return true;
   };
 
+  const convertToFirestoreTimestamp = (dateString: string): Timestamp => {
+    // Criar data local sem conversão de fuso horário
+    const [year, month, day] = dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    return Timestamp.fromDate(localDate);
+  };
+
   const handleSalvar = async () => {
     setLoading(true);
     
@@ -233,13 +240,13 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
           }
         }
 
-        // Salvar Protocolo
+        // Salvar Protocolo com datas corrigidas
         await addDoc(collection(db, 'subconjuntosEnfermagem'), {
           tipoSubconjunto: 'Protocolo_Enfermagem',
           tituloSubconjunto: tituloProtocolo.trim(),
           volumeProtocolo: parseInt(volumeProtocolo),
-          dataPublicacaoProtocolo: new Date(dataPublicacao),
-          dataAtualizacaoProtocolo: dataAtualizacao ? new Date(dataAtualizacao) : null,
+          dataPublicacaoProtocolo: convertToFirestoreTimestamp(dataPublicacao),
+          dataAtualizacaoProtocolo: dataAtualizacao ? convertToFirestoreTimestamp(dataAtualizacao) : null,
           versaoProtocolo: parseFloat(versaoProtocolo),
           urlProtocolo: urlProtocolo.trim(),
           imagemCapaProtocolo: imagemCapaUrl,
