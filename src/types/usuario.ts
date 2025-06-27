@@ -1,5 +1,6 @@
+// src/types/usuario.ts
+import { Timestamp } from 'firebase/firestore';
 
-import { Timestamp, FieldValue } from "firebase/firestore";
 export interface DadosPessoais {
   nomeCompleto: string;
   rg: string;
@@ -10,13 +11,10 @@ export interface DadosPessoais {
   cidade: string;
   uf: string;
   cep: string;
-  lotacao?: string;
-  matricula?: string;
-  observacoes?: string;
 }
 
 export interface DadosProfissionais {
-  formacao: "" | "Enfermeiro" | "Residente de Enfermagem" | "Técnico de Enfermagem" | "Acadêmico de Enfermagem";
+  formacao: string;
   numeroCoren?: string;
   ufCoren?: string;
   dataInicioResidencia?: string;
@@ -28,43 +26,19 @@ export interface DadosProfissionais {
   localCargo?: string;
 }
 
-export interface Log {
-  usuario_afetado: string;
-  acao: "aprovado" | "recusado" | "revogado" | "reativado" | "excluído";
-  quem_realizou: string;
-  data_hora: Timestamp;
-  justificativa?: string;
-}
-
 export interface Usuario {
+  id?: string; // ID do Firestore
+  uid: string; // UID do Auth
+  email: string;
   dadosPessoais: DadosPessoais;
   dadosProfissionais: DadosProfissionais;
-  email: string;
-  uid: string;
-  dataCadastro: Timestamp;
-  statusAcesso: 'Aguardando' | 'Aprovado' | 'Negado' | 'Revogado' | 'Cancelado';
-  tipoUsuario?: 'Administrador' | 'Comum';
-  dataAprovacao?: Timestamp;
-  dataRevogacao?: Timestamp;
-  motivoRevogacao?: string;
-  dataUltimoAcesso?: Timestamp;
-  historico_logs?: Log[];
-  id?: string;
-  termoResponsabilidadeAceito?: boolean;
-  termoResponsabilidadeData: Timestamp | FieldValue;
-  // Legacy properties for backward compatibility
-  nome?: string;
-  sobrenome?: string;
-  ehAdmin?: boolean;
-  gestorConteudos?: boolean;
-  unidade?: string;
-  atuaSMS?: boolean; // Adding this property to resolve Dashboard error
-}
-
-export interface SessaoUsuario {
-  uid: string;
-  email: string;
-  nomeUsuario: string;
-  tipoUsuario: 'Administrador' | 'Comum';
-  usuario: Usuario;
+  termoResponsabilidadeAceito: boolean;
+  termoResponsabilidadeData: Timestamp; // era any
+  ehAdmin: boolean;
+  gestorConteudos: boolean;
+  tipoUsuario: 'Comum' | 'Admin';
+  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado';
+  dataCadastro?: Timestamp; // era any
+  dataRecusaAcesso?: Timestamp; // era any
+  dataLiberacaoAcesso?: Timestamp; // era any
 }
