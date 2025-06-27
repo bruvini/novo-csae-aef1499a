@@ -1,10 +1,13 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HeartPulse, Users } from 'lucide-react';
+import { HeartPulse, Users, BookOpen } from 'lucide-react';
+
 const Index = () => {
-  return <div className="flex flex-col min-h-screen bg-gray-50">
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <main className="flex flex-col items-center justify-center flex-1 w-full px-4 py-12">
         <div className="text-center">
           <img src="/logo_csae.png" alt="Logo CSAE Floripa" className="mx-auto h-20 md:h-24 w-auto mb-8" />
@@ -29,13 +32,24 @@ const Index = () => {
                   <Link to="/registrar">Fazer meu cadastro</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  
+                  <Link to="/gestao-usuarios" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Gestão de Usuários
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline">
+                  <Link to="/gestao-conteudos" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    Gestão de Conteúdos
+                  </Link>
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       </main>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

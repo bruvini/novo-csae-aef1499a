@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
+import GestaoConteudos from "./pages/GestaoConteudos";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/" element={<Index />} />
             <Route path="/registrar" element={<Register />} />
             <Route path="/gestao-usuarios" element={<GestaoUsuarios />} />
+            <Route path="/gestao-conteudos" element={<GestaoConteudos />} />
             <Route path="*" element={<Index />} />
           </Routes>
         </BrowserRouter>
