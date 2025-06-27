@@ -71,3 +71,15 @@ Yes it is!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Configuring Firebase Storage CORS
+
+The project includes a CORS configuration for Firebase Storage. It allows the production domain `https://csae.com.br` and the local development domain `http://localhost:3000` to access the bucket with the methods `GET`, `POST`, `PUT` and `OPTIONS`.
+
+To apply it, install the [Google Cloud SDK](https://cloud.google.com/sdk) and run:
+
+```sh
+./scripts/set-storage-cors.sh
+```
+
+The script uses `gsutil cors set` to apply `scripts/cors.json` to the bucket `gs://csaefloripa.appspot.com`.
