@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { HeartPulse, Users, BookOpen } from 'lucide-react';
+import { HeartPulse } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -27,21 +27,9 @@ const Index = () => {
               <p className="font-medium">
                 Enquanto isso, você já pode garantir seu acesso futuro fazendo o cadastro!
               </p>
-              <div className="pt-4 flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="pt-4 flex justify-center">
                 <Button asChild size="lg" className="bg-csae-green-600 hover:bg-csae-green-700">
                   <Link to="/registrar">Fazer meu cadastro</Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link to="/gestao-usuarios" className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Gestão de Usuários
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link to="/gestao-conteudos" className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    Gestão de Conteúdos
-                  </Link>
                 </Button>
               </div>
             </CardContent>

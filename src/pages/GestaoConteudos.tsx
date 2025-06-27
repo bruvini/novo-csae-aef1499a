@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus } from 'lucide-react';
 import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
+import ModalCadastroDiagnostico from '@/components/gestao-conteudos/ModalCadastroDiagnostico';
+import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
 
 const GestaoConteudos = () => {
   return (
@@ -151,7 +153,7 @@ const GestaoConteudos = () => {
                   </TabsList>
 
                   {/* Sub-aba Subconjuntos */}
-                  <TabsContent value="subconjuntos">
+                  <TabsContent value="subconjuntos" className="space-y-4">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-lg">Subconjuntos</CardTitle>
@@ -165,9 +167,7 @@ const GestaoConteudos = () => {
                         </Tooltip>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Subconjuntos será implementado aqui.
-                        </p>
+                        <TabelaSubconjuntos />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -179,9 +179,7 @@ const GestaoConteudos = () => {
                         <CardTitle className="text-lg">Diagnósticos de Enfermagem</CardTitle>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" className="h-8 w-8">
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                            <ModalCadastroDiagnostico />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Cadastrar Diagnósticos de Enfermagem</p>
@@ -190,7 +188,7 @@ const GestaoConteudos = () => {
                       </CardHeader>
                       <CardContent>
                         <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Diagnósticos de Enfermagem será implementado aqui.
+                          Tabela de Diagnósticos de Enfermagem será implementada aqui.
                         </p>
                       </CardContent>
                     </Card>
