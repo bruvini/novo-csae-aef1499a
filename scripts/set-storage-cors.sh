@@ -17,7 +17,3 @@ set -e
 gsutil cors set "$SCRIPT_DIR/cors.json" "$BUCKET"
 
 echo "CORS configuration applied to $BUCKET"
-
-# Show the current CORS settings for verification
-echo "Current CORS settings:" 
-gsutil cors get "$BUCKET"
