@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,12 +10,19 @@ import { useToast } from '@/hooks/use-toast';
 import { collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/services/firebase';
+import { SubconjuntoEnfermagem, atualizarSubconjunto } from '@/services/bancodados/subconjuntosDB';
 
 interface ModalCadastroSubconjuntoProps {
   onSubconjuntoCadastrado?: () => void;
+  subconjuntoParaEdicao?: SubconjuntoEnfermagem | null;
+  onClose?: () => void;
 }
 
-const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubconjuntoProps) => {
+const ModalCadastroSubconjunto = ({ 
+  onSubconjuntoCadastrado, 
+  subconjuntoParaEdicao = null,
+  onClose 
+}: ModalCadastroSubconjuntoProps) => {
   const [open, setOpen] = useState(false);
   const [tipoSubconjunto, setTipoSubconjunto] = useState<'nhb' | 'protocolo'>('nhb');
   const [loading, setLoading] = useState(false);
@@ -34,6 +41,38 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
   const [urlProtocolo, setUrlProtocolo] = useState('');
   const [imagemCapa, setImagemCapa] = useState<File | null>(null);
 
+  const modoEdicao = !!subconjuntoParaEdicao;
+
+  // Carregar dados para edição
+  useEffect(() => {
+    if (subconjuntoParaEdicao) {
+      setOpen(true);
+      
+      if (subconjuntoParaEdicao.tipoSubconjunto === 'nhb') {
+        setTipoSubconjunto('nhb');
+        setTituloNhb(subconjuntoParaEdicao.tituloSubconjunto);
+        setDescricaoNhb(subconjuntoParaEdicao.descricaoSubconjunto || '');
+      } else {
+        setTipoSubconjunto('protocolo');
+        setTituloProtocolo(subconjuntoParaEdicao.tituloSubconjunto);
+        setVolumeProtocolo(subconjuntoParaEdicao.volumeProtocolo?.toString() || '');
+        setVersaoProtocolo(subconjuntoParaEdicao.versaoProtocolo?.toString() || '');
+        setUrlProtocolo(subconjuntoParaEdicao.urlProtocolo || '');
+        
+        // Formatar datas para o input
+        if (subconjuntoParaEdicao.dataPublicacaoProtocolo) {
+          const dataPublicacaoDate = subconjuntoParaEdicao.dataPublicacaoProtocolo.toDate();
+          setDataPublicacao(dataPublicacaoDate.toISOString().split('T')[0]);
+        }
+        
+        if (subconjuntoParaEdicao.dataAtualizacaoProtocolo) {
+          const dataAtualizacaoDate = subconjuntoParaEdicao.dataAtualizacaoProtocolo.toDate();
+          setDataAtualizacao(dataAtualizacaoDate.toISOString().split('T')[0]);
+        }
+      }
+    }
+  }, [subconjuntoParaEdicao]);
+
   const resetForm = () => {
     setTituloNhb('');
     setDescricaoNhb('');
@@ -47,13 +86,19 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
     setTipoSubconjunto('nhb');
   };
 
-  const verificarDuplicacao = async (tipo: string, titulo: string): Promise<boolean> => {
+  const verificarDuplicacao = async (tipo: string, titulo: string, idParaIgnorar?: string): Promise<boolean> => {
     const q = query(
       collection(db, 'subconjuntosEnfermagem'),
       where('tipoSubconjunto', '==', tipo),
       where('tituloSubconjunto', '==', titulo)
     );
     const querySnapshot = await getDocs(q);
+    
+    // Se estamos editando, ignorar o documento atual
+    if (idParaIgnorar) {
+      return querySnapshot.docs.some(doc => doc.id !== idParaIgnorar);
+    }
+    
     return !querySnapshot.empty;
   };
 
@@ -178,7 +223,7 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
         }
 
         // Verificar duplicação
-        const duplicado = await verificarDuplicacao('nhb', tituloNhb);
+        const duplicado = await verificarDuplicacao('nhb', tituloNhb, modoEdicao ? subconjuntoParaEdicao?.id : undefined);
         if (duplicado) {
           toast({
             title: "Erro de duplicação",
@@ -189,18 +234,32 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
           return;
         }
 
-        // Salvar NHB
-        await addDoc(collection(db, 'subconjuntosEnfermagem'), {
-          tipoSubconjunto: 'nhb',
-          tituloSubconjunto: tituloNhb.trim(),
-          descricaoSubconjunto: descricaoNhb.trim() || null,
-          dataCadastro: new Date(),
-        });
+        if (modoEdicao && subconjuntoParaEdicao) {
+          // Atualizar NHB existente
+          await atualizarSubconjunto(subconjuntoParaEdicao.id, {
+            tipoSubconjunto: 'nhb',
+            tituloSubconjunto: tituloNhb.trim(),
+            descricaoSubconjunto: descricaoNhb.trim() || null,
+          });
 
-        toast({
-          title: "Sucesso",
-          description: "Necessidade Humana Básica cadastrada com sucesso!",
-        });
+          toast({
+            title: "Sucesso",
+            description: "Necessidade Humana Básica atualizada com sucesso!",
+          });
+        } else {
+          // Salvar nova NHB
+          await addDoc(collection(db, 'subconjuntosEnfermagem'), {
+            tipoSubconjunto: 'nhb',
+            tituloSubconjunto: tituloNhb.trim(),
+            descricaoSubconjunto: descricaoNhb.trim() || null,
+            dataCadastro: new Date(),
+          });
+
+          toast({
+            title: "Sucesso",
+            description: "Necessidade Humana Básica cadastrada com sucesso!",
+          });
+        }
 
       } else {
         // Validar campos Protocolo
@@ -210,7 +269,7 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
         }
 
         // Verificar duplicação
-        const duplicado = await verificarDuplicacao('Protocolo_Enfermagem', tituloProtocolo);
+        const duplicado = await verificarDuplicacao('Protocolo_Enfermagem', tituloProtocolo, modoEdicao ? subconjuntoParaEdicao?.id : undefined);
         if (duplicado) {
           toast({
             title: "Erro de duplicação",
@@ -222,7 +281,7 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
         }
 
         // Upload da imagem se fornecida
-        let imagemCapaUrl = null;
+        let imagemCapaUrl = modoEdicao ? subconjuntoParaEdicao?.imagemCapaProtocolo : null;
         if (imagemCapa) {
           try {
             console.log('Iniciando processo de upload da imagem...');
@@ -240,8 +299,7 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
           }
         }
 
-        // Salvar Protocolo com datas corrigidas
-        await addDoc(collection(db, 'subconjuntosEnfermagem'), {
+        const dadosProtocolo = {
           tipoSubconjunto: 'Protocolo_Enfermagem',
           tituloSubconjunto: tituloProtocolo.trim(),
           volumeProtocolo: parseInt(volumeProtocolo),
@@ -250,19 +308,35 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
           versaoProtocolo: parseFloat(versaoProtocolo),
           urlProtocolo: urlProtocolo.trim(),
           imagemCapaProtocolo: imagemCapaUrl,
-          dataCadastro: new Date(),
-        });
+        };
 
-        toast({
-          title: "Sucesso",
-          description: "Protocolo de Enfermagem cadastrado com sucesso!",
-        });
+        if (modoEdicao && subconjuntoParaEdicao) {
+          // Atualizar protocolo existente
+          await atualizarSubconjunto(subconjuntoParaEdicao.id, dadosProtocolo);
+
+          toast({
+            title: "Sucesso",
+            description: "Protocolo de Enfermagem atualizado com sucesso!",
+          });
+        } else {
+          // Salvar novo Protocolo
+          await addDoc(collection(db, 'subconjuntosEnfermagem'), {
+            ...dadosProtocolo,
+            dataCadastro: new Date(),
+          });
+
+          toast({
+            title: "Sucesso",
+            description: "Protocolo de Enfermagem cadastrado com sucesso!",
+          });
+        }
       }
 
       // Resetar formulário e fechar modal
       resetForm();
       setOpen(false);
       onSubconjuntoCadastrado?.();
+      onClose?.();
 
     } catch (error) {
       console.error('Erro ao salvar subconjunto:', error);
@@ -276,16 +350,29 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
     }
   };
 
+  const handleClose = () => {
+    if (modoEdicao) {
+      onClose?.();
+    } else {
+      resetForm();
+      setOpen(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="icon" variant="outline" className="h-8 w-8">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={modoEdicao ? true : open} onOpenChange={modoEdicao ? undefined : setOpen}>
+      {!modoEdicao && (
+        <DialogTrigger asChild>
+          <Button size="icon" variant="outline" className="h-8 w-8">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar Subconjunto</DialogTitle>
+          <DialogTitle>
+            {modoEdicao ? 'Editar Subconjunto' : 'Cadastrar Subconjunto'}
+          </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -296,6 +383,7 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
               value={tipoSubconjunto} 
               onValueChange={(value: 'nhb' | 'protocolo') => setTipoSubconjunto(value)}
               className="flex gap-6"
+              disabled={modoEdicao}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="nhb" id="nhb" />
@@ -410,6 +498,11 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
                   accept="image/*"
                   onChange={(e) => setImagemCapa(e.target.files?.[0] || null)}
                 />
+                {modoEdicao && subconjuntoParaEdicao?.imagemCapaProtocolo && !imagemCapa && (
+                  <p className="text-sm text-gray-600">
+                    Imagem atual: <a href={subconjuntoParaEdicao.imagemCapaProtocolo} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Ver imagem</a>
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -418,16 +511,13 @@ const ModalCadastroSubconjunto = ({ onSubconjuntoCadastrado }: ModalCadastroSubc
           <div className="flex justify-end gap-3 pt-4">
             <Button 
               variant="outline" 
-              onClick={() => {
-                resetForm();
-                setOpen(false);
-              }}
+              onClick={handleClose}
               disabled={loading}
             >
               Cancelar
             </Button>
             <Button onClick={handleSalvar} disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar'}
+              {loading ? 'Salvando...' : modoEdicao ? 'Atualizar' : 'Salvar'}
             </Button>
           </div>
         </div>

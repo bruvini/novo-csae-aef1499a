@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus } from 'lucide-react';
 import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
+import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
 
 const GestaoConteudos = () => {
   return (
@@ -151,7 +152,7 @@ const GestaoConteudos = () => {
                   </TabsList>
 
                   {/* Sub-aba Subconjuntos */}
-                  <TabsContent value="subconjuntos">
+                  <TabsContent value="subconjuntos" className="space-y-4">
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle className="text-lg">Subconjuntos</CardTitle>
@@ -165,9 +166,7 @@ const GestaoConteudos = () => {
                         </Tooltip>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Subconjuntos será implementado aqui.
-                        </p>
+                        <TabelaSubconjuntos />
                       </CardContent>
                     </Card>
                   </TabsContent>
