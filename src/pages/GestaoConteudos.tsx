@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus } from 'lucide-react';
+import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
 
 const GestaoConteudos = () => {
   return (
@@ -156,9 +157,7 @@ const GestaoConteudos = () => {
                         <CardTitle className="text-lg">Subconjuntos</CardTitle>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" className="h-8 w-8">
-                              <Plus className="h-4 w-4" />
-                            </Button>
+                            <ModalCadastroSubconjunto />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>Cadastrar Subconjuntos</p>
