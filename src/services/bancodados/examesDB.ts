@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -9,6 +8,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  where,
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -83,4 +83,46 @@ export const deleteExame = async (id: string) => {
 export const getExamesCount = async (): Promise<number> => {
   const snapshot = await getDocs(collection(db, COLLECTION_NAME));
   return snapshot.size;
+};
+
+export const buscarNomesExamesUnicos = async (): Promise<string[]> => {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const nomes = new Set<string>();
+    
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if (data.nomeExame) {
+        nomes.add(data.nomeExame);
+      }
+    });
+
+    return Array.from(nomes).sort();
+  } catch (error) {
+    console.error('Erro ao buscar nomes de exames únicos:', error);
+    throw error;
+  }
+};
+
+export const buscarExamePorNome = async (nomeExame: string): Promise<Exame | null> => {
+  try {
+    const q = query(
+      collection(db, COLLECTION_NAME),
+      where('nomeExame', '==', nomeExame)
+    );
+    const snapshot = await getDocs(q);
+    
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return {
+        id: doc.id,
+        ...doc.data()
+      } as Exame;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Erro ao buscar exame por nome:', error);
+    throw error;
+  }
 };

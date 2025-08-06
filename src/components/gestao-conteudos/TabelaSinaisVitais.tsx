@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   getSinaisVitais, 
@@ -8,6 +7,7 @@ import {
   type SinalVital,
   type ValorReferenciaVital
 } from '@/services/bancodados/sinaisVitaisDB';
+import { buscarNHBs } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -70,7 +70,8 @@ const TabelaSinaisVitais = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editandoSinal, setEditandoSinal] = useState<SinalVital | null>(null);
   const [salvandoSinal, setSalvandoSinal] = useState(false);
-  
+  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
+
   // Estados do formulário
   const [nomeVital, setNomeVital] = useState('');
   const [descricaoVital, setDescricaoVital] = useState('');
@@ -82,6 +83,18 @@ const TabelaSinaisVitais = () => {
       setSinaisVitais(data);
       setLoading(false);
     });
+
+    // Carregar NHBs disponíveis
+    const carregarNHBs = async () => {
+      try {
+        const nhbs = await buscarNHBs();
+        setNhbOptions(nhbs);
+      } catch (error) {
+        console.error('Erro ao carregar NHBs:', error);
+      }
+    };
+
+    carregarNHBs();
 
     return () => unsubscribe();
   }, []);
@@ -383,11 +396,22 @@ const TabelaSinaisVitais = () => {
 
                         <div>
                           <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
-                          <Input
+                          <Select
                             value={valor.subconjuntoNHBVinculado}
-                            onChange={(e) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', e.target.value)}
-                            placeholder="Subconjunto relacionado"
-                          />
+                            onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione um NHB..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="">Nenhum</SelectItem>
+                              {nhbOptions.map((nhb) => (
+                                <SelectItem key={nhb} value={nhb}>
+                                  {nhb}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </AccordionContent>
                     </AccordionItem>

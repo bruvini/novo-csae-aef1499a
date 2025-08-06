@@ -1,14 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   getExames, 
   addExame, 
   updateExame, 
   deleteExame,
+  buscarNomesExamesUnicos,
+  buscarExamePorNome,
   type Exame,
   type ComponenteExame,
   type ResultadoExame
 } from '@/services/bancodados/examesDB';
+import { buscarNHBs } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -62,6 +64,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Combobox } from '@/components/ui/combobox';
 
 const TabelaExames = () => {
   const [exames, setExames] = useState<Exame[]>([]);
@@ -76,12 +79,31 @@ const TabelaExames = () => {
   const [descricaoExame, setDescricaoExame] = useState('');
   const [tipoExame, setTipoExame] = useState<'Laboratorial' | 'Imagem'>('Laboratorial');
   const [componentes, setComponentes] = useState<ComponenteExame[]>([]);
+  const [nomesExamesUnicos, setNomesExamesUnicos] = useState<string[]>([]);
+  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
 
   useEffect(() => {
     const unsubscribe = getExames((data) => {
       setExames(data);
       setLoading(false);
     });
+
+    // Carregar nomes únicos de exames e NHBs
+    const carregarDados = async () => {
+      try {
+        const [nomesUnicos, nhbs] = await Promise.all([
+          buscarNomesExamesUnicos(),
+          buscarNHBs()
+        ]);
+        
+        setNomesExamesUnicos(nomesUnicos);
+        setNhbOptions(nhbs);
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    };
+
+    carregarDados();
 
     return () => unsubscribe();
   }, []);
@@ -110,6 +132,25 @@ const TabelaExames = () => {
     setComponentes([...exame.componentes]);
     setEditandoExame(exame);
     setSheetOpen(true);
+  };
+
+  const handleNomeExameChange = async (novoNome: string) => {
+    setNomeExame(novoNome);
+    
+    // Se o nome corresponde a um exame existente, carregar seus dados
+    if (nomesExamesUnicos.includes(novoNome)) {
+      try {
+        const exameExistente = await buscarExamePorNome(novoNome);
+        if (exameExistente) {
+          setDescricaoExame(exameExistente.descricaoExame);
+          setTipoExame(exameExistente.tipoExame);
+          setComponentes([...exameExistente.componentes]);
+          toast.info('Dados do exame existente carregados. Você pode adicionar novos componentes.');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do exame:', error);
+      }
+    }
   };
 
   const adicionarComponente = () => {
@@ -227,6 +268,11 @@ const TabelaExames = () => {
     );
   }
 
+  const nomeExameOptions = nomesExamesUnicos.map(nome => ({
+    value: nome,
+    label: nome
+  }));
+
   return (
     <div className="space-y-4">
       {/* Header com busca e botão de adicionar */}
@@ -261,11 +307,17 @@ const TabelaExames = () => {
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
                   <label className="block text-sm font-medium mb-2">Nome *</label>
-                  <Input
+                  <Combobox
+                    options={nomeExameOptions}
                     value={nomeExame}
-                    onChange={(e) => setNomeExame(e.target.value)}
-                    placeholder="Ex: Hemograma Completo"
+                    onValueChange={handleNomeExameChange}
+                    placeholder="Digite ou selecione um exame..."
+                    searchPlaceholder="Buscar exames..."
+                    emptyText="Nenhum exame encontrado."
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Digite um novo nome ou selecione um exame existente para adicionar componentes
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Descrição</label>
@@ -465,11 +517,22 @@ const TabelaExames = () => {
 
                               <div>
                                 <label className="block text-sm font-medium mb-1">Subconjunto NHB Vinculado</label>
-                                <Input
+                                <Select
                                   value={resultado.subconjuntoNHBVinculado}
-                                  onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', e.target.value)}
-                                  placeholder="Subconjunto relacionado"
-                                />
+                                  onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um NHB..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="">Nenhum</SelectItem>
+                                    {nhbOptions.map((nhb) => (
+                                      <SelectItem key={nhb} value={nhb}>
+                                        {nhb}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                             </div>
                           ))}

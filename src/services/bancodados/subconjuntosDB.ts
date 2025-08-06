@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   query, 
@@ -131,4 +130,20 @@ export const escutarSubconjuntos = (
     
     callback(subconjuntos);
   });
+};
+
+export const buscarNHBs = async (): Promise<string[]> => {
+  try {
+    const q = query(
+      collection(db, 'subconjuntosEnfermagem'),
+      where('tipoSubconjunto', '==', 'nhb'),
+      orderBy('tituloSubconjunto')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => doc.data().tituloSubconjunto);
+  } catch (error) {
+    console.error('Erro ao buscar NHBs:', error);
+    throw error;
+  }
 };
