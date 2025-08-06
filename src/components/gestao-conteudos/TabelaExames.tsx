@@ -5,26 +5,30 @@ import {
   addExame, 
   updateExame, 
   deleteExame,
-  buscarNomesExamesUnicos,
-  buscarExamePorNome,
+  getNomesDeExamesUnicos,
   type Exame,
   type ComponenteExame,
   type ResultadoExame
 } from '@/services/bancodados/examesDB';
-import { buscarNHBs } from '@/services/bancodados/subconjuntosDB';
+import { getSubconjuntosNhb } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Combobox } from '@/components/ui/combobox';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import {
   Sheet,
@@ -33,13 +37,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,17 +49,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  Search,
-  Eye
+  Plus,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -74,9 +63,10 @@ const TabelaExames = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editandoExame, setEditandoExame] = useState<Exame | null>(null);
   const [salvandoExame, setSalvandoExame] = useState(false);
-  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
   const [nomesExamesExistentes, setNomesExamesExistentes] = useState<string[]>([]);
-  const [carregandoDados, setCarregandoDados] = useState(false);
+  const [loadingExames, setLoadingExames] = useState(true);
+  const [listaNhb, setListaNhb] = useState<{ id: string; tituloSubconjunto: string }[]>([]);
+  const [loadingNhb, setLoadingNhb] = useState(true);
 
   // Estados do formulário
   const [nomeExame, setNomeExame] = useState('');
@@ -90,21 +80,36 @@ const TabelaExames = () => {
       setLoading(false);
     });
 
-    // Carregar dados auxiliares
-    const carregarDados = async () => {
+    // Buscar nomes de exames existentes
+    const fetchNomes = async () => {
       try {
-        const [nhbs, nomesExames] = await Promise.all([
-          buscarNHBs(),
-          buscarNomesExamesUnicos()
-        ]);
-        setNhbOptions(nhbs);
-        setNomesExamesExistentes(nomesExames);
+        setLoadingExames(true);
+        const nomes = await getNomesDeExamesUnicos();
+        setNomesExamesExistentes(nomes);
       } catch (error) {
-        console.error('Erro ao carregar dados auxiliares:', error);
+        console.error('Erro ao carregar nomes de exames:', error);
+        toast.error('Erro ao carregar lista de exames');
+      } finally {
+        setLoadingExames(false);
       }
     };
 
-    carregarDados();
+    // Buscar subconjuntos NHB
+    const fetchNhb = async () => {
+      try {
+        setLoadingNhb(true);
+        const nhbs = await getSubconjuntosNhb();
+        setListaNhb(nhbs);
+      } catch (error) {
+        console.error('Erro ao carregar NHBs:', error);
+        toast.error('Erro ao carregar lista de NHBs');
+      } finally {
+        setLoadingNhb(false);
+      }
+    };
+
+    fetchNomes();
+    fetchNhb();
 
     return () => unsubscribe();
   }, []);
@@ -135,25 +140,6 @@ const TabelaExames = () => {
     setSheetOpen(true);
   };
 
-  const buscarDadosExamePorNome = async (nome: string) => {
-    if (!nome.trim()) return;
-    
-    setCarregandoDados(true);
-    try {
-      const exameExistente = await buscarExamePorNome(nome.trim());
-      if (exameExistente) {
-        setDescricaoExame(exameExistente.descricaoExame || '');
-        setTipoExame(exameExistente.tipoExame);
-        setComponentes(exameExistente.componentes || []);
-        toast.success('Dados do exame carregados com sucesso!');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dados do exame:', error);
-    } finally {
-      setCarregandoDados(false);
-    }
-  };
-
   const adicionarComponente = () => {
     setComponentes([...componentes, {
       componenteAnalisado: '',
@@ -174,22 +160,21 @@ const TabelaExames = () => {
 
   const adicionarResultado = (componenteIndex: number) => {
     const novosComponentes = [...componentes];
-    const novoResultado: ResultadoExame = {
+    const novoResultado: ResultadoExame = tipoExame === 'Laboratorial' ? {
+      idadeMinima: null,
+      idadeMaxima: null,
+      idadeUnidade: '',
+      criterioSexo: 'Ambos',
+      valorMinimo: null,
+      valorMaximo: null,
+      nomeAlteracao: '',
+      subconjuntoNHBVinculado: ''
+    } : {
+      resultadoClassificatorio: '',
       nomeAlteracao: '',
       subconjuntoNHBVinculado: ''
     };
-
-    if (tipoExame === 'Laboratorial') {
-      novoResultado.idadeMinima = null;
-      novoResultado.idadeMaxima = null;
-      novoResultado.idadeUnidade = '';
-      novoResultado.criterioSexo = 'Ambos';
-      novoResultado.valorMinimo = null;
-      novoResultado.valorMaximo = null;
-    } else {
-      novoResultado.resultadoClassificatorio = '';
-    }
-
+    
     novosComponentes[componenteIndex].resultados.push(novoResultado);
     setComponentes(novosComponentes);
   };
@@ -225,7 +210,6 @@ const TabelaExames = () => {
           ...comp,
           resultados: comp.resultados.map(res => ({
             ...res,
-            // Converter "none" de volta para string vazia ao salvar
             subconjuntoNHBVinculado: res.subconjuntoNHBVinculado === 'none' ? '' : res.subconjuntoNHBVinculado
           }))
         }))
@@ -237,6 +221,9 @@ const TabelaExames = () => {
       } else {
         await addExame(dados);
         toast.success('Exame criado com sucesso!');
+        // Recarregar lista de nomes após adicionar novo exame
+        const nomesAtualizados = await getNomesDeExamesUnicos();
+        setNomesExamesExistentes(nomesAtualizados);
       }
 
       setSheetOpen(false);
@@ -253,6 +240,9 @@ const TabelaExames = () => {
     try {
       await deleteExame(exame.id);
       toast.success('Exame excluído com sucesso!');
+      // Recarregar lista de nomes após excluir exame
+      const nomesAtualizados = await getNomesDeExamesUnicos();
+      setNomesExamesExistentes(nomesAtualizados);
     } catch (error) {
       toast.error('Erro ao excluir exame');
       console.error(error);
@@ -279,16 +269,11 @@ const TabelaExames = () => {
     <div className="space-y-4">
       {/* Header com busca e botão de adicionar */}
       <div className="flex justify-between items-center">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar exames..."
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
+        <Input
+          placeholder="Buscar exames..."
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button onClick={abrirModalCriacao}>
@@ -309,21 +294,22 @@ const TabelaExames = () => {
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
                   <label className="block text-sm font-medium mb-2">Nome do Exame *</label>
-                  <Combobox
-                    options={nomesExamesExistentes.map(nome => ({ value: nome, label: nome }))}
-                    value={nomeExame}
-                    onValueChange={(value) => {
-                      setNomeExame(value);
-                      if (value && nomesExamesExistentes.includes(value)) {
-                        buscarDadosExamePorNome(value);
-                      }
-                    }}
-                    placeholder="Digite ou selecione um exame..."
-                    searchPlaceholder="Buscar exame..."
-                    emptyText="Nenhum exame encontrado"
-                  />
-                  {carregandoDados && (
-                    <p className="text-sm text-muted-foreground mt-1">Carregando dados do exame...</p>
+                  {loadingExames ? (
+                    <Input
+                      value={nomeExame}
+                      onChange={(e) => setNomeExame(e.target.value)}
+                      placeholder="Carregando..."
+                      disabled
+                    />
+                  ) : (
+                    <Combobox
+                      options={nomesExamesExistentes.map(nome => ({ value: nome, label: nome }))}
+                      value={nomeExame}
+                      onValueChange={setNomeExame}
+                      placeholder="Selecione ou digite um novo exame..."
+                      searchPlaceholder="Buscar exame..."
+                      emptyText="Nenhum exame encontrado"
+                    />
                   )}
                 </div>
                 <div>
@@ -337,7 +323,10 @@ const TabelaExames = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Tipo de Exame *</label>
-                  <Select value={tipoExame} onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}>
+                  <Select
+                    value={tipoExame}
+                    onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -359,193 +348,197 @@ const TabelaExames = () => {
                   </Button>
                 </div>
 
-                <Accordion type="multiple" className="w-full">
-                  {componentes.map((componente, componenteIndex) => (
-                    <AccordionItem key={componenteIndex} value={`componente-${componenteIndex}`}>
-                      <AccordionTrigger>
-                        {componente.componenteAnalisado || `Componente ${componenteIndex + 1}`}
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-4">
-                        <div className="flex justify-end">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removerComponente(componenteIndex)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remover Componente
-                          </Button>
-                        </div>
+                {componentes.map((componente, componenteIndex) => (
+                  <div key={componenteIndex} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-md font-semibold">Componente {componenteIndex + 1}</h4>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removerComponente(componenteIndex)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remover
+                      </Button>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Componente Analisado *</label>
-                            <Input
-                              value={componente.componenteAnalisado}
-                              onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
-                              placeholder="Ex: Hemácias"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Unidade de Medida</label>
-                            <Input
-                              value={componente.unidadeMedida}
-                              onChange={(e) => atualizarComponente(componenteIndex, 'unidadeMedida', e.target.value)}
-                              placeholder="Ex: mg/dL"
-                            />
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Componente Analisado *</label>
+                        <Input
+                          value={componente.componenteAnalisado}
+                          onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
+                          placeholder="Ex: Glicose"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Unidade de Medida *</label>
+                        <Input
+                          value={componente.unidadeMedida}
+                          onChange={(e) => atualizarComponente(componenteIndex, 'unidadeMedida', e.target.value)}
+                          placeholder="Ex: mg/dL"
+                        />
+                      </div>
+                    </div>
 
-                        {/* Resultados */}
-                        <div className="space-y-4">
+                    {/* Resultados */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <h5 className="text-sm font-semibold">Resultados de Referência</h5>
+                        <Button 
+                          onClick={() => adicionarResultado(componenteIndex)} 
+                          variant="outline" 
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Resultado
+                        </Button>
+                      </div>
+
+                      {componente.resultados.map((resultado, resultadoIndex) => (
+                        <div key={resultadoIndex} className="border rounded p-3 space-y-3 bg-gray-50">
                           <div className="flex justify-between items-center">
-                            <h4 className="font-medium">Resultados</h4>
+                            <h6 className="text-sm font-medium">Resultado {resultadoIndex + 1}</h6>
                             <Button
-                              onClick={() => adicionarResultado(componenteIndex)}
-                              variant="outline"
+                              variant="destructive"
                               size="sm"
+                              onClick={() => removerResultado(componenteIndex, resultadoIndex)}
                             >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Adicionar Resultado
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Remover
                             </Button>
                           </div>
 
-                          {componente.resultados.map((resultado, resultadoIndex) => (
-                            <div key={resultadoIndex} className="border rounded-lg p-4 space-y-4">
-                              <div className="flex justify-between items-center">
-                                <h5 className="font-medium">
-                                  {resultado.nomeAlteracao || `Resultado ${resultadoIndex + 1}`}
-                                </h5>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => removerResultado(componenteIndex, resultadoIndex)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-
-                              <div>
-                                <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
-                                <Input
-                                  value={resultado.nomeAlteracao}
-                                  onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'nomeAlteracao', e.target.value)}
-                                  placeholder="Ex: Normal"
-                                />
-                              </div>
-
-                              {tipoExame === 'Laboratorial' ? (
-                                <>
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Idade Mínima</label>
-                                      <Input
-                                        type="number"
-                                        value={resultado.idadeMinima || ''}
-                                        onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Idade Máxima</label>
-                                      <Input
-                                        type="number"
-                                        value={resultado.idadeMaxima || ''}
-                                        onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
-                                      />
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
-                                      <Select
-                                        value={resultado.idadeUnidade || ''}
-                                        onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value)}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Selecionar" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="dias">Dias</SelectItem>
-                                          <SelectItem value="meses">Meses</SelectItem>
-                                          <SelectItem value="anos">Anos</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Critério Sexo</label>
-                                      <Select
-                                        value={resultado.criterioSexo || 'Ambos'}
-                                        onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Ambos">Ambos</SelectItem>
-                                          <SelectItem value="Masculino">Masculino</SelectItem>
-                                          <SelectItem value="Feminino">Feminino</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
-                                      <Input
-                                        type="number"
-                                        value={resultado.valorMinimo || ''}
-                                        onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-sm font-medium mb-2">Valor Máximo</label>
-                                      <Input
-                                        type="number"
-                                        value={resultado.valorMaximo || ''}
-                                        onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
-                                      />
-                                    </div>
-                                  </div>
-                                </>
-                              ) : (
+                          {tipoExame === 'Laboratorial' ? (
+                            <>
+                              <div className="grid grid-cols-3 gap-3">
                                 <div>
-                                  <label className="block text-sm font-medium mb-2">Resultado Classificatório</label>
+                                  <label className="block text-xs font-medium mb-1">Idade Mínima</label>
                                   <Input
-                                    value={resultado.resultadoClassificatorio || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
-                                    placeholder="Ex: Normal"
+                                    type="number"
+                                    size="sm"
+                                    value={resultado.idadeMinima || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
-                              )}
-
-                              <div>
-                                <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
-                                <Select
-                                  value={resultado.subconjuntoNHBVinculado || 'none'}
-                                  onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', value)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione um NHB..." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">Nenhum</SelectItem>
-                                    {nhbOptions.map((nhb) => (
-                                      <SelectItem key={nhb} value={nhb}>
-                                        {nhb}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Idade Máxima</label>
+                                  <Input
+                                    type="number"
+                                    size="sm"
+                                    value={resultado.idadeMaxima || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Unidade Idade</label>
+                                  <Select
+                                    value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
+                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                                  >
+                                    <SelectTrigger size="sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="not-specified">Não especificado</SelectItem>
+                                      <SelectItem value="dias">Dias</SelectItem>
+                                      <SelectItem value="meses">Meses</SelectItem>
+                                      <SelectItem value="anos">Anos</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
+
+                              <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Critério Sexo</label>
+                                  <Select
+                                    value={resultado.criterioSexo}
+                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
+                                  >
+                                    <SelectTrigger size="sm">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Ambos">Ambos</SelectItem>
+                                      <SelectItem value="Masculino">Masculino</SelectItem>
+                                      <SelectItem value="Feminino">Feminino</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
+                                  <Input
+                                    type="number"
+                                    size="sm"
+                                    value={resultado.valorMinimo || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Valor Máximo</label>
+                                  <Input
+                                    type="number"
+                                    size="sm"
+                                    value={resultado.valorMaximo || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
+                              <Input
+                                size="sm"
+                                value={resultado.resultadoClassificatorio || ''}
+                                onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
+                                placeholder="Ex: Normal"
+                              />
                             </div>
-                          ))}
+                          )}
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Nome da Alteração</label>
+                              <Input
+                                size="sm"
+                                value={resultado.nomeAlteracao}
+                                onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'nomeAlteracao', e.target.value)}
+                                placeholder="Ex: Normal"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Subconjunto NHB</label>
+                              <Select
+                                value={resultado.subconjuntoNHBVinculado || 'none'}
+                                onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}
+                              >
+                                <SelectTrigger size="sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {loadingNhb ? (
+                                    <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                                  ) : (
+                                    <>
+                                      <SelectItem value="none">Nenhum</SelectItem>
+                                      {listaNhb.map((nhb) => (
+                                        <SelectItem key={nhb.id} value={nhb.tituloSubconjunto}>
+                                          {nhb.tituloSubconjunto}
+                                        </SelectItem>
+                                      ))}
+                                    </>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Botões de ação */}
@@ -583,86 +576,11 @@ const TabelaExames = () => {
             ) : (
               examesFiltrados.map((exame) => (
                 <TableRow key={exame.id}>
-                  <TableCell className="font-medium">
-                    {exame.nomeExame}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={exame.tipoExame === 'Laboratorial' ? 'default' : 'secondary'}>
-                      {exame.tipoExame}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {exame.componentes?.length || 0} componente(s)
-                  </TableCell>
+                  <TableCell className="font-medium">{exame.nomeExame}</TableCell>
+                  <TableCell>{exame.tipoExame}</TableCell>
+                  <TableCell>{exame.componentes?.length || 0} componente(s)</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>{exame.nomeExame}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold mb-2">Descrição:</h4>
-                              <p className="text-muted-foreground">{exame.descricaoExame || 'Sem descrição'}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold mb-2">Tipo:</h4>
-                              <Badge variant={exame.tipoExame === 'Laboratorial' ? 'default' : 'secondary'}>
-                                {exame.tipoExame}
-                              </Badge>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold mb-2">Componentes:</h4>
-                              {exame.componentes?.length === 0 ? (
-                                <p className="text-muted-foreground">Nenhum componente cadastrado</p>
-                              ) : (
-                                <div className="space-y-4">
-                                  {exame.componentes?.map((componente, index) => (
-                                    <div key={index} className="border rounded-lg p-4">
-                                      <div className="flex justify-between items-center mb-2">
-                                        <h5 className="font-medium">{componente.componenteAnalisado}</h5>
-                                        {componente.unidadeMedida && (
-                                          <Badge variant="outline">{componente.unidadeMedida}</Badge>
-                                        )}
-                                      </div>
-                                      {componente.resultados?.length > 0 && (
-                                        <div className="space-y-2">
-                                          <h6 className="text-sm font-medium">Resultados:</h6>
-                                          {componente.resultados.map((resultado, resultIndex) => (
-                                            <div key={resultIndex} className="text-sm bg-muted p-2 rounded">
-                                              <span className="font-medium">{resultado.nomeAlteracao}</span>
-                                              {exame.tipoExame === 'Laboratorial' ? (
-                                                <div className="text-xs text-muted-foreground mt-1">
-                                                  {resultado.valorMinimo || resultado.valorMaximo
-                                                    ? `Valores: ${resultado.valorMinimo || 0} - ${resultado.valorMaximo || '∞'}`
-                                                    : 'Valores não especificados'}
-                                                </div>
-                                              ) : (
-                                                resultado.resultadoClassificatorio && (
-                                                  <div className="text-xs text-muted-foreground mt-1">
-                                                    {resultado.resultadoClassificatorio}
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
                       <Button
                         variant="outline"
                         size="sm"
@@ -671,7 +589,6 @@ const TabelaExames = () => {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
@@ -682,7 +599,7 @@ const TabelaExames = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Tem certeza que deseja excluir o exame "{exame.nomeExame}"? 
+                              Tem certeza que deseja excluir o exame "{exame.nomeExame}"?
                               Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>

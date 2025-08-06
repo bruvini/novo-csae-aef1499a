@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   query, 
@@ -144,6 +145,28 @@ export const buscarNHBs = async (): Promise<string[]> => {
     return querySnapshot.docs.map(doc => doc.data().tituloSubconjunto);
   } catch (error) {
     console.error('Erro ao buscar NHBs:', error);
+    throw error;
+  }
+};
+
+// Nova função para buscar subconjuntos do tipo NHB com id e título
+export const getSubconjuntosNhb = async (): Promise<{ id: string; tituloSubconjunto: string }[]> => {
+  try {
+    const q = query(
+      collection(db, 'subconjuntosEnfermagem'),
+      where('tipoSubconjunto', '==', 'nhb'),
+      orderBy('tituloSubconjunto')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const nhbs = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      tituloSubconjunto: doc.data().tituloSubconjunto
+    }));
+    
+    return nhbs;
+  } catch (error) {
+    console.error('Erro ao buscar subconjuntos NHB:', error);
     throw error;
   }
 };

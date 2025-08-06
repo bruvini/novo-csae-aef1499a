@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   addDoc, 
@@ -123,6 +124,19 @@ export const buscarExamePorNome = async (nomeExame: string): Promise<Exame | nul
     return null;
   } catch (error) {
     console.error('Erro ao buscar exame por nome:', error);
+    throw error;
+  }
+};
+
+// Nova função para buscar nomes únicos de exames
+export const getNomesDeExamesUnicos = async (): Promise<string[]> => {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+    const nomes = snapshot.docs.map(doc => doc.data().nomeExame);
+    // Usa um Set para garantir que a lista contenha apenas valores únicos
+    return [...new Set(nomes)].sort();
+  } catch (error) {
+    console.error('Erro ao buscar nomes de exames únicos:', error);
     throw error;
   }
 };

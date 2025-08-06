@@ -8,7 +8,7 @@ import {
   type SinalVital,
   type ValorReferenciaVital
 } from '@/services/bancodados/sinaisVitaisDB';
-import { buscarNHBs } from '@/services/bancodados/subconjuntosDB';
+import { getSubconjuntosNhb } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -60,7 +60,8 @@ const TabelaSinaisVitais = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editandoSinalVital, setEditandoSinalVital] = useState<SinalVital | null>(null);
   const [salvandoSinalVital, setSalvandoSinalVital] = useState(false);
-  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
+  const [listaNhb, setListaNhb] = useState<{ id: string; tituloSubconjunto: string }[]>([]);
+  const [loadingNhb, setLoadingNhb] = useState(true);
 
   // Estados do formulário
   const [sinalVitalNome, setSinalVitalNome] = useState('');
@@ -74,16 +75,21 @@ const TabelaSinaisVitais = () => {
       setLoading(false);
     });
 
-    const carregarNHBs = async () => {
+    // Buscar subconjuntos NHB
+    const fetchNhb = async () => {
       try {
-        const nhbs = await buscarNHBs();
-        setNhbOptions(nhbs);
+        setLoadingNhb(true);
+        const nhbs = await getSubconjuntosNhb();
+        setListaNhb(nhbs);
       } catch (error) {
         console.error('Erro ao carregar NHBs:', error);
+        toast.error('Erro ao carregar lista de NHBs');
+      } finally {
+        setLoadingNhb(false);
       }
     };
 
-    carregarNHBs();
+    fetchNhb();
 
     return () => unsubscribe();
   }, []);
@@ -384,12 +390,18 @@ const TabelaSinaisVitais = () => {
                           <SelectValue placeholder="Selecione um NHB..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Nenhum</SelectItem>
-                          {nhbOptions.map((nhb) => (
-                            <SelectItem key={nhb} value={nhb}>
-                              {nhb}
-                            </SelectItem>
-                          ))}
+                          {loadingNhb ? (
+                            <SelectItem value="loading" disabled>Carregando...</SelectItem>
+                          ) : (
+                            <>
+                              <SelectItem value="none">Nenhum</SelectItem>
+                              {listaNhb.map((nhb) => (
+                                <SelectItem key={nhb.id} value={nhb.tituloSubconjunto}>
+                                  {nhb.tituloSubconjunto}
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
