@@ -116,7 +116,7 @@ const TabelaSinaisVitais = () => {
     setValoresReferencia([...valoresReferencia, {
       idadeMinima: null,
       idadeMaxima: null,
-      idadeUnidade: '',
+      idadeUnidade: 'not-specified',
       criterioSexo: 'Ambos',
       criterioCondicao: '',
       valorMinimo: null,
@@ -148,7 +148,10 @@ const TabelaSinaisVitais = () => {
         sinalVitalNome: nomeVital.trim(),
         sinalVitalDescricao: descricaoVital.trim(),
         unidadeMedida: unidadeMedida.trim(),
-        valoresDeReferencia: valoresReferencia
+        valoresDeReferencia: valoresReferencia.map(valor => ({
+          ...valor,
+          idadeUnidade: valor.idadeUnidade === 'not-specified' ? '' : valor.idadeUnidade
+        }))
       };
 
       if (editandoSinal) {
@@ -305,14 +308,14 @@ const TabelaSinaisVitais = () => {
                           <div>
                             <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
                             <Select
-                              value={valor.idadeUnidade}
+                              value={valor.idadeUnidade || 'not-specified'}
                               onValueChange={(value) => atualizarValorReferencia(index, 'idadeUnidade', value)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecionar" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="">Não especificado</SelectItem>
+                                <SelectItem value="not-specified">Não especificado</SelectItem>
                                 <SelectItem value="dias">Dias</SelectItem>
                                 <SelectItem value="meses">Meses</SelectItem>
                                 <SelectItem value="anos">Anos</SelectItem>
