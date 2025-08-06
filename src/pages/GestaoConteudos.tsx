@@ -1,13 +1,13 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus } from 'lucide-react';
-import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
-import ModalCadastroDiagnostico from '@/components/gestao-conteudos/ModalCadastroDiagnostico';
 import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
 import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
+import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 
 const GestaoConteudos = () => {
   return (
@@ -23,6 +23,9 @@ const GestaoConteudos = () => {
           </p>
         </div>
 
+        {/* Indicadores */}
+        <IndicadoresConteudo />
+
         {/* Bloco de Orientações */}
         <Card className="shadow-md">
           <CardHeader>
@@ -31,18 +34,6 @@ const GestaoConteudos = () => {
           <CardContent>
             <p className="text-gray-600">
               Em desenvolvimento. Esta área será destinada à explicação do uso dos conteúdos nesta ferramenta.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Bloco de Indicadores */}
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-xl text-csae-green-700">Indicadores</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">
-              Indicadores em desenvolvimento.
             </p>
           </CardContent>
         </Card>
@@ -56,8 +47,9 @@ const GestaoConteudos = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="exame-fisico" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="exame-fisico">Exame Físico</TabsTrigger>
+                <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
                 <TabsTrigger value="diagnosticos">Diagnósticos de Enfermagem</TabsTrigger>
               </TabsList>
 
@@ -142,6 +134,11 @@ const GestaoConteudos = () => {
                     </Card>
                   </TabsContent>
                 </Tabs>
+              </TabsContent>
+
+              {/* Aba Subconjuntos */}
+              <TabsContent value="subconjuntos" className="space-y-6">
+                <TabelaSubconjuntos />
               </TabsContent>
 
               {/* Aba Diagnósticos de Enfermagem */}

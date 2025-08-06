@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   getDiagnosticos, 
@@ -53,10 +52,12 @@ import {
   Trash2, 
   X, 
   PlusCircle,
-  Search 
+  Search,
+  Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import ModalVisualizarDiagnostico from './ModalVisualizarDiagnostico';
 
 const TabelaDiagnosticos = () => {
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([]);
@@ -65,6 +66,12 @@ const TabelaDiagnosticos = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editandoDiagnostico, setEditandoDiagnostico] = useState<Diagnostico | null>(null);
   const [salvandoDiagnostico, setSalvandoDiagnostico] = useState(false);
+  
+  // Estado para modal de visualização
+  const [modalVisualizacao, setModalVisualizacao] = useState<{
+    open: boolean;
+    diagnostico: Diagnostico | null;
+  }>({ open: false, diagnostico: null });
   
   // Estados do formulário
   const [tituloDiagnostico, setTituloDiagnostico] = useState('');
@@ -111,6 +118,14 @@ const TabelaDiagnosticos = () => {
     setResultadosEsperados([...diagnostico.resultadosEsperados]);
     setEditandoDiagnostico(diagnostico);
     setSheetOpen(true);
+  };
+
+  const abrirModalVisualizacao = (diagnostico: Diagnostico) => {
+    setModalVisualizacao({ open: true, diagnostico });
+  };
+
+  const fecharModalVisualizacao = () => {
+    setModalVisualizacao({ open: false, diagnostico: null });
   };
 
   const adicionarSubconjunto = () => {
@@ -512,7 +527,7 @@ const TabelaDiagnosticos = () => {
               <TableHead>Título do Diagnóstico</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Subconjuntos</TableHead>
-              <TableHead className="w-32">Ações</TableHead>
+              <TableHead className="w-40">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -543,18 +558,28 @@ const TabelaDiagnosticos = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => abrirModalVisualizacao(diagnostico)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => abrirModalEdicao(diagnostico)}
+                        className="h-8 w-8 p-0"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
+                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -585,6 +610,13 @@ const TabelaDiagnosticos = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Modal de Visualização */}
+      <ModalVisualizarDiagnostico
+        diagnostico={modalVisualizacao.diagnostico}
+        open={modalVisualizacao.open}
+        onClose={fecharModalVisualizacao}
+      />
     </div>
   );
 };
