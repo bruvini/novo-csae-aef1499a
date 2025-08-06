@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   getExames, 
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { 
   Table, 
   TableBody, 
@@ -64,7 +66,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Combobox } from '@/components/ui/combobox';
 
 const TabelaExames = () => {
   const [exames, setExames] = useState<Exame[]>([]);
@@ -73,14 +74,15 @@ const TabelaExames = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editandoExame, setEditandoExame] = useState<Exame | null>(null);
   const [salvandoExame, setSalvandoExame] = useState(false);
-  
+  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
+  const [nomesExamesExistentes, setNomesExamesExistentes] = useState<string[]>([]);
+  const [carregandoDados, setCarregandoDados] = useState(false);
+
   // Estados do formulário
   const [nomeExame, setNomeExame] = useState('');
   const [descricaoExame, setDescricaoExame] = useState('');
   const [tipoExame, setTipoExame] = useState<'Laboratorial' | 'Imagem'>('Laboratorial');
   const [componentes, setComponentes] = useState<ComponenteExame[]>([]);
-  const [nomesExamesUnicos, setNomesExamesUnicos] = useState<string[]>([]);
-  const [nhbOptions, setNhbOptions] = useState<string[]>([]);
 
   useEffect(() => {
     const unsubscribe = getExames((data) => {
@@ -88,18 +90,17 @@ const TabelaExames = () => {
       setLoading(false);
     });
 
-    // Carregar nomes únicos de exames e NHBs
+    // Carregar dados auxiliares
     const carregarDados = async () => {
       try {
-        const [nomesUnicos, nhbs] = await Promise.all([
-          buscarNomesExamesUnicos(),
-          buscarNHBs()
+        const [nhbs, nomesExames] = await Promise.all([
+          buscarNHBs(),
+          buscarNomesExamesUnicos()
         ]);
-        
-        setNomesExamesUnicos(nomesUnicos);
         setNhbOptions(nhbs);
+        setNomesExamesExistentes(nomesExames);
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar dados auxiliares:', error);
       }
     };
 
@@ -129,27 +130,27 @@ const TabelaExames = () => {
     setNomeExame(exame.nomeExame);
     setDescricaoExame(exame.descricaoExame);
     setTipoExame(exame.tipoExame);
-    setComponentes([...exame.componentes]);
+    setComponentes(exame.componentes || []);
     setEditandoExame(exame);
     setSheetOpen(true);
   };
 
-  const handleNomeExameChange = async (novoNome: string) => {
-    setNomeExame(novoNome);
+  const buscarDadosExamePorNome = async (nome: string) => {
+    if (!nome.trim()) return;
     
-    // Se o nome corresponde a um exame existente, carregar seus dados
-    if (nomesExamesUnicos.includes(novoNome)) {
-      try {
-        const exameExistente = await buscarExamePorNome(novoNome);
-        if (exameExistente) {
-          setDescricaoExame(exameExistente.descricaoExame);
-          setTipoExame(exameExistente.tipoExame);
-          setComponentes([...exameExistente.componentes]);
-          toast.info('Dados do exame existente carregados. Você pode adicionar novos componentes.');
-        }
-      } catch (error) {
-        console.error('Erro ao carregar dados do exame:', error);
+    setCarregandoDados(true);
+    try {
+      const exameExistente = await buscarExamePorNome(nome.trim());
+      if (exameExistente) {
+        setDescricaoExame(exameExistente.descricaoExame || '');
+        setTipoExame(exameExistente.tipoExame);
+        setComponentes(exameExistente.componentes || []);
+        toast.success('Dados do exame carregados com sucesso!');
       }
+    } catch (error) {
+      console.error('Erro ao buscar dados do exame:', error);
+    } finally {
+      setCarregandoDados(false);
     }
   };
 
@@ -177,7 +178,7 @@ const TabelaExames = () => {
       nomeAlteracao: '',
       subconjuntoNHBVinculado: ''
     };
-    
+
     if (tipoExame === 'Laboratorial') {
       novoResultado.idadeMinima = null;
       novoResultado.idadeMaxima = null;
@@ -188,15 +189,14 @@ const TabelaExames = () => {
     } else {
       novoResultado.resultadoClassificatorio = '';
     }
-    
+
     novosComponentes[componenteIndex].resultados.push(novoResultado);
     setComponentes(novosComponentes);
   };
 
   const removerResultado = (componenteIndex: number, resultadoIndex: number) => {
     const novosComponentes = [...componentes];
-    novosComponentes[componenteIndex].resultados = 
-      novosComponentes[componenteIndex].resultados.filter((_, i) => i !== resultadoIndex);
+    novosComponentes[componenteIndex].resultados = novosComponentes[componenteIndex].resultados.filter((_, i) => i !== resultadoIndex);
     setComponentes(novosComponentes);
   };
 
@@ -221,7 +221,14 @@ const TabelaExames = () => {
         nomeExame: nomeExame.trim(),
         descricaoExame: descricaoExame.trim(),
         tipoExame,
-        componentes
+        componentes: componentes.map(comp => ({
+          ...comp,
+          resultados: comp.resultados.map(res => ({
+            ...res,
+            // Converter "none" de volta para string vazia ao salvar
+            subconjuntoNHBVinculado: res.subconjuntoNHBVinculado === 'none' ? '' : res.subconjuntoNHBVinculado
+          }))
+        }))
       };
 
       if (editandoExame) {
@@ -268,11 +275,6 @@ const TabelaExames = () => {
     );
   }
 
-  const nomeExameOptions = nomesExamesUnicos.map(nome => ({
-    value: nome,
-    label: nome
-  }));
-
   return (
     <div className="space-y-4">
       {/* Header com busca e botão de adicionar */}
@@ -294,7 +296,7 @@ const TabelaExames = () => {
               Cadastrar Exame
             </Button>
           </SheetTrigger>
-          <SheetContent className="w-full sm:max-w-4xl max-h-screen overflow-y-auto">
+          <SheetContent className="w-full sm:max-w-6xl max-h-screen overflow-y-auto">
             <SheetHeader>
               <SheetTitle>
                 {editandoExame ? 'Editar Exame' : 'Novo Exame'}
@@ -306,18 +308,23 @@ const TabelaExames = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nome *</label>
+                  <label className="block text-sm font-medium mb-2">Nome do Exame *</label>
                   <Combobox
-                    options={nomeExameOptions}
+                    options={nomesExamesExistentes.map(nome => ({ value: nome, label: nome }))}
                     value={nomeExame}
-                    onValueChange={handleNomeExameChange}
+                    onValueChange={(value) => {
+                      setNomeExame(value);
+                      if (value && nomesExamesExistentes.includes(value)) {
+                        buscarDadosExamePorNome(value);
+                      }
+                    }}
                     placeholder="Digite ou selecione um exame..."
-                    searchPlaceholder="Buscar exames..."
-                    emptyText="Nenhum exame encontrado."
+                    searchPlaceholder="Buscar exame..."
+                    emptyText="Nenhum exame encontrado"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Digite um novo nome ou selecione um exame existente para adicionar componentes
-                  </p>
+                  {carregandoDados && (
+                    <p className="text-sm text-muted-foreground mt-1">Carregando dados do exame...</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Descrição</label>
@@ -329,11 +336,8 @@ const TabelaExames = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tipo de Exame</label>
-                  <Select
-                    value={tipoExame}
-                    onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}
-                  >
+                  <label className="block text-sm font-medium mb-2">Tipo de Exame *</label>
+                  <Select value={tipoExame} onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -375,11 +379,11 @@ const TabelaExames = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium mb-2">Componente Analisado</label>
+                            <label className="block text-sm font-medium mb-2">Componente Analisado *</label>
                             <Input
                               value={componente.componenteAnalisado}
                               onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
-                              placeholder="Ex: Hemoglobina"
+                              placeholder="Ex: Hemácias"
                             />
                           </div>
                           <div>
@@ -387,13 +391,13 @@ const TabelaExames = () => {
                             <Input
                               value={componente.unidadeMedida}
                               onChange={(e) => atualizarComponente(componenteIndex, 'unidadeMedida', e.target.value)}
-                              placeholder="Ex: g/dL"
+                              placeholder="Ex: mg/dL"
                             />
                           </div>
                         </div>
 
-                        {/* Resultados do Componente */}
-                        <div className="space-y-3">
+                        {/* Resultados */}
+                        <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <h4 className="font-medium">Resultados</h4>
                             <Button
@@ -407,9 +411,11 @@ const TabelaExames = () => {
                           </div>
 
                           {componente.resultados.map((resultado, resultadoIndex) => (
-                            <div key={resultadoIndex} className="border rounded-lg p-4 space-y-3">
+                            <div key={resultadoIndex} className="border rounded-lg p-4 space-y-4">
                               <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Resultado {resultadoIndex + 1}</span>
+                                <h5 className="font-medium">
+                                  {resultado.nomeAlteracao || `Resultado ${resultadoIndex + 1}`}
+                                </h5>
                                 <Button
                                   variant="destructive"
                                   size="sm"
@@ -420,7 +426,7 @@ const TabelaExames = () => {
                               </div>
 
                               <div>
-                                <label className="block text-sm font-medium mb-1">Nome da Alteração</label>
+                                <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
                                 <Input
                                   value={resultado.nomeAlteracao}
                                   onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'nomeAlteracao', e.target.value)}
@@ -432,7 +438,7 @@ const TabelaExames = () => {
                                 <>
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Idade Mínima</label>
+                                      <label className="block text-sm font-medium mb-2">Idade Mínima</label>
                                       <Input
                                         type="number"
                                         value={resultado.idadeMinima || ''}
@@ -440,7 +446,7 @@ const TabelaExames = () => {
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Idade Máxima</label>
+                                      <label className="block text-sm font-medium mb-2">Idade Máxima</label>
                                       <Input
                                         type="number"
                                         value={resultado.idadeMaxima || ''}
@@ -451,7 +457,7 @@ const TabelaExames = () => {
 
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Unidade de Idade</label>
+                                      <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
                                       <Select
                                         value={resultado.idadeUnidade || ''}
                                         onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value)}
@@ -460,7 +466,6 @@ const TabelaExames = () => {
                                           <SelectValue placeholder="Selecionar" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="">Não especificado</SelectItem>
                                           <SelectItem value="dias">Dias</SelectItem>
                                           <SelectItem value="meses">Meses</SelectItem>
                                           <SelectItem value="anos">Anos</SelectItem>
@@ -468,7 +473,7 @@ const TabelaExames = () => {
                                       </Select>
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Critério Sexo</label>
+                                      <label className="block text-sm font-medium mb-2">Critério Sexo</label>
                                       <Select
                                         value={resultado.criterioSexo || 'Ambos'}
                                         onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
@@ -487,7 +492,7 @@ const TabelaExames = () => {
 
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Valor Mínimo</label>
+                                      <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
                                       <Input
                                         type="number"
                                         value={resultado.valorMinimo || ''}
@@ -495,7 +500,7 @@ const TabelaExames = () => {
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium mb-1">Valor Máximo</label>
+                                      <label className="block text-sm font-medium mb-2">Valor Máximo</label>
                                       <Input
                                         type="number"
                                         value={resultado.valorMaximo || ''}
@@ -506,7 +511,7 @@ const TabelaExames = () => {
                                 </>
                               ) : (
                                 <div>
-                                  <label className="block text-sm font-medium mb-1">Resultado Classificatório</label>
+                                  <label className="block text-sm font-medium mb-2">Resultado Classificatório</label>
                                   <Input
                                     value={resultado.resultadoClassificatorio || ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
@@ -516,16 +521,16 @@ const TabelaExames = () => {
                               )}
 
                               <div>
-                                <label className="block text-sm font-medium mb-1">Subconjunto NHB Vinculado</label>
+                                <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
                                 <Select
-                                  value={resultado.subconjuntoNHBVinculado}
+                                  value={resultado.subconjuntoNHBVinculado || 'none'}
                                   onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', value)}
                                 >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Selecione um NHB..." />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Nenhum</SelectItem>
+                                    <SelectItem value="none">Nenhum</SelectItem>
                                     {nhbOptions.map((nhb) => (
                                       <SelectItem key={nhb} value={nhb}>
                                         {nhb}
@@ -564,13 +569,14 @@ const TabelaExames = () => {
             <TableRow>
               <TableHead>Nome do Exame</TableHead>
               <TableHead>Tipo</TableHead>
+              <TableHead>Componentes</TableHead>
               <TableHead className="w-40">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {examesFiltrados.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   {filtro ? 'Nenhum exame encontrado' : 'Nenhum exame cadastrado'}
                 </TableCell>
               </TableRow>
@@ -586,6 +592,9 @@ const TabelaExames = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    {exame.componentes?.length || 0} componente(s)
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-1">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -593,11 +602,15 @@ const TabelaExames = () => {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>{exame.nomeExame}</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-4">
+                            <div>
+                              <h4 className="font-semibold mb-2">Descrição:</h4>
+                              <p className="text-muted-foreground">{exame.descricaoExame || 'Sem descrição'}</p>
+                            </div>
                             <div>
                               <h4 className="font-semibold mb-2">Tipo:</h4>
                               <Badge variant={exame.tipoExame === 'Laboratorial' ? 'default' : 'secondary'}>
@@ -605,62 +618,45 @@ const TabelaExames = () => {
                               </Badge>
                             </div>
                             <div>
-                              <h4 className="font-semibold mb-2">Descrição:</h4>
-                              <p className="text-muted-foreground">{exame.descricaoExame || 'Sem descrição'}</p>
-                            </div>
-                            <div>
                               <h4 className="font-semibold mb-2">Componentes:</h4>
-                              {exame.componentes.length === 0 ? (
+                              {exame.componentes?.length === 0 ? (
                                 <p className="text-muted-foreground">Nenhum componente cadastrado</p>
                               ) : (
-                                <Accordion type="multiple" className="w-full">
-                                  {exame.componentes.map((componente, index) => (
-                                    <AccordionItem key={index} value={`comp-${index}`}>
-                                      <AccordionTrigger>
-                                        {componente.componenteAnalisado} ({componente.unidadeMedida})
-                                      </AccordionTrigger>
-                                      <AccordionContent>
+                                <div className="space-y-4">
+                                  {exame.componentes?.map((componente, index) => (
+                                    <div key={index} className="border rounded-lg p-4">
+                                      <div className="flex justify-between items-center mb-2">
+                                        <h5 className="font-medium">{componente.componenteAnalisado}</h5>
+                                        {componente.unidadeMedida && (
+                                          <Badge variant="outline">{componente.unidadeMedida}</Badge>
+                                        )}
+                                      </div>
+                                      {componente.resultados?.length > 0 && (
                                         <div className="space-y-2">
-                                          {componente.resultados.map((resultado, rIndex) => (
-                                            <div key={rIndex} className="border rounded-lg p-3">
-                                              <h5 className="font-medium mb-2">{resultado.nomeAlteracao}</h5>
-                                              <div className="text-sm space-y-1">
-                                                {exame.tipoExame === 'Laboratorial' ? (
-                                                  <>
-                                                    <div>
-                                                      <span className="font-medium">Faixa etária:</span>{' '}
-                                                      {resultado.idadeMinima || resultado.idadeMaxima
-                                                        ? `${resultado.idadeMinima || 0} - ${resultado.idadeMaxima || '∞'} ${resultado.idadeUnidade}`
-                                                        : 'Não especificada'}
-                                                    </div>
-                                                    <div>
-                                                      <span className="font-medium">Sexo:</span> {resultado.criterioSexo}
-                                                    </div>
-                                                    <div>
-                                                      <span className="font-medium">Valores:</span>{' '}
-                                                      {resultado.valorMinimo || resultado.valorMaximo
-                                                        ? `${resultado.valorMinimo || 0} - ${resultado.valorMaximo || '∞'}`
-                                                        : 'Não especificados'}
-                                                    </div>
-                                                  </>
-                                                ) : (
-                                                  <div>
-                                                    <span className="font-medium">Resultado:</span> {resultado.resultadoClassificatorio}
+                                          <h6 className="text-sm font-medium">Resultados:</h6>
+                                          {componente.resultados.map((resultado, resultIndex) => (
+                                            <div key={resultIndex} className="text-sm bg-muted p-2 rounded">
+                                              <span className="font-medium">{resultado.nomeAlteracao}</span>
+                                              {exame.tipoExame === 'Laboratorial' ? (
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                  {resultado.valorMinimo || resultado.valorMaximo
+                                                    ? `Valores: ${resultado.valorMinimo || 0} - ${resultado.valorMaximo || '∞'}`
+                                                    : 'Valores não especificados'}
+                                                </div>
+                                              ) : (
+                                                resultado.resultadoClassificatorio && (
+                                                  <div className="text-xs text-muted-foreground mt-1">
+                                                    {resultado.resultadoClassificatorio}
                                                   </div>
-                                                )}
-                                                {resultado.subconjuntoNHBVinculado && (
-                                                  <div>
-                                                    <span className="font-medium">Subconjunto:</span> {resultado.subconjuntoNHBVinculado}
-                                                  </div>
-                                                )}
-                                              </div>
+                                                )
+                                              )}
                                             </div>
                                           ))}
                                         </div>
-                                      </AccordionContent>
-                                    </AccordionItem>
+                                      )}
+                                    </div>
                                   ))}
-                                </Accordion>
+                                </div>
                               )}
                             </div>
                           </div>
