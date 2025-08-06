@@ -11,15 +11,20 @@ import { buscarNHBs } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import {
   Sheet,
@@ -28,13 +33,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,18 +45,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  X, 
-  Search,
-  Eye
+  Plus,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -68,13 +57,13 @@ const TabelaSinaisVitais = () => {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editandoSinal, setEditandoSinal] = useState<SinalVital | null>(null);
-  const [salvandoSinal, setSalvandoSinal] = useState(false);
+  const [editandoSinalVital, setEditandoSinalVital] = useState<SinalVital | null>(null);
+  const [salvandoSinalVital, setSalvandoSinalVital] = useState(false);
   const [nhbOptions, setNhbOptions] = useState<string[]>([]);
 
   // Estados do formulário
-  const [nomeVital, setNomeVital] = useState('');
-  const [descricaoVital, setDescricaoVital] = useState('');
+  const [sinalVitalNome, setSinalVitalNome] = useState('');
+  const [sinalVitalDescricao, setSinalVitalDescricao] = useState('');
   const [unidadeMedida, setUnidadeMedida] = useState('');
   const [valoresReferencia, setValoresReferencia] = useState<ValorReferenciaVital[]>([]);
 
@@ -84,7 +73,6 @@ const TabelaSinaisVitais = () => {
       setLoading(false);
     });
 
-    // Carregar NHBs disponíveis
     const carregarNHBs = async () => {
       try {
         const nhbs = await buscarNHBs();
@@ -99,16 +87,16 @@ const TabelaSinaisVitais = () => {
     return () => unsubscribe();
   }, []);
 
-  const sinaisFiltrados = sinaisVitais.filter(sinal =>
+  const sinaisVitaisFiltrados = sinaisVitais.filter(sinal =>
     sinal.sinalVitalNome.toLowerCase().includes(filtro.toLowerCase())
   );
 
   const limparFormulario = () => {
-    setNomeVital('');
-    setDescricaoVital('');
+    setSinalVitalNome('');
+    setSinalVitalDescricao('');
     setUnidadeMedida('');
     setValoresReferencia([]);
-    setEditandoSinal(null);
+    setEditandoSinalVital(null);
   };
 
   const abrirModalCriacao = () => {
@@ -117,15 +105,11 @@ const TabelaSinaisVitais = () => {
   };
 
   const abrirModalEdicao = (sinal: SinalVital) => {
-    setNomeVital(sinal.sinalVitalNome);
-    setDescricaoVital(sinal.sinalVitalDescricao);
+    setSinalVitalNome(sinal.sinalVitalNome);
+    setSinalVitalDescricao(sinal.sinalVitalDescricao);
     setUnidadeMedida(sinal.unidadeMedida);
-    // Convert empty strings to 'not-specified' for UI display
-    setValoresReferencia(sinal.valoresDeReferencia.map(valor => ({
-      ...valor,
-      idadeUnidade: valor.idadeUnidade === '' ? 'not-specified' : valor.idadeUnidade
-    })));
-    setEditandoSinal(sinal);
+    setValoresReferencia(sinal.valoresDeReferencia || []);
+    setEditandoSinalVital(sinal);
     setSheetOpen(true);
   };
 
@@ -149,30 +133,34 @@ const TabelaSinaisVitais = () => {
 
   const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaVital, valor: any) => {
     const novosValores = [...valoresReferencia];
+    if (campo === 'idadeUnidade' && valor === '') {
+      valor = 'not-specified';
+    }
     novosValores[index] = { ...novosValores[index], [campo]: valor };
     setValoresReferencia(novosValores);
   };
 
-  const salvarSinal = async () => {
-    if (!nomeVital.trim() || !unidadeMedida.trim()) {
-      toast.error('Nome e unidade de medida são obrigatórios');
+  const salvarSinalVital = async () => {
+    if (!sinalVitalNome.trim() || !unidadeMedida.trim()) {
+      toast.error('Nome e Unidade de Medida são obrigatórios');
       return;
     }
 
-    setSalvandoSinal(true);
+    setSalvandoSinalVital(true);
     try {
       const dados = {
-        sinalVitalNome: nomeVital.trim(),
-        sinalVitalDescricao: descricaoVital.trim(),
+        sinalVitalNome: sinalVitalNome.trim(),
+        sinalVitalDescricao: sinalVitalDescricao.trim(),
         unidadeMedida: unidadeMedida.trim(),
-        valoresDeReferencia: valoresReferencia.map(valor => ({
-          ...valor,
-          idadeUnidade: valor.idadeUnidade === 'not-specified' ? '' : valor.idadeUnidade
+        valoresDeReferencia: valoresReferencia.map(vr => ({
+          ...vr,
+          idadeUnidade: vr.idadeUnidade === 'not-specified' ? '' : vr.idadeUnidade,
+          subconjuntoNHBVinculado: vr.subconjuntoNHBVinculado === 'none' ? '' : vr.subconjuntoNHBVinculado
         }))
       };
 
-      if (editandoSinal) {
-        await updateSinalVital(editandoSinal.id, dados);
+      if (editandoSinalVital) {
+        await updateSinalVital(editandoSinalVital.id, dados);
         toast.success('Sinal vital atualizado com sucesso!');
       } else {
         await addSinalVital(dados);
@@ -185,11 +173,11 @@ const TabelaSinaisVitais = () => {
       toast.error('Erro ao salvar sinal vital');
       console.error(error);
     } finally {
-      setSalvandoSinal(false);
+      setSalvandoSinalVital(false);
     }
   };
 
-  const excluirSinal = async (sinal: SinalVital) => {
+  const excluirSinalVital = async (sinal: SinalVital) => {
     try {
       await deleteSinalVital(sinal.id);
       toast.success('Sinal vital excluído com sucesso!');
@@ -219,16 +207,11 @@ const TabelaSinaisVitais = () => {
     <div className="space-y-4">
       {/* Header com busca e botão de adicionar */}
       <div className="flex justify-between items-center">
-        <div className="relative w-64">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Buscar sinais vitais..."
-            value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
+        <Input
+          placeholder="Buscar sinais vitais..."
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value)}
+        />
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <Button onClick={abrirModalCriacao}>
@@ -239,7 +222,7 @@ const TabelaSinaisVitais = () => {
           <SheetContent className="w-full sm:max-w-4xl max-h-screen overflow-y-auto">
             <SheetHeader>
               <SheetTitle>
-                {editandoSinal ? 'Editar Sinal Vital' : 'Novo Sinal Vital'}
+                {editandoSinalVital ? 'Editar Sinal Vital' : 'Novo Sinal Vital'}
               </SheetTitle>
             </SheetHeader>
 
@@ -248,18 +231,18 @@ const TabelaSinaisVitais = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Dados do Sinal Vital</h3>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nome *</label>
+                  <label className="block text-sm font-medium mb-2">Nome do Sinal Vital *</label>
                   <Input
-                    value={nomeVital}
-                    onChange={(e) => setNomeVital(e.target.value)}
+                    value={sinalVitalNome}
+                    onChange={(e) => setSinalVitalNome(e.target.value)}
                     placeholder="Ex: Pressão Arterial"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Descrição</label>
                   <Textarea
-                    value={descricaoVital}
-                    onChange={(e) => setDescricaoVital(e.target.value)}
+                    value={sinalVitalDescricao}
+                    onChange={(e) => setSinalVitalDescricao(e.target.value)}
                     placeholder="Descrição do sinal vital..."
                     rows={3}
                   />
@@ -274,7 +257,7 @@ const TabelaSinaisVitais = () => {
                 </div>
               </div>
 
-              {/* Valores de Referência */}
+              {/* Valores de referência */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-semibold">Valores de Referência</h3>
@@ -284,154 +267,147 @@ const TabelaSinaisVitais = () => {
                   </Button>
                 </div>
 
-                <Accordion type="multiple" className="w-full">
-                  {valoresReferencia.map((valor, index) => (
-                    <AccordionItem key={index} value={`valor-${index}`}>
-                      <AccordionTrigger>
-                        {valor.nomeAlteracao || `Valor ${index + 1}`}
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-4">
-                        <div className="flex justify-end">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => removerValorReferencia(index)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Remover
-                          </Button>
-                        </div>
+                {valoresReferencia.map((valor, index) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-md font-semibold">Valor de Referência {index + 1}</h4>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removerValorReferencia(index)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Remover
+                      </Button>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Idade Mínima</label>
-                            <Input
-                              type="number"
-                              value={valor.idadeMinima || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Idade Máxima</label>
-                            <Input
-                              type="number"
-                              value={valor.idadeMaxima || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
-                            />
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Idade Mínima</label>
+                        <Input
+                          type="number"
+                          value={valor.idadeMinima || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Idade Máxima</label>
+                        <Input
+                          type="number"
+                          value={valor.idadeMaxima || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
-                            <Select
-                              value={valor.idadeUnidade || 'not-specified'}
-                              onValueChange={(value) => atualizarValorReferencia(index, 'idadeUnidade', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecionar" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="not-specified">Não especificado</SelectItem>
-                                <SelectItem value="dias">Dias</SelectItem>
-                                <SelectItem value="meses">Meses</SelectItem>
-                                <SelectItem value="anos">Anos</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Critério Sexo</label>
-                            <Select
-                              value={valor.criterioSexo}
-                              onValueChange={(value) => atualizarValorReferencia(index, 'criterioSexo', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Ambos">Ambos</SelectItem>
-                                <SelectItem value="Masculino">Masculino</SelectItem>
-                                <SelectItem value="Feminino">Feminino</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
+                      <Select
+                        value={valor.idadeUnidade === '' ? 'not-specified' : valor.idadeUnidade}
+                        onValueChange={(value) => atualizarValorReferencia(index, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar unidade" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="not-specified">Não especificado</SelectItem>
+                          <SelectItem value="dias">Dias</SelectItem>
+                          <SelectItem value="meses">Meses</SelectItem>
+                          <SelectItem value="anos">Anos</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Critério Sexo</label>
+                      <Select
+                        value={valor.criterioSexo}
+                        onValueChange={(value) => atualizarValorReferencia(index, 'criterioSexo', value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Ambos">Ambos</SelectItem>
+                          <SelectItem value="Masculino">Masculino</SelectItem>
+                          <SelectItem value="Feminino">Feminino</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Critério Condição</label>
-                          <Input
-                            value={valor.criterioCondicao}
-                            onChange={(e) => atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
-                            placeholder="Ex: Em repouso"
-                          />
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Condição</label>
+                    <Input
+                      value={valor.criterioCondicao}
+                      onChange={(e) => atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
+                      placeholder="Ex: Jejum"
+                    />
+                  </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
-                            <Input
-                              type="number"
-                              value={valor.valorMinimo || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-2">Valor Máximo</label>
-                            <Input
-                              type="number"
-                              value={valor.valorMaximo || ''}
-                              onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
-                            />
-                          </div>
-                        </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
+                      <Input
+                        type="number"
+                        value={valor.valorMinimo || ''}
+                        onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Valor Máximo</label>
+                      <Input
+                        type="number"
+                        value={valor.valorMaximo || ''}
+                        onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
+                      />
+                    </div>
+                  </div>
 
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
-                          <Input
-                            value={valor.nomeAlteracao}
-                            onChange={(e) => atualizarValorReferencia(index, 'nomeAlteracao', e.target.value)}
-                            placeholder="Ex: Normotensão"
-                          />
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
+                    <Input
+                      value={valor.nomeAlteracao}
+                      onChange={(e) => atualizarValorReferencia(index, 'nomeAlteracao', e.target.value)}
+                      placeholder="Ex: Normal"
+                    />
+                  </div>
 
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
-                          <Select
-                            value={valor.subconjuntoNHBVinculado}
-                            onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione um NHB..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="">Nenhum</SelectItem>
-                              {nhbOptions.map((nhb) => (
-                                <SelectItem key={nhb} value={nhb}>
-                                  {nhb}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-
-              {/* Botões de ação */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={salvarSinal} disabled={salvandoSinal}>
-                  {salvandoSinal ? 'Salvando...' : 'Salvar Sinal Vital'}
-                </Button>
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
+                    <Select
+                      value={valor.subconjuntoNHBVinculado || 'none'}
+                      onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um NHB..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {nhbOptions.map((nhb) => (
+                          <SelectItem key={nhb} value={nhb}>
+                            {nhb}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
             </div>
-          </SheetContent>
-        </Sheet>
-      </div>
+
+            {/* Botões de ação */}
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setSheetOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={salvarSinalVital} disabled={salvandoSinalVital}>
+                {salvandoSinalVital ? 'Salvando...' : 'Salvar Sinal Vital'}
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Tabela */}
       <div className="border rounded-lg">
@@ -440,89 +416,25 @@ const TabelaSinaisVitais = () => {
             <TableRow>
               <TableHead>Nome do Sinal Vital</TableHead>
               <TableHead>Unidade de Medida</TableHead>
+              <TableHead>Valores de Referência</TableHead>
               <TableHead className="w-40">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sinaisFiltrados.length === 0 ? (
+            {sinaisVitaisFiltrados.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                   {filtro ? 'Nenhum sinal vital encontrado' : 'Nenhum sinal vital cadastrado'}
                 </TableCell>
               </TableRow>
             ) : (
-              sinaisFiltrados.map((sinal) => (
+              sinaisVitaisFiltrados.map((sinal) => (
                 <TableRow key={sinal.id}>
-                  <TableCell className="font-medium">
-                    {sinal.sinalVitalNome}
-                  </TableCell>
-                  <TableCell>
-                    {sinal.unidadeMedida}
-                  </TableCell>
+                  <TableCell className="font-medium">{sinal.sinalVitalNome}</TableCell>
+                  <TableCell>{sinal.unidadeMedida}</TableCell>
+                  <TableCell>{sinal.valoresDeReferencia?.length || 0} valor(es)</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>{sinal.sinalVitalNome}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold mb-2">Descrição:</h4>
-                              <p className="text-muted-foreground">{sinal.sinalVitalDescricao || 'Sem descrição'}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold mb-2">Unidade de Medida:</h4>
-                              <Badge variant="secondary">{sinal.unidadeMedida}</Badge>
-                            </div>
-                            <div>
-                              <h4 className="font-semibold mb-2">Valores de Referência:</h4>
-                              {sinal.valoresDeReferencia.length === 0 ? (
-                                <p className="text-muted-foreground">Nenhum valor de referência cadastrado</p>
-                              ) : (
-                                <div className="space-y-3">
-                                  {sinal.valoresDeReferencia.map((valor, index) => (
-                                    <div key={index} className="border rounded-lg p-4">
-                                      <h5 className="font-medium mb-2">{valor.nomeAlteracao}</h5>
-                                      <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                          <span className="font-medium">Faixa etária:</span>{' '}
-                                          {valor.idadeMinima || valor.idadeMaxima
-                                            ? `${valor.idadeMinima || 0} - ${valor.idadeMaxima || '∞'} ${valor.idadeUnidade}`
-                                            : 'Não especificada'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Sexo:</span> {valor.criterioSexo}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Condição:</span> {valor.criterioCondicao || 'Não especificada'}
-                                        </div>
-                                        <div>
-                                          <span className="font-medium">Valores:</span>{' '}
-                                          {valor.valorMinimo || valor.valorMaximo
-                                            ? `${valor.valorMinimo || 0} - ${valor.valorMaximo || '∞'}`
-                                            : 'Não especificados'}
-                                        </div>
-                                        {valor.subconjuntoNHBVinculado && (
-                                          <div className="col-span-2">
-                                            <span className="font-medium">Subconjunto:</span> {valor.subconjuntoNHBVinculado}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                      
                       <Button
                         variant="outline"
                         size="sm"
@@ -531,7 +443,6 @@ const TabelaSinaisVitais = () => {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
@@ -542,14 +453,14 @@ const TabelaSinaisVitais = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Tem certeza que deseja excluir o sinal vital "{sinal.sinalVitalNome}"? 
+                              Tem certeza que deseja excluir o sinal vital "{sinal.sinalVitalNome}"?
                               Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => excluirSinal(sinal)}
+                              onClick={() => excluirSinalVital(sinal)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Excluir
