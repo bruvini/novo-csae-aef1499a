@@ -1,30 +1,40 @@
 
+
 // Re-export all the functions from specific database modules
 export * from './usuariosDB';
 export * from './gestaoUsuariosDB';
 export * from './subconjuntosDB';
 
-// Explicit re-exports from diagnosticosDB to avoid conflicts
-export {
+// Explicit type re-exports from diagnosticosDB to avoid conflicts
+export type {
   MaterialApoio as DiagnosticoMaterialApoio,
   IntervencaoEnfermagem,
   ResultadoEsperado as DiagnosticoResultadoEsperado,
   SubconjuntoVinculado,
-  DiagnosticoEnfermagem,
+  DiagnosticoEnfermagem
+} from './diagnosticosDB';
+
+// Function re-exports from diagnosticosDB
+export {
   verificarDiagnosticoDuplicado,
   uploadMaterialApoio,
   salvarDiagnostico
 } from './diagnosticosDB';
 
-// Explicit re-exports from rolEnfermagemDB to avoid conflicts
-export {
+// Explicit type re-exports from rolEnfermagemDB to avoid conflicts
+export type {
   MaterialApoio as RolMaterialApoio,
   Intervencao,
   ResultadoEsperado as RolResultadoEsperado,
   Subconjunto,
-  Diagnostico,
+  Diagnostico
+} from './rolEnfermagemDB';
+
+// Function re-exports from rolEnfermagemDB
+export {
   getDiagnosticos,
   addDiagnostico,
   updateDiagnostico,
   deleteDiagnostico
 } from './rolEnfermagemDB';
+
