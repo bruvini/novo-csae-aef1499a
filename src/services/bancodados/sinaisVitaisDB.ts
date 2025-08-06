@@ -16,7 +16,7 @@ import { db } from '../firebase';
 export interface ValorReferenciaVital {
   idadeMinima: number | null;
   idadeMaxima: number | null;
-  idadeUnidade: 'dias' | 'meses' | 'anos' | '';
+  idadeUnidade: 'dias' | 'meses' | 'anos' | '' | 'not-specified';
   criterioSexo: 'Masculino' | 'Feminino' | 'Ambos';
   criterioCondicao: string;
   valorMinimo: number | null;

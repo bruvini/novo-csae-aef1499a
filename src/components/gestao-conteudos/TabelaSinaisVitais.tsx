@@ -107,7 +107,11 @@ const TabelaSinaisVitais = () => {
     setNomeVital(sinal.sinalVitalNome);
     setDescricaoVital(sinal.sinalVitalDescricao);
     setUnidadeMedida(sinal.unidadeMedida);
-    setValoresReferencia([...sinal.valoresDeReferencia]);
+    // Convert empty strings to 'not-specified' for UI display
+    setValoresReferencia(sinal.valoresDeReferencia.map(valor => ({
+      ...valor,
+      idadeUnidade: valor.idadeUnidade === '' ? 'not-specified' : valor.idadeUnidade
+    })));
     setEditandoSinal(sinal);
     setSheetOpen(true);
   };
