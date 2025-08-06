@@ -3,3 +3,4 @@ export * from './usuariosDB';
 export * from './gestaoUsuariosDB';
 export * from './subconjuntosDB';
 export * from './diagnosticosDB';
+export * from './rolEnfermagemDB';

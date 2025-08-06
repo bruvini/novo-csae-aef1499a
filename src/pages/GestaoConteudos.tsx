@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +7,7 @@ import { Plus } from 'lucide-react';
 import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
 import ModalCadastroDiagnostico from '@/components/gestao-conteudos/ModalCadastroDiagnostico';
 import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
+import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
 
 const GestaoConteudos = () => {
   return (
@@ -145,55 +145,8 @@ const GestaoConteudos = () => {
               </TabsContent>
 
               {/* Aba Diagnósticos de Enfermagem */}
-              <TabsContent value="diagnosticos" className="space-y-4">
-                <Tabs defaultValue="subconjuntos" orientation="horizontal">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
-                    <TabsTrigger value="diagnosticos-enfermagem">Diagnósticos</TabsTrigger>
-                  </TabsList>
-
-                  {/* Sub-aba Subconjuntos */}
-                  <TabsContent value="subconjuntos" className="space-y-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Subconjuntos</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ModalCadastroSubconjunto />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Subconjuntos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </CardHeader>
-                      <CardContent>
-                        <TabelaSubconjuntos />
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Sub-aba Diagnósticos de Enfermagem */}
-                  <TabsContent value="diagnosticos-enfermagem">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Diagnósticos de Enfermagem</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ModalCadastroDiagnostico />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Diagnósticos de Enfermagem</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Tabela de Diagnósticos de Enfermagem será implementada aqui.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
+              <TabsContent value="diagnosticos" className="space-y-6">
+                <TabelaDiagnosticos />
               </TabsContent>
             </Tabs>
           </CardContent>
