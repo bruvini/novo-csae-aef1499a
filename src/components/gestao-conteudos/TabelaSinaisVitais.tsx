@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   getSinaisVitais, 
@@ -133,8 +134,8 @@ const TabelaSinaisVitais = () => {
 
   const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaVital, valor: any) => {
     const novosValores = [...valoresReferencia];
-    if (campo === 'idadeUnidade' && valor === '') {
-      valor = 'not-specified';
+    if (campo === 'idadeUnidade' && valor === 'not-specified') {
+      valor = '';
     }
     novosValores[index] = { ...novosValores[index], [campo]: valor };
     setValoresReferencia(novosValores);
@@ -303,111 +304,112 @@ const TabelaSinaisVitais = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">Unidade de Idade</label>
+                        <Select
+                          value={valor.idadeUnidade === '' ? 'not-specified' : valor.idadeUnidade}
+                          onValueChange={(value) => atualizarValorReferencia(index, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecionar unidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="not-specified">Não especificado</SelectItem>
+                            <SelectItem value="dias">Dias</SelectItem>
+                            <SelectItem value="meses">Meses</SelectItem>
+                            <SelectItem value="anos">Anos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Critério Sexo</label>
+                        <Select
+                          value={valor.criterioSexo}
+                          onValueChange={(value) => atualizarValorReferencia(index, 'criterioSexo', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Ambos">Ambos</SelectItem>
+                            <SelectItem value="Masculino">Masculino</SelectItem>
+                            <SelectItem value="Feminino">Feminino</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Condição</label>
+                      <Input
+                        value={valor.criterioCondicao}
+                        onChange={(e) => atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
+                        placeholder="Ex: Jejum"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
+                        <Input
+                          type="number"
+                          value={valor.valorMinimo || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Valor Máximo</label>
+                        <Input
+                          type="number"
+                          value={valor.valorMaximo || ''}
+                          onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
+                      <Input
+                        value={valor.nomeAlteracao}
+                        onChange={(e) => atualizarValorReferencia(index, 'nomeAlteracao', e.target.value)}
+                        placeholder="Ex: Normal"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
                       <Select
-                        value={valor.idadeUnidade === '' ? 'not-specified' : valor.idadeUnidade}
-                        onValueChange={(value) => atualizarValorReferencia(index, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                        value={valor.subconjuntoNHBVinculado || 'none'}
+                        onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecionar unidade" />
+                          <SelectValue placeholder="Selecione um NHB..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="not-specified">Não especificado</SelectItem>
-                          <SelectItem value="dias">Dias</SelectItem>
-                          <SelectItem value="meses">Meses</SelectItem>
-                          <SelectItem value="anos">Anos</SelectItem>
+                          <SelectItem value="none">Nenhum</SelectItem>
+                          {nhbOptions.map((nhb) => (
+                            <SelectItem key={nhb} value={nhb}>
+                              {nhb}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Critério Sexo</label>
-                      <Select
-                        value={valor.criterioSexo}
-                        onValueChange={(value) => atualizarValorReferencia(index, 'criterioSexo', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Ambos">Ambos</SelectItem>
-                          <SelectItem value="Masculino">Masculino</SelectItem>
-                          <SelectItem value="Feminino">Feminino</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Condição</label>
-                    <Input
-                      value={valor.criterioCondicao}
-                      onChange={(e) => atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
-                      placeholder="Ex: Jejum"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
-                      <Input
-                        type="number"
-                        value={valor.valorMinimo || ''}
-                        onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Valor Máximo</label>
-                      <Input
-                        type="number"
-                        value={valor.valorMaximo || ''}
-                        onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
-                    <Input
-                      value={valor.nomeAlteracao}
-                      onChange={(e) => atualizarValorReferencia(index, 'nomeAlteracao', e.target.value)}
-                      placeholder="Ex: Normal"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
-                    <Select
-                      value={valor.subconjuntoNHBVinculado || 'none'}
-                      onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um NHB..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Nenhum</SelectItem>
-                        {nhbOptions.map((nhb) => (
-                          <SelectItem key={nhb} value={nhb}>
-                            {nhb}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ))}
+              {/* Botões de ação */}
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setSheetOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={salvarSinalVital} disabled={salvandoSinalVital}>
+                  {salvandoSinalVital ? 'Salvando...' : 'Salvar Sinal Vital'}
+                </Button>
+              </div>
             </div>
-
-            {/* Botões de ação */}
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setSheetOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={salvarSinalVital} disabled={salvandoSinalVital}>
-                {salvandoSinalVital ? 'Salvando...' : 'Salvar Sinal Vital'}
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+          </SheetContent>
+        </Sheet>
+      </div>
 
       {/* Tabela */}
       <div className="border rounded-lg">
