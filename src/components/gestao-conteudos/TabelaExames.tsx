@@ -416,7 +416,7 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Idade Mínima</label>
                                   <Input
                                     type="number"
-                                    size="sm"
+                                    className="h-8"
                                     value={resultado.idadeMinima || ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
                                   />
@@ -425,7 +425,7 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Idade Máxima</label>
                                   <Input
                                     type="number"
-                                    size="sm"
+                                    className="h-8"
                                     value={resultado.idadeMaxima || ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
                                   />
@@ -436,7 +436,7 @@ const TabelaExames = () => {
                                     value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
                                     onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
                                   >
-                                    <SelectTrigger size="sm">
+                                    <SelectTrigger className="h-8">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -456,7 +456,7 @@ const TabelaExames = () => {
                                     value={resultado.criterioSexo}
                                     onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
                                   >
-                                    <SelectTrigger size="sm">
+                                    <SelectTrigger className="h-8">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -470,7 +470,7 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
                                   <Input
                                     type="number"
-                                    size="sm"
+                                    className="h-8"
                                     value={resultado.valorMinimo || ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
                                   />
@@ -479,7 +479,7 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Valor Máximo</label>
                                   <Input
                                     type="number"
-                                    size="sm"
+                                    className="h-8"
                                     value={resultado.valorMaximo || ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
                                   />
@@ -490,7 +490,7 @@ const TabelaExames = () => {
                             <div>
                               <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
                               <Input
-                                size="sm"
+                                className="h-8"
                                 value={resultado.resultadoClassificatorio || ''}
                                 onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
                                 placeholder="Ex: Normal"
@@ -502,7 +502,7 @@ const TabelaExames = () => {
                             <div>
                               <label className="block text-xs font-medium mb-1">Nome da Alteração</label>
                               <Input
-                                size="sm"
+                                className="h-8"
                                 value={resultado.nomeAlteracao}
                                 onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'nomeAlteracao', e.target.value)}
                                 placeholder="Ex: Normal"
@@ -514,7 +514,7 @@ const TabelaExames = () => {
                                 value={resultado.subconjuntoNHBVinculado || 'none'}
                                 onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}
                               >
-                                <SelectTrigger size="sm">
+                                <SelectTrigger className="h-8">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
