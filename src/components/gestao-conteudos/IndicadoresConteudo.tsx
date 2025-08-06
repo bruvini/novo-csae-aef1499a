@@ -2,16 +2,20 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, FileText, Target, Zap } from 'lucide-react';
+import { Activity, FileText, Target, Zap, Heart, TestTube } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { getSinaisVitaisCount } from '@/services/bancodados/sinaisVitaisDB';
+import { getExamesCount } from '@/services/bancodados/examesDB';
 
 interface IndicadoresData {
   totalDiagnosticos: number;
   totalSubconjuntos: number;
   totalResultados: number;
   totalIntervencoes: number;
+  totalSinaisVitais: number;
+  totalExames: number;
 }
 
 const IndicadoresConteudo = () => {
@@ -30,6 +34,12 @@ const IndicadoresConteudo = () => {
         // Buscar total de subconjuntos
         const subconjuntosSnapshot = await getDocs(collection(db, 'subconjuntosEnfermagem'));
         const totalSubconjuntos = subconjuntosSnapshot.size;
+
+        // Buscar total de sinais vitais
+        const totalSinaisVitais = await getSinaisVitaisCount();
+
+        // Buscar total de exames
+        const totalExames = await getExamesCount();
 
         // Calcular total de resultados esperados e intervenções
         let totalResultados = 0;
@@ -52,7 +62,9 @@ const IndicadoresConteudo = () => {
           totalDiagnosticos,
           totalSubconjuntos,
           totalResultados,
-          totalIntervencoes
+          totalIntervencoes,
+          totalSinaisVitais,
+          totalExames
         });
       } catch (error) {
         console.error('Erro ao carregar indicadores:', error);
@@ -66,8 +78,8 @@ const IndicadoresConteudo = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[...Array(4)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+        {[...Array(6)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -85,7 +97,7 @@ const IndicadoresConteudo = () => {
 
   if (!indicadores) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <Card>
           <CardContent className="p-6">
             <p className="text-center text-muted-foreground">
@@ -125,11 +137,25 @@ const IndicadoresConteudo = () => {
       description: "Intervenções cadastradas",
       icon: Zap,
       color: "text-purple-600"
+    },
+    {
+      title: "Total de Sinais Vitais",
+      value: indicadores.totalSinaisVitais,
+      description: "Sinais vitais cadastrados",
+      icon: Heart,
+      color: "text-red-600"
+    },
+    {
+      title: "Total de Exames",
+      value: indicadores.totalExames,
+      description: "Exames cadastrados",
+      icon: TestTube,
+      color: "text-cyan-600"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (
