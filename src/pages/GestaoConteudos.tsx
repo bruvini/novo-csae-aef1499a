@@ -2,12 +2,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus } from 'lucide-react';
-import ModalCadastroSubconjunto from '@/components/gestao-conteudos/ModalCadastroSubconjunto';
-import ModalCadastroDiagnostico from '@/components/gestao-conteudos/ModalCadastroDiagnostico';
 import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
+import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
+import TabelaSinaisVitais from '@/components/gestao-conteudos/TabelaSinaisVitais';
+import TabelaExames from '@/components/gestao-conteudos/TabelaExames';
+import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 
 const GestaoConteudos = () => {
   return (
@@ -23,6 +22,9 @@ const GestaoConteudos = () => {
           </p>
         </div>
 
+        {/* Indicadores */}
+        <IndicadoresConteudo />
+
         {/* Bloco de Orientações */}
         <Card className="shadow-md">
           <CardHeader>
@@ -31,18 +33,6 @@ const GestaoConteudos = () => {
           <CardContent>
             <p className="text-gray-600">
               Em desenvolvimento. Esta área será destinada à explicação do uso dos conteúdos nesta ferramenta.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Bloco de Indicadores */}
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="text-xl text-csae-green-700">Indicadores</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600">
-              Indicadores em desenvolvimento.
             </p>
           </CardContent>
         </Card>
@@ -56,40 +46,28 @@ const GestaoConteudos = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="exame-fisico" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="exame-fisico">Exame Físico</TabsTrigger>
+                <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
                 <TabsTrigger value="diagnosticos">Diagnósticos de Enfermagem</TabsTrigger>
               </TabsList>
 
               {/* Aba Exame Físico */}
               <TabsContent value="exame-fisico" className="space-y-4">
                 <Tabs defaultValue="sinais-vitais" orientation="horizontal">
-                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
                     <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
                     <TabsTrigger value="exames-diagnosticos">Exames Diagnósticos</TabsTrigger>
-                    <TabsTrigger value="sistemas-corpo">Sistemas do Corpo Humano</TabsTrigger>
                   </TabsList>
 
                   {/* Sub-aba Sinais Vitais */}
                   <TabsContent value="sinais-vitais">
                     <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
+                      <CardHeader>
                         <CardTitle className="text-lg">Sinais Vitais</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" className="h-8 w-8">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar SSVV</p>
-                          </TooltipContent>
-                        </Tooltip>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Sinais Vitais será implementado aqui.
-                        </p>
+                        <TabelaSinaisVitais />
                       </CardContent>
                     </Card>
                   </TabsContent>
@@ -97,103 +75,25 @@ const GestaoConteudos = () => {
                   {/* Sub-aba Exames Diagnósticos */}
                   <TabsContent value="exames-diagnosticos">
                     <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
+                      <CardHeader>
                         <CardTitle className="text-lg">Exames Diagnósticos</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" className="h-8 w-8">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Exames</p>
-                          </TooltipContent>
-                        </Tooltip>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Exames Diagnósticos será implementado aqui.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Sub-aba Sistemas do Corpo Humano */}
-                  <TabsContent value="sistemas-corpo">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Sistemas do Corpo Humano</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button size="icon" variant="outline" className="h-8 w-8">
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Propedêuticas</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Conteúdo dos Sistemas do Corpo Humano será implementado aqui.
-                        </p>
+                        <TabelaExames />
                       </CardContent>
                     </Card>
                   </TabsContent>
                 </Tabs>
               </TabsContent>
 
+              {/* Aba Subconjuntos */}
+              <TabsContent value="subconjuntos" className="space-y-6">
+                <TabelaSubconjuntos />
+              </TabsContent>
+
               {/* Aba Diagnósticos de Enfermagem */}
-              <TabsContent value="diagnosticos" className="space-y-4">
-                <Tabs defaultValue="subconjuntos" orientation="horizontal">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
-                    <TabsTrigger value="diagnosticos-enfermagem">Diagnósticos</TabsTrigger>
-                  </TabsList>
-
-                  {/* Sub-aba Subconjuntos */}
-                  <TabsContent value="subconjuntos" className="space-y-4">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Subconjuntos</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ModalCadastroSubconjunto />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Subconjuntos</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </CardHeader>
-                      <CardContent>
-                        <TabelaSubconjuntos />
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-
-                  {/* Sub-aba Diagnósticos de Enfermagem */}
-                  <TabsContent value="diagnosticos-enfermagem">
-                    <Card>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg">Diagnósticos de Enfermagem</CardTitle>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <ModalCadastroDiagnostico />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Cadastrar Diagnósticos de Enfermagem</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-gray-500 text-center py-8">
-                          Tabela de Diagnósticos de Enfermagem será implementada aqui.
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                </Tabs>
+              <TabsContent value="diagnosticos" className="space-y-6">
+                <TabelaDiagnosticos />
               </TabsContent>
             </Tabs>
           </CardContent>
