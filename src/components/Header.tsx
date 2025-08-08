@@ -3,15 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Menu } from 'lucide-react';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface HeaderProps {
-  userName?: string;
-  onLogout?: () => void;
-}
-
-const Header = ({ userName, onLogout }: HeaderProps) => {
+const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { toggleSidebar } = useSidebar();
+  const { sessionData, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -59,14 +56,14 @@ const Header = ({ userName, onLogout }: HeaderProps) => {
 
           {/* Área do usuário e logout */}
           <div className="flex items-center space-x-3">
-            {userName && (
+            {sessionData && (
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-700">
                 <User className="w-4 h-4" />
-                <span>Bem-vindo(a), {userName}!</span>
+                <span>Bem-vindo(a), {sessionData.nomeCompleto.split(' ')[0]}!</span>
               </div>
             )}
             <Button
-              onClick={onLogout}
+              onClick={logout}
               variant="outline"
               size="sm"
               className="csae-btn-secondary"

@@ -1,23 +1,25 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, EyeOff, Mail, Lock, Instagram } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const { login, loading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar lógica de login
-    console.log('Login attempt:', { email, password, rememberMe });
+    await login(email, password);
   };
 
   return (
@@ -97,6 +99,7 @@ const Login = () => {
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10 border-csae-green-200 focus:border-csae-green-500 focus:ring-csae-green-200"
                         required
+                        disabled={loading}
                       />
                     </div>
                   </div>
@@ -115,11 +118,13 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         className="pl-10 pr-10 border-csae-green-200 focus:border-csae-green-500 focus:ring-csae-green-200"
                         required
+                        disabled={loading}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-csae-green-600 transition-colors"
+                        disabled={loading}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -132,6 +137,7 @@ const Login = () => {
                         id="remember"
                         checked={rememberMe}
                         onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                        disabled={loading}
                       />
                       <Label htmlFor="remember" className="text-sm text-gray-600 cursor-pointer">
                         Lembrar de mim
@@ -141,6 +147,7 @@ const Login = () => {
                     <button
                       type="button"
                       className="text-sm text-csae-green-600 hover:text-csae-green-700 hover:underline transition-colors"
+                      disabled={loading}
                     >
                       Esqueci minha senha
                     </button>
@@ -149,13 +156,19 @@ const Login = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-csae-green-600 hover:bg-csae-green-700 text-white py-3 text-base font-medium transition-all duration-200 transform hover:scale-[1.02]"
+                    disabled={loading}
                   >
-                    Entrar
+                    {loading ? 'Entrando...' : 'Entrar'}
                   </Button>
 
                   <div className="text-center">
                     <p className="text-gray-600 mb-3">Ainda não tem uma conta?</p>
-                    <Button asChild variant="outline" className="w-full border-csae-green-600 text-csae-green-600 hover:bg-csae-green-50">
+                    <Button 
+                      asChild 
+                      variant="outline" 
+                      className="w-full border-csae-green-600 text-csae-green-600 hover:bg-csae-green-50"
+                      disabled={loading}
+                    >
                       <Link to="/registrar">Cadastre-se</Link>
                     </Button>
                   </div>
