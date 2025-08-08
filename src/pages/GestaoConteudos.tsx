@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,20 +12,13 @@ import TabelaExames from '@/components/gestao-conteudos/TabelaExames';
 import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 
 const GestaoConteudos = () => {
-  const handleLogout = () => {
-    console.log('Logout functionality to be implemented');
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          <Header 
-            userName="Enf. Maria Silva"
-            onLogout={handleLogout}
-          />
+          <Header />
           
           <main className="flex-1 bg-gray-50">
             <div className="container mx-auto px-4 py-8">

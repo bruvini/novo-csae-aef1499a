@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,20 +14,13 @@ const ProcessoEnfermagem = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
 
-  const handleLogout = () => {
-    console.log('Logout functionality to be implemented');
-  };
-
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          <Header 
-            userName="Enf. Maria Silva"
-            onLogout={handleLogout}
-          />
+          <Header />
           
           <main className="flex-1 bg-gray-50">
             {/* Seção Explicativa */}

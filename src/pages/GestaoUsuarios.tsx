@@ -201,7 +201,7 @@ const GestaoUsuarios = () => {
         <div className="min-h-screen flex w-full">
           <AppSidebar />
           <div className="flex-1 flex flex-col">
-            <Header userName="Enf. Maria Silva" onLogout={handleLogout} />
+            <Header />
             <main className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600 mx-auto mb-4"></div>
@@ -221,10 +221,7 @@ const GestaoUsuarios = () => {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          <Header 
-            userName="Enf. Maria Silva"
-            onLogout={handleLogout}
-          />
+          <Header />
           
           <main className="flex-1 bg-gray-50">
             <div className="container mx-auto px-4 py-8">
