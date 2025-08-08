@@ -12,9 +12,9 @@ const NavigationCards = () => {
       title: 'Processo de Enfermagem',
       description: 'Ferramenta completa para realizar e acompanhar o Processo de Enfermagem com base nas melhores práticas científicas.',
       icon: Heart,
-      href: '#',
-      status: 'Em construção',
-      disabled: true,
+      href: '/processo-enfermagem',
+      status: 'Disponível',
+      disabled: false,
     },
     {
       id: 'gestao-conteudos',
