@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Search, ExternalLink, AlertCircle, Users, FileText, Clock } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Plus, Search, AlertCircle, Users, FileText, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ProcessoEnfermagemExplicacao from '@/components/ProcessoEnfermagemExplicacao';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
@@ -31,75 +32,7 @@ const ProcessoEnfermagem = () => {
           
           <main className="flex-1 bg-gray-50">
             {/* Seção Explicativa */}
-            <section className="bg-white border-b border-gray-200 py-8">
-              <div className="container mx-auto px-4 max-w-4xl">
-                <div className="text-center mb-8">
-                  <h1 className="text-3xl font-bold text-csae-green-800 mb-4">
-                    Processo de Enfermagem
-                  </h1>
-                  <p className="text-lg text-gray-600">
-                    Ferramenta digital para sistematização da assistência de enfermagem
-                  </p>
-                </div>
-
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-csae-green-800">
-                      <FileText className="w-5 h-5" />
-                      <span>O que é o Processo de Enfermagem?</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-gray-700 leading-relaxed">
-                      Conforme a <strong>Resolução COFEN nº 736/2024</strong>, o Processo de Enfermagem (PE) 
-                      deve ser realizado de forma deliberada e sistemática em todo contexto onde ocorre o cuidado. 
-                      Ele precisa estar fundamentado em suporte teórico, como teorias e modelos de cuidado, 
-                      linguagens padronizadas, instrumentos de predição de risco e protocolos baseados em evidências.
-                    </p>
-                    
-                    <div className="bg-csae-green-50 p-4 rounded-lg">
-                      <h3 className="font-semibold text-csae-green-800 mb-3">
-                        As cinco etapas inter-relacionadas e cíclicas:
-                      </h3>
-                      <ul className="space-y-2 text-sm text-gray-700">
-                        <li className="flex items-start space-x-2">
-                          <span className="bg-csae-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mt-0.5">1</span>
-                          <span><strong>Avaliação:</strong> Coleta de dados subjetivos e objetivos</span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="bg-csae-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mt-0.5">2</span>
-                          <span><strong>Diagnóstico de Enfermagem:</strong> Identificação de problemas e vulnerabilidades</span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="bg-csae-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mt-0.5">3</span>
-                          <span><strong>Planejamento:</strong> Elaboração do plano assistencial com priorização</span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="bg-csae-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mt-0.5">4</span>
-                          <span><strong>Implementação:</strong> Execução das intervenções e atividades</span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="bg-csae-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold mt-0.5">5</span>
-                          <span><strong>Evolução:</strong> Avaliação dos resultados e revisão de todo o processo</span>
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="flex items-center justify-center pt-4">
-                      <a
-                        href="https://www.cofen.gov.br/resolucao-cofen-no-736-de-17-de-janeiro-de-2024"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center space-x-2 text-csae-green-700 hover:text-csae-green-800 transition-colors"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span className="text-sm font-medium">Consultar Resolução COFEN nº 736/2024</span>
-                      </a>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </section>
+            <ProcessoEnfermagemExplicacao />
 
             {/* Dashboard e Área Funcional */}
             <section className="py-8">

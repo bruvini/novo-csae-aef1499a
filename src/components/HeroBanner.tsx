@@ -3,31 +3,54 @@ import React from 'react';
 
 const HeroBanner = () => {
   return (
-    <section className="relative w-full h-64 sm:h-80 lg:h-96 overflow-hidden" role="banner">
-      <div className="absolute inset-0">
-        <img
-          src="/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png"
-          alt="Profissional de enfermagem em frente ao Centro de Saúde com laptop mostrando o Portal CSAE"
-          className="w-full h-full object-cover"
-        />
-        {/* Overlay para melhor contraste do texto */}
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-      </div>
-      
-      <div className="relative z-10 container mx-auto px-4 h-full flex items-center justify-center">
-        <div className="text-center text-white max-w-3xl">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 drop-shadow-lg">
-            Empoderando o cuidado de enfermagem através da tecnologia
-          </h2>
-          <p className="text-lg sm:text-xl font-medium drop-shadow-md">
-            Versão 2.0 - Feito por enfermeiros para enfermeiros
-          </p>
-          <div className="mt-4 inline-block bg-white bg-opacity-20 backdrop-blur-sm rounded-lg px-4 py-2">
-            <p className="text-sm font-medium">
-              Portal CSAE Floripa 2.0 - Inovação e humanização no cuidado
-            </p>
+    <section className="relative w-full bg-gradient-to-r from-csae-green-600 to-csae-green-700 overflow-hidden" role="banner">
+      <div className="container mx-auto px-4 py-12 lg:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+          {/* Coluna Esquerda - Texto (60-70%) */}
+          <div className="lg:col-span-2 text-white space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
+                Empoderando o cuidado de enfermagem através da 
+                <span className="text-csae-green-200"> tecnologia</span>
+              </h2>
+              <p className="text-xl sm:text-2xl font-medium text-csae-green-100">
+                Versão 2.0 - Feito por enfermeiros para enfermeiros
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <p className="text-lg text-csae-green-100 leading-relaxed">
+                Uma plataforma inovadora desenvolvida especialmente para os profissionais 
+                de enfermagem da rede pública de Florianópolis.
+              </p>
+              <div className="inline-block bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3 border border-white/20">
+                <p className="text-sm font-semibold text-white">
+                  Portal CSAE Floripa 2.0 - Inovação e humanização no cuidado
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Coluna Direita - Imagem (30-40%) */}
+          <div className="lg:col-span-1 flex justify-center lg:justify-end">
+            <div className="relative">
+              <div className="w-64 h-64 sm:w-80 sm:h-80 lg:w-72 lg:h-72 xl:w-80 xl:h-80 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
+                <img
+                  src="/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png"
+                  alt="Profissional de enfermagem em frente ao Centro de Saúde com laptop mostrando o Portal CSAE"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Efeito de brilho */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-3xl blur-xl"></div>
+            </div>
           </div>
         </div>
+      </div>
+      
+      {/* Padrão decorativo de fundo */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="30" cy="30" r="2"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
       </div>
     </section>
   );
