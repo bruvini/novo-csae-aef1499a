@@ -47,6 +47,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Função unificada para buscar documento do usuário
+  const getUserDoc = async (uid: string) => {
+    try {
+      // Tentativa 1: busca direta usando UID como ID do documento
+      const docRef = doc(db, 'usuarios', uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        console.log('Documento encontrado por UID direto:', docSnap.data());
+        return { id: docSnap.id, ...docSnap.data() } as Usuario & { id: string };
+      }
+      
+      // Tentativa 2: busca por campo 'uid' na coleção
+      console.log('Documento não encontrado por UID direto, tentando query por campo uid...');
+      const q = query(collection(db, 'usuarios'), where('uid', '==', uid));
+      const querySnap = await getDocs(q);
+      
+      if (!querySnap.empty) {
+        const firstDoc = querySnap.docs[0];
+        console.log('Documento encontrado por query uid:', firstDoc.data());
+        return { id: firstDoc.id, ...firstDoc.data() } as Usuario & { id: string };
+      }
+      
+      // Nenhum documento encontrado
+      console.log('Nenhum documento encontrado para UID:', uid);
+      return null;
+      
+    } catch (error) {
+      console.error('Erro ao buscar documento do usuário:', error);
+      throw error;
+    }
+  };
+
   // Carregar dados da sessão do localStorage ao iniciar
   useEffect(() => {
     const savedSession = localStorage.getItem('csae_session');
@@ -61,38 +94,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Função para buscar dados do usuário no Firestore
+  // Função para carregar dados do usuário no Firestore
   const loadUserData = async (uid: string): Promise<void> => {
     try {
       console.log('Buscando dados do usuário com UID:', uid);
       
-      // Busca direta usando UID como ID do documento
-      let userDocRef = doc(db, 'usuarios', uid);
-      let userDocSnap = await getDoc(userDocRef);
+      const userDoc = await getUserDoc(uid);
       
-      let userData;
-      let docId;
-      
-      if (userDocSnap.exists()) {
-        userData = userDocSnap.data() as Usuario;
-        docId = userDocSnap.id;
-        console.log('Documento encontrado por UID direto:', userData);
-      } else {
-        console.log('Documento não encontrado por UID direto, tentando busca por campo uid...');
-        
-        // Fallback: busca por campo 'uid' na coleção
-        const q = query(collection(db, 'usuarios'), where('uid', '==', uid));
-        const querySnap = await getDocs(q);
-        
-        if (!querySnap.empty) {
-          const firstDoc = querySnap.docs[0];
-          userData = firstDoc.data() as Usuario;
-          docId = firstDoc.id;
-          console.log('Documento encontrado por query uid:', userData);
-        }
-      }
-
-      if (!userData) {
+      if (!userDoc) {
         console.log('Documento do usuário não encontrado');
         toast({
           title: "Cadastro não localizado",
@@ -117,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Processar documento do usuário
-      await handleUserDocument(userData, uid, docId);
+      await handleUserDocument(userDoc, uid);
       
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
@@ -135,46 +144,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // Função para processar o documento do usuário
-  const handleUserDocument = async (userData: Usuario, uid: string, docId: string): Promise<void> => {
-    console.log('Processando documento do usuário. Status:', userData.statusAcesso);
+  // Função para processar o documento do usuário com verificação case-insensitive
+  const handleUserDocument = async (userDoc: Usuario & { id: string }, uid: string): Promise<void> => {
+    console.log('Processando documento do usuário. Status original:', userDoc.statusAcesso);
     
-    if (userData.statusAcesso === 'Liberado') {
-      // Criar objeto de sessão
-      const session: SessionData = {
-        nomeCompleto: userData.dadosPessoais.nomeCompleto,
-        tipoUsuario: userData.tipoUsuario,
-        uid: uid,
-        statusAcesso: userData.statusAcesso,
-        ehAdmin: userData.ehAdmin,
-        gestorConteudos: userData.gestorConteudos,
-        email: userData.email,
-      };
-      
-      // Salvar no localStorage e estado
-      localStorage.setItem('csae_session', JSON.stringify(session));
-      setSessionData(session);
-      
-      console.log('Usuário autorizado. Sessão criada:', session);
-    } else {
-      // Status não liberado
-      console.log('Status de acesso não liberado:', userData.statusAcesso);
-      
-      let message = "Seu perfil está em análise. Tente novamente mais tarde ou entre em contato pelo nosso Instagram @portalcsaefloripa";
-      let variant: "default" | "destructive" = "default";
-      let className = "bg-yellow-50 border-yellow-200";
-      
-      if (userData.statusAcesso === 'Recusado') {
-        message = "Seu acesso foi negado. Entre em contato pelo nosso Instagram @portalcsaefloripa";
-        variant = "destructive";
-        className = "";
-      }
-      
+    // Normalizar status para comparação case-insensitive
+    const status = (userDoc.statusAcesso || '').toLowerCase();
+    console.log('Status normalizado:', status);
+    
+    if (status === 'aguardando') {
+      console.log('Status: aguardando - perfil em análise');
       toast({
-        title: userData.statusAcesso === 'Recusado' ? "Acesso negado" : "Perfil em análise",
-        description: message,
-        variant: variant,
-        className: className,
+        title: "Perfil em análise",
+        description: "Seu perfil está em análise. Tente novamente mais tarde ou entre em contato pelo nosso Instagram @portalcsaefloripa",
+        variant: "default",
+        className: "bg-yellow-50 border-yellow-200",
       });
       
       await signOut(auth);
@@ -182,7 +166,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSessionData(null);
       localStorage.removeItem('csae_session');
       navigate('/login');
+      return;
     }
+    
+    if (status === 'rejeitado' || status === 'recusado') {
+      console.log('Status: rejeitado/recusado - acesso negado');
+      toast({
+        title: "Acesso negado",
+        description: "Seu acesso foi negado. Entre em contato pelo nosso Instagram @portalcsaefloripa",
+        variant: "destructive",
+      });
+      
+      await signOut(auth);
+      setUser(null);
+      setSessionData(null);
+      localStorage.removeItem('csae_session');
+      navigate('/login');
+      return;
+    }
+    
+    if (status === 'aprovado' || status === 'liberado') {
+      console.log('Status: aprovado/liberado - acesso permitido');
+      
+      // Criar objeto de sessão
+      const session: SessionData = {
+        nomeCompleto: userDoc.dadosPessoais.nomeCompleto,
+        tipoUsuario: userDoc.tipoUsuario,
+        uid: uid,
+        statusAcesso: userDoc.statusAcesso,
+        ehAdmin: userDoc.ehAdmin,
+        gestorConteudos: userDoc.gestorConteudos,
+        email: userDoc.email,
+      };
+      
+      // Salvar no localStorage e estado
+      localStorage.setItem('csae_session', JSON.stringify(session));
+      setSessionData(session);
+      
+      console.log('Usuário autorizado. Sessão criada:', session);
+      return;
+    }
+    
+    // Status não reconhecido
+    console.log('Status não reconhecido:', userDoc.statusAcesso);
+    toast({
+      title: "Status inválido",
+      description: "Status de acesso não reconhecido. Entre em contato com o suporte.",
+      variant: "destructive",
+    });
+    
+    await signOut(auth);
+    setUser(null);
+    setSessionData(null);
+    localStorage.removeItem('csae_session');
+    navigate('/login');
   };
 
   // Configurar persistência e monitorar estado de autenticação
@@ -238,28 +275,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Login realizado. UID:', user.uid);
 
       // Buscar dados do usuário no Firestore
-      let userDocRef = doc(db, 'usuarios', user.uid);
-      let userDocSnap = await getDoc(userDocRef);
-      
-      let userData;
-      let docId;
-      
-      if (userDocSnap.exists()) {
-        userData = userDocSnap.data() as Usuario;
-        docId = userDocSnap.id;
-      } else {
-        // Fallback: busca por campo 'uid'
-        const q = query(collection(db, 'usuarios'), where('uid', '==', user.uid));
-        const querySnap = await getDocs(q);
-        
-        if (!querySnap.empty) {
-          const firstDoc = querySnap.docs[0];
-          userData = firstDoc.data() as Usuario;
-          docId = firstDoc.id;
-        }
-      }
+      const userDoc = await getUserDoc(user.uid);
 
-      if (!userData) {
+      if (!userDoc) {
         await signOut(auth);
         toast({
           title: "Cadastro não encontrado",
@@ -277,7 +295,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      if (userData.statusAcesso === 'Aguardando') {
+      // Verificar status com comparação case-insensitive
+      const status = (userDoc.statusAcesso || '').toLowerCase();
+      console.log('Status do usuário no login:', userDoc.statusAcesso, '(normalizado:', status + ')');
+
+      if (status === 'aguardando') {
         await signOut(auth);
         toast({
           title: "Perfil em análise",
@@ -288,7 +310,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      if (userData.statusAcesso === 'Recusado') {
+      if (status === 'rejeitado' || status === 'recusado') {
         await signOut(auth);
         toast({
           title: "Acesso negado",
@@ -298,7 +320,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      if (userData.statusAcesso !== 'Liberado') {
+      if (status !== 'aprovado' && status !== 'liberado') {
         await signOut(auth);
         toast({
           title: "Status inválido",
@@ -308,15 +330,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Registrar histórico de acesso
+      // Status aprovado - registrar histórico de acesso
       try {
-        const updateRef = doc(db, 'usuarios', docId);
+        const updateRef = doc(db, 'usuarios', userDoc.id);
         await updateDoc(updateRef, {
           historicoAcesso: arrayUnion({
             dataHora: serverTimestamp(),
             ip: 'N/A',
           })
         });
+        console.log('Histórico de acesso registrado com sucesso');
       } catch (error) {
         console.error('Erro ao registrar histórico de acesso:', error);
         // Não impedir o login por erro no histórico
@@ -324,13 +347,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Criar sessão
       const session: SessionData = {
-        nomeCompleto: userData.dadosPessoais.nomeCompleto,
-        tipoUsuario: userData.tipoUsuario,
+        nomeCompleto: userDoc.dadosPessoais.nomeCompleto,
+        tipoUsuario: userDoc.tipoUsuario,
         uid: user.uid,
-        statusAcesso: userData.statusAcesso,
-        ehAdmin: userData.ehAdmin,
-        gestorConteudos: userData.gestorConteudos,
-        email: userData.email,
+        statusAcesso: userDoc.statusAcesso,
+        ehAdmin: userDoc.ehAdmin,
+        gestorConteudos: userDoc.gestorConteudos,
+        email: userDoc.email,
       };
 
       localStorage.setItem('csae_session', JSON.stringify(session));
@@ -338,7 +361,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       toast({
         title: "Login realizado com sucesso!",
-        description: `Bem-vindo(a), ${userData.dadosPessoais.nomeCompleto}!`,
+        description: `Bem-vindo(a), ${userDoc.dadosPessoais.nomeCompleto}!`,
         variant: "default",
         className: "bg-green-50 border-green-200",
       });
@@ -410,7 +433,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading,
     login,
     logout,
-    isAuthenticated: !!(user && sessionData && sessionData.statusAcesso === 'Liberado'),
+    isAuthenticated: !!(user && sessionData && (sessionData.statusAcesso.toLowerCase() === 'aprovado' || sessionData.statusAcesso.toLowerCase() === 'liberado')),
   };
 
   return (
