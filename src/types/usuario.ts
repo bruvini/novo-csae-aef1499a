@@ -41,8 +41,9 @@ export interface Usuario {
   termoResponsabilidadeData: Timestamp;
   ehAdmin: boolean;
   gestorConteudos: boolean;
-  tipoUsuario: 'Comum' | 'Admin';
-  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado';
+  tipoUsuario: 'Comum' | 'Admin' | 'Administrador';
+  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado';
+  paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
   dataCadastro?: Timestamp;
   dataRecusaAcesso?: Timestamp;
   dataLiberacaoAcesso?: Timestamp;

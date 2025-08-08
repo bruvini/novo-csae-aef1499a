@@ -9,10 +9,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Usuario } from '@/types/usuario';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, Check, X, Trash2 } from 'lucide-react';
+import { Eye, Check, X, Trash2, Settings } from 'lucide-react';
 
 interface TabelaUsuariosProps {
   usuarios: Usuario[];
@@ -21,6 +22,7 @@ interface TabelaUsuariosProps {
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
   onExcluir: (usuario: Usuario) => void;
+  onEditarPrivilegios?: (usuario: Usuario) => void;
 }
 
 const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
@@ -29,7 +31,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   onDetalhes,
   onAprovar,
   onRecusar,
-  onExcluir
+  onExcluir,
+  onEditarPrivilegios
 }) => {
   const formatarData = (timestamp: any) => {
     if (!timestamp) return 'Não informado';
@@ -39,6 +42,13 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
     } catch {
       return 'Data inválida';
     }
+  };
+
+  const getTipoUsuarioBadge = (usuario: Usuario) => {
+    if (usuario.ehAdmin) {
+      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Administrador</Badge>;
+    }
+    return <Badge variant="outline">Usuário Comum</Badge>;
   };
 
   if (usuarios.length === 0) {
@@ -57,6 +67,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead>Nome Completo</TableHead>
+            {tipo === 'aprovados' && <TableHead>Tipo de Usuário</TableHead>}
             <TableHead>Data de Cadastro</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
@@ -67,6 +78,11 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
               <TableCell className="font-medium">
                 {usuario.dadosPessoais?.nomeCompleto || 'Nome não informado'}
               </TableCell>
+              {tipo === 'aprovados' && (
+                <TableCell>
+                  {getTipoUsuarioBadge(usuario)}
+                </TableCell>
+              )}
               <TableCell>
                 {formatarData(usuario.dataCadastro)}
               </TableCell>
@@ -101,6 +117,17 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                         Recusar
                       </Button>
                     </>
+                  )}
+
+                  {tipo === 'aprovados' && onEditarPrivilegios && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEditarPrivilegios(usuario)}
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Alterar Privilégios
+                    </Button>
                   )}
                   
                   <Button

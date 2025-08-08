@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
@@ -15,6 +14,7 @@ interface SessionData {
   ehAdmin: boolean;
   gestorConteudos: boolean;
   email: string;
+  paginasPermitidas?: string[];
 }
 
 interface AuthContextType {
@@ -188,6 +188,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (status === 'aprovado' || status === 'liberado') {
       console.log('Status: aprovado/liberado - acesso permitido');
       
+      // Garantir que usuários existentes tenham paginasPermitidas definidas
+      let paginasPermitidas = userDoc.paginasPermitidas;
+      if (!userDoc.ehAdmin && (!paginasPermitidas || paginasPermitidas.length === 0)) {
+        // Usuário comum sem páginas definidas - definir páginas padrão
+        paginasPermitidas = ['ProcessoEnfermagem'];
+        
+        // Atualizar no Firestore
+        try {
+          const updateRef = doc(db, 'usuarios', userDoc.id);
+          await updateDoc(updateRef, { paginasPermitidas });
+          console.log('Páginas padrão definidas para usuário comum');
+        } catch (error) {
+          console.error('Erro ao definir páginas padrão:', error);
+        }
+      }
+      
       // Criar objeto de sessão
       const session: SessionData = {
         nomeCompleto: userDoc.dadosPessoais.nomeCompleto,
@@ -197,6 +213,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
+        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas
       };
       
       // Salvar no localStorage e estado
@@ -345,6 +362,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Não impedir o login por erro no histórico
       }
 
+      // Garantir que usuários existentes tenham paginasPermitidas definidas
+      let paginasPermitidas = userDoc.paginasPermitidas;
+      if (!userDoc.ehAdmin && (!paginasPermitidas || paginasPermitidas.length === 0)) {
+        paginasPermitidas = ['ProcessoEnfermagem'];
+        
+        // Atualizar no Firestore
+        try {
+          const updateRef = doc(db, 'usuarios', userDoc.id);
+          await updateDoc(updateRef, { paginasPermitidas });
+          console.log('Páginas padrão definidas para usuário comum');
+        } catch (error) {
+          console.error('Erro ao definir páginas padrão:', error);
+        }
+      }
+
       // Criar sessão
       const session: SessionData = {
         nomeCompleto: userDoc.dadosPessoais.nomeCompleto,
@@ -354,6 +386,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
+        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas
       };
 
       localStorage.setItem('csae_session', JSON.stringify(session));

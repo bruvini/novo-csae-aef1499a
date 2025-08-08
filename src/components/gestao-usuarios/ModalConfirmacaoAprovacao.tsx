@@ -1,22 +1,13 @@
 
 import React, { useState } from 'react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import ModalEdicaoPrivilegios from './ModalEdicaoPrivilegios';
+import { Usuario } from '@/types/usuario';
 
 interface ModalConfirmacaoAprovacaoProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (isAdmin: boolean) => void;
+  onConfirm: (isAdmin: boolean, paginasPermitidas: string[]) => void;
+  usuario?: Usuario | null;
   nomeUsuario: string;
 }
 
@@ -24,47 +15,20 @@ const ModalConfirmacaoAprovacao: React.FC<ModalConfirmacaoAprovacaoProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  nomeUsuario
+  usuario
 }) => {
-  const [tipoUsuario, setTipoUsuario] = useState<string>('comum');
-
-  const handleConfirm = () => {
-    onConfirm(tipoUsuario === 'admin');
-    setTipoUsuario('comum');
+  const handleConfirm = (isAdmin: boolean, paginasPermitidas: string[]) => {
+    onConfirm(isAdmin, paginasPermitidas);
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Aprovar Usuário</AlertDialogTitle>
-          <AlertDialogDescription>
-            Você está prestes a aprovar o usuário <strong>{nomeUsuario}</strong>.
-            Selecione o tipo de privilégio que ele terá no sistema:
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        
-        <div className="py-4">
-          <RadioGroup value={tipoUsuario} onValueChange={setTipoUsuario}>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="comum" id="comum" />
-              <Label htmlFor="comum">Usuário Comum</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="admin" id="admin" />
-              <Label htmlFor="admin">Administrador</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm}>
-            Aprovar
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ModalEdicaoPrivilegios
+      isOpen={isOpen}
+      onClose={onClose}
+      onConfirm={handleConfirm}
+      usuario={usuario}
+      isNewApproval={true}
+    />
   );
 };
 

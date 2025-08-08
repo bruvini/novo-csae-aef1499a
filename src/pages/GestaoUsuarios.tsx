@@ -13,11 +13,13 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
 import ModalDetalhesUsuario from '@/components/gestao-usuarios/ModalDetalhesUsuario';
 import ModalConfirmacaoAprovacao from '@/components/gestao-usuarios/ModalConfirmacaoAprovacao';
+import ModalEdicaoPrivilegios from '@/components/gestao-usuarios/ModalEdicaoPrivilegios';
 import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import {
   buscarUsuariosAguardando,
   buscarUsuariosAprovados,
   aprovarUsuario,
+  editarPrivilegiosUsuario,
   recusarUsuario,
   excluirUsuario
 } from '@/services/bancodados';
@@ -47,12 +49,9 @@ const GestaoUsuarios = () => {
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
   const [modalAprovacaoAberto, setModalAprovacaoAberto] = useState(false);
+  const [modalEdicaoPrivilegiosAberto, setModalEdicaoPrivilegiosAberto] = useState(false);
   const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
   const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
-
-  const handleLogout = () => {
-    console.log('Logout functionality to be implemented');
-  };
 
   const carregarUsuarios = async () => {
     setCarregando(true);
@@ -119,6 +118,11 @@ const GestaoUsuarios = () => {
     setModalAprovacaoAberto(true);
   };
 
+  const handleEditarPrivilegios = (usuario: Usuario) => {
+    setUsuarioSelecionado(usuario);
+    setModalEdicaoPrivilegiosAberto(true);
+  };
+
   const handleRecusar = (usuario: Usuario) => {
     setUsuarioSelecionado(usuario);
     setModalRecusaAberto(true);
@@ -129,14 +133,14 @@ const GestaoUsuarios = () => {
     setModalExclusaoAberto(true);
   };
 
-  const confirmarAprovacao = async (isAdmin: boolean) => {
+  const confirmarAprovacao = async (isAdmin: boolean, paginasPermitidas: string[]) => {
     if (!usuarioSelecionado?.id) return;
     
     try {
-      await aprovarUsuario(usuarioSelecionado.id, isAdmin);
+      await aprovarUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas);
       toast({
         title: 'Usuário aprovado!',
-        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi aprovado com sucesso.`
+        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi aprovado como ${isAdmin ? 'Administrador' : 'Usuário Comum'}.`
       });
       setModalAprovacaoAberto(false);
       setUsuarioSelecionado(null);
@@ -146,6 +150,28 @@ const GestaoUsuarios = () => {
       toast({
         title: 'Erro',
         description: 'Não foi possível aprovar o usuário.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const confirmarEdicaoPrivilegios = async (isAdmin: boolean, paginasPermitidas: string[]) => {
+    if (!usuarioSelecionado?.id) return;
+    
+    try {
+      await editarPrivilegiosUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas);
+      toast({
+        title: 'Privilégios atualizados!',
+        description: `Os privilégios de ${usuarioSelecionado.dadosPessoais?.nomeCompleto} foram atualizados.`
+      });
+      setModalEdicaoPrivilegiosAberto(false);
+      setUsuarioSelecionado(null);
+      carregarUsuarios();
+    } catch (error) {
+      console.error('Erro ao editar privilégios:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível editar os privilégios do usuário.',
         variant: 'destructive'
       });
     }
@@ -317,6 +343,7 @@ const GestaoUsuarios = () => {
                         tipo="aprovados"
                         onDetalhes={handleDetalhes}
                         onExcluir={handleExcluir}
+                        onEditarPrivilegios={handleEditarPrivilegios}
                       />
                     </CardContent>
                   </Card>
@@ -346,7 +373,19 @@ const GestaoUsuarios = () => {
           setUsuarioSelecionado(null);
         }}
         onConfirm={confirmarAprovacao}
+        usuario={usuarioSelecionado}
         nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''}
+      />
+
+      <ModalEdicaoPrivilegios
+        isOpen={modalEdicaoPrivilegiosAberto}
+        onClose={() => {
+          setModalEdicaoPrivilegiosAberto(false);
+          setUsuarioSelecionado(null);
+        }}
+        onConfirm={confirmarEdicaoPrivilegios}
+        usuario={usuarioSelecionado}
+        isNewApproval={false}
       />
 
       <ModalConfirmacaoExclusao

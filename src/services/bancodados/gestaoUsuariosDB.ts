@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   getDocs, 
@@ -61,19 +62,20 @@ export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
   }
 }
 
-export async function aprovarUsuario(userId: string, isAdmin: boolean): Promise<void> {
+export async function aprovarUsuario(
+  userId: string, 
+  isAdmin: boolean, 
+  paginasPermitidas: string[] = []
+): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     const updateData: any = {
       statusAcesso: 'Aprovado',
-      dataAprovacao: serverTimestamp()
+      dataAprovacao: serverTimestamp(),
+      ehAdmin: isAdmin,
+      tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
+      paginasPermitidas: isAdmin ? [] : paginasPermitidas
     };
-    
-    if (isAdmin) {
-      updateData.tipoUsuario = 'Administrador';
-    } else {
-      updateData.tipoUsuario = 'Comum';
-    }
     
     await updateDoc(userRef, updateData);
   } catch (error) {
@@ -82,12 +84,33 @@ export async function aprovarUsuario(userId: string, isAdmin: boolean): Promise<
   }
 }
 
+export async function editarPrivilegiosUsuario(
+  userId: string,
+  isAdmin: boolean,
+  paginasPermitidas: string[] = []
+): Promise<void> {
+  try {
+    const userRef = doc(db, 'usuarios', userId);
+    const updateData: any = {
+      ehAdmin: isAdmin,
+      tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
+      paginasPermitidas: isAdmin ? [] : paginasPermitidas,
+      dataAtualizacaoPrivilegios: serverTimestamp()
+    };
+    
+    await updateDoc(userRef, updateData);
+  } catch (error) {
+    console.error("Erro ao editar privilégios do usuário:", error);
+    throw error;
+  }
+}
+
 export async function recusarUsuario(userId: string): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     await updateDoc(userRef, {
-      statusAcesso: 'Negado',
-      dataRevogacao: serverTimestamp()
+      statusAcesso: 'Recusado',
+      dataRecusaAcesso: serverTimestamp()
     });
   } catch (error) {
     console.error("Erro ao recusar usuário:", error);
