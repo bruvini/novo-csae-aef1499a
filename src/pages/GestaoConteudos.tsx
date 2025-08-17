@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,7 @@ import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos
 import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
 import TabelaSinaisVitais from '@/components/gestao-conteudos/TabelaSinaisVitais';
 import TabelaExames from '@/components/gestao-conteudos/TabelaExames';
+import TabelaRevisaoSistemas from '@/components/gestao-conteudos/TabelaRevisaoSistemas';
 import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 
 const GestaoConteudos = () => {
@@ -65,9 +67,10 @@ const GestaoConteudos = () => {
                     {/* Aba Exame Físico */}
                     <TabsContent value="exame-fisico" className="space-y-4">
                       <Tabs defaultValue="sinais-vitais" orientation="horizontal">
-                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                        <TabsList className="grid w-full grid-cols-3 mb-4">
                           <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
                           <TabsTrigger value="exames-diagnosticos">Exames Diagnósticos</TabsTrigger>
+                          <TabsTrigger value="revisao-sistemas">Revisão de Sistemas</TabsTrigger>
                         </TabsList>
 
                         {/* Sub-aba Sinais Vitais */}
@@ -92,6 +95,11 @@ const GestaoConteudos = () => {
                               <TabelaExames />
                             </CardContent>
                           </Card>
+                        </TabsContent>
+
+                        {/* Sub-aba Revisão de Sistemas */}
+                        <TabsContent value="revisao-sistemas">
+                          <TabelaRevisaoSistemas />
                         </TabsContent>
                       </Tabs>
                     </TabsContent>
