@@ -98,6 +98,44 @@ export function determinarStatusPaciente(paciente: Paciente): StatusPaciente {
   return 'Concluído';
 }
 
+export async function calcularIndicadoresComProcessos(pacientes: Paciente[], uidUsuario: string): Promise<IndicadoresPacientes> {
+  const totalPacientes = pacientes.length;
+  
+  let processosAtivos = 0;
+  let totalProcessosConcluidos = 0;
+
+  // Importar funções do novo serviço
+  const { buscarProcessoAtivo, buscarProcessoConcluido } = await import('./processosEnfermagemDB');
+
+  // Verificar processos reais no Firestore para cada paciente
+  for (const paciente of pacientes) {
+    if (paciente.id) {
+      try {
+        // Verificar processo ativo
+        const processoAtivo = await buscarProcessoAtivo(paciente.id, uidUsuario);
+        if (processoAtivo) {
+          processosAtivos++;
+        } else {
+          // Verificar se tem processo concluído
+          const temProcessoConcluido = await buscarProcessoConcluido(paciente.id, uidUsuario);
+          if (temProcessoConcluido) {
+            totalProcessosConcluidos++;
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar processos do paciente:', error);
+      }
+    }
+  }
+
+  return {
+    totalPacientes,
+    processosAtivos,
+    totalProcessosConcluidos
+  };
+}
+
+// Manter função original para compatibilidade
 export function calcularIndicadores(pacientes: Paciente[]): IndicadoresPacientes {
   const totalPacientes = pacientes.length;
   
