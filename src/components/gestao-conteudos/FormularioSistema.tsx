@@ -406,17 +406,16 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
                   <div>
                     <Label>Unidade</Label>
                     <Select
-                      value={editingAchado.achado.idadeUnidade}
-                      onValueChange={(value: 'dias' | 'meses' | 'anos' | '') => setEditingAchado({
+                      value={editingAchado.achado.idadeUnidade || undefined}
+                      onValueChange={(value: 'dias' | 'meses' | 'anos') => setEditingAchado({
                         ...editingAchado,
                         achado: { ...editingAchado.achado, idadeUnidade: value }
                       })}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">-</SelectItem>
                         <SelectItem value="dias">Dias</SelectItem>
                         <SelectItem value="meses">Meses</SelectItem>
                         <SelectItem value="anos">Anos</SelectItem>
@@ -427,7 +426,7 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
                 <div>
                   <Label>NHB Vinculada</Label>
                   <Select
-                    value={editingAchado.achado.subconjuntoNHBVinculado}
+                    value={editingAchado.achado.subconjuntoNHBVinculado || undefined}
                     onValueChange={(value) => setEditingAchado({
                       ...editingAchado,
                       achado: { ...editingAchado.achado, subconjuntoNHBVinculado: value }
