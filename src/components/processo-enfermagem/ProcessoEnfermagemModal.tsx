@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -30,7 +29,8 @@ import {
   buscarProcessoAtivo,
   salvarProgressoProcesso,
   concluirProcesso,
-  excluirProcesso
+  excluirProcesso,
+  iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
 import StepperProcesso from './StepperProcesso';
 
@@ -80,6 +80,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       const processoExistente = await buscarProcessoAtivo(paciente.id, user.uid);
 
       if (processoExistente) {
+        // Iniciar nova sessão para processo existente
+        await iniciarNovaSessao(processoExistente.id);
+        
         // Carregar processo existente
         setProcesso(processoExistente);
         setEtapaAtual(processoExistente.etapaAtual);
@@ -98,7 +101,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         }
         setEtapasCompletadas(completadas);
       } else {
-        // Criar novo processo
+        // Criar novo processo (já inclui a primeira sessão)
         const novoProcessoId = await criarProcessoEnfermagem(paciente.id, user.uid);
         
         const novoProcesso: ProcessoEnfermagem = {
@@ -107,7 +110,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           enfermeiroId: user.uid,
           status: 'em_andamento',
           etapaAtual: 1,
-          dataInicio: new Date() as any, // será convertido para Timestamp
+          dataInicio: new Date() as any,
+          sessoesDeTrabalho: [{ inicioSessao: new Date() as any }],
           avaliacao: {},
           diagnostico: {},
           planejamento: {},
@@ -167,6 +171,36 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       toast({
         title: "Erro",
         description: "Não foi possível salvar o progresso. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Nova função para save on close
+  const handleSaveOnClose = async () => {
+    if (!processo) {
+      onOpenChange(false);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await salvarProgressoProcesso(processo.id, etapaAtual, dadosEtapas);
+      
+      toast({
+        title: "Progresso salvo automaticamente",
+        description: "Seus dados foram salvos automaticamente.",
+      });
+      
+      onProcessoAtualizado();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Erro ao salvar automaticamente:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao salvar automaticamente. Tente salvar manualmente.",
         variant: "destructive",
       });
     } finally {
@@ -241,8 +275,25 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+      <Dialog 
+        open={open} 
+        onOpenChange={(newOpen) => {
+          if (!newOpen) {
+            // Se está tentando fechar, salvar automaticamente
+            handleSaveOnClose();
+          } else {
+            onOpenChange(newOpen);
+          }
+        }}
+      >
+        <DialogContent 
+          className="max-w-6xl h-[90vh] flex flex-col"
+          onInteractOutside={(e) => {
+            // Prevenir fechamento imediato, salvar primeiro
+            e.preventDefault();
+            handleSaveOnClose();
+          }}
+        >
           <DialogHeader className="shrink-0">
             <DialogTitle className="text-xl font-bold text-csae-green-800">
               {paciente.nomeCompleto}

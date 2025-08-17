@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +14,7 @@ import ListaPacientes from '@/components/processo-enfermagem/ListaPacientes';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Paciente, StatusPaciente, IndicadoresPacientes } from '@/types/paciente';
-import { buscarPacientesUsuario, calcularIndicadores, determinarStatusPaciente } from '@/services/bancodados/pacientesDB';
+import { buscarPacientesUsuario, calcularIndicadores, determinarStatusPaciente, calcularIndicadoresExpandidos } from '@/services/bancodados/pacientesDB';
 
 const ProcessoEnfermagem = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,6 +22,7 @@ const ProcessoEnfermagem = () => {
   const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
+  const [indicadoresExpandidos, setIndicadoresExpandidos] = useState<any>(null);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -47,9 +47,27 @@ const ProcessoEnfermagem = () => {
     }
   };
 
+  // Nova função para carregar indicadores expandidos
+  const carregarIndicadoresExpandidos = async () => {
+    if (!user || pacientes.length === 0) return;
+    
+    try {
+      const indicadores = await calcularIndicadoresExpandidos(pacientes, user.uid);
+      setIndicadoresExpandidos(indicadores);
+    } catch (error) {
+      console.error('Erro ao carregar indicadores expandidos:', error);
+    }
+  };
+
   useEffect(() => {
     carregarPacientes();
   }, [user]);
+
+  useEffect(() => {
+    if (pacientes.length > 0) {
+      carregarIndicadoresExpandidos();
+    }
+  }, [pacientes, user]);
 
   // Filtrar e buscar pacientes
   const pacientesFiltrados = useMemo(() => {
@@ -107,10 +125,10 @@ const ProcessoEnfermagem = () => {
             {/* Dashboard e Área Funcional */}
             <section className="py-8">
               <div className="container mx-auto px-4">
-                {/* Dashboard */}
+                {/* Dashboard Expandido */}
                 <div className="mb-8">
                   <h2 className="text-2xl font-bold text-csae-green-800 mb-6">Dashboard</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <Card className="bg-gradient-to-r from-csae-green-50 to-csae-green-100 border-csae-green-200">
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
@@ -131,7 +149,7 @@ const ProcessoEnfermagem = () => {
                           <div>
                             <p className="text-sm font-medium text-blue-600">Processos Ativos</p>
                             <p className="text-2xl font-bold text-blue-800">
-                              {loading ? '-' : indicadores.processosAtivos}
+                              {loading ? '-' : indicadoresExpandidos?.processosAtivos || 0}
                             </p>
                           </div>
                           <Clock className="w-8 h-8 text-blue-600" />
@@ -143,12 +161,46 @@ const ProcessoEnfermagem = () => {
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-purple-600">Total Concluídos</p>
+                            <p className="text-sm font-medium text-purple-600">Processos Concluídos</p>
                             <p className="text-2xl font-bold text-purple-800">
-                              {loading ? '-' : indicadores.totalProcessosConcluidos}
+                              {loading ? '-' : indicadoresExpandidos?.processosConcluidos || 0}
                             </p>
                           </div>
                           <FileText className="w-8 h-8 text-purple-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-orange-600">Média por Paciente</p>
+                            <p className="text-2xl font-bold text-orange-800">
+                              {loading ? '-' : indicadoresExpandidos?.mediaProcessosPorPaciente || '0.0'}
+                            </p>
+                          </div>
+                          <FileText className="w-8 h-8 text-orange-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200">
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-emerald-600">Taxa de Conclusão</p>
+                            <p className="text-2xl font-bold text-emerald-800">
+                              {loading ? '-' : 
+                                indicadoresExpandidos ? 
+                                  Math.round(
+                                    (indicadoresExpandidos.processosConcluidos / 
+                                    (indicadoresExpandidos.processosConcluidos + indicadoresExpandidos.processosAtivos)) * 100
+                                  ) + '%' : '0%'
+                              }
+                            </p>
+                          </div>
+                          <FileText className="w-8 h-8 text-emerald-600" />
                         </div>
                       </CardContent>
                     </Card>

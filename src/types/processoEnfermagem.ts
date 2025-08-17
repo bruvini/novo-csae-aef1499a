@@ -1,6 +1,12 @@
 
 import { Timestamp } from 'firebase/firestore';
 
+// NOVO TIPO para registrar cada sessão de trabalho
+export interface SessaoDeTrabalho {
+  inicioSessao: Timestamp;
+  fimSessao?: Timestamp; // Opcional, pois a sessão atual não terá um fim até ser salva
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -9,6 +15,7 @@ export interface ProcessoEnfermagem {
   etapaAtual: number; // de 1 a 5
   dataInicio: Timestamp;
   dataConclusao?: Timestamp;
+  sessoesDeTrabalho: SessaoDeTrabalho[]; // NOVO CAMPO: um array para registrar todas as sessões
   // Estruturas de dados para cada etapa (inicialmente podem ser objetos vazios)
   avaliacao: any;
   diagnostico: any;

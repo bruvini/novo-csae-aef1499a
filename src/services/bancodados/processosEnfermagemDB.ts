@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -10,22 +9,27 @@ import {
   where,
   getDocs,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  arrayUnion
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, SessaoDeTrabalho } from '@/types/processoEnfermagem';
 
 export async function criarProcessoEnfermagem(
   pacienteId: string,
   enfermeiroId: string
 ): Promise<string> {
   try {
+    const agora = serverTimestamp();
     const novoProcesso = {
       pacienteId,
       enfermeiroId,
       status: 'em_andamento' as const,
       etapaAtual: 1,
-      dataInicio: serverTimestamp(),
+      dataInicio: agora,
+      sessoesDeTrabalho: [{
+        inicioSessao: agora
+      }], // Primeira sessão inicializada
       avaliacao: {},
       diagnostico: {},
       planejamento: {},
@@ -38,6 +42,51 @@ export async function criarProcessoEnfermagem(
     return docRef.id;
   } catch (error) {
     console.error('Erro ao criar processo:', error);
+    throw error;
+  }
+}
+
+export async function iniciarNovaSessao(processoId: string): Promise<void> {
+  try {
+    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    
+    await updateDoc(processoRef, {
+      sessoesDeTrabalho: arrayUnion({
+        inicioSessao: serverTimestamp()
+      })
+    });
+    
+    console.log('Nova sessão iniciada');
+  } catch (error) {
+    console.error('Erro ao iniciar nova sessão:', error);
+    throw error;
+  }
+}
+
+export async function finalizarSessaoAtual(processoId: string): Promise<void> {
+  try {
+    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    const processoDoc = await getDoc(processoRef);
+    
+    if (processoDoc.exists()) {
+      const dados = processoDoc.data() as ProcessoEnfermagem;
+      const sessoes = [...dados.sessoesDeTrabalho];
+      
+      // Encontrar a última sessão sem fimSessao
+      const ultimaSessaoIndex = sessoes.findIndex(sessao => !sessao.fimSessao);
+      
+      if (ultimaSessaoIndex !== -1) {
+        sessoes[ultimaSessaoIndex].fimSessao = serverTimestamp() as Timestamp;
+        
+        await updateDoc(processoRef, {
+          sessoesDeTrabalho: sessoes
+        });
+        
+        console.log('Sessão finalizada');
+      }
+    }
+  } catch (error) {
+    console.error('Erro ao finalizar sessão:', error);
     throw error;
   }
 }
@@ -103,6 +152,10 @@ export async function salvarProgressoProcesso(
   }
 ): Promise<void> {
   try {
+    // Primeiro finalizar a sessão atual
+    await finalizarSessaoAtual(processoId);
+    
+    // Depois salvar o progresso
     const processoRef = doc(db, 'processosEnfermagem', processoId);
     
     await updateDoc(processoRef, {
@@ -128,6 +181,9 @@ export async function concluirProcesso(
   }
 ): Promise<void> {
   try {
+    // Finalizar a sessão atual antes de concluir
+    await finalizarSessaoAtual(processoId);
+    
     const processoRef = doc(db, 'processosEnfermagem', processoId);
     
     await updateDoc(processoRef, {
@@ -151,5 +207,30 @@ export async function excluirProcesso(processoId: string): Promise<void> {
   } catch (error) {
     console.error('Erro ao excluir processo:', error);
     throw error;
+  }
+}
+
+export async function contarProcessosConcluidos(): Promise<number> {
+  try {
+    const q = query(
+      collection(db, 'processosEnfermagem'),
+      where('status', '==', 'concluido')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Erro ao contar processos concluídos:', error);
+    return 0;
+  }
+}
+
+export async function contarTotalProcessos(): Promise<number> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'processosEnfermagem'));
+    return querySnapshot.size;
+  } catch (error) {
+    console.error('Erro ao contar total de processos:', error);
+    return 0;
   }
 }

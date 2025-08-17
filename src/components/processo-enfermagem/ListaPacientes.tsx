@@ -1,255 +1,193 @@
-
-import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, User, Play, ArrowRight, CheckCircle } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Paciente, StatusPaciente } from '@/types/paciente';
-import { determinarStatusPaciente } from '@/services/bancodados/pacientesDB';
-import { buscarProcessoAtivo, buscarProcessoConcluido } from '@/services/bancodados/processosEnfermagemDB';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Plus, Play, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Paciente } from '@/types/paciente';
 import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
+import { buscarProcessoAtivo } from '@/services/bancodados/processosEnfermagemDB';
 
 interface ListaPacientesProps {
   pacientes: Paciente[];
-  loading?: boolean;
+  loading: boolean;
 }
 
 const ListaPacientes: React.FC<ListaPacientesProps> = ({ pacientes, loading }) => {
-  const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null);
+  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [statusProcessos, setStatusProcessos] = useState<{[key: string]: 'sem_processo' | 'em_andamento' | 'concluido'}>({});
+  const [statusProcesso, setStatusProcesso] = useState<{ [pacienteId: string]: string }>({});
   const { user } = useAuth();
 
-  // Verificar status dos processos para cada paciente
-  useEffect(() => {
-    const verificarStatusProcessos = async () => {
-      if (!user) return;
-
-      const novosStatus: {[key: string]: 'sem_processo' | 'em_andamento' | 'concluido'} = {};
-
-      for (const paciente of pacientes) {
-        if (paciente.id) {
-          try {
-            // Verificar se tem processo ativo
-            const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
-            if (processoAtivo) {
-              novosStatus[paciente.id] = 'em_andamento';
-              continue;
-            }
-
-            // Verificar se tem processo concluído
-            const temProcessoConcluido = await buscarProcessoConcluido(paciente.id, user.uid);
-            if (temProcessoConcluido) {
-              novosStatus[paciente.id] = 'concluido';
-            } else {
-              novosStatus[paciente.id] = 'sem_processo';
-            }
-          } catch (error) {
-            console.error('Erro ao verificar status do processo:', error);
-            novosStatus[paciente.id] = 'sem_processo';
-          }
-        }
-      }
-
-      setStatusProcessos(novosStatus);
-    };
-
-    if (pacientes.length > 0) {
-      verificarStatusProcessos();
-    }
-  }, [pacientes, user]);
-
-  const handleIniciarProcesso = (paciente: Paciente) => {
-    setPacienteSelecionado(paciente);
+  const handleOpenModal = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
     setModalOpen(true);
   };
 
-  const handleProcessoAtualizado = () => {
-    // Recarregar status dos processos
-    if (user && pacientes.length > 0) {
-      const verificarStatusProcessos = async () => {
-        const novosStatus: {[key: string]: 'sem_processo' | 'em_andamento' | 'concluido'} = {};
-
-        for (const paciente of pacientes) {
-          if (paciente.id) {
-            try {
-              const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
-              if (processoAtivo) {
-                novosStatus[paciente.id] = 'em_andamento';
-                continue;
-              }
-
-              const temProcessoConcluido = await buscarProcessoConcluido(paciente.id, user.uid);
-              if (temProcessoConcluido) {
-                novosStatus[paciente.id] = 'concluido';
-              } else {
-                novosStatus[paciente.id] = 'sem_processo';
-              }
-            } catch (error) {
-              console.error('Erro ao verificar status do processo:', error);
-              novosStatus[paciente.id] = 'sem_processo';
-            }
-          }
-        }
-
-        setStatusProcessos(novosStatus);
-      };
-
-      verificarStatusProcessos();
-    }
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedPaciente(null);
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2 flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                </div>
-                <div className="h-6 bg-gray-200 rounded w-20"></div>
-                <div className="h-8 bg-gray-200 rounded w-32 ml-4"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+  const handleProcessoAtualizado = () => {
+    // Lógica para atualizar a lista de pacientes ou o status do processo
+    // Pode ser uma chamada para recarregar os dados do paciente
+  };
 
-  if (pacientes.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="max-w-md mx-auto">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <User className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-medium text-gray-700 mb-2">
-            Nenhum paciente encontrado
-          </h3>
-          <p className="text-gray-500">
-            Os pacientes cadastrados aparecerão aqui.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const verificarStatusProcesso = useCallback(async (paciente: Paciente) => {
+    if (!user || !paciente.id) return 'sem-processo';
 
-  const getStatusBadge = (pacienteId: string) => {
-    const status = statusProcessos[pacienteId] || 'sem_processo';
-    
-    const configs = {
-      'sem_processo': { 
-        className: 'bg-gray-100 text-gray-700 border-gray-200',
-        label: 'Sem processo'
-      },
-      'em_andamento': { 
-        className: 'bg-blue-100 text-blue-700 border-blue-200',
-        label: 'Em andamento'
-      },
-      'concluido': { 
-        className: 'bg-green-100 text-green-700 border-green-200',
-        label: 'Concluído'
+    try {
+      // Buscar APENAS processos em andamento
+      const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
+      
+      if (processoAtivo) {
+        return 'em-andamento';
       }
+      
+      // Se não há processo em andamento, permitir iniciar novo processo
+      return 'sem-processo';
+    } catch (error) {
+      console.error('Erro ao verificar status do processo:', error);
+      return 'sem-processo';
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const verificarStatusTodosPacientes = async () => {
+      const statusTemp: { [pacienteId: string]: string } = {};
+      for (const paciente of pacientes) {
+        statusTemp[paciente.id] = loading ? 'carregando' : await verificarStatusProcesso(paciente);
+      }
+      setStatusProcesso(statusTemp);
     };
 
-    const config = configs[status];
-    return (
-      <Badge variant="outline" className={config.className}>
-        {config.label}
-      </Badge>
-    );
+    verificarStatusTodosPacientes();
+  }, [pacientes, loading, verificarStatusProcesso]);
+
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'em-andamento':
+        return {
+          label: 'Em andamento',
+          variant: 'default' as const,
+          className: 'bg-blue-100 text-blue-800'
+        };
+      case 'sem-processo':
+        return {
+          label: 'Disponível',
+          variant: 'secondary' as const,
+          className: 'bg-green-100 text-green-800'
+        };
+      default:
+        return {
+          label: 'Carregando...',
+          variant: 'outline' as const,
+          className: 'bg-gray-100 text-gray-600'
+        };
+    }
   };
 
-  const getActionButton = (paciente: Paciente) => {
-    if (!paciente.id) return null;
-    
-    const status = statusProcessos[paciente.id] || 'sem_processo';
-
-    if (status === 'em_andamento') {
-      return (
-        <Button 
-          size="sm" 
-          className="csae-btn-primary" 
-          onClick={() => handleIniciarProcesso(paciente)}
-        >
-          <ArrowRight className="w-4 h-4 mr-2" />
-          Continuar Processo
-        </Button>
-      );
+  const getButtonConfig = (status: string) => {
+    switch (status) {
+      case 'em-andamento':
+        return {
+          text: 'Continuar Processo',
+          icon: <Play className="w-4 h-4" />,
+          disabled: false,
+          variant: 'default' as const
+        };
+      case 'sem-processo':
+        return {
+          text: 'Iniciar Processo',
+          icon: <Plus className="w-4 h-4" />,
+          disabled: false,
+          variant: 'default' as const
+        };
+      default:
+        return {
+          text: 'Carregando...',
+          icon: <Loader2 className="w-4 h-4 animate-spin" />,
+          disabled: true,
+          variant: 'outline' as const
+        };
     }
-
-    if (status === 'concluido') {
-      return (
-        <Button size="sm" variant="outline" disabled>
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Processo Concluído
-        </Button>
-      );
-    }
-
-    return (
-      <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={() => handleIniciarProcesso(paciente)}
-      >
-        <Play className="w-4 h-4 mr-2" />
-        Iniciar Processo
-      </Button>
-    );
   };
 
   return (
     <>
-      <div className="space-y-4">
-        {pacientes.map((paciente) => {
-          return (
-            <Card key={paciente.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-4 h-4 text-csae-green-600" />
-                      <h3 className="font-medium text-gray-900">
-                        {paciente.nomeCompleto}
-                      </h3>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      <div className="flex items-center space-x-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          Nascimento: {format(paciente.dataNascimento.toDate(), 'dd/MM/yyyy', { locale: ptBR })}
-                        </span>
-                      </div>
-                      <span>•</span>
-                      <span>{paciente.sexo}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-4">
-                    {paciente.id && getStatusBadge(paciente.id)}
-                    {getActionButton(paciente)}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          // Mostrar skeleton cards enquanto carrega
+          [...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="flex flex-col space-y-2 p-6">
+                <div className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[250px]" />
+                    <Skeleton className="h-4 w-[200px]" />
                   </div>
                 </div>
+                <Skeleton className="h-10 w-full" />
               </CardContent>
             </Card>
-          );
-        })}
+          ))
+        ) : pacientes.length === 0 ? (
+          // Mostrar mensagem se não houver pacientes
+          <div className="col-span-full text-center">
+            Nenhum paciente cadastrado.
+          </div>
+        ) : (
+          // Mostrar lista de pacientes
+          pacientes.map((paciente) => {
+            const status = statusProcesso[paciente.id] || 'carregando';
+            const statusDisplay = getStatusDisplay(status);
+            const buttonConfig = getButtonConfig(status);
+
+            return (
+              <Card key={paciente.id}>
+                <CardContent className="flex flex-col space-y-4 p-6">
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      <AvatarImage src="https://github.com/shadcn.png" alt={paciente.nomeCompleto} />
+                      <AvatarFallback>{paciente.nomeCompleto.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg font-semibold">{paciente.nomeCompleto}</CardTitle>
+                      {/* <CardDescription>
+                        Paciente desde {new Date(paciente.dataCadastro).toLocaleDateString()}
+                      </CardDescription> */}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Badge variant={statusDisplay.variant} className={statusDisplay.className}>
+                      {statusDisplay.label}
+                    </Badge>
+                    <Button 
+                      onClick={() => handleOpenModal(paciente)}
+                      disabled={buttonConfig.disabled}
+                      className="csae-btn-primary flex items-center gap-2"
+                    >
+                      {buttonConfig.icon}
+                      {buttonConfig.text}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
       </div>
 
-      {pacienteSelecionado && (
+      {/* Modal */}
+      {selectedPaciente && (
         <ProcessoEnfermagemModal
           open={modalOpen}
-          onOpenChange={setModalOpen}
-          paciente={pacienteSelecionado}
+          onOpenChange={handleCloseModal}
+          paciente={selectedPaciente}
           onProcessoAtualizado={handleProcessoAtualizado}
         />
       )}

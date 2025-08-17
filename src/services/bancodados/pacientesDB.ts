@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -132,6 +131,45 @@ export async function calcularIndicadoresComProcessos(pacientes: Paciente[], uid
     totalPacientes,
     processosAtivos,
     totalProcessosConcluidos
+  };
+}
+
+export async function calcularIndicadoresExpandidos(pacientes: Paciente[], uidUsuario: string): Promise<IndicadoresPacientes & { processosConcluidos: number; mediaProcessosPorPaciente: number }> {
+  const totalPacientes = pacientes.length;
+  
+  // Importar as novas funções
+  const { buscarProcessoAtivo, contarProcessosConcluidos, contarTotalProcessos } = await import('./processosEnfermagemDB');
+  
+  let processosAtivos = 0;
+  
+  // Contar processos ativos verificando cada paciente
+  for (const paciente of pacientes) {
+    if (paciente.id) {
+      try {
+        const processoAtivo = await buscarProcessoAtivo(paciente.id, uidUsuario);
+        if (processoAtivo) {
+          processosAtivos++;
+        }
+      } catch (error) {
+        console.error('Erro ao verificar processos do paciente:', error);
+      }
+    }
+  }
+  
+  // Buscar processos concluídos e total
+  const processosConcluidos = await contarProcessosConcluidos();
+  const totalProcessos = await contarTotalProcessos();
+  
+  // Calcular média de processos por paciente
+  const mediaProcessosPorPaciente = totalPacientes > 0 ? 
+    Math.round((totalProcessos / totalPacientes) * 10) / 10 : 0;
+
+  return {
+    totalPacientes,
+    processosAtivos,
+    totalProcessosConcluidos: processosConcluidos, // Mantém compatibilidade
+    processosConcluidos, // Nova métrica específica
+    mediaProcessosPorPaciente
   };
 }
 
