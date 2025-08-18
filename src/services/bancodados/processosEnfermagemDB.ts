@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -233,6 +232,28 @@ export async function excluirProcesso(processoId: string): Promise<void> {
     console.log('Processo excluído com sucesso');
   } catch (error) {
     console.error('Erro ao excluir processo:', error);
+    throw error;
+  }
+}
+
+export async function excluirProcessosPorPaciente(pacienteId: string): Promise<void> {
+  try {
+    const q = query(
+      collection(db, 'processosEnfermagem'),
+      where('pacienteId', '==', pacienteId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    
+    // Excluir todos os processos encontrados
+    const deletePromises = querySnapshot.docs.map(doc => 
+      deleteDoc(doc.ref)
+    );
+
+    await Promise.all(deletePromises);
+    console.log(`${querySnapshot.docs.length} processos excluídos para o paciente ${pacienteId}`);
+  } catch (error) {
+    console.error('Erro ao excluir processos do paciente:', error);
     throw error;
   }
 }

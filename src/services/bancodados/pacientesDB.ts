@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   addDoc, 
@@ -6,7 +7,10 @@ import {
   where, 
   orderBy,
   serverTimestamp,
-  Timestamp
+  Timestamp,
+  doc,
+  updateDoc,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Paciente, StatusPaciente, IndicadoresPacientes } from '@/types/paciente';
@@ -49,6 +53,65 @@ export async function cadastrarPaciente(
     console.log('Paciente cadastrado com sucesso');
   } catch (error) {
     console.error('Erro ao cadastrar paciente:', error);
+    throw error;
+  }
+}
+
+export async function atualizarPaciente(
+  pacienteId: string,
+  dadosAtualizados: {
+    nomeCompleto: string;
+    dataNascimento: Date;
+    sexo: 'Feminino' | 'Masculino';
+  },
+  uidUsuario: string
+): Promise<void> {
+  try {
+    const dataNascimentoTimestamp = Timestamp.fromDate(dadosAtualizados.dataNascimento);
+    
+    // Verificar se já existe outro paciente com mesmo nome e data de nascimento
+    const q = query(
+      collection(db, 'pacientesProcessoEnfermagem'),
+      where('uidUsuario', '==', uidUsuario),
+      where('nomeCompleto', '==', dadosAtualizados.nomeCompleto),
+      where('dataNascimento', '==', dataNascimentoTimestamp)
+    );
+    
+    const existingPatients = await getDocs(q);
+    
+    // Verificar se existe outro paciente com os mesmos dados (excluindo o atual)
+    const otherPatient = existingPatients.docs.find(doc => doc.id !== pacienteId);
+    if (otherPatient) {
+      throw new Error('Já existe outro paciente cadastrado com este nome e data de nascimento.');
+    }
+
+    const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
+    await updateDoc(pacienteRef, {
+      nomeCompleto: dadosAtualizados.nomeCompleto,
+      dataNascimento: dataNascimentoTimestamp,
+      sexo: dadosAtualizados.sexo
+    });
+
+    console.log('Paciente atualizado com sucesso');
+  } catch (error) {
+    console.error('Erro ao atualizar paciente:', error);
+    throw error;
+  }
+}
+
+export async function excluirPaciente(pacienteId: string): Promise<void> {
+  try {
+    // Primeiro, excluir todos os processos de enfermagem associados
+    const { excluirProcessosPorPaciente } = await import('./processosEnfermagemDB');
+    await excluirProcessosPorPaciente(pacienteId);
+
+    // Depois, excluir o paciente
+    const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
+    await deleteDoc(pacienteRef);
+
+    console.log('Paciente excluído com sucesso');
+  } catch (error) {
+    console.error('Erro ao excluir paciente:', error);
     throw error;
   }
 }

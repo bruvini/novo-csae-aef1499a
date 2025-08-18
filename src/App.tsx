@@ -1,64 +1,69 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Index from "./pages/Index";
-import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
-import GestaoUsuarios from "./pages/GestaoUsuarios";
-import GestaoConteudos from "./pages/GestaoConteudos";
-
-const queryClient = new QueryClient();
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryClient } from '@/contexts/QueryContext';
+import Index from '@/pages/Index';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ProcessoEnfermagem from '@/pages/ProcessoEnfermagem';
+import GestaoConteudos from '@/pages/GestaoConteudos';
+import GestaoUsuarios from '@/pages/GestaoUsuarios';
+import NotFound from '@/pages/NotFound';
+import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { Header } from '@/components/Header';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/registrar" element={<Register />} />
-              
-              {/* Rotas protegidas */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/processo-enfermagem" element={
-                <ProtectedRoute>
-                  <ProcessoEnfermagem />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/gestao-usuarios" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <GestaoUsuarios />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/gestao-conteudos" element={
-                <ProtectedRoute requireGestorConteudos={true}>
-                  <GestaoConteudos />
-                </ProtectedRoute>
-              } />
-              
-              {/* Redirecionar rotas não encontradas para login */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <QueryClient>
+      <AuthProvider>
+        <Router>
+          <SidebarProvider defaultOpen={false}>
+            <div className="min-h-screen flex w-full bg-gray-50">
+              <AppSidebar />
+              <SidebarInset className="flex-1">
+                <Header />
+                <main className="flex-1 p-6">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route 
+                      path="/processo-enfermagem" 
+                      element={
+                        <ProtectedRoute>
+                          <ProcessoEnfermagem />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/gestao-conteudos" 
+                      element={
+                        <ProtectedRoute requireAdmin>
+                          <GestaoConteudos />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/gestao-usuarios" 
+                      element={
+                        <ProtectedRoute requireAdmin>
+                          <GestaoUsuarios />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+              </SidebarInset>
+            </div>
+            <Toaster />
+          </SidebarProvider>
+        </Router>
+      </AuthProvider>
+    </QueryClient>
   );
 }
 

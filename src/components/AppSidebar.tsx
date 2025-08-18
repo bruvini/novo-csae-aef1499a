@@ -22,7 +22,10 @@ const navigationItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="w-64 border-r border-csae-green-200">
+    <Sidebar 
+      className="w-64 border-r border-csae-green-200"
+      collapsible="offcanvas"
+    >
       <SidebarContent className="bg-white">
         <SidebarGroup>
           <SidebarGroupLabel className="text-csae-green-800 font-semibold px-4 py-3">

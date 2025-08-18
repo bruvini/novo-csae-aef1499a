@@ -5,12 +5,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle, Circle, Search, FileText, Target, Play, TrendingUp } from 'lucide-react';
 import { ETAPAS_PROCESSO } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { cn } from '@/lib/utils';
 
 interface StepperProcessoProps {
   etapaAtual: number;
   onEtapaChange: (etapa: number) => void;
   etapasCompletadas: number[];
+  processo?: ProcessoEnfermagem;
 }
 
 const ICONES_ETAPAS = {
@@ -24,9 +26,24 @@ const ICONES_ETAPAS = {
 const StepperProcesso: React.FC<StepperProcessoProps> = ({
   etapaAtual,
   onEtapaChange,
-  etapasCompletadas
+  etapasCompletadas,
+  processo
 }) => {
   const progressoAtual = (etapaAtual / 5) * 100;
+
+  const isEtapaAcessivel = (numeroEtapa: number) => {
+    if (numeroEtapa <= etapaAtual || etapasCompletadas.includes(numeroEtapa)) {
+      return true;
+    }
+
+    // Lógica específica para etapa de Diagnóstico (etapa 2)
+    if (numeroEtapa === 2 && processo) {
+      return !!(processo.avaliacao.coletaDeDadosSubjetivos && 
+                processo.avaliacao.coletaDeDadosSubjetivos.trim() !== '');
+    }
+
+    return false;
+  };
 
   return (
     <div className="space-y-4">
@@ -46,7 +63,11 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
           const IconeComponent = ICONES_ETAPAS[etapa.icone as keyof typeof ICONES_ETAPAS];
           const isAtual = etapa.numero === etapaAtual;
           const isCompletada = etapasCompletadas.includes(etapa.numero);
-          const isAcessivel = etapa.numero <= etapaAtual || isCompletada;
+          const isAcessivel = isEtapaAcessivel(etapa.numero);
+
+          const tooltipContent = etapa.numero === 2 ? 
+            "Compreende a identificação de problemas existentes, condições de vulnerabilidades ou disposições para melhorar comportamentos de saúde. Estes representam o julgamento clínico das informações obtidas sobre as necessidades do cuidado de Enfermagem e saúde da pessoa, família, coletividade ou grupos especiais." :
+            etapa.descricao;
 
           return (
             <Tooltip key={etapa.numero}>
@@ -79,7 +100,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-sm">
                 <p className="font-medium">{etapa.nome}</p>
-                <p className="text-sm text-gray-600 mt-1">{etapa.descricao}</p>
+                <p className="text-sm text-gray-600 mt-1">{tooltipContent}</p>
               </TooltipContent>
             </Tooltip>
           );

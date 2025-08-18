@@ -355,6 +355,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 etapaAtual={etapaAtual}
                 onEtapaChange={handleEtapaChange}
                 etapasCompletadas={etapasCompletadas}
+                processo={processo}
               />
             </div>
 
