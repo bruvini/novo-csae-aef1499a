@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +13,7 @@ import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal } from '@/services/bancodados/revisaoSistemasDB';
+import { Timestamp } from 'firebase/firestore';
 
 interface EtapaAvaliacaoProps {
   processo: ProcessoEnfermagem;
@@ -80,8 +80,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     loadData();
   }, [processo.avaliacao?.nhbsAfetadas]);
 
-  const calculateAge = (dataNascimento: string): number => {
-    const birth = new Date(dataNascimento);
+  const calculateAge = (dataNascimento: Timestamp): number => {
+    const birth = dataNascimento.toDate();
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
