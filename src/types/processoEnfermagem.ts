@@ -15,6 +15,15 @@ export interface AvaliacaoEnfermagem {
   nhbsAfetadas: { parametro: string; nhb: string }[];
 }
 
+interface DiagnosticoSelecionado {
+  id: string; // ID do documento do diagnóstico em 'rolEnfermagem'
+  tituloDiagnostico: string;
+}
+
+export interface DiagnosticoEnfermagem {
+  diagnosticosSelecionados: DiagnosticoSelecionado[];
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -26,7 +35,7 @@ export interface ProcessoEnfermagem {
   sessoesDeTrabalho: SessaoDeTrabalho[]; // NOVO CAMPO: um array para registrar todas as sessões
   // Estruturas de dados para cada etapa (inicialmente podem ser objetos vazios)
   avaliacao: AvaliacaoEnfermagem;
-  diagnostico: any;
+  diagnostico: DiagnosticoEnfermagem;
   planejamento: any;
   implementacao: any;
   evolucao: any;
@@ -49,7 +58,7 @@ export const ETAPAS_PROCESSO: EtapaProcesso[] = [
   {
     numero: 2,
     nome: "Diagnóstico",
-    descricao: "Processo de interpretação e análise dos dados coletados na avaliação para identificar problemas de saúde reais ou potenciais que podem ser resolvidos pela enfermagem.",
+    descricao: "Compreende a identificação de problemas existentes, condições de vulnerabilidades ou disposições para melhorar comportamentos de saúde. Estes representam o julgamento clínico das informações obtidas sobre as necessidades do cuidado de Enfermagem e saúde da pessoa, família, coletividade ou grupos especiais.",
     icone: "FileText"
   },
   {

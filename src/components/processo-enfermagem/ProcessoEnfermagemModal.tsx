@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -35,6 +34,7 @@ import {
 } from '@/services/bancodados/processosEnfermagemDB';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
+import EtapaDiagnostico from './EtapaDiagnostico';
 import { Timestamp } from 'firebase/firestore';
 
 interface ProcessoEnfermagemModalProps {
@@ -66,7 +66,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       exameFisico: {},
       nhbsAfetadas: []
     } as AvaliacaoEnfermagem,
-    diagnostico: {},
+    diagnostico: { diagnosticosSelecionados: [] },
     planejamento: {},
     implementacao: {},
     evolucao: {}
@@ -99,7 +99,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             exameFisico: {},
             nhbsAfetadas: []
           },
-          diagnostico: processoExistente.diagnostico || {},
+          diagnostico: processoExistente.diagnostico || { diagnosticosSelecionados: [] },
           planejamento: processoExistente.planejamento || {},
           implementacao: processoExistente.implementacao || {},
           evolucao: processoExistente.evolucao || {}
@@ -129,7 +129,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             exameFisico: {},
             nhbsAfetadas: []
           },
-          diagnostico: {},
+          diagnostico: { diagnosticosSelecionados: [] },
           planejamento: {},
           implementacao: {},
           evolucao: {}
@@ -144,7 +144,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             exameFisico: {},
             nhbsAfetadas: []
           },
-          diagnostico: {},
+          diagnostico: { diagnosticosSelecionados: [] },
           planejamento: {},
           implementacao: {},
           evolucao: {}
@@ -182,6 +182,20 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       setProcesso(prev => prev ? {
         ...prev,
         avaliacao: novaAvaliacao
+      } : prev);
+    }
+  };
+
+  const handleUpdateDiagnostico = (novoDiagnostico: any) => {
+    setDadosEtapas(prev => ({
+      ...prev,
+      diagnostico: novoDiagnostico
+    }));
+    
+    if (processo) {
+      setProcesso(prev => prev ? {
+        ...prev,
+        diagnostico: novoDiagnostico
       } : prev);
     }
   };
@@ -356,7 +370,17 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                   )}
                 </TabsContent>
 
-                {ETAPAS_PROCESSO.slice(1).map((etapa) => (
+                <TabsContent value="2" className="h-full">
+                  {processo && (
+                    <EtapaDiagnostico
+                      processo={processo}
+                      paciente={paciente}
+                      onUpdateDiagnostico={handleUpdateDiagnostico}
+                    />
+                  )}
+                </TabsContent>
+
+                {ETAPAS_PROCESSO.slice(2).map((etapa) => (
                   <TabsContent key={etapa.numero} value={etapa.numero.toString()} className="h-full">
                     <Card className="h-full">
                       <CardHeader>

@@ -36,7 +36,7 @@ export async function criarProcessoEnfermagem(
         exameFisico: {},
         nhbsAfetadas: []
       },
-      diagnostico: {},
+      diagnostico: { diagnosticosSelecionados: [] },
       planejamento: {},
       implementacao: {},
       evolucao: {}
