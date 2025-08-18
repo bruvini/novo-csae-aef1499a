@@ -9,7 +9,10 @@ export interface SessaoDeTrabalho {
 
 export interface AvaliacaoEnfermagem {
   coletaDeDadosSubjetivos: string;
-  exameFisico: any; // Manter como 'any' por enquanto, será detalhado no futuro
+  exameFisico: {
+    [parametro: string]: string | number; // Ex: { "Frequência Cardíaca": 110, "Pressão Arterial Sistólica": 130 }
+  };
+  nhbsAfetadas: { parametro: string; nhb: string }[];
 }
 
 export interface ProcessoEnfermagem {

@@ -61,7 +61,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   // Dados das etapas (inicialmente vazios)
   const [dadosEtapas, setDadosEtapas] = useState({
-    avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} } as AvaliacaoEnfermagem,
+    avaliacao: { 
+      coletaDeDadosSubjetivos: '', 
+      exameFisico: {},
+      nhbsAfetadas: []
+    } as AvaliacaoEnfermagem,
     diagnostico: {},
     planejamento: {},
     implementacao: {},
@@ -90,7 +94,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         setProcesso(processoExistente);
         setEtapaAtual(processoExistente.etapaAtual);
         setDadosEtapas({
-          avaliacao: processoExistente.avaliacao || { coletaDeDadosSubjetivos: '', exameFisico: {} },
+          avaliacao: processoExistente.avaliacao || { 
+            coletaDeDadosSubjetivos: '', 
+            exameFisico: {},
+            nhbsAfetadas: []
+          },
           diagnostico: processoExistente.diagnostico || {},
           planejamento: processoExistente.planejamento || {},
           implementacao: processoExistente.implementacao || {},
@@ -116,7 +124,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           etapaAtual: 1,
           dataInicio: agora,
           sessoesDeTrabalho: [{ inicioSessao: agora }],
-          avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} },
+          avaliacao: { 
+            coletaDeDadosSubjetivos: '', 
+            exameFisico: {},
+            nhbsAfetadas: []
+          },
           diagnostico: {},
           planejamento: {},
           implementacao: {},
@@ -127,7 +139,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         setEtapaAtual(1);
         setEtapasCompletadas([]);
         setDadosEtapas({
-          avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} },
+          avaliacao: { 
+            coletaDeDadosSubjetivos: '', 
+            exameFisico: {},
+            nhbsAfetadas: []
+          },
           diagnostico: {},
           planejamento: {},
           implementacao: {},
@@ -313,10 +329,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           }}
         >
           <DialogHeader className="shrink-0">
-            <DialogTitle className="text-xl font-bold text-csae-green-800">
+            <DialogTitle className="text-xl font-bold text-primary">
               {paciente.nomeCompleto}
             </DialogTitle>
-            <p className="text-gray-600">Processo de Enfermagem</p>
+            <p className="text-muted-foreground">Processo de Enfermagem</p>
           </DialogHeader>
 
           <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
@@ -334,6 +350,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                   {processo && (
                     <EtapaAvaliacao
                       processo={processo}
+                      paciente={paciente}
                       onUpdateAvaliacao={handleUpdateAvaliacao}
                     />
                   )}
@@ -349,9 +366,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-4">
-                          <p className="text-gray-600">{etapa.descricao}</p>
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <p className="text-center text-gray-500">
+                          <p className="text-muted-foreground">{etapa.descricao}</p>
+                          <div className="bg-muted border border-border rounded-lg p-6">
+                            <p className="text-center text-muted-foreground">
                               Componentes da etapa "{etapa.nome}" serão implementados aqui.
                             </p>
                           </div>
@@ -392,7 +409,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               <Button
                 onClick={handleConcluirProcesso}
                 disabled={saving}
-                className="csae-btn-primary flex items-center gap-2"
+                className="flex items-center gap-2"
               >
                 {saving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -419,7 +436,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleExcluirProcesso}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
             </AlertDialogAction>
