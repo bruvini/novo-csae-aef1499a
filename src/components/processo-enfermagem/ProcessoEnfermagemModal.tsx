@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -23,7 +24,7 @@ import { Loader2, Trash2, Save, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente } from '@/types/paciente';
-import { ProcessoEnfermagem, ETAPAS_PROCESSO } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, ETAPAS_PROCESSO, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import {
   criarProcessoEnfermagem,
   buscarProcessoAtivo,
@@ -33,6 +34,7 @@ import {
   iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
 import StepperProcesso from './StepperProcesso';
+import EtapaAvaliacao from './EtapaAvaliacao';
 import { Timestamp } from 'firebase/firestore';
 
 interface ProcessoEnfermagemModalProps {
@@ -59,7 +61,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   // Dados das etapas (inicialmente vazios)
   const [dadosEtapas, setDadosEtapas] = useState({
-    avaliacao: {},
+    avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} } as AvaliacaoEnfermagem,
     diagnostico: {},
     planejamento: {},
     implementacao: {},
@@ -88,7 +90,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         setProcesso(processoExistente);
         setEtapaAtual(processoExistente.etapaAtual);
         setDadosEtapas({
-          avaliacao: processoExistente.avaliacao || {},
+          avaliacao: processoExistente.avaliacao || { coletaDeDadosSubjetivos: '', exameFisico: {} },
           diagnostico: processoExistente.diagnostico || {},
           planejamento: processoExistente.planejamento || {},
           implementacao: processoExistente.implementacao || {},
@@ -114,7 +116,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           etapaAtual: 1,
           dataInicio: agora,
           sessoesDeTrabalho: [{ inicioSessao: agora }],
-          avaliacao: {},
+          avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} },
           diagnostico: {},
           planejamento: {},
           implementacao: {},
@@ -125,7 +127,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         setEtapaAtual(1);
         setEtapasCompletadas([]);
         setDadosEtapas({
-          avaliacao: {},
+          avaliacao: { coletaDeDadosSubjetivos: '', exameFisico: {} },
           diagnostico: {},
           planejamento: {},
           implementacao: {},
@@ -152,6 +154,20 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   const handleEtapaChange = (novaEtapa: number) => {
     setEtapaAtual(novaEtapa);
+  };
+
+  const handleUpdateAvaliacao = (novaAvaliacao: AvaliacaoEnfermagem) => {
+    setDadosEtapas(prev => ({
+      ...prev,
+      avaliacao: novaAvaliacao
+    }));
+    
+    if (processo) {
+      setProcesso(prev => prev ? {
+        ...prev,
+        avaliacao: novaAvaliacao
+      } : prev);
+    }
   };
 
   const handleSalvarProgresso = async () => {
@@ -314,7 +330,16 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
             <div className="flex-1 overflow-auto">
               <Tabs value={etapaAtual.toString()} className="h-full">
-                {ETAPAS_PROCESSO.map((etapa) => (
+                <TabsContent value="1" className="h-full">
+                  {processo && (
+                    <EtapaAvaliacao
+                      processo={processo}
+                      onUpdateAvaliacao={handleUpdateAvaliacao}
+                    />
+                  )}
+                </TabsContent>
+
+                {ETAPAS_PROCESSO.slice(1).map((etapa) => (
                   <TabsContent key={etapa.numero} value={etapa.numero.toString()} className="h-full">
                     <Card className="h-full">
                       <CardHeader>

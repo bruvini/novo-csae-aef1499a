@@ -7,6 +7,11 @@ export interface SessaoDeTrabalho {
   fimSessao?: Timestamp; // Opcional, pois a sessão atual não terá um fim até ser salva
 }
 
+export interface AvaliacaoEnfermagem {
+  coletaDeDadosSubjetivos: string;
+  exameFisico: any; // Manter como 'any' por enquanto, será detalhado no futuro
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -17,7 +22,7 @@ export interface ProcessoEnfermagem {
   dataConclusao?: Timestamp;
   sessoesDeTrabalho: SessaoDeTrabalho[]; // NOVO CAMPO: um array para registrar todas as sessões
   // Estruturas de dados para cada etapa (inicialmente podem ser objetos vazios)
-  avaliacao: any;
+  avaliacao: AvaliacaoEnfermagem;
   diagnostico: any;
   planejamento: any;
   implementacao: any;

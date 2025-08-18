@@ -31,7 +31,10 @@ export async function criarProcessoEnfermagem(
           inicioSessao: agora
         }
       ], // Primeira sessão inicializada com timestamp do cliente
-      avaliacao: {},
+      avaliacao: {
+        coletaDeDadosSubjetivos: '',
+        exameFisico: {}
+      },
       diagnostico: {},
       planejamento: {},
       implementacao: {},
