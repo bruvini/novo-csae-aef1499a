@@ -54,9 +54,9 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   const [diagnosticosPorProtocolo, setDiagnosticosPorProtocolo] = useState<DiagnosticoPorSubconjunto>({});
   const [loading, setLoading] = useState(true);
 
-  // Verificar se há dados da avaliação
-  const hasAvaliacaoData = processo.avaliacao.coletaDeDadosSubjetivos?.trim() !== '';
-  const nhbsAfetadas = processo.avaliacao.nhbsAfetadas || [];
+  // Verificar se há dados da avaliação - uso seguro com fallback
+  const hasAvaliacaoData = ((processo.avaliacao?.coletaDeDadosSubjetivos ?? '').trim() !== '');
+  const nhbsAfetadas = processo.avaliacao?.nhbsAfetadas ?? [];
 
   useEffect(() => {
     const loadData = async () => {
@@ -111,13 +111,14 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   };
 
   const handleAddDiagnostico = (diagnostico: Diagnostico) => {
-    const jaExiste = processo.diagnostico.diagnosticosSelecionados.some(
+    const selecionadosAtuais = processo.diagnostico?.diagnosticosSelecionados ?? [];
+    const jaExiste = selecionadosAtuais.some(
       d => d.id === diagnostico.id
     );
 
     if (!jaExiste) {
       const novosDiagnosticos = [
-        ...processo.diagnostico.diagnosticosSelecionados,
+        ...selecionadosAtuais,
         {
           id: diagnostico.id,
           tituloDiagnostico: diagnostico.tituloDiagnostico
@@ -131,7 +132,8 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   };
 
   const handleRemoveDiagnostico = (diagnosticoId: string) => {
-    const novosDiagnosticos = processo.diagnostico.diagnosticosSelecionados.filter(
+    const selecionadosAtuais = processo.diagnostico?.diagnosticosSelecionados ?? [];
+    const novosDiagnosticos = selecionadosAtuais.filter(
       d => d.id !== diagnosticoId
     );
 
@@ -176,6 +178,9 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       </div>
     );
   }
+
+  // Selecionados com fallback seguro
+  const diagnosticosSelecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
 
   return (
     <div className="space-y-6">
@@ -384,13 +389,13 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
           <CardTitle className="text-base">Diagnósticos de Enfermagem Selecionados</CardTitle>
         </CardHeader>
         <CardContent>
-          {processo.diagnostico.diagnosticosSelecionados.length === 0 ? (
+          {diagnosticosSelecionados.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Nenhum diagnóstico selecionado ainda. Explore as categorias acima para adicionar diagnósticos.
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
-              {processo.diagnostico.diagnosticosSelecionados.map((diagnostico) => (
+              {diagnosticosSelecionados.map((diagnostico) => (
                 <Badge
                   key={diagnostico.id}
                   variant="secondary"
