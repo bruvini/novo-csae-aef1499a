@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -8,9 +9,7 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp,
-  Timestamp,
-  arrayUnion
+  Timestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ProcessoEnfermagem, SessaoDeTrabalho } from '@/types/processoEnfermagem';
@@ -20,16 +19,18 @@ export async function criarProcessoEnfermagem(
   enfermeiroId: string
 ): Promise<string> {
   try {
-    const agora = serverTimestamp();
+    const agora = Timestamp.now();
     const novoProcesso = {
       pacienteId,
       enfermeiroId,
       status: 'em_andamento' as const,
       etapaAtual: 1,
       dataInicio: agora,
-      sessoesDeTrabalho: [{
-        inicioSessao: agora
-      }], // Primeira sessão inicializada
+      sessoesDeTrabalho: [
+        {
+          inicioSessao: agora
+        }
+      ], // Primeira sessão inicializada com timestamp do cliente
       avaliacao: {},
       diagnostico: {},
       planejamento: {},
@@ -49,13 +50,27 @@ export async function criarProcessoEnfermagem(
 export async function iniciarNovaSessao(processoId: string): Promise<void> {
   try {
     const processoRef = doc(db, 'processosEnfermagem', processoId);
-    
+    const processoDoc = await getDoc(processoRef);
+
+    if (!processoDoc.exists()) return;
+
+    const dados = processoDoc.data() as ProcessoEnfermagem;
+    const sessoes: SessaoDeTrabalho[] = Array.isArray(dados.sessoesDeTrabalho) ? [...dados.sessoesDeTrabalho] : [];
+
+    // Se a última sessão ainda não foi finalizada, não crie outra
+    const ultima = sessoes[sessoes.length - 1];
+    if (ultima && !ultima.fimSessao) {
+      console.log('Sessão já em andamento. Nova sessão não será iniciada.');
+      return;
+    }
+
+    const novaSessao: SessaoDeTrabalho = { inicioSessao: Timestamp.now() };
+    sessoes.push(novaSessao);
+
     await updateDoc(processoRef, {
-      sessoesDeTrabalho: arrayUnion({
-        inicioSessao: serverTimestamp()
-      })
+      sessoesDeTrabalho: sessoes
     });
-    
+
     console.log('Nova sessão iniciada');
   } catch (error) {
     console.error('Erro ao iniciar nova sessão:', error);
@@ -70,19 +85,27 @@ export async function finalizarSessaoAtual(processoId: string): Promise<void> {
     
     if (processoDoc.exists()) {
       const dados = processoDoc.data() as ProcessoEnfermagem;
-      const sessoes = [...dados.sessoesDeTrabalho];
+      const sessoes: SessaoDeTrabalho[] = Array.isArray(dados.sessoesDeTrabalho) ? [...dados.sessoesDeTrabalho] : [];
       
-      // Encontrar a última sessão sem fimSessao
-      const ultimaSessaoIndex = sessoes.findIndex(sessao => !sessao.fimSessao);
+      // Encontrar a última sessão sem fimSessao (varre de trás para frente)
+      let ultimaSessaoIndex = -1;
+      for (let i = sessoes.length - 1; i >= 0; i--) {
+        if (!sessoes[i].fimSessao) {
+          ultimaSessaoIndex = i;
+          break;
+        }
+      }
       
       if (ultimaSessaoIndex !== -1) {
-        sessoes[ultimaSessaoIndex].fimSessao = serverTimestamp() as Timestamp;
+        sessoes[ultimaSessaoIndex].fimSessao = Timestamp.now();
         
         await updateDoc(processoRef, {
           sessoesDeTrabalho: sessoes
         });
         
         console.log('Sessão finalizada');
+      } else {
+        console.log('Nenhuma sessão aberta para finalizar.');
       }
     }
   } catch (error) {
@@ -188,7 +211,7 @@ export async function concluirProcesso(
     
     await updateDoc(processoRef, {
       status: 'concluido',
-      dataConclusao: serverTimestamp(),
+      dataConclusao: Timestamp.now(),
       etapaAtual: 5,
       ...dadosEtapas
     });

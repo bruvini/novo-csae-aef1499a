@@ -33,6 +33,7 @@ import {
   iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
 import StepperProcesso from './StepperProcesso';
+import { Timestamp } from 'firebase/firestore';
 
 interface ProcessoEnfermagemModalProps {
   open: boolean;
@@ -104,14 +105,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         // Criar novo processo (já inclui a primeira sessão)
         const novoProcessoId = await criarProcessoEnfermagem(paciente.id, user.uid);
         
+        const agora = Timestamp.now();
         const novoProcesso: ProcessoEnfermagem = {
           id: novoProcessoId,
           pacienteId: paciente.id,
           enfermeiroId: user.uid,
           status: 'em_andamento',
           etapaAtual: 1,
-          dataInicio: new Date() as any,
-          sessoesDeTrabalho: [{ inicioSessao: new Date() as any }],
+          dataInicio: agora,
+          sessoesDeTrabalho: [{ inicioSessao: agora }],
           avaliacao: {},
           diagnostico: {},
           planejamento: {},
