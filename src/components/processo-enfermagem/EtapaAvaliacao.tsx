@@ -10,23 +10,23 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { BookOpen, Activity, FileText, Stethoscope } from 'lucide-react';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
-import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames, Exame } from '@/services/bancodados/examesDB';
-import { getSistemas, SistemaCorporal } from '@/services/bancodados/revisaoSistemasDB';
+import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
+import { getExames, Exame, ComponenteExame, ResultadoExame } from '@/services/bancodados/examesDB';
+import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
+import { Combobox } from '@/components/ui/combobox';
+
+// Tipos auxiliares de validação
+interface ValidationStatus {
+  status: 'normal' | 'alterado' | 'neutro';
+  nomeAlteracao?: string;
+  nhb?: string;
+}
 
 interface EtapaAvaliacaoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
   onUpdateAvaliacao: (avaliacao: AvaliacaoEnfermagem) => void;
-}
-
-interface ValidationStatus {
-  [parametro: string]: {
-    status: 'normal' | 'alterado';
-    nomeAlteracao?: string;
-    nhb?: string;
-  };
 }
 
 const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
@@ -40,7 +40,11 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const [exames, setExames] = useState<Exame[]>([]);
   const [sistemas, setSistemas] = useState<SistemaCorporal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [validationStatus, setValidationStatus] = useState<ValidationStatus>({});
+
+  // Novo estado padronizado para validação por parâmetro
+  const [validationStates, setValidationStates] = useState<{ [parametro: string]: ValidationStatus }>({});
+
+  // Mantemos a lista de NHBs local para exibição imediata
   const [nhbsAfetadas, setNhbsAfetadas] = useState<{ parametro: string; nhb: string }[]>([]);
 
   useEffect(() => {
@@ -65,8 +69,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
-        
-        // Initialize NHBs from existing data
+
+        // Inicializa NHBs a partir dos dados existentes
         if (processo.avaliacao?.nhbsAfetadas) {
           setNhbsAfetadas(processo.avaliacao.nhbsAfetadas);
         }
@@ -85,131 +89,212 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
       age--;
     }
-    
+
     return age;
   };
 
-  const validateValue = (parametro: string, value: string | number, type: 'sinal' | 'exame' | 'sistema') => {
-    if (!value || value === '') {
-      // Remove from validation if empty
-      const newStatus = { ...validationStatus };
-      delete newStatus[parametro];
-      setValidationStatus(newStatus);
-      
-      // Remove from NHBs
-      setNhbsAfetadas(prev => prev.filter(item => item.parametro !== parametro));
+  // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
+  const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
+    setNhbsAfetadas((prev) => {
+      const outras = prev.filter((n) => n.parametro !== parametro);
+      const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
+      // Sincroniza no processo
+      const novaAvaliacao: AvaliacaoEnfermagem = {
+        ...processo.avaliacao,
+        nhbsAfetadas: novaLista,
+      };
+      onUpdateAvaliacao(novaAvaliacao);
+      return novaLista;
+    });
+  };
+
+  // Utilitário: define o status de validação de um parâmetro
+  const setParametroValidation = (
+    parametro: string,
+    status: ValidationStatus['status'],
+    nomeAlteracao?: string,
+    nhb?: string
+  ) => {
+    setValidationStates((prev) => ({
+      ...prev,
+      [parametro]: { status, nomeAlteracao, nhb },
+    }));
+  };
+
+  // Função genérica para salvar valor do exame físico no processo (mantendo imutabilidade)
+  const saveExameFisicoValue = (parametro: string, value: string | number) => {
+    const novoExameFisico = {
+      ...processo.avaliacao.exameFisico,
+      [parametro]: value,
+    };
+
+    const novaAvaliacao: AvaliacaoEnfermagem = {
+      ...processo.avaliacao,
+      exameFisico: novoExameFisico,
+      nhbsAfetadas,
+    };
+
+    onUpdateAvaliacao(novaAvaliacao);
+  };
+
+  // Validação para valores numéricos (sinais vitais e exames laboratoriais)
+  const validateNumeric = (parametro: string, value: string | number, type: 'sinal' | 'exameLab') => {
+    if (value === '' || value === null || typeof value === 'undefined') {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
       return;
     }
 
     const numValue = Number(value);
-    if (isNaN(numValue)) return;
-
-    const idade = calculateAge(paciente.dataNascimento);
-    let referenceData: any[] = [];
-
-    // Get reference data based on type
-    switch (type) {
-      case 'sinal':
-        const sinal = sinaisVitais.find(s => s.sinalVitalNome === parametro);
-        referenceData = sinal?.valoresDeReferencia || [];
-        break;
-      case 'exame':
-        const exame = exames.find(e => e.componentes.some(c => c.componenteAnalisado === parametro));
-        const componente = exame?.componentes.find(c => c.componenteAnalisado === parametro);
-        referenceData = componente?.resultados || [];
-        break;
-      default:
-        return;
+    if (isNaN(numValue)) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
     }
 
-    // Find matching reference range
-    const matchingRange = referenceData.find(ref => {
-      const ageMatches = (!ref.idadeMinima || idade >= ref.idadeMinima) && 
-                        (!ref.idadeMaxima || idade <= ref.idadeMaxima);
-      const sexMatches = ref.criterioSexo === 'Ambos' || ref.criterioSexo === paciente.sexo;
-      return ageMatches && sexMatches;
+    const idade = calculateAge(paciente.dataNascimento);
+    const sexo = paciente.sexo;
+
+    let referenceData: (ValorReferenciaVital | ResultadoExame)[] = [];
+
+    if (type === 'sinal') {
+      const sinal = sinaisVitais.find((s) => s.sinalVitalNome === parametro);
+      referenceData = (sinal?.valoresDeReferencia || []) as ValorReferenciaVital[];
+    } else {
+      // exameLab
+      const exame = exames.find(
+        (e) => e.tipoExame === 'Laboratorial' && e.componentes.some((c) => c.componenteAnalisado === parametro)
+      );
+      const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
+      referenceData = (componente?.resultados || []) as ResultadoExame[];
+    }
+
+    if (!referenceData.length) {
+      // Sem referência -> neutro
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
+
+    // Encontra faixa compatível por idade e sexo
+    const matchingRange = referenceData.find((ref: any) => {
+      const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
+      const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
+      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === sexo;
+      return idadeMinOk && idadeMaxOk && sexoOk;
+    }) as any;
+
+    if (!matchingRange) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
+
+    // Considera "Normal"/"Normalidade" como normal; caso contrário, compara min/max quando existentes
+    const nomeAlt: string | null | undefined = matchingRange.nomeAlteracao;
+    const nhb: string | undefined = matchingRange.subconjuntoNHBVinculado;
+
+    const nomeIndicaNormal =
+      nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt === '' || nomeAlt == null;
+
+    const min = (matchingRange as ResultadoExame).valorMinimo ?? (matchingRange as ValorReferenciaVital).valorMinimo;
+    const max = (matchingRange as ResultadoExame).valorMaximo ?? (matchingRange as ValorReferenciaVital).valorMaximo;
+
+    const dentroFaixa =
+      (min == null || numValue >= min) && (max == null || numValue <= max);
+
+    const isNormal = nomeIndicaNormal || dentroFaixa;
+
+    if (isNormal) {
+      setParametroValidation(parametro, 'normal');
+      updateNhbs(parametro, true);
+    } else {
+      setParametroValidation(parametro, 'alterado', nomeAlt || 'Alteração', nhb);
+      updateNhbs(parametro, false, nhb);
+    }
+  };
+
+  // Validação para exames de imagem (seleção classificatória)
+  const validateImagem = (parametro: string, selected: string) => {
+    if (!selected) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
+
+    const exame = exames.find(
+      (e) => e.tipoExame === 'Imagem' && e.componentes.some((c) => c.componenteAnalisado === parametro)
+    );
+    const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
+    const resultado = componente?.resultados.find((r) => r.resultadoClassificatorio === selected);
+
+    if (!resultado) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
+
+    const nomeAlt = resultado.nomeAlteracao;
+    const nhb = resultado.subconjuntoNHBVinculado;
+    const isNormal = nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt == null || nomeAlt === '';
+
+    if (isNormal) {
+      setParametroValidation(parametro, 'normal');
+      updateNhbs(parametro, true);
+    } else {
+      setParametroValidation(parametro, 'alterado', nomeAlt, nhb);
+      updateNhbs(parametro, false, nhb);
+    }
+  };
+
+  // Validação para revisão de sistemas (achados propedêuticos)
+  const validateSistema = (parametro: string, selectedDescricao: string) => {
+    if (!selectedDescricao) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
+
+    // Encontrar o exame e achado correspondente pelo nome do "parametro" (utilizamos exame.nomeExame como parâmetro)
+    let achadoSelecionado: Achado | undefined = undefined;
+    sistemas.some((sist) => {
+      const exame = sist.exames.find((ex) => ex.nomeExame === parametro);
+      if (exame) {
+        achadoSelecionado = exame.achados.find((a) => a.descricaoAchado === selectedDescricao);
+        return true;
+      }
+      return false;
     });
 
-    if (matchingRange) {
-      const isNormal = (!matchingRange.valorMinimo || numValue >= matchingRange.valorMinimo) &&
-                      (!matchingRange.valorMaximo || numValue <= matchingRange.valorMaximo);
+    if (!achadoSelecionado) {
+      setParametroValidation(parametro, 'neutro');
+      updateNhbs(parametro, true);
+      return;
+    }
 
-      const newStatus = {
-        ...validationStatus,
-        [parametro]: {
-          status: isNormal ? 'normal' as const : 'alterado' as const,
-          nomeAlteracao: matchingRange.nomeAlteracao,
-          nhb: matchingRange.subconjuntoNHBVinculado
-        }
-      };
+    const nomeAlt = achadoSelecionado.nomeAlteracao;
+    const nhb = achadoSelecionado.subconjuntoNHBVinculado;
+    const isNormal = nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt == null || nomeAlt === '';
 
-      setValidationStatus(newStatus);
-
-      if (!isNormal && matchingRange.subconjuntoNHBVinculado) {
-        setNhbsAfetadas(prev => {
-          const filtered = prev.filter(item => item.parametro !== parametro);
-          return [...filtered, { 
-            parametro, 
-            nhb: matchingRange.subconjuntoNHBVinculado 
-          }];
-        });
-      } else {
-        setNhbsAfetadas(prev => prev.filter(item => item.parametro !== parametro));
-      }
+    if (isNormal) {
+      setParametroValidation(parametro, 'normal');
+      updateNhbs(parametro, true);
+    } else {
+      setParametroValidation(parametro, 'alterado', nomeAlt, nhb);
+      updateNhbs(parametro, false, nhb);
     }
   };
 
   const handleColetaDadosChange = (value: string) => {
     const novaAvaliacao: AvaliacaoEnfermagem = {
       ...processo.avaliacao,
-      coletaDeDadosSubjetivos: value
+      coletaDeDadosSubjetivos: value,
     };
     onUpdateAvaliacao(novaAvaliacao);
-  };
-
-  const handleExameFisicoChange = (parametro: string, value: string | number) => {
-    const novoExameFisico = {
-      ...processo.avaliacao.exameFisico,
-      [parametro]: value
-    };
-
-    const novaAvaliacao: AvaliacaoEnfermagem = {
-      ...processo.avaliacao,
-      exameFisico: novoExameFisico,
-      nhbsAfetadas
-    };
-
-    onUpdateAvaliacao(novaAvaliacao);
-  };
-
-  // Update NHBs when they change
-  useEffect(() => {
-    const novaAvaliacao: AvaliacaoEnfermagem = {
-      ...processo.avaliacao,
-      nhbsAfetadas
-    };
-    onUpdateAvaliacao(novaAvaliacao);
-  }, [nhbsAfetadas]);
-
-  const getInputClassName = (parametro: string) => {
-    const status = validationStatus[parametro];
-    if (!status) return '';
-    return status.status === 'alterado' ? 'border-red-500' : 'border-green-500';
-  };
-
-  const renderValidationMessage = (parametro: string) => {
-    const status = validationStatus[parametro];
-    if (!status || status.status === 'normal') return null;
-    
-    return (
-      <p className="text-xs text-red-600 mt-1">
-        {status.nomeAlteracao}
-      </p>
-    );
   };
 
   if (loading) {
@@ -219,6 +304,20 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       </div>
     );
   }
+
+  // Classes condicionais para feedback visual
+  const getInputClassName = (parametro: string) => {
+    const status = validationStates[parametro]?.status || 'neutro';
+    if (status === 'alterado') return 'border-red-500';
+    if (status === 'normal') return 'border-green-500';
+    return '';
+  };
+
+  const renderValidationMessage = (parametro: string) => {
+    const v = validationStates[parametro];
+    if (!v || v.status !== 'alterado') return null;
+    return <p className="text-xs text-red-600 mt-1">{v.nomeAlteracao}</p>;
+  };
 
   return (
     <div className="h-full">
@@ -437,37 +536,35 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                     <DialogTitle>Guia para Exame Físico de Enfermagem</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="h-full pr-4">
-                    <div className="space-y-6 text-sm">
-                      <section>
-                        <h3 className="text-lg font-semibold text-primary mb-3">Privacidade e Respeito</h3>
-                        <p className="mb-4">
-                          O exame físico deve sempre respeitar a privacidade e dignidade do paciente. 
-                          Explique cada procedimento antes de realizá-lo e obtenha consentimento.
-                        </p>
-                      </section>
+                    <section>
+                      <h3 className="text-lg font-semibold text-primary mb-3">Privacidade e Respeito</h3>
+                      <p className="mb-4">
+                        O exame físico deve sempre respeitar a privacidade e dignidade do paciente. 
+                        Explique cada procedimento antes de realizá-lo e obtenha consentimento.
+                      </p>
+                    </section>
 
-                      <section>
-                        <h3 className="text-lg font-semibold text-primary mb-3">Clareza nas Instruções</h3>
-                        <p className="mb-4">
-                          Use linguagem simples e clara ao dar instruções. Verifique se o paciente 
-                          compreendeu o que será feito e tire suas dúvidas.
-                        </p>
-                      </section>
+                    <section>
+                      <h3 className="text-lg font-semibold text-primary mb-3">Clareza nas Instruções</h3>
+                      <p className="mb-4">
+                        Use linguagem simples e clara ao dar instruções. Verifique se o paciente 
+                        compreendeu o que será feito e tire suas dúvidas.
+                      </p>
+                    </section>
 
-                      <section>
-                        <h3 className="text-lg font-semibold text-primary mb-3">O Toque Terapêutico</h3>
-                        <p className="mb-4">
-                          O toque durante o exame físico deve ser firme, mas gentil. Mantenha as mãos 
-                          aquecidas e explique a sensação que o paciente pode esperar sentir.
-                        </p>
-                      </section>
+                    <section>
+                      <h3 className="text-lg font-semibold text-primary mb-3">O Toque Terapêutico</h3>
+                      <p className="mb-4">
+                        O toque durante o exame físico deve ser firme, mas gentil. Mantenha as mãos 
+                        aquecidas e explique a sensação que o paciente pode esperar sentir.
+                      </p>
+                    </section>
 
-                      <div className="border-t pt-4 mt-6">
-                        <p className="text-xs text-muted-foreground">
-                          <strong>Referência:</strong> Todo o conteúdo deste guia foi extraído de:<br />
-                          Arma, Juliana Cipriano de. Guia de habilidades de comunicação no cuidado de enfermagem [livro eletrônico] / Juliana Cipriano de Arma, Mirelle Saes, Luiz Augusto Facchini. -- Florianópolis, SC : Ed. dos Autores, 2022. PDF.
-                        </p>
-                      </div>
+                    <div className="border-t pt-4 mt-6">
+                      <p className="text-xs text-muted-foreground">
+                        <strong>Referência:</strong> Todo o conteúdo deste guia foi extraído de:<br />
+                        Arma, Juliana Cipriano de. Guia de habilidades de comunicação no cuidado de enfermagem [livro eletrônico] / Juliana Cipriano de Arma, Mirelle Saes, Luiz Augusto Facchini. -- Florianópolis, SC : Ed. dos Autores, 2022. PDF.
+                      </p>
                     </div>
                   </ScrollArea>
                 </DialogContent>
@@ -475,6 +572,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
             </div>
 
             <Accordion type="multiple" className="w-full">
+              {/* Sinais Vitais - Inputs numéricos com validação em tempo real */}
               <AccordionItem value="sinais-vitais">
                 <AccordionTrigger className="flex items-center gap-2">
                   <Activity className="w-4 h-4" />
@@ -489,11 +587,12 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                         </label>
                         <Input
                           type="number"
-                          placeholder={`Digite o valor`}
+                          placeholder="Digite o valor"
                           value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''}
                           onChange={(e) => {
-                            handleExameFisicoChange(sinal.sinalVitalNome, e.target.value);
-                            validateValue(sinal.sinalVitalNome, e.target.value, 'sinal');
+                            const val = e.target.value;
+                            saveExameFisicoValue(sinal.sinalVitalNome, val);
+                            validateNumeric(sinal.sinalVitalNome, val, 'sinal');
                           }}
                           className={getInputClassName(sinal.sinalVitalNome)}
                         />
@@ -504,6 +603,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionContent>
               </AccordionItem>
 
+              {/* Exames Diagnósticos - Diferenciar Laboratorial (Input) e Imagem (Combobox) */}
               <AccordionItem value="exames-diagnosticos">
                 <AccordionTrigger className="flex items-center gap-2">
                   <FileText className="w-4 h-4" />
@@ -515,24 +615,63 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                       <div key={exame.id} className="space-y-3">
                         <h4 className="font-medium text-sm">{exame.nomeExame}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-4">
-                          {exame.componentes.map((componente, idx) => (
-                            <div key={idx} className="space-y-2">
-                              <label className="text-sm font-medium">
-                                {componente.componenteAnalisado} ({componente.unidadeMedida})
-                              </label>
-                              <Input
-                                type="number"
-                                placeholder="Digite o resultado"
-                                value={processo.avaliacao?.exameFisico?.[componente.componenteAnalisado] || ''}
-                                onChange={(e) => {
-                                  handleExameFisicoChange(componente.componenteAnalisado, e.target.value);
-                                  validateValue(componente.componenteAnalisado, e.target.value, 'exame');
-                                }}
-                                className={getInputClassName(componente.componenteAnalisado)}
-                              />
-                              {renderValidationMessage(componente.componenteAnalisado)}
-                            </div>
-                          ))}
+                          {exame.componentes.map((componente, idx) => {
+                            const parametro = componente.componenteAnalisado;
+                            const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
+
+                            // Exame de Imagem -> Combobox com resultadoClassificatorio
+                            if (exame.tipoExame === 'Imagem') {
+                              const opcoes = Array.from(
+                                new Set(
+                                  (componente.resultados || [])
+                                    .map((r) => r.resultadoClassificatorio)
+                                    .filter((r): r is string => !!r)
+                                )
+                              ).map((r) => ({ value: r, label: r }));
+
+                              return (
+                                <div key={idx} className="space-y-2">
+                                  <label className="text-sm font-medium">
+                                    {parametro}
+                                  </label>
+                                  <Combobox
+                                    options={opcoes}
+                                    value={String(valorAtual)}
+                                    onValueChange={(selected) => {
+                                      // Limpar seleção (""), ou salvar seleção
+                                      saveExameFisicoValue(parametro, selected);
+                                      validateImagem(parametro, selected);
+                                    }}
+                                    placeholder="Selecione o resultado..."
+                                    searchPlaceholder="Buscar resultado..."
+                                    className={getInputClassName(parametro)}
+                                  />
+                                  {renderValidationMessage(parametro)}
+                                </div>
+                              );
+                            }
+
+                            // Exame Laboratorial -> Input numérico
+                            return (
+                              <div key={idx} className="space-y-2">
+                                <label className="text-sm font-medium">
+                                  {parametro} ({componente.unidadeMedida})
+                                </label>
+                                <Input
+                                  type="number"
+                                  placeholder="Digite o resultado"
+                                  value={valorAtual}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    saveExameFisicoValue(parametro, val);
+                                    validateNumeric(parametro, val, 'exameLab');
+                                  }}
+                                  className={getInputClassName(parametro)}
+                                />
+                                {renderValidationMessage(parametro)}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
@@ -540,6 +679,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionContent>
               </AccordionItem>
 
+              {/* Revisão de Sistemas - Combobox para achados propedêuticos */}
               <AccordionItem value="revisao-sistemas">
                 <AccordionTrigger className="flex items-center gap-2">
                   <Stethoscope className="w-4 h-4" />
@@ -551,20 +691,35 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                       <div key={sistema.id} className="space-y-3">
                         <h4 className="font-medium text-sm">{sistema.nomeSistema}</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
-                          {sistema.exames.map((exame, idx) => (
-                            <div key={idx} className="space-y-2">
-                              <label className="text-sm font-medium">
-                                {exame.nomeExame} - {exame.propedeutica}
-                              </label>
-                              <Input
-                                placeholder="Digite o achado"
-                                value={processo.avaliacao?.exameFisico?.[exame.nomeExame] || ''}
-                                onChange={(e) => {
-                                  handleExameFisicoChange(exame.nomeExame, e.target.value);
-                                }}
-                              />
-                            </div>
-                          ))}
+                          {sistema.exames.map((exame, idx) => {
+                            const parametro = exame.nomeExame;
+                            const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
+
+                            const opcoesAchados = (exame.achados || []).map((a) => ({
+                              value: a.descricaoAchado,
+                              label: a.descricaoAchado,
+                            }));
+
+                            return (
+                              <div key={idx} className="space-y-2">
+                                <label className="text-sm font-medium">
+                                  {exame.nomeExame} - {exame.propedeutica}
+                                </label>
+                                <Combobox
+                                  options={opcoesAchados}
+                                  value={String(valorAtual)}
+                                  onValueChange={(selected) => {
+                                    saveExameFisicoValue(parametro, selected);
+                                    validateSistema(parametro, selected);
+                                  }}
+                                  placeholder="Selecione o achado..."
+                                  searchPlaceholder="Buscar achado..."
+                                  className={getInputClassName(parametro)}
+                                />
+                                {renderValidationMessage(parametro)}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
