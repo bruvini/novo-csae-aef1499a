@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -273,12 +272,12 @@ const ListaPacientes: React.FC<ListaPacientesProps> = ({
       </div>
 
       {/* Modal do Processo de Enfermagem */}
-      {selectedPaciente && modalProcessoOpen && (
+      {selectedPaciente && modalProcessoOpen && user && (
         <ProcessoEnfermagemModal
-          open={modalProcessoOpen}
-          onOpenChange={handleCloseProcessoModal}
+          isOpen={modalProcessoOpen}
+          onClose={handleCloseProcessoModal}
           paciente={selectedPaciente}
-          onProcessoAtualizado={handleProcessoAtualizado}
+          enfermeiroId={user.uid}
         />
       )}
 

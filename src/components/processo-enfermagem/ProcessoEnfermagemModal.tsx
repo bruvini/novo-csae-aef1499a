@@ -1,15 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalTitle,
-  ModalCloseButton,
-} from '@/components/ui/modal';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/components/ui/use-toast"
-import { toast } from "@/components/ui/use-toast"
 import { Paciente } from '@/types/paciente';
 import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import {
@@ -18,12 +18,13 @@ import {
   concluirProcesso,
   iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
+import { calcularTempoAtivo } from '@/utils/timeUtils';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
 import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
-import { ImplementacaoEnfermagem } from '@/types/processoEnfermagem';
+import { ImplementacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 
 interface ProcessoEnfermagemModalProps {
   isOpen: boolean;
@@ -62,7 +63,19 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   );
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
+  const [, setTick] = useState(0);
   const { toast } = useToast()
+
+  // Timer para atualizar o tempo ativo a cada segundo
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   useEffect(() => {
     // Se um processo inicial for fornecido, use-o
@@ -134,7 +147,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }));
   };
 
-  const handleUpdatePlanejamento = (planejamento: any) => {
+  const handleUpdatePlanejamento = (planejamento: PlanejamentoEnfermagem) => {
     setProcesso(prev => ({
       ...prev,
       planejamento
@@ -242,13 +255,22 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   };
 
+  // Calcular tempo ativo se há sessões de trabalho
+  const tempoAtivo = processo.sessoesDeTrabalho?.length > 0 
+    ? calcularTempoAtivo(processo.sessoesDeTrabalho)
+    : "00 dias, 00:00:00";
+
   return (
-    <Modal open={isOpen} onOpenChange={onClose}>
-      <ModalContent className="overflow-auto">
-        <ModalHeader>
-          <ModalTitle>Processo de Enfermagem</ModalTitle>
-          <ModalCloseButton />
-        </ModalHeader>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl h-[90vh] overflow-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Processo de Enfermagem - {paciente.nomeCompleto}</DialogTitle>
+            <Badge variant="outline" className="text-sm">
+              Tempo Ativo: {tempoAtivo}
+            </Badge>
+          </div>
+        </DialogHeader>
         
         <div className="p-4">
           <StepperProcesso
@@ -261,19 +283,19 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <div className="mt-6">{renderEtapaAtual()}</div>
         </div>
 
-        <ModalFooter>
+        <DialogFooter>
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
           <Button type="button" onClick={handleSalvarProgresso}>
             Salvar Progresso
           </Button>
-          <Button type="button" onClick={handleConcluirProcesso} disabled={etapaAtual !== 5}>
+          <Button type="button" disabled>
             Concluir Processo
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
