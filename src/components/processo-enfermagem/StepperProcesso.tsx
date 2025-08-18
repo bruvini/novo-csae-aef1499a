@@ -42,6 +42,12 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
                 processo.avaliacao.coletaDeDadosSubjetivos.trim() !== '');
     }
 
+    // Lógica específica para etapa de Planejamento (etapa 3)
+    if (numeroEtapa === 3 && processo) {
+      return !!(processo.diagnostico.diagnosticosSelecionados && 
+                processo.diagnostico.diagnosticosSelecionados.length > 0);
+    }
+
     return false;
   };
 
@@ -64,10 +70,6 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
           const isAtual = etapa.numero === etapaAtual;
           const isCompletada = etapasCompletadas.includes(etapa.numero);
           const isAcessivel = isEtapaAcessivel(etapa.numero);
-
-          const tooltipContent = etapa.numero === 2 ? 
-            "Compreende a identificação de problemas existentes, condições de vulnerabilidades ou disposições para melhorar comportamentos de saúde. Estes representam o julgamento clínico das informações obtidas sobre as necessidades do cuidado de Enfermagem e saúde da pessoa, família, coletividade ou grupos especiais." :
-            etapa.descricao;
 
           return (
             <Tooltip key={etapa.numero}>
@@ -100,7 +102,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-sm">
                 <p className="font-medium">{etapa.nome}</p>
-                <p className="text-sm text-gray-600 mt-1">{tooltipContent}</p>
+                <p className="text-sm text-gray-600 mt-1">{etapa.descricao}</p>
               </TooltipContent>
             </Tooltip>
           );

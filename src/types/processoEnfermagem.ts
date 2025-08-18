@@ -24,6 +24,24 @@ export interface DiagnosticoEnfermagem {
   diagnosticosSelecionados: DiagnosticoSelecionado[];
 }
 
+// NOVOS TIPOS para a Etapa de Planejamento
+export interface IntervencaoSelecionada {
+  acaoPrescrita: string;
+  tipo: 'padrao' | 'autoral'; // 'padrao' para as do sistema, 'autoral' para as customizadas
+}
+
+export interface DiagnosticoPlanejado {
+  diagnosticoId: string;
+  tituloDiagnostico: string;
+  ordemPrioridade: number;
+  resultadoEsperadoSelecionado?: string; // Armazena o título do resultado escolhido
+  intervencoesSelecionadas: IntervencaoSelecionada[];
+}
+
+export interface PlanejamentoEnfermagem {
+  diagnosticosPlanejados: DiagnosticoPlanejado[];
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -36,7 +54,7 @@ export interface ProcessoEnfermagem {
   // Estruturas de dados para cada etapa (inicialmente podem ser objetos vazios)
   avaliacao: AvaliacaoEnfermagem;
   diagnostico: DiagnosticoEnfermagem;
-  planejamento: any;
+  planejamento: PlanejamentoEnfermagem;
   implementacao: any;
   evolucao: any;
 }
@@ -64,7 +82,7 @@ export const ETAPAS_PROCESSO: EtapaProcesso[] = [
   {
     numero: 3,
     nome: "Planejamento",
-    descricao: "Determinação de resultados esperados e seleção de intervenções de enfermagem para alcançar objetivos específicos do cuidado ao paciente.",
+    descricao: "Planejamento de Enfermagem – compreende o desenvolvimento de um plano assistencial direcionado para à pessoa, família, coletividade, grupos especiais, e compartilhado com os sujeitos do cuidado e equipe de Enfermagem e saúde.",
     icone: "Target"
   },
   {

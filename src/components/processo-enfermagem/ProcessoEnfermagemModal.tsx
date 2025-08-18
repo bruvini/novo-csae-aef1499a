@@ -24,7 +24,7 @@ import { Loader2, Trash2, Save, CheckCircle2, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente } from '@/types/paciente';
-import { ProcessoEnfermagem, ETAPAS_PROCESSO, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, ETAPAS_PROCESSO, AvaliacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import {
   criarProcessoEnfermagem,
   buscarProcessoAtivo,
@@ -37,6 +37,7 @@ import { calcularTempoAtivo } from '@/utils/timeUtils';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
+import EtapaPlanejamento from './EtapaPlanejamento';
 import { Timestamp } from 'firebase/firestore';
 
 interface ProcessoEnfermagemModalProps {
@@ -69,7 +70,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       nhbsAfetadas: []
     } as AvaliacaoEnfermagem,
     diagnostico: { diagnosticosSelecionados: [] },
-    planejamento: {},
+    planejamento: { diagnosticosPlanejados: [] } as PlanejamentoEnfermagem,
     implementacao: {},
     evolucao: {}
   });
@@ -109,7 +110,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             nhbsAfetadas: []
           },
           diagnostico: processoExistente.diagnostico || { diagnosticosSelecionados: [] },
-          planejamento: processoExistente.planejamento || {},
+          planejamento: processoExistente.planejamento || { diagnosticosPlanejados: [] },
           implementacao: processoExistente.implementacao || {},
           evolucao: processoExistente.evolucao || {}
         });
@@ -137,7 +138,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             nhbsAfetadas: []
           },
           diagnostico: { diagnosticosSelecionados: [] },
-          planejamento: {},
+          planejamento: { diagnosticosPlanejados: [] },
           implementacao: {},
           evolucao: {}
         };
@@ -152,7 +153,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             nhbsAfetadas: []
           },
           diagnostico: { diagnosticosSelecionados: [] },
-          planejamento: {},
+          planejamento: { diagnosticosPlanejados: [] },
           implementacao: {},
           evolucao: {}
         });
@@ -203,6 +204,20 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       setProcesso(prev => prev ? {
         ...prev,
         diagnostico: novoDiagnostico
+      } : prev);
+    }
+  };
+
+  const handleUpdatePlanejamento = (novoPlanejamento: PlanejamentoEnfermagem) => {
+    setDadosEtapas(prev => ({
+      ...prev,
+      planejamento: novoPlanejamento
+    }));
+    
+    if (processo) {
+      setProcesso(prev => prev ? {
+        ...prev,
+        planejamento: novoPlanejamento
       } : prev);
     }
   };
@@ -395,7 +410,17 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                   )}
                 </TabsContent>
 
-                {ETAPAS_PROCESSO.slice(2).map((etapa) => (
+                <TabsContent value="3" className="h-full">
+                  {processo && (
+                    <EtapaPlanejamento
+                      processo={processo}
+                      paciente={paciente}
+                      onUpdatePlanejamento={handleUpdatePlanejamento}
+                    />
+                  )}
+                </TabsContent>
+
+                {ETAPAS_PROCESSO.slice(3).map((etapa) => (
                   <TabsContent key={etapa.numero} value={etapa.numero.toString()} className="h-full">
                     <Card className="h-full">
                       <CardHeader>
