@@ -1,509 +1,279 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalTitle,
+  ModalCloseButton,
+} from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Trash2, Save, CheckCircle2, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from "@/components/ui/use-toast"
+import { toast } from "@/components/ui/use-toast"
 import { Paciente } from '@/types/paciente';
-import { ProcessoEnfermagem, ETAPAS_PROCESSO, AvaliacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import {
   criarProcessoEnfermagem,
-  buscarProcessoAtivo,
   salvarProgressoProcesso,
   concluirProcesso,
-  excluirProcesso,
   iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
-import { calcularTempoAtivo } from '@/utils/timeUtils';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
 import EtapaPlanejamento from './EtapaPlanejamento';
-import { Timestamp } from 'firebase/firestore';
+import EtapaImplementacao from './EtapaImplementacao';
+import { ImplementacaoEnfermagem } from '@/types/processoEnfermagem';
 
 interface ProcessoEnfermagemModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  isOpen: boolean;
+  onClose: () => void;
   paciente: Paciente;
-  onProcessoAtualizado: () => void;
+  enfermeiroId: string;
+  processoInicial?: ProcessoEnfermagem | null;
 }
 
 const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
-  open,
-  onOpenChange,
+  isOpen,
+  onClose,
   paciente,
-  onProcessoAtualizado
+  enfermeiroId,
+  processoInicial
 }) => {
-  const [processo, setProcesso] = useState<ProcessoEnfermagem | null>(null);
+  const [processo, setProcesso] = useState<ProcessoEnfermagem>(
+    processoInicial || {
+      id: '',
+      pacienteId: paciente.id,
+      enfermeiroId: enfermeiroId,
+      status: 'em_andamento',
+      etapaAtual: 1,
+      dataInicio: null,
+      sessoesDeTrabalho: [],
+      avaliacao: {
+        coletaDeDadosSubjetivos: '',
+        exameFisico: {},
+        nhbsAfetadas: []
+      },
+      diagnostico: { diagnosticosSelecionados: [] },
+      planejamento: { diagnosticosPlanejados: [] },
+      implementacao: {},
+      evolucao: {}
+    }
+  );
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [, setTick] = useState(0); // Force re-render for timer
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const [dadosEtapas, setDadosEtapas] = useState({
-    avaliacao: { 
-      coletaDeDadosSubjetivos: '', 
-      exameFisico: {},
-      nhbsAfetadas: []
-    } as AvaliacaoEnfermagem,
-    diagnostico: { diagnosticosSelecionados: [] },
-    planejamento: { diagnosticosPlanejados: [] } as PlanejamentoEnfermagem,
-    implementacao: {},
-    evolucao: {}
-  });
+  const { toast } = useToast()
 
   useEffect(() => {
-    if (open && paciente.id && user) {
-      inicializarProcesso();
-    }
-  }, [open, paciente.id, user]);
-
-  useEffect(() => {
-    if (!open || !processo) return;
-
-    const interval = setInterval(() => {
-      setTick(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [open, processo]);
-
-  const inicializarProcesso = async () => {
-    if (!user || !paciente.id) return;
-
-    setLoading(true);
-    try {
-      const processoExistente = await buscarProcessoAtivo(paciente.id, user.uid);
-
-      if (processoExistente) {
-        await iniciarNovaSessao(processoExistente.id);
-        
-        setProcesso(processoExistente);
-        setEtapaAtual(processoExistente.etapaAtual);
-        setDadosEtapas({
-          avaliacao: processoExistente.avaliacao || { 
-            coletaDeDadosSubjetivos: '', 
-            exameFisico: {},
-            nhbsAfetadas: []
-          },
-          diagnostico: processoExistente.diagnostico || { diagnosticosSelecionados: [] },
-          planejamento: processoExistente.planejamento || { diagnosticosPlanejados: [] },
-          implementacao: processoExistente.implementacao || {},
-          evolucao: processoExistente.evolucao || {}
-        });
-
-        const completadas = [];
-        for (let i = 1; i < processoExistente.etapaAtual; i++) {
-          completadas.push(i);
-        }
-        setEtapasCompletadas(completadas);
-      } else {
-        const novoProcessoId = await criarProcessoEnfermagem(paciente.id, user.uid);
-        
-        const agora = Timestamp.now();
-        const novoProcesso: ProcessoEnfermagem = {
-          id: novoProcessoId,
-          pacienteId: paciente.id,
-          enfermeiroId: user.uid,
-          status: 'em_andamento',
-          etapaAtual: 1,
-          dataInicio: agora,
-          sessoesDeTrabalho: [{ inicioSessao: agora }],
-          avaliacao: { 
-            coletaDeDadosSubjetivos: '', 
-            exameFisico: {},
-            nhbsAfetadas: []
-          },
-          diagnostico: { diagnosticosSelecionados: [] },
-          planejamento: { diagnosticosPlanejados: [] },
-          implementacao: {},
-          evolucao: {}
-        };
-
-        setProcesso(novoProcesso);
-        setEtapaAtual(1);
-        setEtapasCompletadas([]);
-        setDadosEtapas({
-          avaliacao: { 
-            coletaDeDadosSubjetivos: '', 
-            exameFisico: {},
-            nhbsAfetadas: []
-          },
-          diagnostico: { diagnosticosSelecionados: [] },
-          planejamento: { diagnosticosPlanejados: [] },
-          implementacao: {},
-          evolucao: {}
-        });
-
-        toast({
-          title: "Processo iniciado",
-          description: "Novo processo de enfermagem criado com sucesso!",
-        });
+    // Se um processo inicial for fornecido, use-o
+    if (processoInicial) {
+      setProcesso(processoInicial);
+      setEtapaAtual(processoInicial.etapaAtual);
+      
+      // Lógica para determinar as etapas completadas
+      const etapasConcluidas = [];
+      if (processoInicial.avaliacao && processoInicial.avaliacao.coletaDeDadosSubjetivos) {
+        etapasConcluidas.push(1);
       }
+      if (processoInicial.diagnostico && processoInicial.diagnostico.diagnosticosSelecionados.length > 0) {
+        etapasConcluidas.push(2);
+      }
+      if (processoInicial.planejamento && processoInicial.planejamento.diagnosticosPlanejados.length > 0) {
+        etapasConcluidas.push(3);
+      }
+      if (processoInicial.implementacao && Object.keys(processoInicial.implementacao).length > 0) {
+        etapasConcluidas.push(4);
+      }
+      if (processoInicial.evolucao) {
+        etapasConcluidas.push(5);
+      }
+      setEtapasCompletadas(etapasConcluidas);
+    } else {
+      // Caso contrário, crie um novo processo
+      criarNovoProcesso();
+    }
+  }, [processoInicial]);
+
+  const criarNovoProcesso = async () => {
+    try {
+      const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
+      setProcesso(prev => ({ ...prev, id: novoId }));
+      
+      // Iniciar a primeira sessão de trabalho
+      await iniciarNovaSessao(novoId);
+      
+      toast({
+        title: "Sucesso",
+        description: "Novo processo de enfermagem iniciado!",
+      })
     } catch (error) {
-      console.error('Erro ao inicializar processo:', error);
+      console.error('Erro ao criar processo:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível inicializar o processo. Tente novamente.",
+        description: "Erro ao iniciar processo de enfermagem.",
         variant: "destructive",
-      });
-      onOpenChange(false);
-    } finally {
-      setLoading(false);
+      })
     }
   };
 
-  const handleEtapaChange = (novaEtapa: number) => {
-    setEtapaAtual(novaEtapa);
+  const handleEtapaChange = (etapa: number) => {
+    setEtapaAtual(etapa);
   };
 
-  const handleUpdateAvaliacao = (novaAvaliacao: AvaliacaoEnfermagem) => {
-    setDadosEtapas(prev => ({
+  const handleUpdateAvaliacao = (avaliacao: any) => {
+    setProcesso(prev => ({
       ...prev,
-      avaliacao: novaAvaliacao
+      avaliacao
     }));
-    
-    if (processo) {
-      setProcesso(prev => prev ? {
-        ...prev,
-        avaliacao: novaAvaliacao
-      } : prev);
-    }
   };
 
-  const handleUpdateDiagnostico = (novoDiagnostico: any) => {
-    setDadosEtapas(prev => ({
+  const handleUpdateDiagnostico = (diagnostico: any) => {
+    setProcesso(prev => ({
       ...prev,
-      diagnostico: novoDiagnostico
+      diagnostico
     }));
-    
-    if (processo) {
-      setProcesso(prev => prev ? {
-        ...prev,
-        diagnostico: novoDiagnostico
-      } : prev);
-    }
   };
 
-  const handleUpdatePlanejamento = (novoPlanejamento: PlanejamentoEnfermagem) => {
-    setDadosEtapas(prev => ({
+  const handleUpdatePlanejamento = (planejamento: any) => {
+    setProcesso(prev => ({
       ...prev,
-      planejamento: novoPlanejamento
+      planejamento
     }));
-    
-    if (processo) {
-      setProcesso(prev => prev ? {
-        ...prev,
-        planejamento: novoPlanejamento
-      } : prev);
-    }
+  };
+
+  const handleUpdateImplementacao = (implementacao: ImplementacaoEnfermagem) => {
+    setProcesso(prev => ({
+      ...prev,
+      implementacao
+    }));
   };
 
   const handleSalvarProgresso = async () => {
-    if (!processo) return;
-
-    setSaving(true);
     try {
-      await salvarProgressoProcesso(processo.id, etapaAtual, dadosEtapas);
-      
-      toast({
-        title: "Progresso salvo",
-        description: "Progresso salvo com sucesso!",
+      await salvarProgressoProcesso(processo.id, etapaAtual, {
+        avaliacao: processo.avaliacao,
+        diagnostico: processo.diagnostico,
+        planejamento: processo.planejamento,
+        implementacao: processo.implementacao,
+        evolucao: processo.evolucao
       });
       
-      onProcessoAtualizado();
-      onOpenChange(false);
+      // Adicionar etapa atual às etapas completadas, se ainda não estiver lá
+      if (!etapasCompletadas.includes(etapaAtual)) {
+        setEtapasCompletadas([...etapasCompletadas, etapaAtual]);
+      }
+      
+      toast({
+        title: "Sucesso",
+        description: "Progresso salvo com sucesso!",
+      })
     } catch (error) {
       console.error('Erro ao salvar progresso:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível salvar o progresso. Tente novamente.",
+        description: "Erro ao salvar o progresso.",
         variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveOnClose = async () => {
-    if (!processo) {
-      onOpenChange(false);
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await salvarProgressoProcesso(processo.id, etapaAtual, dadosEtapas);
-      
-      toast({
-        title: "Progresso salvo automaticamente",
-        description: "Seus dados foram salvos automaticamente.",
-      });
-      
-      onProcessoAtualizado();
-      onOpenChange(false);
-    } catch (error) {
-      console.error('Erro ao salvar automaticamente:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar automaticamente. Tente salvar manualmente.",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
+      })
     }
   };
 
   const handleConcluirProcesso = async () => {
-    if (!processo) return;
-
-    setSaving(true);
     try {
-      await concluirProcesso(processo.id, dadosEtapas);
-      
-      toast({
-        title: "Processo concluído",
-        description: "Processo concluído e arquivado com sucesso!",
+      await concluirProcesso(processo.id, {
+        avaliacao: processo.avaliacao,
+        diagnostico: processo.diagnostico,
+        planejamento: processo.planejamento,
+        implementacao: processo.implementacao,
+        evolucao: processo.evolucao
       });
-      
-      onProcessoAtualizado();
-      onOpenChange(false);
+      toast({
+        title: "Sucesso",
+        description: "Processo concluído com sucesso!",
+      })
+      onClose(); // Fechar o modal após a conclusão
     } catch (error) {
       console.error('Erro ao concluir processo:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível concluir o processo. Tente novamente.",
+        description: "Erro ao concluir o processo.",
         variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
+      })
     }
   };
 
-  const handleExcluirProcesso = async () => {
-    if (!processo) return;
-
-    try {
-      await excluirProcesso(processo.id);
-      
-      toast({
-        title: "Processo excluído",
-        description: "Processo excluído com sucesso!",
-      });
-      
-      onProcessoAtualizado();
-      onOpenChange(false);
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error('Erro ao excluir processo:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível excluir o processo. Tente novamente.",
-        variant: "destructive",
-      });
+  const renderEtapaAtual = () => {
+    switch (etapaAtual) {
+      case 1:
+        return (
+          <EtapaAvaliacao
+            processo={processo}
+            paciente={paciente}
+            onUpdateAvaliacao={handleUpdateAvaliacao}
+          />
+        );
+      case 2:
+        return (
+          <EtapaDiagnostico
+            processo={processo}
+            paciente={paciente}
+            onUpdateDiagnostico={handleUpdateDiagnostico}
+          />
+        );
+      case 3:
+        return (
+          <EtapaPlanejamento
+            processo={processo}
+            paciente={paciente}
+            onUpdatePlanejamento={handleUpdatePlanejamento}
+          />
+        );
+      case 4:
+        return (
+          <EtapaImplementacao
+            processo={processo}
+            paciente={paciente}
+            onUpdateImplementacao={handleUpdateImplementacao}
+          />
+        );
+      case 5:
+        return <div>Etapa de Evolução (em desenvolvimento)</div>;
+      default:
+        return null;
     }
   };
-
-  if (loading) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl h-[90vh]">
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
-              <p>Carregando processo de enfermagem...</p>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
-    <>
-      <Dialog 
-        open={open} 
-        onOpenChange={(newOpen) => {
-          if (!newOpen) {
-            handleSaveOnClose();
-          } else {
-            onOpenChange(newOpen);
-          }
-        }}
-      >
-        <DialogContent 
-          className="max-w-6xl h-[90vh] flex flex-col"
-          onInteractOutside={(e) => {
-            e.preventDefault();
-            handleSaveOnClose();
-          }}
-        >
-          <DialogHeader className="shrink-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="text-xl font-bold text-primary">
-                  {paciente.nomeCompleto}
-                </DialogTitle>
-                <p className="text-muted-foreground">Processo de Enfermagem</p>
-              </div>
-              {processo && processo.sessoesDeTrabalho && (
-                <Badge variant="outline" className="flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Tempo Ativo: {calcularTempoAtivo(processo.sessoesDeTrabalho)}
-                </Badge>
-              )}
-            </div>
-          </DialogHeader>
+    <Modal open={isOpen} onOpenChange={onClose}>
+      <ModalContent className="overflow-auto">
+        <ModalHeader>
+          <ModalTitle>Processo de Enfermagem</ModalTitle>
+          <ModalCloseButton />
+        </ModalHeader>
+        
+        <div className="p-4">
+          <StepperProcesso
+            etapaAtual={etapaAtual}
+            onEtapaChange={handleEtapaChange}
+            etapasCompletadas={etapasCompletadas}
+            processo={processo}
+          />
+          
+          <div className="mt-6">{renderEtapaAtual()}</div>
+        </div>
 
-          <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
-            <div className="shrink-0">
-              <StepperProcesso
-                etapaAtual={etapaAtual}
-                onEtapaChange={handleEtapaChange}
-                etapasCompletadas={etapasCompletadas}
-                processo={processo}
-              />
-            </div>
-
-            <div className="flex-1 overflow-auto">
-              <Tabs value={etapaAtual.toString()} className="h-full">
-                <TabsContent value="1" className="h-full">
-                  {processo && (
-                    <EtapaAvaliacao
-                      processo={processo}
-                      paciente={paciente}
-                      onUpdateAvaliacao={handleUpdateAvaliacao}
-                    />
-                  )}
-                </TabsContent>
-
-                <TabsContent value="2" className="h-full">
-                  {processo && (
-                    <EtapaDiagnostico
-                      processo={processo}
-                      paciente={paciente}
-                      onUpdateDiagnostico={handleUpdateDiagnostico}
-                    />
-                  )}
-                </TabsContent>
-
-                <TabsContent value="3" className="h-full">
-                  {processo && (
-                    <EtapaPlanejamento
-                      processo={processo}
-                      paciente={paciente}
-                      onUpdatePlanejamento={handleUpdatePlanejamento}
-                    />
-                  )}
-                </TabsContent>
-
-                {ETAPAS_PROCESSO.slice(3).map((etapa) => (
-                  <TabsContent key={etapa.numero} value={etapa.numero.toString()} className="h-full">
-                    <Card className="h-full">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          Etapa {etapa.numero}: {etapa.nome}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <p className="text-muted-foreground">{etapa.descricao}</p>
-                          <div className="bg-muted border border-border rounded-lg p-6">
-                            <p className="text-center text-muted-foreground">
-                              Componentes da etapa "{etapa.nome}" serão implementados aqui.
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TabsContent>
-                ))}
-              </Tabs>
-            </div>
-          </div>
-
-          <DialogFooter className="shrink-0 flex justify-between">
-            <Button
-              variant="destructive"
-              onClick={() => setShowDeleteDialog(true)}
-              className="flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Excluir Processo
-            </Button>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleSalvarProgresso}
-                disabled={saving}
-                className="flex items-center gap-2"
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
-                Salvar Progresso
-              </Button>
-
-              <Button
-                onClick={handleConcluirProcesso}
-                disabled={true}
-                className="flex items-center gap-2"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                Concluir Processo
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Processo de Enfermagem</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir este processo? Todos os dados preenchidos 
-              serão perdidos permanentemente. Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleExcluirProcesso}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        <ModalFooter>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSalvarProgresso}>
+            Salvar Progresso
+          </Button>
+          <Button type="button" onClick={handleConcluirProcesso} disabled={etapaAtual !== 5}>
+            Concluir Processo
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };
 

@@ -42,6 +42,21 @@ export interface PlanejamentoEnfermagem {
   diagnosticosPlanejados: DiagnosticoPlanejado[];
 }
 
+// NOVOS TIPOS para a Etapa de Implementação
+export interface IntervencaoImplementada extends IntervencaoSelecionada {
+  implementadoNestaConsulta: boolean;
+  quemExecuta?: 'Enfermeiro' | 'Equipe/Outros'; // Apenas para intervenções 'padrao'
+  prazo?: number;
+  prazoUnidade?: 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos';
+}
+
+export interface ImplementacaoEnfermagem {
+  // A chave será o título do diagnóstico para fácil acesso
+  [tituloDiagnostico: string]: {
+    intervencoes: IntervencaoImplementada[];
+  }
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -55,7 +70,7 @@ export interface ProcessoEnfermagem {
   avaliacao: AvaliacaoEnfermagem;
   diagnostico: DiagnosticoEnfermagem;
   planejamento: PlanejamentoEnfermagem;
-  implementacao: any;
+  implementacao: ImplementacaoEnfermagem;
   evolucao: any;
 }
 
@@ -88,7 +103,7 @@ export const ETAPAS_PROCESSO: EtapaProcesso[] = [
   {
     numero: 4,
     nome: "Implementação",
-    descricao: "Execução das intervenções de enfermagem planejadas, incluindo cuidados diretos, educação do paciente e coordenação do cuidado.",
+    descricao: "Compreende a realização das intervenções, ações e atividades previstas no planejamento assistencial, pela equipe de enfermagem, respeitando as resoluções/pareceres do Conselho Federal e Conselhos Regionais de Enfermagem quanto a competência técnica de cada profissional, por meio da colaboração e comunicação contínua, inclusive com a checagem quanto à execução da prescrição de enfermagem.",
     icone: "Play"
   },
   {

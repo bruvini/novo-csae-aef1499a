@@ -37,7 +37,7 @@ export async function criarProcessoEnfermagem(
       },
       diagnostico: { diagnosticosSelecionados: [] },
       planejamento: { diagnosticosPlanejados: [] },
-      implementacao: {},
+      implementacao: {}, // Inicializar implementação vazia
       evolucao: {}
     };
 

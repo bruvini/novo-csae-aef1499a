@@ -48,6 +48,26 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
                 processo.diagnostico.diagnosticosSelecionados.length > 0);
     }
 
+    // Lógica específica para etapa de Implementação (etapa 4)
+    if (numeroEtapa === 4 && processo) {
+      const diagnosticosPlanjados = processo.planejamento?.diagnosticosPlanejados || [];
+      
+      if (diagnosticosPlanjados.length === 0) {
+        return false;
+      }
+
+      // Verificar se todos têm resultado esperado (quando aplicável) e intervenções
+      return diagnosticosPlanjados.every(diag => {
+        // Todos devem ter pelo menos uma intervenção
+        const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
+        
+        // Se tem resultado esperado definido no planejamento, deve estar preenchido
+        const temResultado = !diag.resultadoEsperadoSelecionado || diag.resultadoEsperadoSelecionado.trim() !== '';
+        
+        return temIntervencoes && temResultado;
+      });
+    }
+
     return false;
   };
 
