@@ -19,8 +19,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 function App() {
   return (
     <QueryClient>
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <SidebarProvider defaultOpen={false}>
             <div className="min-h-screen flex w-full bg-gray-50">
               <AppSidebar />
@@ -62,8 +62,8 @@ function App() {
             </div>
             <Toaster />
           </SidebarProvider>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </QueryClient>
   );
 }
