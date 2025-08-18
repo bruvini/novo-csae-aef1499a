@@ -17,9 +17,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Trash2, Save, CheckCircle2 } from 'lucide-react';
+import { Loader2, Trash2, Save, CheckCircle2, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente } from '@/types/paciente';
@@ -32,6 +33,7 @@ import {
   excluirProcesso,
   iniciarNovaSessao
 } from '@/services/bancodados/processosEnfermagemDB';
+import { calcularTempoAtivo } from '@/utils/timeUtils';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
@@ -56,10 +58,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [, setTick] = useState(0); // Force re-render for timer
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Dados das etapas (inicialmente vazios)
   const [dadosEtapas, setDadosEtapas] = useState({
     avaliacao: { 
       coletaDeDadosSubjetivos: '', 
@@ -78,19 +80,26 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   }, [open, paciente.id, user]);
 
+  useEffect(() => {
+    if (!open || !processo) return;
+
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [open, processo]);
+
   const inicializarProcesso = async () => {
     if (!user || !paciente.id) return;
 
     setLoading(true);
     try {
-      // Buscar processo ativo existente
       const processoExistente = await buscarProcessoAtivo(paciente.id, user.uid);
 
       if (processoExistente) {
-        // Iniciar nova sessão para processo existente
         await iniciarNovaSessao(processoExistente.id);
         
-        // Carregar processo existente
         setProcesso(processoExistente);
         setEtapaAtual(processoExistente.etapaAtual);
         setDadosEtapas({
@@ -105,14 +114,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           evolucao: processoExistente.evolucao || {}
         });
 
-        // Marcar etapas anteriores como completadas
         const completadas = [];
         for (let i = 1; i < processoExistente.etapaAtual; i++) {
           completadas.push(i);
         }
         setEtapasCompletadas(completadas);
       } else {
-        // Criar novo processo (já inclui a primeira sessão)
         const novoProcessoId = await criarProcessoEnfermagem(paciente.id, user.uid);
         
         const agora = Timestamp.now();
@@ -226,7 +233,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   };
 
-  // Nova função para save on close
   const handleSaveOnClose = async () => {
     if (!processo) {
       onOpenChange(false);
@@ -327,7 +333,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         open={open} 
         onOpenChange={(newOpen) => {
           if (!newOpen) {
-            // Se está tentando fechar, salvar automaticamente
             handleSaveOnClose();
           } else {
             onOpenChange(newOpen);
@@ -337,16 +342,25 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         <DialogContent 
           className="max-w-6xl h-[90vh] flex flex-col"
           onInteractOutside={(e) => {
-            // Prevenir fechamento imediato, salvar primeiro
             e.preventDefault();
             handleSaveOnClose();
           }}
         >
           <DialogHeader className="shrink-0">
-            <DialogTitle className="text-xl font-bold text-primary">
-              {paciente.nomeCompleto}
-            </DialogTitle>
-            <p className="text-muted-foreground">Processo de Enfermagem</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-bold text-primary">
+                  {paciente.nomeCompleto}
+                </DialogTitle>
+                <p className="text-muted-foreground">Processo de Enfermagem</p>
+              </div>
+              {processo && processo.sessoesDeTrabalho && (
+                <Badge variant="outline" className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Tempo Ativo: {calcularTempoAtivo(processo.sessoesDeTrabalho)}
+                </Badge>
+              )}
+            </div>
           </DialogHeader>
 
           <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
@@ -433,14 +447,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
               <Button
                 onClick={handleConcluirProcesso}
-                disabled={saving}
+                disabled={true}
                 className="flex items-center gap-2"
               >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
+                <CheckCircle2 className="w-4 h-4" />
                 Concluir Processo
               </Button>
             </div>

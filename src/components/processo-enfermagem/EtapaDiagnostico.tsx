@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Accordion, 
   AccordionContent, 
@@ -31,7 +32,8 @@ import {
   Star, 
   X,
   CheckCircle,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
@@ -61,6 +63,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   const [diagnosticosPorNHB, setDiagnosticosPorNHB] = useState<DiagnosticoPorSubconjunto>({});
   const [diagnosticosPorProtocolo, setDiagnosticosPorProtocolo] = useState<DiagnosticoPorSubconjunto>({});
   const [loading, setLoading] = useState(true);
+  const [termoBusca, setTermoBusca] = useState('');
 
   // Verificar se há dados da avaliação - uso seguro com fallback
   const hasAvaliacaoData = ((processo.avaliacao?.coletaDeDadosSubjetivos ?? '').trim() !== '');
@@ -71,14 +74,12 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       try {
         setLoading(true);
         
-        // Carregar diagnósticos
         const unsubscribeDiagnosticos = getDiagnosticos((diagnosticosData) => {
           console.log('Diagnósticos carregados:', diagnosticosData);
           setDiagnosticos(diagnosticosData);
           processarDiagnosticosPorSubconjunto(diagnosticosData);
         });
 
-        // Carregar subconjuntos
         const subconjuntosData = await buscarSubconjuntos();
         console.log('Subconjuntos carregados:', subconjuntosData);
         setSubconjuntos(subconjuntosData);
@@ -120,6 +121,33 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
     console.log('Diagnósticos por Protocolo:', porProtocolo);
     setDiagnosticosPorNHB(porNHB);
     setDiagnosticosPorProtocolo(porProtocolo);
+  };
+
+  // Função para filtrar diagnósticos com base no termo de busca
+  const filtrarDiagnosticos = (diagnosticosLista: Diagnostico[]): Diagnostico[] => {
+    if (!termoBusca.trim()) return diagnosticosLista;
+    
+    const termo = termoBusca.toLowerCase();
+    return diagnosticosLista.filter(diagnostico => 
+      diagnostico.tituloDiagnostico.toLowerCase().includes(termo) ||
+      diagnostico.descricaoDiagnostico.toLowerCase().includes(termo)
+    );
+  };
+
+  // Função para filtrar subconjuntos com base nos diagnósticos filtrados
+  const filtrarSubconjuntos = (diagnosticosPorSubconjunto: DiagnosticoPorSubconjunto): DiagnosticoPorSubconjunto => {
+    if (!termoBusca.trim()) return diagnosticosPorSubconjunto;
+    
+    const subconjuntosFiltrados: DiagnosticoPorSubconjunto = {};
+    
+    Object.entries(diagnosticosPorSubconjunto).forEach(([subconjunto, diagnosticosLista]) => {
+      const diagnosticosFiltrados = filtrarDiagnosticos(diagnosticosLista);
+      if (diagnosticosFiltrados.length > 0) {
+        subconjuntosFiltrados[subconjunto] = diagnosticosFiltrados;
+      }
+    });
+    
+    return subconjuntosFiltrados;
   };
 
   const handleToggleDiagnostico = (diagnostico: Diagnostico) => {
@@ -201,6 +229,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
 
   // Selecionados com fallback seguro
   const diagnosticosSelecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
+  
+  // Aplicar filtros
+  const nhbsFiltradas = filtrarSubconjuntos(diagnosticosPorNHB);
+  const protocolosFiltrados = filtrarSubconjuntos(diagnosticosPorProtocolo);
 
   return (
     <div className="space-y-6">
@@ -369,6 +401,24 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
         </CardContent>
       </Card>
 
+      {/* Barra de Busca */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Buscar Diagnósticos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar diagnóstico..."
+              value={termoBusca}
+              onChange={(e) => setTermoBusca(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Colunas de Diagnósticos */}
       <div className="grid gap-6" style={{ 
         gridTemplateColumns: `${showNHBs && showProtocolos ? '1fr 1fr' : '1fr'}` 
@@ -385,7 +435,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
             </CardHeader>
             <CardContent>
               <Accordion type="multiple" className="w-full">
-                {Object.entries(diagnosticosPorNHB).map(([subconjunto, diagnosticosLista]) => (
+                {Object.entries(nhbsFiltradas).map(([subconjunto, diagnosticosLista]) => (
                   <AccordionItem key={subconjunto} value={subconjunto}>
                     <AccordionTrigger className="text-left">
                       <div className="flex items-center gap-2">
@@ -419,7 +469,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
                                     {isSelected && <CheckCircle className="w-4 h-4 flex-shrink-0" />}
                                     <h4 className="font-medium text-sm">{diagnostico.tituloDiagnostico}</h4>
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  <p className={cn(
+                                    "text-xs mt-1 line-clamp-2",
+                                    isSelected ? "text-white/80" : "text-muted-foreground"
+                                  )}>
                                     {diagnostico.descricaoDiagnostico}
                                   </p>
                                 </div>
@@ -443,14 +496,16 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
               <CardTitle className="text-base">Protocolos de Enfermagem</CardTitle>
             </CardHeader>
             <CardContent>
-              {Object.keys(diagnosticosPorProtocolo).length === 0 ? (
+              {Object.keys(protocolosFiltrados).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhum protocolo de enfermagem encontrado. Verifique se há diagnósticos 
-                  cadastrados com subconjuntos do tipo "Protocolo_Enfermagem".
+                  {termoBusca.trim() 
+                    ? "Nenhum protocolo encontrado para o termo buscado."
+                    : "Nenhum protocolo de enfermagem encontrado. Verifique se há diagnósticos cadastrados com subconjuntos do tipo 'Protocolo_Enfermagem'."
+                  }
                 </p>
               ) : (
                 <Accordion type="multiple" className="w-full">
-                  {Object.entries(diagnosticosPorProtocolo).map(([subconjunto, diagnosticosLista]) => (
+                  {Object.entries(protocolosFiltrados).map(([subconjunto, diagnosticosLista]) => (
                     <AccordionItem key={subconjunto} value={subconjunto}>
                       <AccordionTrigger className="text-left">
                         <div className="flex items-center justify-between">
@@ -481,7 +536,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
                                       {isSelected && <CheckCircle className="w-4 h-4 flex-shrink-0" />}
                                       <h4 className="font-medium text-sm">{diagnostico.tituloDiagnostico}</h4>
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    <p className={cn(
+                                      "text-xs mt-1 line-clamp-2",
+                                      isSelected ? "text-white/80" : "text-muted-foreground"
+                                    )}>
                                       {diagnostico.descricaoDiagnostico}
                                     </p>
                                   </div>
