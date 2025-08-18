@@ -45,26 +45,26 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { control, handleSubmit, formState: { errors }, reset: form } = useForm<FormValues>();
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
 
   const isEditMode = !!pacienteParaEditar;
 
   // Pré-preencher o formulário quando estiver editando
   useEffect(() => {
     if (isEditMode && pacienteParaEditar) {
-      form.reset({
+      reset({
         nomeCompleto: pacienteParaEditar.nomeCompleto,
         dataNascimento: pacienteParaEditar.dataNascimento.toDate(),
         sexo: pacienteParaEditar.sexo,
       });
     } else {
-      form.reset({
+      reset({
         nomeCompleto: '',
         dataNascimento: undefined,
         sexo: undefined,
       });
     }
-  }, [isEditMode, pacienteParaEditar, form]);
+  }, [isEditMode, pacienteParaEditar, reset]);
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
@@ -105,7 +105,7 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
 
       onPacienteCadastrado();
       onOpenChange(false);
-      form.reset();
+      reset();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -244,7 +244,7 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} onClick={handleSubmit(onSubmit)}>
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

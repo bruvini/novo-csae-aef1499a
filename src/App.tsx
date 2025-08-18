@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,8 +13,8 @@ import GestaoUsuarios from '@/pages/GestaoUsuarios';
 import NotFound from '@/pages/NotFound';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
-import { Header } from '@/components/Header';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import Header from '@/components/Header';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 function App() {
   return (

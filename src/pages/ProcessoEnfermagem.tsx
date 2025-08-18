@@ -110,6 +110,10 @@ const ProcessoEnfermagem = () => {
     carregarPacientes();
   };
 
+  const handlePacienteAtualizado = () => {
+    carregarPacientes();
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -252,7 +256,8 @@ const ProcessoEnfermagem = () => {
                   {/* Lista de Pacientes */}
                   <ListaPacientes 
                     pacientes={pacientesFiltrados} 
-                    loading={loading} 
+                    loading={loading}
+                    onPacienteAtualizado={handlePacienteAtualizado}
                   />
                 </div>
               </div>
