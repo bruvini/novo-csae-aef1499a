@@ -15,11 +15,9 @@ import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
 import {
-  criarProcessoEnfermagem,
-  salvarProgressoProcesso,
-  concluirProcesso,
-  buscarProcessoAtivo,
-  iniciarNovaSessao
+  adicionarNovoProcessoAoPaciente,
+  atualizarProcessoDoPaciente,
+  buscarProcessosAtivos
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 
@@ -149,18 +147,42 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setLoading(true);
     try {
-      const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
+      const processosAtivos = await buscarProcessosAtivos(paciente.id!);
       
-      if (processoAtivo) {
-        await iniciarNovaSessao(paciente.id, processoAtivo.id);
+      if (processosAtivos.length > 0) {
+        const processoAtivo = processosAtivos[0];
         setProcesso(processoAtivo);
       } else {
         // Criar novo processo
-        const processoId = await criarProcessoEnfermagem(paciente.id, user.uid);
-        const novoProcesso = await buscarProcessoAtivo(paciente.id, user.uid);
-        if (novoProcesso) {
-          setProcesso(novoProcesso);
-        }
+        const novoProcesso: ProcessoEnfermagem = {
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          pacienteId: paciente.id!,
+          enfermeiroId: user.uid,
+          status: 'em_andamento',
+          etapaAtual: 1,
+          dataInicio: Timestamp.now(),
+          sessoesDeTrabalho: [{
+            inicioSessao: Timestamp.now()
+          }],
+          avaliacao: {
+            coletaDeDadosSubjetivos: '',
+            exameFisico: {},
+            nhbsAfetadas: []
+          },
+          diagnostico: {
+            diagnosticosSelecionados: []
+          },
+          planejamento: {
+            diagnosticosPlanejados: []
+          },
+          implementacao: {},
+          evolucao: {
+            resumoGerado: ''
+          }
+        };
+        
+        await adicionarNovoProcessoAoPaciente(paciente.id!, novoProcesso);
+        setProcesso(novoProcesso);
       }
     } catch (error) {
       console.error('Erro ao carregar processo:', error);
@@ -183,18 +205,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setSaving(true);
     try {
-      await salvarProgressoProcesso(
-        paciente.id,
-        processo.id,
-        processo.etapaAtual,
-        {
-          avaliacao: processo.avaliacao,
-          diagnostico: processo.diagnostico,
-          planejamento: processo.planejamento,
-          implementacao: processo.implementacao,
-          evolucao: processo.evolucao
-        }
-      );
+      await atualizarProcessoDoPaciente(paciente.id!, processo);
 
       toast({
         title: "Sucesso",
@@ -229,9 +240,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           if (intervencao.tipo === 'autoral' && intervencao.implementadoNestaConsulta) {
             const intervencaoAutoral = {
               textoIntervencao: intervencao.acaoPrescrita,
-              tituloResultadoVinculado: '', // Pode ser preenchido se necessário
+              tituloResultadoVinculado: '',
               autorId: user.uid,
-              autorNome: user.displayName || user.email || user.uid,
+              autorNome: user.displayName || user.email || 'Usuário não identificado',
               dataCriacao: Timestamp.now()
             };
             intervencoesParaSalvar.push(intervencaoAutoral);
@@ -247,23 +258,22 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       // Preparar processo com evolução completa
       const processoCompleto = {
         ...processo,
+        status: 'concluido' as const,
+        dataConclusao: Timestamp.now(),
         evolucao: {
           ...processo.evolucao,
           resumoGerado: textoFinalDaEvolucao
-        }
+        },
+        sessoesDeTrabalho: [
+          ...processo.sessoesDeTrabalho.slice(0, -1),
+          {
+            ...processo.sessoesDeTrabalho[processo.sessoesDeTrabalho.length - 1],
+            fimSessao: Timestamp.now()
+          }
+        ]
       };
 
-      await concluirProcesso(
-        paciente.id!,
-        processo.id,
-        {
-          avaliacao: processoCompleto.avaliacao,
-          diagnostico: processoCompleto.diagnostico,
-          planejamento: processoCompleto.planejamento,
-          implementacao: processoCompleto.implementacao,
-          evolucao: processoCompleto.evolucao
-        }
-      );
+      await atualizarProcessoDoPaciente(paciente.id!, processoCompleto);
 
       toast({
         title: "Sucesso",
@@ -301,7 +311,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaDiagnostico
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdateDiagnostico={(novoDiagnostico) => {
+              const novoProcesso = {
+                ...processo,
+                diagnostico: novoDiagnostico
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 3:
@@ -309,7 +325,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaPlanejamento
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdatePlanejamento={(novoPlanejamento) => {
+              const novoProcesso = {
+                ...processo,
+                planejamento: novoPlanejamento
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 4:
@@ -317,7 +339,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaImplementacao
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdateImplementacao={(novaImplementacao) => {
+              const novoProcesso = {
+                ...processo,
+                implementacao: novaImplementacao
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 5:
