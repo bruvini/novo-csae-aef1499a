@@ -166,6 +166,36 @@ export async function buscarProcessoConcluido(
   }
 }
 
+export async function buscarProcessosConcluidos(
+  pacienteId: string,
+  enfermeiroId: string
+): Promise<ProcessoEnfermagem[]> {
+  try {
+    const q = query(
+      collection(db, 'processosEnfermagem'),
+      where('pacienteId', '==', pacienteId),
+      where('enfermeiroId', '==', enfermeiroId),
+      where('status', '==', 'concluido'),
+      orderBy('dataConclusao', 'desc')
+    );
+
+    const querySnapshot = await getDocs(q);
+    
+    const processos: ProcessoEnfermagem[] = [];
+    querySnapshot.forEach((doc) => {
+      processos.push({
+        id: doc.id,
+        ...doc.data()
+      } as ProcessoEnfermagem);
+    });
+
+    return processos;
+  } catch (error) {
+    console.error('Erro ao buscar processos concluídos:', error);
+    return [];
+  }
+}
+
 export async function salvarProgressoProcesso(
   processoId: string,
   etapaAtual: number,

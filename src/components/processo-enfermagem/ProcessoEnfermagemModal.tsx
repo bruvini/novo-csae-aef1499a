@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -34,7 +33,7 @@ import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/banco
 import { calcularTempoAtivo } from '@/utils/timeUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
-import { Loader2, Trash2, X } from 'lucide-react';
+import { Loader2, Trash2, X, History } from 'lucide-react';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
@@ -42,6 +41,7 @@ import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
 import { ImplementacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
+import HistoricoProcessosModal from './HistoricoProcessosModal';
 
 interface ProcessoEnfermagemModalProps {
   isOpen: boolean;
@@ -85,6 +85,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [, setTick] = useState(0);
+  const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -426,6 +427,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 </Badge>
                 <Button
                   variant="ghost"
+                  size="sm"
+                  onClick={() => setHistoricoModalOpen(true)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <History className="h-4 w-4 mr-2" />
+                  Histórico
+                </Button>
+                <Button
+                  variant="ghost"
                   size="icon"
                   onClick={handleSaveAndClose}
                   disabled={isSaving}
@@ -480,6 +490,14 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Histórico Modal */}
+      <HistoricoProcessosModal
+        isOpen={historicoModalOpen}
+        onClose={() => setHistoricoModalOpen(false)}
+        paciente={paciente}
+        enfermeiroId={enfermeiroId}
+      />
 
       <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,32 +110,14 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
     const implementacao = processo.implementacao || {};
     const intervencoesImplementadas: string[] = [];
 
-    Object.entries(implementacao).forEach(([tituloDiag, diagnostico]) => {
+    Object.entries(implementacao).forEach(([, diagnostico]) => {
       diagnostico.intervencoes.forEach(intervencao => {
         if (intervencao.implementadoNestaConsulta) {
-          let textoIntervencao = '';
-          
-          if (intervencao.tipo === 'padrao') {
-            if (intervencao.quemExecuta === 'Enfermeiro') {
-              // Para intervenções padrão executadas pelo enfermeiro, usar o texto original
-              // Em uma implementação futura, aqui buscaria a 'acaoEnfermeiro' no banco
-              textoIntervencao = intervencao.acaoPrescrita;
-            } else {
-              // Para outras situações, usar o texto prescrito
-              textoIntervencao = intervencao.acaoPrescrita;
-            }
-          } else { // tipo === 'autoral'
-            textoIntervencao = intervencao.acaoPrescrita;
-          }
+          let textoIntervencao = intervencao.acaoPrescrita;
           
           // Adicionar informação sobre prazo se existir
           if (intervencao.prazo && intervencao.prazoUnidade) {
             textoIntervencao += ` - Prazo: ${intervencao.prazo} ${intervencao.prazoUnidade}`;
-          }
-          
-          // Adicionar informação sobre executor se for padrão
-          if (intervencao.tipo === 'padrao' && intervencao.quemExecuta) {
-            textoIntervencao += ` (Executado por: ${intervencao.quemExecuta})`;
           }
           
           intervencoesImplementadas.push(textoIntervencao);

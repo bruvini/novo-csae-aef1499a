@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,107 +12,14 @@ import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import ModalCadastroPaciente from '@/components/processo-enfermagem/ModalCadastroPaciente';
 import ListaPacientes from '@/components/processo-enfermagem/ListaPacientes';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Paciente, StatusPaciente, IndicadoresPacientes } from '@/types/paciente';
-import { buscarPacientesUsuario, calcularIndicadores, determinarStatusPaciente, calcularIndicadoresExpandidos } from '@/services/bancodados/pacientesDB';
+import { useIndicadoresTempoReal } from '@/hooks/useIndicadoresTempoReal';
 
 const ProcessoEnfermagem = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [indicadoresExpandidos, setIndicadoresExpandidos] = useState<any>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  // Buscar pacientes do usuário logado
-  const carregarPacientes = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const pacientesData = await buscarPacientesUsuario(user.uid);
-      setPacientes(pacientesData);
-      console.log(`Carregados ${pacientesData.length} pacientes para o usuário ${user.uid}`);
-    } catch (error) {
-      console.error('Erro ao carregar pacientes:', error);
-      toast({
-        title: "Erro ao carregar pacientes",
-        description: "Ocorreu um erro ao buscar seus pacientes. Tente recarregar a página.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Nova função para carregar indicadores expandidos
-  const carregarIndicadoresExpandidos = async () => {
-    if (!user || pacientes.length === 0) return;
-    
-    try {
-      const indicadores = await calcularIndicadoresExpandidos(pacientes, user.uid);
-      setIndicadoresExpandidos(indicadores);
-    } catch (error) {
-      console.error('Erro ao carregar indicadores expandidos:', error);
-    }
-  };
-
-  useEffect(() => {
-    carregarPacientes();
-  }, [user]);
-
-  useEffect(() => {
-    if (pacientes.length > 0) {
-      carregarIndicadoresExpandidos();
-    }
-  }, [pacientes, user]);
-
-  // Filtrar e buscar pacientes
-  const pacientesFiltrados = useMemo(() => {
-    let resultado = pacientes;
-
-    // Filtro por nome
-    if (searchTerm.trim()) {
-      resultado = resultado.filter(paciente =>
-        paciente.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtro por status
-    if (statusFilter !== 'todos') {
-      resultado = resultado.filter(paciente => {
-        const status = determinarStatusPaciente(paciente);
-        
-        switch (statusFilter) {
-          case 'sem-processo':
-            return status === 'Sem processo iniciado';
-          case 'em-andamento':
-            return status === 'Em andamento';
-          case 'concluido':
-            return status === 'Concluído';
-          default:
-            return true;
-        }
-      });
-    }
-
-    return resultado;
-  }, [pacientes, searchTerm, statusFilter]);
-
-  // Calcular indicadores
-  const indicadores: IndicadoresPacientes = useMemo(() => {
-    return calcularIndicadores(pacientes);
-  }, [pacientes]);
+  const { indicadores, loading } = useIndicadoresTempoReal();
 
   const handlePacienteCadastrado = () => {
-    carregarPacientes();
-  };
-
-  const handlePacienteAtualizado = () => {
-    carregarPacientes();
+    // Os indicadores serão atualizados automaticamente através dos listeners
   };
 
   return (
@@ -153,7 +61,7 @@ const ProcessoEnfermagem = () => {
                           <div>
                             <p className="text-sm font-medium text-blue-600">Processos Ativos</p>
                             <p className="text-2xl font-bold text-blue-800">
-                              {loading ? '-' : indicadoresExpandidos?.processosAtivos || 0}
+                              {loading ? '-' : indicadores.processosAtivos}
                             </p>
                           </div>
                           <Clock className="w-8 h-8 text-blue-600" />
@@ -167,7 +75,7 @@ const ProcessoEnfermagem = () => {
                           <div>
                             <p className="text-sm font-medium text-purple-600">Processos Concluídos</p>
                             <p className="text-2xl font-bold text-purple-800">
-                              {loading ? '-' : indicadoresExpandidos?.processosConcluidos || 0}
+                              {loading ? '-' : indicadores.processosConcluidos}
                             </p>
                           </div>
                           <FileText className="w-8 h-8 text-purple-600" />
@@ -181,7 +89,7 @@ const ProcessoEnfermagem = () => {
                           <div>
                             <p className="text-sm font-medium text-orange-600">Média por Paciente</p>
                             <p className="text-2xl font-bold text-orange-800">
-                              {loading ? '-' : indicadoresExpandidos?.mediaProcessosPorPaciente || '0.0'}
+                              {loading ? '-' : indicadores.mediaProcessosPorPaciente}
                             </p>
                           </div>
                           <FileText className="w-8 h-8 text-orange-600" />
@@ -196,10 +104,10 @@ const ProcessoEnfermagem = () => {
                             <p className="text-sm font-medium text-emerald-600">Taxa de Conclusão</p>
                             <p className="text-2xl font-bold text-emerald-800">
                               {loading ? '-' : 
-                                indicadoresExpandidos ? 
+                                (indicadores.processosAtivos + indicadores.processosConcluidos) > 0 ? 
                                   Math.round(
-                                    (indicadoresExpandidos.processosConcluidos / 
-                                    (indicadoresExpandidos.processosConcluidos + indicadoresExpandidos.processosAtivos)) * 100
+                                    (indicadores.processosConcluidos / 
+                                    (indicadores.processosConcluidos + indicadores.processosAtivos)) * 100
                                   ) + '%' : '0%'
                               }
                             </p>
@@ -211,46 +119,17 @@ const ProcessoEnfermagem = () => {
                   </div>
                 </div>
 
-                {/* Área de Ações */}
+                {/* Área Principal - Unificada */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                    <h2 className="text-2xl font-bold text-csae-green-800">Gerenciar Pacientes</h2>
+                    <h2 className="text-2xl font-bold text-csae-green-800">Meus Pacientes</h2>
                     <Button 
                       className="csae-btn-primary" 
                       onClick={() => setModalCadastroOpen(true)}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Paciente
+                      Cadastrar Paciente
                     </Button>
-                  </div>
-
-                  {/* Filtros e Busca */}
-                  <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                        <Input
-                          type="text"
-                          placeholder="Buscar paciente pelo nome..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                    <div className="sm:w-48">
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Filtrar por status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos os Status</SelectItem>
-                          <SelectItem value="sem-processo">Sem Processo</SelectItem>
-                          <SelectItem value="em-andamento">Em Andamento</SelectItem>
-                          <SelectItem value="concluido">Concluído</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
 
                   {/* Lista de Pacientes */}
