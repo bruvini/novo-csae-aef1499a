@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -8,7 +9,8 @@ import {
   query,
   where,
   getDocs,
-  Timestamp
+  Timestamp,
+  orderBy // ADICIONADO
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ProcessoEnfermagem, SessaoDeTrabalho } from '@/types/processoEnfermagem';

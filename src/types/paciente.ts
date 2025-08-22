@@ -27,3 +27,24 @@ export interface IndicadoresPacientes {
   processosAtivos: number;
   totalProcessosConcluidos: number;
 }
+
+// NOVO: utilitário para determinar o status do paciente com base na lista de processos
+export function determinarStatusPaciente(paciente: Paciente): StatusPaciente {
+  if (!paciente?.processosEnfermagem || paciente.processosEnfermagem.length === 0) {
+    return 'Sem processo iniciado';
+  }
+
+  // Se existir algum processo em andamento, prioriza esse status
+  const temEmAndamento = paciente.processosEnfermagem.some(
+    (p) => p.statusProcesso === 'Em andamento'
+  );
+  if (temEmAndamento) return 'Em andamento';
+
+  // Caso contrário, se houver algum concluído
+  const temConcluido = paciente.processosEnfermagem.some(
+    (p) => p.statusProcesso === 'Concluído'
+  );
+  if (temConcluido) return 'Concluído';
+
+  return 'Sem processo iniciado';
+}

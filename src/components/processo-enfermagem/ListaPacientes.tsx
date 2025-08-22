@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   ColumnDef,
@@ -17,20 +18,31 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Trash2, Play } from "lucide-react"
+import { MoreHorizontal, Edit, Trash2, Play, History } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente, StatusPaciente, determinarStatusPaciente } from '@/types/paciente';
-import { useListaPacientesContext } from '@/contexts/ListaPacientesContext';
+// REMOVIDO: import { useListaPacientesContext } from '@/contexts/ListaPacientesContext';
 import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
 import ModalEditarPaciente from './ModalEditarPaciente';
 import { excluirPaciente } from '@/services/bancodados/pacientesDB';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
-import { History } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 
 const ListaPacientes: React.FC = () => {
-  const { pacientesFiltrados, carregarPacientes } = useListaPacientesContext();
+  // REMOVIDO: const { pacientesFiltrados, carregarPacientes } = useListaPacientesContext();
   const [tableData, setTableData] = useState<Paciente[]>([]);
   const [processoModalOpen, setProcessoModalOpen] = useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null);
@@ -42,9 +54,26 @@ const ListaPacientes: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // NOVO: função local para carregar pacientes do usuário autenticado
+  const carregarPacientes = async () => {
+    if (!user?.uid) {
+      setTableData([]);
+      return;
+    }
+    console.log('Carregando pacientes do usuário:', user.uid);
+    const q = query(collection(db, 'pacientes'), where('uidUsuario', '==', user.uid));
+    const snapshot = await getDocs(q);
+    const pacientes: Paciente[] = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as any),
+    })) as Paciente[];
+    setTableData(pacientes);
+  };
+
   useEffect(() => {
-    setTableData(pacientesFiltrados);
-  }, [pacientesFiltrados]);
+    carregarPacientes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const handleAbrirProcesso = (paciente: Paciente) => {
     setPacienteSelecionado(paciente);
@@ -105,8 +134,8 @@ const ListaPacientes: React.FC = () => {
         header: "Nascimento",
         cell: ({ row }) => {
           const dataNascimento = row.original.dataNascimento;
-          if (dataNascimento) {
-            const data = dataNascimento.toDate();
+          if (dataNascimento && typeof (dataNascimento as any).toDate === 'function') {
+            const data = (dataNascimento as any).toDate();
             return data.toLocaleDateString('pt-BR');
           }
           return 'Data Inválida';
@@ -122,23 +151,6 @@ const ListaPacientes: React.FC = () => {
         cell: ({ row }) => {
           const paciente = row.original;
           const status = determinarStatusPaciente(paciente);
-
-          let badgeProps = {};
-          switch (status) {
-            case 'Sem processo iniciado':
-              badgeProps = { variant: 'outline' };
-              break;
-            case 'Em andamento':
-              badgeProps = { variant: 'secondary' };
-              break;
-            case 'Concluído':
-              badgeProps = { variant: 'success' };
-              break;
-            default:
-              badgeProps = { variant: 'default' };
-              break;
-          }
-
           return (
             <div className="w-fit">
               {status}
@@ -194,7 +206,7 @@ const ListaPacientes: React.FC = () => {
         },
       },
     ],
-    [handleAbrirProcesso, handleEditarPaciente, handleExcluirClick, handleVisualizarHistorico]
+    []
   );
 
   const table = useReactTable({
@@ -307,7 +319,7 @@ const ListaPacientes: React.FC = () => {
         <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogLabel>Confirmar Exclusão</AlertDialogLabel>
+              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
               <AlertDialogDescription>
                 Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.
               </AlertDialogDescription>
