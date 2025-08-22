@@ -1,6 +1,7 @@
 
 import {
   collection,
+  collectionGroup,
   doc,
   addDoc,
   getDoc,
@@ -10,10 +11,15 @@ import {
   where,
   getDocs,
   Timestamp,
-  orderBy // ADICIONADO
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ProcessoEnfermagem, SessaoDeTrabalho } from '@/types/processoEnfermagem';
+
+// Utilitário local para montar o caminho da subcoleção de processos
+const processosPath = (enfermeiroId: string, pacienteId: string) =>
+  `usuarios/${enfermeiroId}/pacientes/${pacienteId}/processosEnfermagem`;
 
 export async function criarProcessoEnfermagem(
   pacienteId: string,
@@ -29,21 +35,22 @@ export async function criarProcessoEnfermagem(
       dataInicio: agora,
       sessoesDeTrabalho: [
         {
-          inicioSessao: agora
-        }
-      ], // Primeira sessão inicializada com timestamp do cliente
+          inicioSessao: agora,
+        },
+      ],
       avaliacao: {
         coletaDeDadosSubjetivos: '',
         exameFisico: {},
-        nhbsAfetadas: []
+        nhbsAfetadas: [],
       },
       diagnostico: { diagnosticosSelecionados: [] },
       planejamento: { diagnosticosPlanejados: [] },
-      implementacao: {}, // Inicializar implementação vazia
-      evolucao: { resumoGerado: '' } // NOVO CAMPO: inicializar evolução vazia
+      implementacao: {},
+      evolucao: { resumoGerado: '' },
     };
 
-    const docRef = await addDoc(collection(db, 'processosEnfermagem'), novoProcesso);
+    const colecao = collection(db, processosPath(enfermeiroId, pacienteId));
+    const docRef = await addDoc(colecao, novoProcesso);
     console.log('Processo criado com ID:', docRef.id);
     return docRef.id;
   } catch (error) {
@@ -52,9 +59,13 @@ export async function criarProcessoEnfermagem(
   }
 }
 
-export async function iniciarNovaSessao(processoId: string): Promise<void> {
+export async function iniciarNovaSessao(
+  enfermeiroId: string,
+  pacienteId: string,
+  processoId: string
+): Promise<void> {
   try {
-    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    const processoRef = doc(db, processosPath(enfermeiroId, pacienteId), processoId);
     const processoDoc = await getDoc(processoRef);
 
     if (!processoDoc.exists()) return;
@@ -62,7 +73,6 @@ export async function iniciarNovaSessao(processoId: string): Promise<void> {
     const dados = processoDoc.data() as ProcessoEnfermagem;
     const sessoes: SessaoDeTrabalho[] = Array.isArray(dados.sessoesDeTrabalho) ? [...dados.sessoesDeTrabalho] : [];
 
-    // Se a última sessão ainda não foi finalizada, não crie outra
     const ultima = sessoes[sessoes.length - 1];
     if (ultima && !ultima.fimSessao) {
       console.log('Sessão já em andamento. Nova sessão não será iniciada.');
@@ -73,7 +83,7 @@ export async function iniciarNovaSessao(processoId: string): Promise<void> {
     sessoes.push(novaSessao);
 
     await updateDoc(processoRef, {
-      sessoesDeTrabalho: sessoes
+      sessoesDeTrabalho: sessoes,
     });
 
     console.log('Nova sessão iniciada');
@@ -83,16 +93,20 @@ export async function iniciarNovaSessao(processoId: string): Promise<void> {
   }
 }
 
-export async function finalizarSessaoAtual(processoId: string): Promise<void> {
+export async function finalizarSessaoAtual(
+  enfermeiroId: string,
+  pacienteId: string,
+  processoId: string
+): Promise<void> {
   try {
-    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    const processoRef = doc(db, processosPath(enfermeiroId, pacienteId), processoId);
     const processoDoc = await getDoc(processoRef);
-    
+
     if (processoDoc.exists()) {
       const dados = processoDoc.data() as ProcessoEnfermagem;
       const sessoes: SessaoDeTrabalho[] = Array.isArray(dados.sessoesDeTrabalho) ? [...dados.sessoesDeTrabalho] : [];
-      
-      // Encontrar a última sessão sem fimSessao (varre de trás para frente)
+
+      // Encontrar a última sessão sem fimSessao
       let ultimaSessaoIndex = -1;
       for (let i = sessoes.length - 1; i >= 0; i--) {
         if (!sessoes[i].fimSessao) {
@@ -100,14 +114,14 @@ export async function finalizarSessaoAtual(processoId: string): Promise<void> {
           break;
         }
       }
-      
+
       if (ultimaSessaoIndex !== -1) {
         sessoes[ultimaSessaoIndex].fimSessao = Timestamp.now();
-        
+
         await updateDoc(processoRef, {
-          sessoesDeTrabalho: sessoes
+          sessoesDeTrabalho: sessoes,
         });
-        
+
         console.log('Sessão finalizada');
       } else {
         console.log('Nenhuma sessão aberta para finalizar.');
@@ -124,15 +138,11 @@ export async function buscarProcessoAtivo(
   enfermeiroId: string
 ): Promise<ProcessoEnfermagem | null> {
   try {
-    const q = query(
-      collection(db, 'processosEnfermagem'),
-      where('pacienteId', '==', pacienteId),
-      where('enfermeiroId', '==', enfermeiroId),
-      where('status', '==', 'em_andamento')
-    );
+    const colecao = collection(db, processosPath(enfermeiroId, pacienteId));
+    const q = query(colecao, where('status', '==', 'em_andamento'), orderBy('dataInicio', 'desc'), limit(1));
 
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       return null;
     }
@@ -140,7 +150,7 @@ export async function buscarProcessoAtivo(
     const docData = querySnapshot.docs[0];
     return {
       id: docData.id,
-      ...docData.data()
+      ...docData.data(),
     } as ProcessoEnfermagem;
   } catch (error) {
     console.error('Erro ao buscar processo ativo:', error);
@@ -153,12 +163,8 @@ export async function buscarProcessoConcluido(
   enfermeiroId: string
 ): Promise<boolean> {
   try {
-    const q = query(
-      collection(db, 'processosEnfermagem'),
-      where('pacienteId', '==', pacienteId),
-      where('enfermeiroId', '==', enfermeiroId),
-      where('status', '==', 'concluido')
-    );
+    const colecao = collection(db, processosPath(enfermeiroId, pacienteId));
+    const q = query(colecao, where('status', '==', 'concluido'), limit(1));
 
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
@@ -173,21 +179,20 @@ export async function buscarProcessosConcluidos(
   enfermeiroId: string
 ): Promise<ProcessoEnfermagem[]> {
   try {
+    const colecao = collection(db, processosPath(enfermeiroId, pacienteId));
     const q = query(
-      collection(db, 'processosEnfermagem'),
-      where('pacienteId', '==', pacienteId),
-      where('enfermeiroId', '==', enfermeiroId),
+      colecao,
       where('status', '==', 'concluido'),
       orderBy('dataConclusao', 'desc')
     );
 
     const querySnapshot = await getDocs(q);
-    
+
     const processos: ProcessoEnfermagem[] = [];
-    querySnapshot.forEach((doc) => {
+    querySnapshot.forEach((docSnap) => {
       processos.push({
-        id: doc.id,
-        ...doc.data()
+        id: docSnap.id,
+        ...docSnap.data(),
       } as ProcessoEnfermagem);
     });
 
@@ -199,6 +204,8 @@ export async function buscarProcessosConcluidos(
 }
 
 export async function salvarProgressoProcesso(
+  enfermeiroId: string,
+  pacienteId: string,
   processoId: string,
   etapaAtual: number,
   dadosEtapas: {
@@ -210,17 +217,15 @@ export async function salvarProgressoProcesso(
   }
 ): Promise<void> {
   try {
-    // Primeiro finalizar a sessão atual
-    await finalizarSessaoAtual(processoId);
-    
-    // Depois salvar o progresso
-    const processoRef = doc(db, 'processosEnfermagem', processoId);
-    
+    await finalizarSessaoAtual(enfermeiroId, pacienteId, processoId);
+
+    const processoRef = doc(db, processosPath(enfermeiroId, pacienteId), processoId);
+
     await updateDoc(processoRef, {
       etapaAtual,
-      ...dadosEtapas
+      ...dadosEtapas,
     });
-    
+
     console.log('Progresso salvo com sucesso');
   } catch (error) {
     console.error('Erro ao salvar progresso:', error);
@@ -229,6 +234,8 @@ export async function salvarProgressoProcesso(
 }
 
 export async function concluirProcesso(
+  enfermeiroId: string,
+  pacienteId: string,
   processoId: string,
   dadosEtapas: {
     avaliacao: any;
@@ -239,18 +246,17 @@ export async function concluirProcesso(
   }
 ): Promise<void> {
   try {
-    // Finalizar a sessão atual antes de concluir
-    await finalizarSessaoAtual(processoId);
-    
-    const processoRef = doc(db, 'processosEnfermagem', processoId);
-    
+    await finalizarSessaoAtual(enfermeiroId, pacienteId, processoId);
+
+    const processoRef = doc(db, processosPath(enfermeiroId, pacienteId), processoId);
+
     await updateDoc(processoRef, {
       status: 'concluido',
       dataConclusao: Timestamp.now(),
       etapaAtual: 5,
-      ...dadosEtapas
+      ...dadosEtapas,
     });
-    
+
     console.log('Processo concluído com sucesso');
   } catch (error) {
     console.error('Erro ao concluir processo:', error);
@@ -258,9 +264,13 @@ export async function concluirProcesso(
   }
 }
 
-export async function excluirProcesso(processoId: string): Promise<void> {
+export async function excluirProcesso(
+  enfermeiroId: string,
+  pacienteId: string,
+  processoId: string
+): Promise<void> {
   try {
-    await deleteDoc(doc(db, 'processosEnfermagem', processoId));
+    await deleteDoc(doc(db, processosPath(enfermeiroId, pacienteId), processoId));
     console.log('Processo excluído com sucesso');
   } catch (error) {
     console.error('Erro ao excluir processo:', error);
@@ -270,17 +280,15 @@ export async function excluirProcesso(processoId: string): Promise<void> {
 
 export async function excluirProcessosPorPaciente(pacienteId: string): Promise<void> {
   try {
+    // Agora que os processos estão em subcoleções, usamos collectionGroup para localizar todos
     const q = query(
-      collection(db, 'processosEnfermagem'),
+      collectionGroup(db, 'processosEnfermagem'),
       where('pacienteId', '==', pacienteId)
     );
 
     const querySnapshot = await getDocs(q);
-    
-    // Excluir todos os processos encontrados
-    const deletePromises = querySnapshot.docs.map(doc => 
-      deleteDoc(doc.ref)
-    );
+
+    const deletePromises = querySnapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
 
     await Promise.all(deletePromises);
     console.log(`${querySnapshot.docs.length} processos excluídos para o paciente ${pacienteId}`);
@@ -292,11 +300,8 @@ export async function excluirProcessosPorPaciente(pacienteId: string): Promise<v
 
 export async function contarProcessosConcluidos(): Promise<number> {
   try {
-    const q = query(
-      collection(db, 'processosEnfermagem'),
-      where('status', '==', 'concluido')
-    );
-    
+    const q = query(collectionGroup(db, 'processosEnfermagem'), where('status', '==', 'concluido'));
+
     const querySnapshot = await getDocs(q);
     return querySnapshot.size;
   } catch (error) {
@@ -307,7 +312,7 @@ export async function contarProcessosConcluidos(): Promise<number> {
 
 export async function contarTotalProcessos(): Promise<number> {
   try {
-    const querySnapshot = await getDocs(collection(db, 'processosEnfermagem'));
+    const querySnapshot = await getDocs(collectionGroup(db, 'processosEnfermagem'));
     return querySnapshot.size;
   } catch (error) {
     console.error('Erro ao contar total de processos:', error);
@@ -315,15 +320,19 @@ export async function contarTotalProcessos(): Promise<number> {
   }
 }
 
-// NOVO: buscar processo por ID e retornar com id embutido
-export async function buscarProcessoPorId(processoId: string): Promise<ProcessoEnfermagem | null> {
+// Atualizado: buscar processo por ID exigindo o caminho completo
+export async function buscarProcessoPorId(
+  enfermeiroId: string,
+  pacienteId: string,
+  processoId: string
+): Promise<ProcessoEnfermagem | null> {
   try {
-    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    const processoRef = doc(db, processosPath(enfermeiroId, pacienteId), processoId);
     const processoDoc = await getDoc(processoRef);
     if (!processoDoc.exists()) return null;
     return {
       id: processoDoc.id,
-      ...processoDoc.data()
+      ...processoDoc.data(),
     } as ProcessoEnfermagem;
   } catch (error) {
     console.error('Erro ao buscar processo por ID:', error);

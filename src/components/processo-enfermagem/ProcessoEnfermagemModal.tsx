@@ -175,13 +175,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
 
-      // Carregar documento completo do Firestore para evitar dessincronização
-      const docCarregado = await buscarProcessoPorId(novoId);
+      // Carregar documento completo da subcoleção correta
+      const docCarregado = await buscarProcessoPorId(enfermeiroId, paciente.id, novoId);
       if (docCarregado) {
         setProcesso(docCarregado);
         setEtapaAtual(docCarregado.etapaAtual);
       } else {
-        // Fallback: manter ao menos o id
         setProcesso(prev => ({ ...prev, id: novoId }));
       }
 
@@ -243,19 +242,24 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setIsSaving(true);
     try {
-      await salvarProgressoProcesso(processo.id, etapaAtual, {
-        avaliacao: processo.avaliacao,
-        diagnostico: processo.diagnostico,
-        planejamento: processo.planejamento,
-        implementacao: processo.implementacao,
-        evolucao: processo.evolucao
-      });
-      
-      // Adicionar etapa atual às etapas completadas, se ainda não estiver lá
+      await salvarProgressoProcesso(
+        enfermeiroId,
+        paciente.id,
+        processo.id,
+        etapaAtual,
+        {
+          avaliacao: processo.avaliacao,
+          diagnostico: processo.diagnostico,
+          planejamento: processo.planejamento,
+          implementacao: processo.implementacao,
+          evolucao: processo.evolucao,
+        }
+      );
+
       if (!etapasCompletadas.includes(etapaAtual)) {
         setEtapasCompletadas([...etapasCompletadas, etapaAtual]);
       }
-      
+
       toast({
         title: "Sucesso",
         description: "Progresso salvo com sucesso!",
@@ -282,9 +286,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setIsSaving(true);
     try {
-      // Salvar intervenções autorais antes de concluir
       const intervencoesAutorais: IntervencaoAutoral[] = [];
-      
+
       processo.planejamento.diagnosticosPlanejados.forEach(diagnostico => {
         diagnostico.intervencoesSelecionadas
           .filter(intervencao => intervencao.tipo === 'autoral')
@@ -293,8 +296,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               textoIntervencao: intervencao.acaoPrescrita,
               tituloResultadoVinculado: diagnostico.resultadoEsperadoSelecionado || '',
               autorId: user?.uid || '',
-              autorNome: user?.displayName || 'Usuário não identificado',
-              dataCriacao: Timestamp.now()
+              autorNome: (user?.displayName || user?.email || user?.uid || 'Nome não disponível'),
+              dataCriacao: Timestamp.now(),
             });
           });
       });
@@ -303,19 +306,24 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         await salvarIntervencoesAutorais(intervencoesAutorais);
       }
 
-      await concluirProcesso(processo.id, {
-        avaliacao: processo.avaliacao,
-        diagnostico: processo.diagnostico,
-        planejamento: processo.planejamento,
-        implementacao: processo.implementacao,
-        evolucao: processo.evolucao
-      });
-      
+      await concluirProcesso(
+        enfermeiroId,
+        paciente.id,
+        processo.id,
+        {
+          avaliacao: processo.avaliacao,
+          diagnostico: processo.diagnostico,
+          planejamento: processo.planejamento,
+          implementacao: processo.implementacao,
+          evolucao: processo.evolucao,
+        }
+      );
+
       toast({
         title: "Sucesso",
         description: "Processo concluído com sucesso!",
       })
-      onClose(); // Fechar o modal após a conclusão
+      onClose();
     } catch (error) {
       console.error('Erro ao concluir processo:', error);
       toast({
@@ -333,13 +341,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setIsSaving(true);
     try {
-      await excluirProcesso(processo.id);
-      
+      await excluirProcesso(enfermeiroId, paciente.id, processo.id);
+
       toast({
         title: "Sucesso",
         description: "Processo excluído com sucesso!",
       });
-      
+
       setShowDeleteAlert(false);
       onClose();
       onProcessoDeleted?.();
