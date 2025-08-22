@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { Paciente } from '@/types/paciente';
 import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import {
@@ -24,6 +25,7 @@ import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
 import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
+import EtapaEvolucao from './EtapaEvolucao';
 import { ImplementacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 
 interface ProcessoEnfermagemModalProps {
@@ -58,7 +60,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       diagnostico: { diagnosticosSelecionados: [] },
       planejamento: { diagnosticosPlanejados: [] },
       implementacao: {},
-      evolucao: {}
+      evolucao: { resumoGerado: '' }
     }
   );
   const [etapaAtual, setEtapaAtual] = useState(1);
@@ -91,7 +93,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           if (processoInicial.avaliacao && processoInicial.avaliacao.coletaDeDadosSubjetivos) {
             etapasConcluidas.push(1);
           }
-          if (processoInicial.diagnostico && processoInicial.diagnosticosSelecionados.length > 0) {
+          if (processoInicial.diagnostico && processoInicial.diagnostico.diagnosticosSelecionados.length > 0) {
             etapasConcluidas.push(2);
           }
           if (processoInicial.planejamento && processoInicial.planejamento.diagnosticosPlanejados.length > 0) {
@@ -208,6 +210,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }));
   };
 
+  const handleUpdateEvolucao = (evolucao: any) => {
+    setProcesso(prev => ({
+      ...prev,
+      evolucao
+    }));
+  };
+
   const handleSalvarProgresso = async () => {
     try {
       await salvarProgressoProcesso(processo.id, etapaAtual, {
@@ -296,7 +305,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           />
         );
       case 5:
-        return <div>Etapa de Evolução (em desenvolvimento)</div>;
+        return (
+          <EtapaEvolucao
+            processo={processo}
+            paciente={paciente}
+            onUpdateEvolucao={handleUpdateEvolucao}
+          />
+        );
       default:
         return null;
     }
@@ -337,7 +352,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <Button type="button" onClick={handleSalvarProgresso}>
             Salvar Progresso
           </Button>
-          <Button type="button" disabled>
+          <Button 
+            type="button" 
+            onClick={handleConcluirProcesso}
+            disabled={etapaAtual !== 5}
+          >
             Concluir Processo
           </Button>
         </DialogFooter>

@@ -57,6 +57,11 @@ export interface ImplementacaoEnfermagem {
   }
 }
 
+// NOVO TIPO para a Etapa de Evolução
+export interface EvolucaoEnfermagem {
+  resumoGerado: string; // Armazenará o texto copiado para o histórico
+}
+
 export interface ProcessoEnfermagem {
   id: string;
   pacienteId: string;
@@ -71,7 +76,7 @@ export interface ProcessoEnfermagem {
   diagnostico: DiagnosticoEnfermagem;
   planejamento: PlanejamentoEnfermagem;
   implementacao: ImplementacaoEnfermagem;
-  evolucao: any;
+  evolucao: EvolucaoEnfermagem; // NOVO CAMPO
 }
 
 export interface EtapaProcesso {
@@ -109,7 +114,7 @@ export const ETAPAS_PROCESSO: EtapaProcesso[] = [
   {
     numero: 5,
     nome: "Evolução",
-    descricao: "Avaliação contínua dos resultados obtidos e da eficácia das intervenções implementadas, com ajustes necessários no plano de cuidados.",
+    descricao: "Evolução de Enfermagem – compreende a avaliação dos resultados alcançados de enfermagem e saúde da pessoa, família, coletividade e grupos especiais. Esta etapa permite a análise e a revisão de todo o Processo de Enfermagem.",
     icone: "TrendingUp"
   }
 ];

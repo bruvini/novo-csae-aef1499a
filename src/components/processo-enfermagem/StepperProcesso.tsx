@@ -68,6 +68,30 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
       });
     }
 
+    // Lógica específica para etapa de Evolução (etapa 5)
+    if (numeroEtapa === 5 && processo) {
+      const implementacao = processo.implementacao || {};
+      
+      // Verificar se pelo menos uma intervenção foi implementada
+      let peloMenosUmaImplementada = false;
+      let todasPadroesTemExecutor = true;
+
+      Object.values(implementacao).forEach(diagnostico => {
+        diagnostico.intervencoes.forEach(intervencao => {
+          if (intervencao.implementadoNestaConsulta) {
+            peloMenosUmaImplementada = true;
+            
+            // Se é padrão e foi implementada, deve ter executor
+            if (intervencao.tipo === 'padrao' && !intervencao.quemExecuta) {
+              todasPadroesTemExecutor = false;
+            }
+          }
+        });
+      });
+
+      return peloMenosUmaImplementada && todasPadroesTemExecutor;
+    }
+
     return false;
   };
 

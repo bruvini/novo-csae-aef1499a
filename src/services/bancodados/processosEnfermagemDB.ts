@@ -38,7 +38,7 @@ export async function criarProcessoEnfermagem(
       diagnostico: { diagnosticosSelecionados: [] },
       planejamento: { diagnosticosPlanejados: [] },
       implementacao: {}, // Inicializar implementação vazia
-      evolucao: {}
+      evolucao: { resumoGerado: '' } // NOVO CAMPO: inicializar evolução vazia
     };
 
     const docRef = await addDoc(collection(db, 'processosEnfermagem'), novoProcesso);
