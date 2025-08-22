@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -232,7 +231,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               textoIntervencao: intervencao.acaoPrescrita,
               tituloResultadoVinculado: '', // Pode ser preenchido se necessário
               autorId: user.uid,
-              autorNome: user.displayName || user.email || 'Usuário não identificado',
+              autorNome: user.displayName || user.email || user.uid,
               dataCriacao: Timestamp.now()
             };
             intervencoesParaSalvar.push(intervencaoAutoral);
@@ -255,7 +254,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       };
 
       await concluirProcesso(
-        paciente.id,
+        paciente.id!,
         processo.id,
         {
           avaliacao: processoCompleto.avaliacao,
@@ -422,10 +421,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <div className="shrink-0 mb-4">
             <StepperProcesso
               etapaAtual={processo.etapaAtual}
-              onStepClick={(etapa) => {
+              onEtapaChange={(etapa) => {
                 const novoProcesso = { ...processo, etapaAtual: etapa };
                 setProcesso(novoProcesso);
               }}
+              etapasCompletadas={[]}
+              processo={processo}
             />
           </div>
 

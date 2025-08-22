@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   ColumnDef,
@@ -332,8 +331,7 @@ const ListaPacientes: React.FC = () => {
           isOpen={processoModalOpen}
           onClose={() => setProcessoModalOpen(false)}
           paciente={pacienteSelecionado}
-          enfermeiroId={user?.uid || ''}
-          onProcessoDeleted={() => {}} // Os dados já são atualizados em tempo real
+          onProcessoUpdated={() => {}} // Os dados já são atualizados em tempo real
         />
       )}
 
@@ -374,7 +372,6 @@ const ListaPacientes: React.FC = () => {
             setPacienteSelecionadoHistorico(null);
           }}
           paciente={pacienteSelecionadoHistorico}
-          enfermeiroId={user?.uid || ''}
         />
       )}
     </div>
