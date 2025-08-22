@@ -1,66 +1,190 @@
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { X } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { CalendarDays, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Paciente } from '@/types/paciente';
+import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnfermagemDB';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
   onClose: () => void;
   paciente: Paciente;
+  enfermeiroId: string;
 }
 
 const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
   isOpen,
   onClose,
-  paciente
+  paciente,
+  enfermeiroId
 }) => {
-  const processosConcluidos = paciente.processosEnfermagem?.filter(
-    processo => processo.status === 'concluido'
-  ) || [];
+  const [processos, setProcessos] = useState<ProcessoEnfermagem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const carregarHistorico = async () => {
+    if (!paciente.id) return;
+    
+    setLoading(true);
+    try {
+      const processosData = await buscarProcessosConcluidos(paciente.id, enfermeiroId);
+      setProcessos(processosData);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o histórico de processos.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      carregarHistorico();
+    }
+  }, [isOpen]);
+
+  const gerarTextoResumo = (processo: ProcessoEnfermagem) => {
+    const linhas: string[] = [];
+    
+    // Cabeçalho
+    linhas.push(`EVOLUÇÃO DE ENFERMAGEM`);
+    linhas.push(`Paciente: ${paciente.nomeCompleto}`);
+    linhas.push(`Data: ${format(processo.dataConclusao?.toDate() || new Date(), 'dd/MM/yyyy', { locale: ptBR })}`);
+    linhas.push('');
+
+    // Avaliação
+    if (processo.avaliacao.coletaDeDadosSubjetivos) {
+      linhas.push('AVALIAÇÃO DE ENFERMAGEM:');
+      linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
+      linhas.push('');
+    }
+
+    // Exame Físico
+    const exameFisico = processo.avaliacao.exameFisico || {};
+    if (Object.keys(exameFisico).length > 0) {
+      linhas.push('EXAME FÍSICO:');
+      Object.entries(exameFisico).forEach(([parametro, valor]) => {
+        if (valor !== null && valor !== undefined && valor !== '') {
+          linhas.push(`${parametro}: ${valor}`);
+        }
+      });
+      linhas.push('');
+    }
+
+    // Diagnósticos
+    if (processo.diagnostico.diagnosticosSelecionados.length > 0) {
+      linhas.push('DIAGNÓSTICOS DE ENFERMAGEM:');
+      processo.diagnostico.diagnosticosSelecionados.forEach(diag => {
+        linhas.push(`• ${diag.tituloDiagnostico}`);
+      });
+      linhas.push('');
+    }
+
+    // Implementação
+    const implementacao = processo.implementacao || {};
+    const intervencoesImplementadas: string[] = [];
+
+    Object.entries(implementacao).forEach(([, diagnostico]) => {
+      diagnostico.intervencoes.forEach(intervencao => {
+        if (intervencao.implementadoNestaConsulta) {
+          intervencoesImplementadas.push(intervencao.acaoPrescrita);
+        }
+      });
+    });
+
+    if (intervencoesImplementadas.length > 0) {
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      intervencoesImplementadas.forEach(int => {
+        linhas.push(`• ${int}`);
+      });
+      linhas.push('');
+    }
+
+    return linhas.join('\n');
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
-        <DialogHeader className="shrink-0">
-          <DialogTitle>
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
             Histórico de Processos - {paciente.nomeCompleto}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
-          {processosConcluidos.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum processo concluído encontrado para este paciente.
+        <div className="flex-1 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Carregando histórico...</p>
+              </div>
+            </div>
+          ) : processos.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-medium">Nenhum processo concluído</p>
+                <p className="text-muted-foreground">Este paciente ainda não possui processos de enfermagem concluídos.</p>
+              </div>
             </div>
           ) : (
-            <Accordion type="single" collapsible className="w-full">
-              {processosConcluidos.map((processo, index) => (
-                <AccordionItem key={processo.idProcesso} value={`processo-${index}`}>
-                  <AccordionTrigger>
-                    Processo concluído em{' '}
-                    {processo.dataConclusao?.toDate().toLocaleDateString('pt-BR') || 
-                     processo.dataInicio?.toDate().toLocaleDateString('pt-BR') || 
-                     'Data não disponível'}
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {processo.evolucao?.resumoGerado || 'Resumo não disponível'}
-                      </pre>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <ScrollArea className="h-full">
+              <Accordion type="single" collapsible className="w-full">
+                {processos.map((processo, index) => (
+                  <AccordionItem key={processo.id} value={`processo-${index}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="font-medium">
+                            Processo concluído em {format(processo.dataConclusao?.toDate() || new Date(), 'dd/MM/yyyy', { locale: ptBR })} às {format(processo.dataConclusao?.toDate() || new Date(), 'HH:mm', { locale: ptBR })}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {processo.diagnostico.diagnosticosSelecionados.length} diagnósticos
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Duração: {Math.ceil((processo.dataConclusao?.toDate().getTime() - processo.dataInicio.toDate().getTime()) / (1000 * 60 * 60 * 24))} dias
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="mt-4">
+                        <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md font-mono">
+                          {gerarTextoResumo(processo)}
+                        </pre>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </ScrollArea>
           )}
         </div>
 
-        <div className="shrink-0 flex justify-end pt-4 border-t">
+        <div className="flex justify-end pt-4 border-t">
           <Button variant="outline" onClick={onClose}>
-            <X className="w-4 h-4 mr-2" />
             Fechar
           </Button>
         </div>
