@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,13 +27,13 @@ interface ValidationStatus {
 interface EtapaAvaliacaoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
-  onUpdateAvaliacao: (avaliacao: AvaliacaoEnfermagem) => void;
+  onUpdateProcesso: (processo: ProcessoEnfermagem) => void;
 }
 
 const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   processo,
   paciente,
-  onUpdateAvaliacao
+  onUpdateProcesso
 }) => {
   const [guiaColetaOpen, setGuiaColetaOpen] = useState(false);
   const [guiaExameOpen, setGuiaExameOpen] = useState(false);
@@ -43,9 +44,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   // Novo estado padronizado para validação por parâmetro
   const [validationStates, setValidationStates] = useState<{ [parametro: string]: ValidationStatus }>({});
-
-  // Mantemos a lista de NHBs local para exibição imediata
-  const [nhbsAfetadas, setNhbsAfetadas] = useState<{ parametro: string; nhb: string }[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -69,11 +67,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
-
-        // Inicializa NHBs a partir dos dados existentes
-        if (processo.avaliacao?.nhbsAfetadas) {
-          setNhbsAfetadas(processo.avaliacao.nhbsAfetadas);
-        }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
       } finally {
@@ -82,7 +75,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     };
 
     loadData();
-  }, [processo.avaliacao?.nhbsAfetadas]);
+  }, []);
 
   const calculateAge = (dataNascimento: Timestamp): number => {
     const birth = dataNascimento.toDate();
@@ -97,19 +90,53 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     return age;
   };
 
-  // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
+  // Função centralizada para atualizar o exame físico
+  const handleExameFisicoChange = (parametro: string, valor: string | number) => {
+    const novoExameFisico = {
+      ...processo.avaliacao.exameFisico,
+      [parametro]: valor
+    };
+
+    const novaAvaliacao: AvaliacaoEnfermagem = {
+      ...processo.avaliacao,
+      exameFisico: novoExameFisico
+    };
+
+    const novoProcesso: ProcessoEnfermagem = {
+      ...processo,
+      avaliacao: novaAvaliacao
+    };
+
+    onUpdateProcesso(novoProcesso);
+
+    // Executar validação após a atualização
+    if (typeof valor === 'number' || (typeof valor === 'string' && !isNaN(Number(valor)))) {
+      validateNumeric(parametro, valor, 'sinal');
+    } else if (typeof valor === 'string') {
+      // Para combobox de exames de imagem
+      validateImagem(parametro, valor);
+      // Para revisão de sistemas
+      validateSistema(parametro, valor);
+    }
+  };
+
+  // Utilitário: atualiza a lista de NHBs
   const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
-    setNhbsAfetadas((prev) => {
-      const outras = prev.filter((n) => n.parametro !== parametro);
-      const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
-      // Sincroniza no processo
-      const novaAvaliacao: AvaliacaoEnfermagem = {
-        ...processo.avaliacao,
-        nhbsAfetadas: novaLista,
-      };
-      onUpdateAvaliacao(novaAvaliacao);
-      return novaLista;
-    });
+    const nhbsAtuais = processo.avaliacao.nhbsAfetadas || [];
+    const outras = nhbsAtuais.filter((n) => n.parametro !== parametro);
+    const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
+
+    const novaAvaliacao: AvaliacaoEnfermagem = {
+      ...processo.avaliacao,
+      nhbsAfetadas: novaLista,
+    };
+
+    const novoProcesso: ProcessoEnfermagem = {
+      ...processo,
+      avaliacao: novaAvaliacao
+    };
+
+    onUpdateProcesso(novoProcesso);
   };
 
   // Utilitário: define o status de validação de um parâmetro
@@ -123,22 +150,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ...prev,
       [parametro]: { status, nomeAlteracao, nhb },
     }));
-  };
-
-  // Função genérica para salvar valor do exame físico no processo (mantendo imutabilidade)
-  const saveExameFisicoValue = (parametro: string, value: string | number) => {
-    const novoExameFisico = {
-      ...processo.avaliacao.exameFisico,
-      [parametro]: value,
-    };
-
-    const novaAvaliacao: AvaliacaoEnfermagem = {
-      ...processo.avaliacao,
-      exameFisico: novoExameFisico,
-      nhbsAfetadas,
-    };
-
-    onUpdateAvaliacao(novaAvaliacao);
   };
 
   // Validação para valores numéricos (sinais vitais e exames laboratoriais)
@@ -294,7 +305,13 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ...processo.avaliacao,
       coletaDeDadosSubjetivos: value,
     };
-    onUpdateAvaliacao(novaAvaliacao);
+
+    const novoProcesso: ProcessoEnfermagem = {
+      ...processo,
+      avaliacao: novaAvaliacao
+    };
+
+    onUpdateProcesso(novoProcesso);
   };
 
   if (loading) {
@@ -589,11 +606,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                           type="number"
                           placeholder="Digite o valor"
                           value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            saveExameFisicoValue(sinal.sinalVitalNome, val);
-                            validateNumeric(sinal.sinalVitalNome, val, 'sinal');
-                          }}
+                          onChange={(e) => handleExameFisicoChange(sinal.sinalVitalNome, e.target.value)}
                           className={getInputClassName(sinal.sinalVitalNome)}
                         />
                         {renderValidationMessage(sinal.sinalVitalNome)}
@@ -637,11 +650,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   <Combobox
                                     options={opcoes}
                                     value={String(valorAtual)}
-                                    onValueChange={(selected) => {
-                                      // Limpar seleção (""), ou salvar seleção
-                                      saveExameFisicoValue(parametro, selected);
-                                      validateImagem(parametro, selected);
-                                    }}
+                                    onValueChange={(selected) => handleExameFisicoChange(parametro, selected)}
                                     placeholder="Selecione o resultado..."
                                     searchPlaceholder="Buscar resultado..."
                                     className={getInputClassName(parametro)}
@@ -661,11 +670,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   type="number"
                                   placeholder="Digite o resultado"
                                   value={valorAtual}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    saveExameFisicoValue(parametro, val);
-                                    validateNumeric(parametro, val, 'exameLab');
-                                  }}
+                                  onChange={(e) => handleExameFisicoChange(parametro, e.target.value)}
                                   className={getInputClassName(parametro)}
                                 />
                                 {renderValidationMessage(parametro)}
@@ -708,10 +713,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                 <Combobox
                                   options={opcoesAchados}
                                   value={String(valorAtual)}
-                                  onValueChange={(selected) => {
-                                    saveExameFisicoValue(parametro, selected);
-                                    validateSistema(parametro, selected);
-                                  }}
+                                  onValueChange={(selected) => handleExameFisicoChange(parametro, selected)}
                                   placeholder="Selecione o achado..."
                                   searchPlaceholder="Buscar achado..."
                                   className={getInputClassName(parametro)}
@@ -728,14 +730,14 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
               </AccordionItem>
             </Accordion>
 
-            {nhbsAfetadas.length > 0 && (
+            {(processo.avaliacao?.nhbsAfetadas?.length || 0) > 0 && (
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="text-lg">Necessidades Humanas Básicas Afetadas</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {nhbsAfetadas.map((item, idx) => (
+                    {processo.avaliacao.nhbsAfetadas?.map((item, idx) => (
                       <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded">
                         <span className="font-medium">{item.parametro}:</span>
                         <span className="text-primary">{item.nhb}</span>
