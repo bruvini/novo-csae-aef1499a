@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -302,7 +301,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaDiagnostico
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdateDiagnostico={(diagnostico) => {
+              const novoProcesso = {
+                ...processo,
+                diagnostico
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 3:
@@ -310,7 +315,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaPlanejamento
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdatePlanejamento={(planejamento) => {
+              const novoProcesso = {
+                ...processo,
+                planejamento
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 4:
@@ -318,7 +329,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <EtapaImplementacao
             processo={processo}
             paciente={paciente}
-            onUpdateProcesso={handleUpdateProcesso}
+            onUpdateImplementacao={(implementacao) => {
+              const novoProcesso = {
+                ...processo,
+                implementacao
+              };
+              handleUpdateProcesso(novoProcesso);
+            }}
           />
         );
       case 5:
@@ -422,10 +439,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           <div className="shrink-0 mb-4">
             <StepperProcesso
               etapaAtual={processo.etapaAtual}
-              onStepClick={(etapa) => {
+              onEtapaChange={(etapa) => {
                 const novoProcesso = { ...processo, etapaAtual: etapa };
                 setProcesso(novoProcesso);
               }}
+              etapasCompletadas={[]}
+              processo={processo}
             />
           </div>
 

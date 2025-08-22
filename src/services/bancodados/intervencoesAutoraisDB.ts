@@ -30,3 +30,9 @@ export const salvarIntervencoesAutorais = async (intervencoes: IntervencaoAutora
   await batch.commit();
   console.log(`${intervencoes.length} intervenções autorais salvas com sucesso`);
 };
+
+export const salvarIntervencaoAutoral = async (intervencao: IntervencaoAutoral): Promise<void> => {
+  const colecaoRef = collection(db, 'intervencoesAutorais');
+  await addDoc(colecaoRef, intervencao);
+  console.log('Intervenção autoral salva com sucesso');
+};
