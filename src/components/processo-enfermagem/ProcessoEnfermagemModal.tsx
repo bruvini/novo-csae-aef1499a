@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -6,6 +7,16 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from "@/hooks/use-toast"
@@ -17,11 +28,13 @@ import {
   concluirProcesso,
   buscarProcessoAtivo,
   buscarProcessoPorId,
+  excluirProcesso,
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
+import { Loader2, Trash2, X } from 'lucide-react';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
@@ -36,6 +49,7 @@ interface ProcessoEnfermagemModalProps {
   paciente: Paciente;
   enfermeiroId: string;
   processoInicial?: ProcessoEnfermagem | null;
+  onProcessoDeleted?: () => void;
 }
 
 const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
@@ -43,7 +57,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   onClose,
   paciente,
   enfermeiroId,
-  processoInicial
+  processoInicial,
+  onProcessoDeleted
 }) => {
   const [processo, setProcesso] = useState<ProcessoEnfermagem>(
     processoInicial || {
@@ -67,6 +82,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   );
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [, setTick] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -221,6 +238,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleSalvarProgresso = async () => {
+    if (!processo.id) return;
+
+    setIsSaving(true);
     try {
       await salvarProgressoProcesso(processo.id, etapaAtual, {
         avaliacao: processo.avaliacao,
@@ -246,10 +266,20 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         description: "Erro ao salvar o progresso.",
         variant: "destructive",
       })
+    } finally {
+      setIsSaving(false);
     }
   };
 
+  const handleSaveAndClose = async () => {
+    await handleSalvarProgresso();
+    onClose();
+  };
+
   const handleConcluirProcesso = async () => {
+    if (!processo.id) return;
+
+    setIsSaving(true);
     try {
       // Salvar intervenções autorais antes de concluir
       const intervencoesAutorais: IntervencaoAutoral[] = [];
@@ -292,6 +322,35 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         description: "Erro ao concluir o processo.",
         variant: "destructive",
       })
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProcess = async () => {
+    if (!processo.id) return;
+
+    setIsSaving(true);
+    try {
+      await excluirProcesso(processo.id);
+      
+      toast({
+        title: "Sucesso",
+        description: "Processo excluído com sucesso!",
+      });
+      
+      setShowDeleteAlert(false);
+      onClose();
+      onProcessoDeleted?.();
+    } catch (error) {
+      console.error('Erro ao excluir processo:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir o processo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -348,51 +407,102 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     : "00 dias, 00:00:00";
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
-        {/* Header fixo */}
-        <DialogHeader className="flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle>Processo de Enfermagem - {paciente.nomeCompleto}</DialogTitle>
-            <Badge variant="outline" className="text-sm">
-              Tempo Ativo: {tempoAtivo}
-            </Badge>
+    <>
+      <Dialog open={isOpen} onOpenChange={() => handleSaveAndClose()}>
+        <DialogContent 
+          className="max-w-6xl h-[90vh] flex flex-col"
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            handleSaveAndClose();
+          }}
+        >
+          {/* Header fixo */}
+          <DialogHeader className="flex-shrink-0 flex-row items-center justify-between">
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle>Processo de Enfermagem - {paciente.nomeCompleto}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-sm">
+                  Tempo Ativo: {tempoAtivo}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleSaveAndClose}
+                  disabled={isSaving}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          {/* Stepper fixo */}
+          <div className="flex-shrink-0 px-4 pb-4">
+            <StepperProcesso
+              etapaAtual={etapaAtual}
+              onEtapaChange={handleEtapaChange}
+              etapasCompletadas={etapasCompletadas}
+              processo={processo}
+            />
           </div>
-        </DialogHeader>
-        
-        {/* Stepper fixo */}
-        <div className="flex-shrink-0 px-4 pb-4">
-          <StepperProcesso
-            etapaAtual={etapaAtual}
-            onEtapaChange={handleEtapaChange}
-            etapasCompletadas={etapasCompletadas}
-            processo={processo}
-          />
-        </div>
 
-        {/* Área de conteúdo rolável */}
-        <div className="flex-1 overflow-y-auto px-4">
-          {renderEtapaAtual()}
-        </div>
+          {/* Área de conteúdo rolável */}
+          <div className="flex-1 overflow-y-auto px-4">
+            {renderEtapaAtual()}
+          </div>
 
-        {/* Footer fixo */}
-        <DialogFooter className="flex-shrink-0">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button type="button" onClick={handleSalvarProgresso}>
-            Salvar Progresso
-          </Button>
-          <Button 
-            type="button" 
-            onClick={handleConcluirProcesso}
-            disabled={etapaAtual !== 5}
-          >
-            Concluir Processo
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          {/* Footer fixo */}
+          <DialogFooter className="flex-shrink-0">
+            <Button 
+              variant="destructive" 
+              className="mr-auto" 
+              onClick={() => setShowDeleteAlert(true)}
+              disabled={isSaving}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Excluir Processo
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleSaveAndClose} disabled={isSaving}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleSalvarProgresso} disabled={isSaving}>
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar Progresso
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleConcluirProcesso}
+              disabled={etapaAtual !== 5 || isSaving}
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Concluir Processo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este processo de enfermagem? Esta ação não pode ser desfeita e todos os dados inseridos serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteProcess}
+              disabled={isSaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 

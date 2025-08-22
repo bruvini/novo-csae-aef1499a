@@ -1,15 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { Search, UserPlus, Play, CheckCircle, Calendar, Trash2, Edit, MoreVertical } from 'lucide-react';
+import { calcularIdade } from '@/utils/timeUtils';
+import { Paciente } from '@/types/paciente';
+import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { buscarPacientesPorEnfermeiro, excluirPaciente } from '@/services/bancodados/pacientesDB';
+import { buscarProcessoAtivo, buscarProcessoConcluido } from '@/services/bancodados/processosEnfermagemDB';
+import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
+import ModalCadastroPaciente from './ModalCadastroPaciente';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,309 +30,347 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Plus, Play, Loader2, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Paciente } from '@/types/paciente';
-import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
-import ModalCadastroPaciente from './ModalCadastroPaciente';
-import { buscarProcessoAtivo } from '@/services/bancodados/processosEnfermagemDB';
-import { excluirPaciente } from '@/services/bancodados/pacientesDB';
+} from '@/components/ui/alert-dialog';
 
-interface ListaPacientesProps {
-  pacientes: Paciente[];
-  loading: boolean;
-  onPacienteAtualizado: () => void;
+interface PacienteComStatus extends Paciente {
+  temProcessoAtivo: boolean;
+  temProcessoConcluido: boolean;
+  processoAtivo?: ProcessoEnfermagem | null;
 }
 
-const ListaPacientes: React.FC<ListaPacientesProps> = ({ 
-  pacientes, 
-  loading, 
-  onPacienteAtualizado 
-}) => {
-  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+const ListaPacientes: React.FC = () => {
+  const [pacientes, setPacientes] = useState<PacienteComStatus[]>([]);
+  const [filteredPacientes, setFilteredPacientes] = useState<PacienteComStatus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [modalProcessoOpen, setModalProcessoOpen] = useState(false);
-  const [modalEditarOpen, setModalEditarOpen] = useState(false);
+  const [modalCadastroOpen, setModalCadastroOpen] = useState(false);
+  const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null);
+  const [processoSelecionado, setProcessoSelecionado] = useState<ProcessoEnfermagem | null>(null);
+  const [pacienteParaEditar, setPacienteParaEditar] = useState<Paciente | null>(null);
   const [pacienteParaExcluir, setPacienteParaExcluir] = useState<Paciente | null>(null);
-  const [statusProcesso, setStatusProcesso] = useState<{ [pacienteId: string]: string }>({});
-  const [excluindo, setExcluindo] = useState(false);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
+  
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const handleOpenProcessoModal = (paciente: Paciente) => {
-    setSelectedPaciente(paciente);
+  const carregarPacientes = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const listaPacientes = await buscarPacientesPorEnfermeiro(user.uid);
+      
+      const pacientesComStatus = await Promise.all(
+        listaPacientes.map(async (paciente) => {
+          const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
+          const temProcessoConcluido = await buscarProcessoConcluido(paciente.id, user.uid);
+          
+          return {
+            ...paciente,
+            temProcessoAtivo: !!processoAtivo,
+            temProcessoConcluido,
+            processoAtivo
+          };
+        })
+      );
+
+      setPacientes(pacientesComStatus);
+    } catch (error) {
+      console.error('Erro ao carregar pacientes:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de pacientes.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarPacientes();
+  }, [user]);
+
+  useEffect(() => {
+    let filtered = pacientes;
+
+    // Filtro por termo de busca
+    if (searchTerm) {
+      filtered = filtered.filter(paciente =>
+        paciente.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'todos') {
+      switch (statusFilter) {
+        case 'sem_processo':
+          filtered = filtered.filter(p => !p.temProcessoAtivo && !p.temProcessoConcluido);
+          break;
+        case 'em_andamento':
+          filtered = filtered.filter(p => p.temProcessoAtivo);
+          break;
+        case 'concluido':
+          filtered = filtered.filter(p => p.temProcessoConcluido && !p.temProcessoAtivo);
+          break;
+      }
+    }
+
+    setFilteredPacientes(filtered);
+  }, [pacientes, searchTerm, statusFilter]);
+
+  const handleIniciarProcesso = (paciente: Paciente) => {
+    setPacienteSelecionado(paciente);
+    setProcessoSelecionado(null);
     setModalProcessoOpen(true);
   };
 
-  const handleCloseProcessoModal = () => {
-    setModalProcessoOpen(false);
-    setSelectedPaciente(null);
+  const handleContinuarProcesso = (paciente: PacienteComStatus) => {
+    setPacienteSelecionado(paciente);
+    setProcessoSelecionado(paciente.processoAtivo || null);
+    setModalProcessoOpen(true);
   };
 
-  const handleOpenEditarModal = (paciente: Paciente) => {
-    setSelectedPaciente(paciente);
-    setModalEditarOpen(true);
+  const handleEditarPaciente = (paciente: Paciente) => {
+    setPacienteParaEditar(paciente);
+    setModalCadastroOpen(true);
   };
 
-  const handleCloseEditarModal = () => {
-    setModalEditarOpen(false);
-    setSelectedPaciente(null);
+  const handleExcluirPaciente = (paciente: Paciente) => {
+    setPacienteParaExcluir(paciente);
+    setShowDeleteAlert(true);
   };
 
-  const handleProcessoAtualizado = () => {
-    onPacienteAtualizado();
-  };
+  const confirmarExclusaoPaciente = async () => {
+    if (!pacienteParaExcluir || !user) return;
 
-  const handlePacienteEditado = () => {
-    onPacienteAtualizado();
-    handleCloseEditarModal();
-  };
-
-  const handleExcluirPaciente = async () => {
-    if (!pacienteParaExcluir) return;
-
-    setExcluindo(true);
     try {
-      await excluirPaciente(pacienteParaExcluir.id);
-      
+      await excluirPaciente(pacienteParaExcluir.id, user.uid);
       toast({
-        title: "Paciente excluído",
-        description: "Paciente e todos os seus processos foram excluídos com sucesso.",
+        title: "Sucesso",
+        description: "Paciente excluído com sucesso!",
       });
-      
-      onPacienteAtualizado();
-      setPacienteParaExcluir(null);
+      carregarPacientes();
     } catch (error) {
       console.error('Erro ao excluir paciente:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível excluir o paciente. Tente novamente.",
+        description: "Erro ao excluir o paciente.",
         variant: "destructive",
       });
     } finally {
-      setExcluindo(false);
+      setShowDeleteAlert(false);
+      setPacienteParaExcluir(null);
     }
   };
 
-  const verificarStatusProcesso = useCallback(async (paciente: Paciente) => {
-    if (!user || !paciente.id) return 'sem-processo';
-
-    try {
-      // Buscar APENAS processos em andamento
-      const processoAtivo = await buscarProcessoAtivo(paciente.id, user.uid);
-      
-      if (processoAtivo) {
-        return 'em-andamento';
-      }
-      
-      // Se não há processo em andamento, permitir iniciar novo processo
-      return 'sem-processo';
-    } catch (error) {
-      console.error('Erro ao verificar status do processo:', error);
-      return 'sem-processo';
-    }
-  }, [user]);
-
-  useEffect(() => {
-    const verificarStatusTodosPacientes = async () => {
-      const statusTemp: { [pacienteId: string]: string } = {};
-      for (const paciente of pacientes) {
-        statusTemp[paciente.id] = loading ? 'carregando' : await verificarStatusProcesso(paciente);
-      }
-      setStatusProcesso(statusTemp);
-    };
-
-    verificarStatusTodosPacientes();
-  }, [pacientes, loading, verificarStatusProcesso]);
-
-  const getStatusDisplay = (status: string) => {
-    switch (status) {
-      case 'em-andamento':
-        return {
-          label: 'Em andamento',
-          variant: 'default' as const,
-          className: 'bg-blue-100 text-blue-800'
-        };
-      case 'sem-processo':
-        return {
-          label: 'Disponível',
-          variant: 'secondary' as const,
-          className: 'bg-green-100 text-green-800'
-        };
-      default:
-        return {
-          label: 'Carregando...',
-          variant: 'outline' as const,
-          className: 'bg-gray-100 text-gray-600'
-        };
-    }
+  const handleProcessoDeleted = () => {
+    carregarPacientes(); // Recarregar a lista quando um processo for excluído
   };
 
-  const getButtonConfig = (status: string) => {
-    switch (status) {
-      case 'em-andamento':
-        return {
-          text: 'Continuar Processo',
-          icon: <Play className="w-4 h-4" />,
-          disabled: false,
-          variant: 'default' as const
-        };
-      case 'sem-processo':
-        return {
-          text: 'Iniciar Processo',
-          icon: <Plus className="w-4 h-4" />,
-          disabled: false,
-          variant: 'default' as const
-        };
-      default:
-        return {
-          text: 'Carregando...',
-          icon: <Loader2 className="w-4 h-4 animate-spin" />,
-          disabled: true,
-          variant: 'outline' as const
-        };
+  const getStatusBadge = (paciente: PacienteComStatus) => {
+    if (paciente.temProcessoAtivo) {
+      return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Em Andamento</Badge>;
     }
+    if (paciente.temProcessoConcluido) {
+      return <Badge variant="secondary" className="bg-green-100 text-green-800">Concluído</Badge>;
+    }
+    return <Badge variant="outline">Sem Processo</Badge>;
   };
+
+  const getActionButton = (paciente: PacienteComStatus) => {
+    if (paciente.temProcessoAtivo) {
+      return (
+        <Button 
+          onClick={() => handleContinuarProcesso(paciente)}
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <Play className="w-4 h-4" />
+          Continuar Processo
+        </Button>
+      );
+    }
+    
+    return (
+      <Button 
+        onClick={() => handleIniciarProcesso(paciente)}
+        size="sm"
+        className="flex items-center gap-2"
+      >
+        <Play className="w-4 h-4" />
+        Iniciar Processo
+      </Button>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Carregando pacientes...</div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {loading ? (
-          // Mostrar skeleton cards enquanto carrega
-          [...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="flex flex-col space-y-2 p-6">
-                <div className="flex items-center space-x-4">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-[250px]" />
-                    <Skeleton className="h-4 w-[200px]" />
-                  </div>
-                </div>
-                <Skeleton className="h-10 w-full" />
-              </CardContent>
-            </Card>
-          ))
-        ) : pacientes.length === 0 ? (
-          // Mostrar mensagem se não houver pacientes
-          <div className="col-span-full text-center">
-            Nenhum paciente cadastrado.
-          </div>
-        ) : (
-          // Mostrar lista de pacientes
-          pacientes.map((paciente) => {
-            const status = statusProcesso[paciente.id] || 'carregando';
-            const statusDisplay = getStatusDisplay(status);
-            const buttonConfig = getButtonConfig(status);
-
-            return (
-              <Card key={paciente.id}>
-                <CardContent className="flex flex-col space-y-4 p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <Avatar>
-                        <AvatarImage src="https://github.com/shadcn.png" alt={paciente.nomeCompleto} />
-                        <AvatarFallback>{paciente.nomeCompleto.substring(0, 2).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="space-y-1">
-                        <CardTitle className="text-lg font-semibold">{paciente.nomeCompleto}</CardTitle>
-                      </div>
-                    </div>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenEditarModal(paciente)}>
-                          <Pencil className="w-4 h-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => setPacienteParaExcluir(paciente)}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge variant={statusDisplay.variant} className={statusDisplay.className}>
-                      {statusDisplay.label}
-                    </Badge>
-                    <Button 
-                      onClick={() => handleOpenProcessoModal(paciente)}
-                      disabled={buttonConfig.disabled}
-                      className="csae-btn-primary flex items-center gap-2"
-                    >
-                      {buttonConfig.icon}
-                      {buttonConfig.text}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold text-gray-900">Meus Pacientes</h2>
+        <Button onClick={() => setModalCadastroOpen(true)} className="flex items-center gap-2">
+          <UserPlus className="w-4 h-4" />
+          Cadastrar Paciente
+        </Button>
       </div>
 
-      {/* Modal do Processo de Enfermagem */}
-      {selectedPaciente && modalProcessoOpen && user && (
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar por nome do paciente..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filtrar por status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os Status</SelectItem>
+            <SelectItem value="sem_processo">Sem Processo</SelectItem>
+            <SelectItem value="em_andamento">Em Andamento</SelectItem>
+            <SelectItem value="concluido">Concluído</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Lista de Pacientes */}
+      {filteredPacientes.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Calendar className="w-12 h-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {searchTerm || statusFilter !== 'todos' 
+                ? 'Nenhum paciente encontrado' 
+                : 'Nenhum paciente cadastrado'
+              }
+            </h3>
+            <p className="text-gray-600 text-center">
+              {searchTerm || statusFilter !== 'todos'
+                ? 'Tente ajustar os filtros de busca.'
+                : 'Cadastre seu primeiro paciente para iniciar um processo de enfermagem.'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPacientes.map((paciente) => (
+            <Card key={paciente.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{paciente.nomeCompleto}</CardTitle>
+                    <CardDescription>
+                      {calcularIdade(paciente.dataNascimento.toDate())} anos • {paciente.sexo}
+                    </CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditarPaciente(paciente)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => handleExcluirPaciente(paciente)}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {getStatusBadge(paciente)}
+                  {paciente.temProcessoConcluido && (
+                    <p className="text-sm text-green-600 flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      Processo de enfermagem concluído
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                {getActionButton(paciente)}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Modais */}
+      {pacienteSelecionado && (
         <ProcessoEnfermagemModal
           isOpen={modalProcessoOpen}
-          onClose={handleCloseProcessoModal}
-          paciente={selectedPaciente}
-          enfermeiroId={user.uid}
+          onClose={() => {
+            setModalProcessoOpen(false);
+            setPacienteSelecionado(null);
+            setProcessoSelecionado(null);
+            carregarPacientes();
+          }}
+          paciente={pacienteSelecionado}
+          enfermeiroId={user?.uid || ''}
+          processoInicial={processoSelecionado}
+          onProcessoDeleted={handleProcessoDeleted}
         />
       )}
 
-      {/* Modal de Editar Paciente */}
-      {selectedPaciente && modalEditarOpen && (
-        <ModalCadastroPaciente
-          open={modalEditarOpen}
-          onOpenChange={handleCloseEditarModal}
-          onPacienteCadastrado={handlePacienteEditado}
-          pacienteParaEditar={selectedPaciente}
-        />
-      )}
+      <ModalCadastroPaciente
+        open={modalCadastroOpen}
+        onOpenChange={(open) => {
+          setModalCadastroOpen(open);
+          if (!open) {
+            setPacienteParaEditar(null);
+          }
+        }}
+        onPacienteCadastrado={carregarPacientes}
+        pacienteParaEditar={pacienteParaEditar}
+      />
 
-      {/* AlertDialog para Confirmação de Exclusão */}
-      <AlertDialog open={!!pacienteParaExcluir} onOpenChange={() => setPacienteParaExcluir(null)}>
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Paciente</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o paciente <strong>'{pacienteParaExcluir?.nomeCompleto}'</strong>? 
-              Todos os seus processos de enfermagem associados também serão excluídos permanentemente. 
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o paciente "{pacienteParaExcluir?.nomeCompleto}"? 
+              Esta ação não pode ser desfeita e todos os dados relacionados, incluindo processos de enfermagem, serão removidos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleExcluirPaciente}
-              disabled={excluindo}
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmarExclusaoPaciente}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {excluindo ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Excluindo...
-                </>
-              ) : (
-                'Excluir'
-              )}
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 };
 

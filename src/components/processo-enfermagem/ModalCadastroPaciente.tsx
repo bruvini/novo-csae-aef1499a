@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -18,7 +19,8 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
+import InputMask from 'react-input-mask';
 import { Paciente } from '@/types/paciente';
 import { cadastrarPaciente, atualizarPaciente } from '@/services/bancodados/pacientesDB';
 
@@ -42,29 +44,53 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
   pacienteParaEditar = null
 }) => {
   const [loading, setLoading] = useState(false);
+  const [dateInputValue, setDateInputValue] = useState('');
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const { control, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
+  const { control, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormValues>();
+  const watchedDate = watch('dataNascimento');
 
   const isEditMode = !!pacienteParaEditar;
 
-  // Pré-preencher o formulário quando estiver editando
+  // Sync date input with form value
+  useEffect(() => {
+    if (watchedDate) {
+      setDateInputValue(format(watchedDate, 'dd/MM/yyyy'));
+    }
+  }, [watchedDate]);
+
+  // Pre-fill form when editing
   useEffect(() => {
     if (isEditMode && pacienteParaEditar) {
+      const birthDate = pacienteParaEditar.dataNascimento.toDate();
       reset({
         nomeCompleto: pacienteParaEditar.nomeCompleto,
-        dataNascimento: pacienteParaEditar.dataNascimento.toDate(),
+        dataNascimento: birthDate,
         sexo: pacienteParaEditar.sexo,
       });
+      setDateInputValue(format(birthDate, 'dd/MM/yyyy'));
     } else {
       reset({
         nomeCompleto: '',
         dataNascimento: undefined,
         sexo: undefined,
       });
+      setDateInputValue('');
     }
   }, [isEditMode, pacienteParaEditar, reset]);
+
+  const handleDateInputChange = (value: string) => {
+    setDateInputValue(value);
+    
+    // Try to parse the date if it's complete
+    if (value.length === 10) {
+      const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
+      if (isValid(parsedDate)) {
+        setValue('dataNascimento', parsedDate);
+      }
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (!user) return;
@@ -72,7 +98,6 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
     setLoading(true);
     try {
       if (isEditMode && pacienteParaEditar) {
-        // Atualizar paciente existente
         await atualizarPaciente(
           pacienteParaEditar.id,
           {
@@ -88,7 +113,6 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
           description: "Os dados do paciente foram atualizados com sucesso!",
         });
       } else {
-        // Cadastrar novo paciente
         await cadastrarPaciente(
           values.nomeCompleto,
           values.dataNascimento,
@@ -106,6 +130,7 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
       onPacienteCadastrado();
       onOpenChange(false);
       reset();
+      setDateInputValue('');
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -162,43 +187,57 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
             <Label htmlFor="dataNascimento" className="text-right">
               Data de Nascimento
             </Label>
-            <Controller
-              name="dataNascimento"
-              control={control}
-              defaultValue={undefined}
-              rules={{ required: 'Data de nascimento é obrigatória' }}
-              render={({ field }) => (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "col-span-3 pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
+            <div className="col-span-3 flex gap-2">
+              <Controller
+                name="dataNascimento"
+                control={control}
+                defaultValue={undefined}
+                rules={{ required: 'Data de nascimento é obrigatória' }}
+                render={({ field }) => (
+                  <>
+                    <InputMask
+                      mask="99/99/9999"
+                      value={dateInputValue}
+                      onChange={(e) => handleDateInputChange(e.target.value)}
+                      placeholder="DD/MM/AAAA"
                     >
-                      {field.value ? (
-                        format(field.value, "PP")
-                      ) : (
-                        <span>Selecione a data</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date('1900-01-01')
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-            />
+                      {(inputProps: any) => <Input {...inputProps} className="flex-1" />}
+                    </InputMask>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          type="button"
+                        >
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={(date) => {
+                            field.onChange(date);
+                            if (date) {
+                              setDateInputValue(format(date, 'dd/MM/yyyy'));
+                            }
+                          }}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1920}
+                          toYear={new Date().getFullYear()}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date('1900-01-01')
+                          }
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </>
+                )}
+              />
+            </div>
             {errors.dataNascimento && (
               <p className="col-span-4 text-sm text-red-500 mt-1">
                 {errors.dataNascimento.message}
@@ -216,7 +255,7 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
               defaultValue={undefined}
               rules={{ required: 'Sexo é obrigatório' }}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Selecione o sexo" />
                   </SelectTrigger>
