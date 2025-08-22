@@ -282,3 +282,19 @@ export async function contarTotalProcessos(): Promise<number> {
     return 0;
   }
 }
+
+// NOVO: buscar processo por ID e retornar com id embutido
+export async function buscarProcessoPorId(processoId: string): Promise<ProcessoEnfermagem | null> {
+  try {
+    const processoRef = doc(db, 'processosEnfermagem', processoId);
+    const processoDoc = await getDoc(processoRef);
+    if (!processoDoc.exists()) return null;
+    return {
+      id: processoDoc.id,
+      ...processoDoc.data()
+    } as ProcessoEnfermagem;
+  } catch (error) {
+    console.error('Erro ao buscar processo por ID:', error);
+    return null;
+  }
+}

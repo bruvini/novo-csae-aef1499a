@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -16,7 +15,8 @@ import {
   criarProcessoEnfermagem,
   salvarProgressoProcesso,
   concluirProcesso,
-  iniciarNovaSessao
+  buscarProcessoAtivo,
+  buscarProcessoPorId,
 } from '@/services/bancodados/processosEnfermagemDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
 import StepperProcesso from './StepperProcesso';
@@ -77,44 +77,91 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     return () => clearInterval(interval);
   }, [isOpen]);
 
+  // Carregar processo ativo ao abrir, ou criar um novo se não existir
   useEffect(() => {
-    // Se um processo inicial for fornecido, use-o
-    if (processoInicial) {
-      setProcesso(processoInicial);
-      setEtapaAtual(processoInicial.etapaAtual);
-      
-      // Lógica para determinar as etapas completadas
-      const etapasConcluidas = [];
-      if (processoInicial.avaliacao && processoInicial.avaliacao.coletaDeDadosSubjetivos) {
-        etapasConcluidas.push(1);
+    if (!isOpen) return;
+
+    const carregarOuCriarProcesso = async () => {
+      try {
+        if (processoInicial) {
+          setProcesso(processoInicial);
+          setEtapaAtual(processoInicial.etapaAtual);
+
+          const etapasConcluidas: number[] = [];
+          if (processoInicial.avaliacao && processoInicial.avaliacao.coletaDeDadosSubjetivos) {
+            etapasConcluidas.push(1);
+          }
+          if (processoInicial.diagnostico && processoInicial.diagnosticosSelecionados.length > 0) {
+            etapasConcluidas.push(2);
+          }
+          if (processoInicial.planejamento && processoInicial.planejamento.diagnosticosPlanejados.length > 0) {
+            etapasConcluidas.push(3);
+          }
+          if (processoInicial.implementacao && Object.keys(processoInicial.implementacao).length > 0) {
+            etapasConcluidas.push(4);
+          }
+          if (processoInicial.evolucao) {
+            etapasConcluidas.push(5);
+          }
+          setEtapasCompletadas(etapasConcluidas);
+          return;
+        }
+
+        // Tentar buscar processo ativo do Firestore
+        const existente = await buscarProcessoAtivo(paciente.id, enfermeiroId);
+        if (existente) {
+          setProcesso(existente);
+          setEtapaAtual(existente.etapaAtual);
+
+          const etapasConcluidas: number[] = [];
+          if (existente.avaliacao && existente.avaliacao.coletaDeDadosSubjetivos) {
+            etapasConcluidas.push(1);
+          }
+          if (existente.diagnostico && existente.diagnostico.diagnosticosSelecionados.length > 0) {
+            etapasConcluidas.push(2);
+          }
+          if (existente.planejamento && existente.planejamento.diagnosticosPlanejados.length > 0) {
+            etapasConcluidas.push(3);
+          }
+          if (existente.implementacao && Object.keys(existente.implementacao).length > 0) {
+            etapasConcluidas.push(4);
+          }
+          if (existente.evolucao) {
+            etapasConcluidas.push(5);
+          }
+          setEtapasCompletadas(etapasConcluidas);
+          return;
+        }
+
+        // Se não existir, cria novo e carrega do Firestore
+        await criarNovoProcesso();
+      } catch (error) {
+        console.error('Erro ao carregar ou criar processo:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar ou iniciar o processo.",
+          variant: "destructive",
+        });
       }
-      if (processoInicial.diagnostico && processoInicial.diagnostico.diagnosticosSelecionados.length > 0) {
-        etapasConcluidas.push(2);
-      }
-      if (processoInicial.planejamento && processoInicial.planejamento.diagnosticosPlanejados.length > 0) {
-        etapasConcluidas.push(3);
-      }
-      if (processoInicial.implementacao && Object.keys(processoInicial.implementacao).length > 0) {
-        etapasConcluidas.push(4);
-      }
-      if (processoInicial.evolucao) {
-        etapasConcluidas.push(5);
-      }
-      setEtapasCompletadas(etapasConcluidas);
-    } else {
-      // Caso contrário, crie um novo processo
-      criarNovoProcesso();
-    }
-  }, [processoInicial]);
+    };
+
+    carregarOuCriarProcesso();
+  }, [isOpen, processoInicial, paciente.id, enfermeiroId]);
 
   const criarNovoProcesso = async () => {
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
-      setProcesso(prev => ({ ...prev, id: novoId }));
-      
-      // Iniciar a primeira sessão de trabalho
-      await iniciarNovaSessao(novoId);
-      
+
+      // Carregar documento completo do Firestore para evitar dessincronização
+      const docCarregado = await buscarProcessoPorId(novoId);
+      if (docCarregado) {
+        setProcesso(docCarregado);
+        setEtapaAtual(docCarregado.etapaAtual);
+      } else {
+        // Fallback: manter ao menos o id
+        setProcesso(prev => ({ ...prev, id: novoId }));
+      }
+
       toast({
         title: "Sucesso",
         description: "Novo processo de enfermagem iniciado!",
