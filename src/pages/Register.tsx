@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -187,7 +188,7 @@ const Register = () => {
           "Seu cadastro foi enviado para análise. Você receberá um e-mail quando for aprovado.",
       });
 
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error("Erro ao cadastrar:", error);
       let description = "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.";
@@ -237,7 +238,7 @@ const Register = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate("/login")}
                   className="csae-btn-secondary order-2 sm:order-1"
                   disabled={carregando}
                 >
