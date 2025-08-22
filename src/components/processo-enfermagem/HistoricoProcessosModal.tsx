@@ -1,86 +1,123 @@
 
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, FileText, Clock } from 'lucide-react';
-import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { CalendarDays, FileText } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { Paciente } from '@/types/paciente';
+import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnfermagemDB';
-import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
   onClose: () => void;
   paciente: Paciente;
+  enfermeiroId: string;
 }
 
 const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
   isOpen,
   onClose,
-  paciente
+  paciente,
+  enfermeiroId
 }) => {
-  const { user } = useAuth();
   const [processos, setProcessos] = useState<ProcessoEnfermagem[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && user && paciente) {
-      carregarHistorico();
-    }
-  }, [isOpen, user, paciente]);
+  const { toast } = useToast();
 
   const carregarHistorico = async () => {
-    if (!user || !paciente) return;
-
+    if (!paciente.id) return;
+    
     setLoading(true);
     try {
-      const processosHistorico = await buscarProcessosConcluidos(paciente.id, user.uid);
-      setProcessos(processosHistorico);
+      const processosData = await buscarProcessosConcluidos(paciente.id, enfermeiroId);
+      setProcessos(processosData);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar o histórico de processos.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatarData = (timestamp: any) => {
-    if (!timestamp) return 'Data não disponível';
-    
-    try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return 'Data inválida';
+  useEffect(() => {
+    if (isOpen) {
+      carregarHistorico();
     }
-  };
+  }, [isOpen]);
 
-  const calcularDuracaoSessoes = (sessoes: any[]) => {
-    if (!sessoes || sessoes.length === 0) return 'N/A';
+  const gerarTextoResumo = (processo: ProcessoEnfermagem) => {
+    const linhas: string[] = [];
+    
+    // Cabeçalho
+    linhas.push(`EVOLUÇÃO DE ENFERMAGEM`);
+    linhas.push(`Paciente: ${paciente.nomeCompleto}`);
+    linhas.push(`Data: ${format(processo.dataConclusao?.toDate() || new Date(), 'dd/MM/yyyy', { locale: ptBR })}`);
+    linhas.push('');
 
-    let duracaoTotal = 0;
-    sessoes.forEach(sessao => {
-      if (sessao.inicioSessao && sessao.fimSessao) {
-        const inicio = sessao.inicioSessao.toDate ? sessao.inicioSessao.toDate() : new Date(sessao.inicioSessao);
-        const fim = sessao.fimSessao.toDate ? sessao.fimSessao.toDate() : new Date(sessao.fimSessao);
-        duracaoTotal += fim.getTime() - inicio.getTime();
-      }
+    // Avaliação
+    if (processo.avaliacao.coletaDeDadosSubjetivos) {
+      linhas.push('AVALIAÇÃO DE ENFERMAGEM:');
+      linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
+      linhas.push('');
+    }
+
+    // Exame Físico
+    const exameFisico = processo.avaliacao.exameFisico || {};
+    if (Object.keys(exameFisico).length > 0) {
+      linhas.push('EXAME FÍSICO:');
+      Object.entries(exameFisico).forEach(([parametro, valor]) => {
+        if (valor !== null && valor !== undefined && valor !== '') {
+          linhas.push(`${parametro}: ${valor}`);
+        }
+      });
+      linhas.push('');
+    }
+
+    // Diagnósticos
+    if (processo.diagnostico.diagnosticosSelecionados.length > 0) {
+      linhas.push('DIAGNÓSTICOS DE ENFERMAGEM:');
+      processo.diagnostico.diagnosticosSelecionados.forEach(diag => {
+        linhas.push(`• ${diag.tituloDiagnostico}`);
+      });
+      linhas.push('');
+    }
+
+    // Implementação
+    const implementacao = processo.implementacao || {};
+    const intervencoesImplementadas: string[] = [];
+
+    Object.entries(implementacao).forEach(([, diagnostico]) => {
+      diagnostico.intervencoes.forEach(intervencao => {
+        if (intervencao.implementadoNestaConsulta) {
+          intervencoesImplementadas.push(intervencao.acaoPrescrita);
+        }
+      });
     });
 
-    const horas = Math.floor(duracaoTotal / (1000 * 60 * 60));
-    const minutos = Math.floor((duracaoTotal % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (horas > 0) {
-      return `${horas}h ${minutos}min`;
+    if (intervencoesImplementadas.length > 0) {
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      intervencoesImplementadas.forEach(int => {
+        linhas.push(`• ${int}`);
+      });
+      linhas.push('');
     }
-    return `${minutos}min`;
+
+    return linhas.join('\n');
   };
 
   return (
@@ -93,102 +130,64 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <p>Carregando histórico...</p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Carregando histórico...</p>
+              </div>
             </div>
           ) : processos.length === 0 ? (
-            <div className="flex items-center justify-center h-32">
-              <p className="text-muted-foreground">
-                Nenhum processo de enfermagem concluído encontrado para este paciente.
-              </p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-lg font-medium">Nenhum processo concluído</p>
+                <p className="text-muted-foreground">Este paciente ainda não possui processos de enfermagem concluídos.</p>
+              </div>
             </div>
           ) : (
-            <Accordion type="single" collapsible className="w-full">
-              {processos.map((processo, index) => (
-                <AccordionItem key={processo.id || index} value={`processo-${index}`}>
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-4">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary">
-                          Processo #{index + 1}
-                        </Badge>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatarData(processo.dataConclusao)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4" />
-                        <span>{calcularDuracaoSessoes(processo.sessoesDeTrabalho || [])}</span>
-                        <Badge 
-                          variant={processo.status === 'concluido' ? 'default' : 'secondary'}
-                          className="ml-2"
-                        >
-                          {processo.status === 'concluido' ? 'Concluído' : 'Em Andamento'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-4">
-                      {/* Informações Gerais */}
-                      <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+            <ScrollArea className="h-full">
+              <Accordion type="single" collapsible className="w-full">
+                {processos.map((processo, index) => (
+                  <AccordionItem key={processo.id} value={`processo-${index}`}>
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center gap-3 text-left">
+                        <CalendarDays className="w-4 h-4 text-muted-foreground" />
                         <div>
-                          <span className="text-sm font-medium">Data de Início:</span>
-                          <p className="text-sm">{formatarData(processo.dataInicio)}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium">Data de Conclusão:</span>
-                          <p className="text-sm">{formatarData(processo.dataConclusao)}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium">Número de Sessões:</span>
-                          <p className="text-sm">{processo.sessoesDeTrabalho?.length || 0}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium">Duração Total:</span>
-                          <p className="text-sm">{calcularDuracaoSessoes(processo.sessoesDeTrabalho || [])}</p>
-                        </div>
-                      </div>
-
-                      {/* Resumo da Evolução */}
-                      <div>
-                        <h4 className="font-medium mb-3">Evolução de Enfermagem:</h4>
-                        <div className="bg-background border rounded-lg p-4">
-                          {processo.evolucao?.resumoGerado ? (
-                            <pre className="whitespace-pre-wrap text-sm font-mono">
-                              {processo.evolucao.resumoGerado}
-                            </pre>
-                          ) : (
-                            <p className="text-muted-foreground text-sm">
-                              Resumo da evolução não disponível para este processo.
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Diagnósticos (resumo) */}
-                      {processo.diagnostico?.diagnosticosSelecionados?.length > 0 && (
-                        <div>
-                          <h4 className="font-medium mb-2">Diagnósticos Identificados:</h4>
-                          <div className="space-y-1">
-                            {processo.diagnostico.diagnosticosSelecionados.map((diag, diagIndex) => (
-                              <div key={diagIndex} className="text-sm bg-muted p-2 rounded">
-                                • {diag.tituloDiagnostico}
-                              </div>
-                            ))}
+                          <p className="font-medium">
+                            Processo concluído em {format(processo.dataConclusao?.toDate() || new Date(), 'dd/MM/yyyy', { locale: ptBR })} às {format(processo.dataConclusao?.toDate() || new Date(), 'HH:mm', { locale: ptBR })}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {processo.diagnostico.diagnosticosSelecionados.length} diagnósticos
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Duração: {Math.ceil((processo.dataConclusao?.toDate().getTime() - processo.dataInicio.toDate().getTime()) / (1000 * 60 * 60 * 24))} dias
+                            </Badge>
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="mt-4">
+                        <pre className="whitespace-pre-wrap text-sm bg-muted p-4 rounded-md font-mono">
+                          {gerarTextoResumo(processo)}
+                        </pre>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </ScrollArea>
           )}
-        </ScrollArea>
+        </div>
+
+        <div className="flex justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
