@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   addDoc, 
@@ -139,6 +138,10 @@ export async function buscarPacientesUsuario(uidUsuario: string): Promise<Pacien
     console.error('Erro ao buscar pacientes:', error);
     return [];
   }
+}
+
+export async function buscarPacientesPorEnfermeiro(uidUsuario: string): Promise<Paciente[]> {
+  return buscarPacientesUsuario(uidUsuario);
 }
 
 export function determinarStatusPaciente(paciente: Paciente): StatusPaciente {

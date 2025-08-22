@@ -147,7 +147,7 @@ const ListaPacientes: React.FC = () => {
     if (!pacienteParaExcluir || !user) return;
 
     try {
-      await excluirPaciente(pacienteParaExcluir.id, user.uid);
+      await excluirPaciente(pacienteParaExcluir.id);
       toast({
         title: "Sucesso",
         description: "Paciente excluído com sucesso!",

@@ -254,11 +254,7 @@ const ProcessoEnfermagem = () => {
                   </div>
 
                   {/* Lista de Pacientes */}
-                  <ListaPacientes 
-                    pacientes={pacientesFiltrados} 
-                    loading={loading}
-                    onPacienteAtualizado={handlePacienteAtualizado}
-                  />
+                  <ListaPacientes />
                 </div>
               </div>
             </section>

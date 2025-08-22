@@ -38,3 +38,16 @@ export function calcularTempoAtivo(sessoes: SessaoDeTrabalho[]): string {
 
   return `${dias.toString().padStart(2, '0')} dias, ${horasFormatadas}:${minutosFormatados}:${segundosFormatados}`;
 }
+
+export function calcularIdade(dataNascimento: Date): number {
+  const hoje = new Date();
+  let idade = hoje.getFullYear() - dataNascimento.getFullYear();
+  const mesAtual = hoje.getMonth();
+  const mesNascimento = dataNascimento.getMonth();
+  
+  if (mesAtual < mesNascimento || (mesAtual === mesNascimento && hoje.getDate() < dataNascimento.getDate())) {
+    idade--;
+  }
+  
+  return idade;
+}
