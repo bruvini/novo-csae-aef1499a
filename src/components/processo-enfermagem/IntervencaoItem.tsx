@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { IntervencaoImplementada } from '@/types/processoEnfermagem';
 
 interface IntervencaoItemProps {
@@ -66,10 +67,10 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
 
           {/* ToggleGroup para quem executa (apenas para intervenções padrão) */}
           {intervencao.tipo === 'padrao' && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">
+            <div className="flex items-center gap-4 mt-2">
+              <Label className="text-xs font-medium text-muted-foreground">
                 Quem executa:
-              </label>
+              </Label>
               <ToggleGroup
                 type="single"
                 value={intervencao.quemExecuta || ''}

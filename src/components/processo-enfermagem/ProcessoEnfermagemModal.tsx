@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -19,7 +18,10 @@ import {
   buscarProcessoAtivo,
   buscarProcessoPorId,
 } from '@/services/bancodados/processosEnfermagemDB';
+import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Timestamp } from 'firebase/firestore';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
@@ -66,7 +68,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
   const [, setTick] = useState(0);
-  const { toast } = useToast()
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   // Timer para atualizar o tempo ativo a cada segundo
   useEffect(() => {
@@ -248,6 +251,27 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   const handleConcluirProcesso = async () => {
     try {
+      // Salvar intervenções autorais antes de concluir
+      const intervencoesAutorais: IntervencaoAutoral[] = [];
+      
+      processo.planejamento.diagnosticosPlanejados.forEach(diagnostico => {
+        diagnostico.intervencoesSelecionadas
+          .filter(intervencao => intervencao.tipo === 'autoral')
+          .forEach(intervencao => {
+            intervencoesAutorais.push({
+              textoIntervencao: intervencao.acaoPrescrita,
+              tituloResultadoVinculado: diagnostico.resultadoEsperadoSelecionado || '',
+              autorId: user?.uid || '',
+              autorNome: user?.displayName || 'Usuário não identificado',
+              dataCriacao: Timestamp.now()
+            });
+          });
+      });
+
+      if (intervencoesAutorais.length > 0) {
+        await salvarIntervencoesAutorais(intervencoesAutorais);
+      }
+
       await concluirProcesso(processo.id, {
         avaliacao: processo.avaliacao,
         diagnostico: processo.diagnostico,
@@ -255,6 +279,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         implementacao: processo.implementacao,
         evolucao: processo.evolucao
       });
+      
       toast({
         title: "Sucesso",
         description: "Processo concluído com sucesso!",
@@ -324,8 +349,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl h-[90vh] overflow-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+        {/* Header fixo */}
+        <DialogHeader className="flex-shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle>Processo de Enfermagem - {paciente.nomeCompleto}</DialogTitle>
             <Badge variant="outline" className="text-sm">
@@ -334,18 +360,23 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           </div>
         </DialogHeader>
         
-        <div className="p-4">
+        {/* Stepper fixo */}
+        <div className="flex-shrink-0 px-4 pb-4">
           <StepperProcesso
             etapaAtual={etapaAtual}
             onEtapaChange={handleEtapaChange}
             etapasCompletadas={etapasCompletadas}
             processo={processo}
           />
-          
-          <div className="mt-6">{renderEtapaAtual()}</div>
         </div>
 
-        <DialogFooter>
+        {/* Área de conteúdo rolável */}
+        <div className="flex-1 overflow-y-auto px-4">
+          {renderEtapaAtual()}
+        </div>
+
+        {/* Footer fixo */}
+        <DialogFooter className="flex-shrink-0">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
