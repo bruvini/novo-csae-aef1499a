@@ -23,10 +23,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente, StatusPaciente, determinarStatusPaciente } from '@/types/paciente';
-// REMOVIDO: import { useListaPacientesContext } from '@/contexts/ListaPacientesContext';
 import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
 import ModalEditarPaciente from './ModalEditarPaciente';
-import { excluirPaciente } from '@/services/bancodados/pacientesDB';
+import { excluirPaciente, buscarPacientesUsuario } from '@/services/bancodados/pacientesDB';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 import {
   AlertDialog,
@@ -38,12 +37,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
 const ListaPacientes: React.FC = () => {
-  // REMOVIDO: const { pacientesFiltrados, carregarPacientes } = useListaPacientesContext();
   const [tableData, setTableData] = useState<Paciente[]>([]);
+  const [loading, setLoading] = useState(true);
   const [processoModalOpen, setProcessoModalOpen] = useState(false);
   const [pacienteSelecionado, setPacienteSelecionado] = useState<Paciente | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -51,29 +50,57 @@ const ListaPacientes: React.FC = () => {
   const [excluirLoading, setExcluirLoading] = useState(false);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const [pacienteSelecionadoHistorico, setPacienteSelecionadoHistorico] = useState<Paciente | null>(null);
+  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // NOVO: função local para carregar pacientes do usuário autenticado
-  const carregarPacientes = async () => {
+  // Função para carregar pacientes em tempo real
+  useEffect(() => {
     if (!user?.uid) {
       setTableData([]);
+      setLoading(false);
       return;
     }
-    console.log('Carregando pacientes do usuário:', user.uid);
-    const q = query(collection(db, 'pacientes'), where('uidUsuario', '==', user.uid));
-    const snapshot = await getDocs(q);
-    const pacientes: Paciente[] = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as any),
-    })) as Paciente[];
-    setTableData(pacientes);
-  };
 
-  useEffect(() => {
-    carregarPacientes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.uid]);
+    console.log('Configurando listener para pacientes do usuário:', user.uid);
+    
+    const q = query(
+      collection(db, 'pacientesProcessoEnfermagem'),
+      where('uidUsuario', '==', user.uid),
+      orderBy('dataCadastro', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, 
+      (querySnapshot) => {
+        console.log('Snapshot recebido, documentos encontrados:', querySnapshot.size);
+        const pacientes: Paciente[] = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          console.log('Documento encontrado:', doc.id, data);
+          pacientes.push({
+            id: doc.id,
+            ...data
+          } as Paciente);
+        });
+        setTableData(pacientes);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Erro ao escutar mudanças nos pacientes:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar pacientes. Tente recarregar a página.",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      console.log('Removendo listener de pacientes');
+      unsubscribe();
+    };
+  }, [user?.uid, toast]);
 
   const handleAbrirProcesso = (paciente: Paciente) => {
     setPacienteSelecionado(paciente);
@@ -90,8 +117,6 @@ const ListaPacientes: React.FC = () => {
     setShowDeleteAlert(true);
   };
 
-  const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-
   const handleDeleteConfirm = async () => {
     if (!pacienteSelecionado?.id) return;
 
@@ -103,7 +128,7 @@ const ListaPacientes: React.FC = () => {
         description: "Paciente excluído com sucesso!",
       });
       setShowDeleteAlert(false);
-      carregarPacientes(); // Recarrega a lista
+      setPacienteSelecionado(null);
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -223,6 +248,14 @@ const ListaPacientes: React.FC = () => {
     },
   })
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="text-sm text-muted-foreground">Carregando pacientes...</div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="rounded-md border">
@@ -262,7 +295,7 @@ const ListaPacientes: React.FC = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Nenhum resultado.
+                  Nenhum paciente cadastrado ainda.
                 </TableCell>
               </TableRow>
             )}
@@ -300,7 +333,7 @@ const ListaPacientes: React.FC = () => {
           onClose={() => setProcessoModalOpen(false)}
           paciente={pacienteSelecionado}
           enfermeiroId={user?.uid || ''}
-          onProcessoDeleted={carregarPacientes}
+          onProcessoDeleted={() => {}} // Os dados já são atualizados em tempo real
         />
       )}
 
@@ -310,29 +343,27 @@ const ListaPacientes: React.FC = () => {
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
           paciente={pacienteParaEditar}
-          onPacienteAtualizado={carregarPacientes}
+          onPacienteAtualizado={() => {}} // Os dados já são atualizados em tempo real
         />
       )}
       
       {/* Delete Alert */}
-      {showDeleteAlert && (
-        <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setShowDeleteAlert(false)}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} disabled={excluirLoading}>
-                {excluirLoading ? "Excluindo..." : "Excluir"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      <AlertDialog open={showDeleteAlert} onOpenChange={setShowDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteAlert(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={excluirLoading}>
+              {excluirLoading ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Histórico Modal */}
       {pacienteSelecionadoHistorico && (
