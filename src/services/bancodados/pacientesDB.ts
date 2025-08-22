@@ -100,11 +100,7 @@ export async function atualizarPaciente(
 
 export async function excluirPaciente(pacienteId: string): Promise<void> {
   try {
-    // Primeiro, excluir todos os processos de enfermagem associados
-    const { excluirProcessosPorPaciente } = await import('./processosEnfermagemDB');
-    await excluirProcessosPorPaciente(pacienteId);
-
-    // Depois, excluir o paciente
+    // Com o novo modelo, os processos são automaticamente excluídos junto com o paciente
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
     await deleteDoc(pacienteRef);
 
@@ -169,29 +165,18 @@ export async function calcularIndicadoresComProcessos(pacientes: Paciente[], uid
   let processosAtivos = 0;
   let totalProcessosConcluidos = 0;
 
-  // Importar funções do novo serviço
-  const { buscarProcessoAtivo, buscarProcessoConcluido } = await import('./processosEnfermagemDB');
-
-  // Verificar processos reais no Firestore para cada paciente
-  for (const paciente of pacientes) {
-    if (paciente.id) {
-      try {
-        // Verificar processo ativo
-        const processoAtivo = await buscarProcessoAtivo(paciente.id, uidUsuario);
-        if (processoAtivo) {
-          processosAtivos++;
-        } else {
-          // Verificar se tem processo concluído
-          const temProcessoConcluido = await buscarProcessoConcluido(paciente.id, uidUsuario);
-          if (temProcessoConcluido) {
-            totalProcessosConcluidos++;
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao verificar processos do paciente:', error);
-      }
+  // Com o novo modelo, verificamos diretamente nos dados já carregados dos pacientes
+  pacientes.forEach(paciente => {
+    const processos = paciente.processosEnfermagem || [];
+    
+    const temProcessoAtivo = processos.some(p => p.status === 'em_andamento');
+    if (temProcessoAtivo) {
+      processosAtivos++;
     }
-  }
+
+    const processosConcluidos = processos.filter(p => p.status === 'concluido');
+    totalProcessosConcluidos += processosConcluidos.length;
+  });
 
   return {
     totalPacientes,
@@ -203,28 +188,23 @@ export async function calcularIndicadoresComProcessos(pacientes: Paciente[], uid
 export async function calcularIndicadoresExpandidos(pacientes: Paciente[], uidUsuario: string): Promise<IndicadoresPacientes & { processosConcluidos: number; mediaProcessosPorPaciente: number }> {
   const totalPacientes = pacientes.length;
   
-  // Importar as novas funções
-  const { buscarProcessoAtivo, contarProcessosConcluidos, contarTotalProcessos } = await import('./processosEnfermagemDB');
-  
   let processosAtivos = 0;
+  let totalProcessos = 0;
+  let processosConcluidos = 0;
   
-  // Contar processos ativos verificando cada paciente
-  for (const paciente of pacientes) {
-    if (paciente.id) {
-      try {
-        const processoAtivo = await buscarProcessoAtivo(paciente.id, uidUsuario);
-        if (processoAtivo) {
-          processosAtivos++;
-        }
-      } catch (error) {
-        console.error('Erro ao verificar processos do paciente:', error);
-      }
+  // Com o novo modelo, contamos diretamente dos dados dos pacientes
+  pacientes.forEach(paciente => {
+    const processos = paciente.processosEnfermagem || [];
+    totalProcessos += processos.length;
+    
+    const temProcessoAtivo = processos.some(p => p.status === 'em_andamento');
+    if (temProcessoAtivo) {
+      processosAtivos++;
     }
-  }
-  
-  // Buscar processos concluídos e total
-  const processosConcluidos = await contarProcessosConcluidos();
-  const totalProcessos = await contarTotalProcessos();
+
+    const processosConcluidosPaciente = processos.filter(p => p.status === 'concluido');
+    processosConcluidos += processosConcluidosPaciente.length;
+  });
   
   // Calcular média de processos por paciente
   const mediaProcessosPorPaciente = totalPacientes > 0 ? 
@@ -233,8 +213,8 @@ export async function calcularIndicadoresExpandidos(pacientes: Paciente[], uidUs
   return {
     totalPacientes,
     processosAtivos,
-    totalProcessosConcluidos: processosConcluidos, // Mantém compatibilidade
-    processosConcluidos, // Nova métrica específica
+    totalProcessosConcluidos: processosConcluidos,
+    processosConcluidos,
     mediaProcessosPorPaciente
   };
 }

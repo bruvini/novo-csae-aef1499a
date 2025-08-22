@@ -4,9 +4,19 @@ import { Timestamp } from 'firebase/firestore';
 export interface ProcessoEnfermagem {
   idProcesso: string;
   dataInicio: Timestamp;
-  dataFim: Timestamp | null;
-  statusProcesso: 'Em andamento' | 'Concluído';
-  // outros campos serão adicionados futuramente
+  dataFim?: Timestamp | null;
+  dataConclusao?: Timestamp | null;
+  status: 'em_andamento' | 'concluido';
+  statusProcesso?: 'Em andamento' | 'Concluído'; // Para compatibilidade
+  etapaAtual?: number;
+  enfermeiroId?: string;
+  pacienteId?: string;
+  sessoesDeTrabalho?: any[];
+  avaliacao?: any;
+  diagnostico?: any;
+  planejamento?: any;
+  implementacao?: any;
+  evolucao?: any;
 }
 
 export interface Paciente {
@@ -28,7 +38,7 @@ export interface IndicadoresPacientes {
   totalProcessosConcluidos: number;
 }
 
-// NOVO: utilitário para determinar o status do paciente com base na lista de processos
+// Utilitário para determinar o status do paciente com base na lista de processos
 export function determinarStatusPaciente(paciente: Paciente): StatusPaciente {
   if (!paciente?.processosEnfermagem || paciente.processosEnfermagem.length === 0) {
     return 'Sem processo iniciado';
@@ -36,13 +46,13 @@ export function determinarStatusPaciente(paciente: Paciente): StatusPaciente {
 
   // Se existir algum processo em andamento, prioriza esse status
   const temEmAndamento = paciente.processosEnfermagem.some(
-    (p) => p.statusProcesso === 'Em andamento'
+    (p) => p.status === 'em_andamento' || p.statusProcesso === 'Em andamento'
   );
   if (temEmAndamento) return 'Em andamento';
 
   // Caso contrário, se houver algum concluído
   const temConcluido = paciente.processosEnfermagem.some(
-    (p) => p.statusProcesso === 'Concluído'
+    (p) => p.status === 'concluido' || p.statusProcesso === 'Concluído'
   );
   if (temConcluido) return 'Concluído';
 

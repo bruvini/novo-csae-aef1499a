@@ -63,7 +63,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [processo, setProcesso] = useState<ProcessoEnfermagem>(
     processoInicial || {
       id: '',
-      pacienteId: paciente.id,
+      pacienteId: paciente.id || '',
       enfermeiroId: enfermeiroId,
       status: 'em_andamento',
       etapaAtual: 1,
@@ -102,7 +102,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   // Carregar processo ativo ao abrir, ou criar um novo se não existir
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !paciente.id) return;
 
     const carregarOuCriarProcesso = async () => {
       try {
@@ -130,7 +130,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           return;
         }
 
-        // Tentar buscar processo ativo do Firestore
+        // Tentar buscar processo ativo
         const existente = await buscarProcessoAtivo(paciente.id, enfermeiroId);
         if (existente) {
           setProcesso(existente);
@@ -156,7 +156,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           return;
         }
 
-        // Se não existir, cria novo e carrega do Firestore
+        // Se não existir, cria novo
         await criarNovoProcesso();
       } catch (error) {
         console.error('Erro ao carregar ou criar processo:', error);
@@ -172,11 +172,13 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   }, [isOpen, processoInicial, paciente.id, enfermeiroId]);
 
   const criarNovoProcesso = async () => {
+    if (!paciente.id) return;
+    
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
 
-      // Carregar documento completo da subcoleção correta
-      const docCarregado = await buscarProcessoPorId(enfermeiroId, paciente.id, novoId);
+      // Carregar documento completo
+      const docCarregado = await buscarProcessoPorId(paciente.id, novoId);
       if (docCarregado) {
         setProcesso(docCarregado);
         setEtapaAtual(docCarregado.etapaAtual);
@@ -238,12 +240,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleSalvarProgresso = async () => {
-    if (!processo.id) return;
+    if (!processo.id || !paciente.id) return;
 
     setIsSaving(true);
     try {
       await salvarProgressoProcesso(
-        enfermeiroId,
         paciente.id,
         processo.id,
         etapaAtual,
@@ -282,7 +283,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleConcluirProcesso = async () => {
-    if (!processo.id) return;
+    if (!processo.id || !paciente.id) return;
 
     setIsSaving(true);
     try {
@@ -296,7 +297,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               textoIntervencao: intervencao.acaoPrescrita,
               tituloResultadoVinculado: diagnostico.resultadoEsperadoSelecionado || '',
               autorId: user?.uid || '',
-              autorNome: (user?.displayName || user?.email || user?.uid || 'Nome não disponível'),
+              autorNome: user?.displayName || user?.email || user?.uid || 'Nome não disponível',
               dataCriacao: Timestamp.now(),
             });
           });
@@ -307,7 +308,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       }
 
       await concluirProcesso(
-        enfermeiroId,
         paciente.id,
         processo.id,
         {
@@ -337,11 +337,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleDeleteProcess = async () => {
-    if (!processo.id) return;
+    if (!processo.id || !paciente.id) return;
 
     setIsSaving(true);
     try {
-      await excluirProcesso(enfermeiroId, paciente.id, processo.id);
+      await excluirProcesso(paciente.id, processo.id);
 
       toast({
         title: "Sucesso",
