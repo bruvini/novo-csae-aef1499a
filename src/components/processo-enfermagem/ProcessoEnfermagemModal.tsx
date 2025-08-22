@@ -15,9 +15,10 @@ import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
 import {
-  adicionarNovoProcessoAoPaciente,
-  atualizarProcessoDoPaciente,
-  buscarProcessosAtivos
+  criarProcessoEnfermagem,
+  salvarProgressoProcesso,
+  concluirProcesso,
+  buscarProcessoAtivo
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 
@@ -147,42 +148,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setLoading(true);
     try {
-      const processosAtivos = await buscarProcessosAtivos(paciente.id!);
+      const processoAtivo = await buscarProcessoAtivo(paciente.id!, user.uid);
       
-      if (processosAtivos.length > 0) {
-        const processoAtivo = processosAtivos[0];
+      if (processoAtivo) {
         setProcesso(processoAtivo);
       } else {
         // Criar novo processo
-        const novoProcesso: ProcessoEnfermagem = {
-          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          pacienteId: paciente.id!,
-          enfermeiroId: user.uid,
-          status: 'em_andamento',
-          etapaAtual: 1,
-          dataInicio: Timestamp.now(),
-          sessoesDeTrabalho: [{
-            inicioSessao: Timestamp.now()
-          }],
-          avaliacao: {
-            coletaDeDadosSubjetivos: '',
-            exameFisico: {},
-            nhbsAfetadas: []
-          },
-          diagnostico: {
-            diagnosticosSelecionados: []
-          },
-          planejamento: {
-            diagnosticosPlanejados: []
-          },
-          implementacao: {},
-          evolucao: {
-            resumoGerado: ''
-          }
-        };
-        
-        await adicionarNovoProcessoAoPaciente(paciente.id!, novoProcesso);
-        setProcesso(novoProcesso);
+        const processoId = await criarProcessoEnfermagem(paciente.id!, user.uid);
+        const novoProcessoCarregado = await buscarProcessoAtivo(paciente.id!, user.uid);
+        setProcesso(novoProcessoCarregado);
       }
     } catch (error) {
       console.error('Erro ao carregar processo:', error);
@@ -205,7 +179,18 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setSaving(true);
     try {
-      await atualizarProcessoDoPaciente(paciente.id!, processo);
+      await salvarProgressoProcesso(
+        paciente.id!,
+        processo.id,
+        processo.etapaAtual,
+        {
+          avaliacao: processo.avaliacao,
+          diagnostico: processo.diagnostico,
+          planejamento: processo.planejamento,
+          implementacao: processo.implementacao,
+          evolucao: processo.evolucao
+        }
+      );
 
       toast({
         title: "Sucesso",
@@ -255,25 +240,21 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         await salvarIntervencaoAutoral(intervencao);
       }
 
-      // Preparar processo com evolução completa
-      const processoCompleto = {
-        ...processo,
-        status: 'concluido' as const,
-        dataConclusao: Timestamp.now(),
-        evolucao: {
-          ...processo.evolucao,
-          resumoGerado: textoFinalDaEvolucao
-        },
-        sessoesDeTrabalho: [
-          ...processo.sessoesDeTrabalho.slice(0, -1),
-          {
-            ...processo.sessoesDeTrabalho[processo.sessoesDeTrabalho.length - 1],
-            fimSessao: Timestamp.now()
+      // Concluir processo com evolução completa
+      await concluirProcesso(
+        paciente.id!,
+        processo.id,
+        {
+          avaliacao: processo.avaliacao,
+          diagnostico: processo.diagnostico,
+          planejamento: processo.planejamento,
+          implementacao: processo.implementacao,
+          evolucao: {
+            ...processo.evolucao,
+            resumoGerado: textoFinalDaEvolucao
           }
-        ]
-      };
-
-      await atualizarProcessoDoPaciente(paciente.id!, processoCompleto);
+        }
+      );
 
       toast({
         title: "Sucesso",
