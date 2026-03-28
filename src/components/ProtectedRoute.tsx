@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, db } from "@/services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import LoadingOverlay from "./LoadingOverlay";
@@ -15,6 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -22,36 +23,50 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
       if (user) {
         setAuthenticated(true);
         
-        // Check if user is admin if required
-        if (requireAdmin) {
-          const userDoc = await getDoc(doc(db, "usuarios", user.uid));
-          if (userDoc.exists() && userDoc.data().ehAdmin === true) {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
+        // Fetch user doc
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setIsAdmin(userData.ehAdmin === true);
+          setStatus(userData.statusAcesso || "Aguardando");
+        } else {
+          setStatus("SemPerfil");
         }
       } else {
         setAuthenticated(false);
         setIsAdmin(false);
+        setStatus(null);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [requireAdmin]);
+  }, []);
 
   if (loading) {
     return <LoadingOverlay />;
   }
 
   if (!authenticated) {
-    // Redirect to home if not authenticated
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (status === "Aguardando") {
+    return <Navigate to="/waiting-approval" replace />;
+  }
+
+  if (status === "Recusado") {
+    // If refused, logout user and send back to login
+    signOut(auth);
+    return <Navigate to="/login" replace />;
+  }
+
+  if (status === "SemPerfil") {
+    // Authenticated but no Firestore doc? Something is wrong.
+    return <Navigate to="/registrar" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
-    // Redirect to home if not admin
     return <Navigate to="/" replace />;
   }
 

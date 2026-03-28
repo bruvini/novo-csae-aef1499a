@@ -41,7 +41,7 @@ export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
   try {
     const q = query(
       collection(db, 'usuarios'), 
-      where('statusAcesso', '==', 'Aprovado'),
+      where('statusAcesso', '==', 'Liberado'),
       orderBy('dataCadastro', 'desc')
     );
     const querySnapshot = await getDocs(q);
@@ -65,7 +65,7 @@ export async function aprovarUsuario(userId: string, isAdmin: boolean): Promise<
   try {
     const userRef = doc(db, 'usuarios', userId);
     const updateData: any = {
-      statusAcesso: 'Aprovado',
+      statusAcesso: 'Liberado',
       dataAprovacao: serverTimestamp()
     };
     
@@ -86,7 +86,7 @@ export async function recusarUsuario(userId: string): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     await updateDoc(userRef, {
-      statusAcesso: 'Negado',
+      statusAcesso: 'Recusado',
       dataRevogacao: serverTimestamp()
     });
   } catch (error) {

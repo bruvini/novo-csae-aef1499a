@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Register from "./pages/Register";
+import Login from "./pages/Login";
+import WaitingApproval from "./pages/WaitingApproval";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import GestaoConteudos from "./pages/GestaoConteudos";
 
@@ -22,7 +24,10 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/registrar" element={<Register />} />
+            <Route path="/waiting-approval" element={<WaitingApproval />} />
             <Route 
               path="/gestao-usuarios" 
               element={
