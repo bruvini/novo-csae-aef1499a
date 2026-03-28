@@ -9,6 +9,8 @@ import Register from "./pages/Register";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import GestaoConteudos from "./pages/GestaoConteudos";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -21,8 +23,22 @@ function App() {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/registrar" element={<Register />} />
-            <Route path="/gestao-usuarios" element={<GestaoUsuarios />} />
-            <Route path="/gestao-conteudos" element={<GestaoConteudos />} />
+            <Route 
+              path="/gestao-usuarios" 
+              element={
+                <ProtectedRoute requireAdmin>
+                  <GestaoUsuarios />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/gestao-conteudos" 
+              element={
+                <ProtectedRoute>
+                  <GestaoConteudos />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="*" element={<Index />} />
           </Routes>
         </BrowserRouter>

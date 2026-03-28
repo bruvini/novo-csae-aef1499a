@@ -1,85 +1,67 @@
-# Welcome to your Lovable project
+# Portal CSAE Floripa 2.0
 
-## Project info
+**Versão**: 2.0.0
+**Data de Atualização**: 28/03/2026 20:45:00
 
-**URL**: https://lovable.dev/projects/391ba209-0df4-4938-a2ba-ef6c59e4c9dc
+## 1. Propósito do Sistema
+O Portal CSAE Floripa é uma plataforma desenvolvida para a Secretaria Municipal de Saúde de Florianópolis, com foco na digitalização e gestão do **Processo de Enfermagem**. O sistema visa centralizar dados profissionais, conteúdos clínicos (diagnósticos, intervenções, etc.) e a gestão de usuários da rede de saúde municipal.
 
-## How can I edit this code?
+## 2. Stack Tecnológica
+Este projeto é construído com as seguintes tecnologias principais:
+- **Core**: React 18 (Vite) + TypeScript
+- **Styling**: Tailwind CSS + shadcn-ui + Framer Motion
+- **Backend/Services**: Firebase (Auth, Firestore, Storage, Analytics, Hosting)
+- **Formulários/Validação**: React Hook Form + Zod
+- **Request Management**: TanStack Query (React Query)
 
-There are several ways of editing your application.
+## 3. Estrutura de Pastas e Convenções
+A organização do projeto segue o padrão:
+- `src/components/`: Componentes reutilizáveis.
+  - `ui/`: Componentes básicos (shadcn-ui).
+  - `[domínio]/`: Componentes específicos de cada área (ex: `gestao-usuarios/`).
+- `src/pages/`: Páginas da aplicação.
+- `src/hooks/`: Hooks customizados para lógica compartilhada.
+- `src/services/`: Integrações de dados (ex: `firebase.ts`, `bancodados/usuariosDB.ts`).
+- `src/types/`: Definições de interfaces e tipos TypeScript.
+- `src/lib/`: Utilitários e configurações de bibliotecas (ex: validators).
 
-**Use Lovable**
+## 4. Como Rodar o Projeto Localmente
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/391ba209-0df4-4938-a2ba-ef6c59e4c9dc) and start prompting.
+### Pré-requisitos
+- Node.js (v18 ou superior)
+- npm (v9 ou superior)
+- Configuração do Firebase Project (veja `.env.example`)
 
-Changes made via Lovable will be committed automatically to this repo.
+### Passo-a-passo
+1. Clone o repositório.
+2. Crie um arquivo `.env` na raiz, copiando de `.env.example` e preenchendo as chaves do Firebase.
+3. Instale as dependências:
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+4. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+5. Acesse: `http://localhost:8080`
 
-**Use your preferred IDE**
+## 5. Como Testar e Validar
+- **Linting**: `npm run lint` - Verifica erros estáticos e de padrões de código.
+- **Build**: `npm run build` - Valida se a aplicação pode ser compilada para produção.
+- **Agent Browser**: Durante o desenvolvimento, o Antigravity utiliza o Agent Browser para validar visualmente as rotas e fluxos críticos.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 6. Deployment e CI/CD
+O deploy é automatizado via Firebase Hosting. 
+- **Destino Principal**: `csaefloripa.web.app` (Firebase default) / `csae.com.br` (Custom Domain).
+- **Processo**: Todo merge na branch `main` dispara o pipeline de build e deploy no Firebase.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 7. Informações Adicionais
+- **Governança**: Veja [GOVERNANCE.md](GOVERNANCE.md) para regras de contribuição.
+- **Segurança**: Veja [SECURITY.md](SECURITY.md) para políticas de proteção de dados e LGPD.
+- **Termo de Responsabilidade**: É obrigatório o aceite do termo no primeiro acesso (modal em `src/components/TermoResponsabilidadeModal.tsx`).
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/391ba209-0df4-4938-a2ba-ef6c59e4c9dc) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes it is!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-## Configuring Firebase Storage CORS
-
-The project includes a CORS configuration for Firebase Storage. It allows the production domain `https://csae.com.br` and the local development domain `http://localhost:3000` to access the bucket with the methods `GET`, `POST`, `PUT` and `OPTIONS`.
-
-To apply it, install the [Google Cloud SDK](https://cloud.google.com/sdk) and run:
-
-```sh
-./scripts/set-storage-cors.sh
-```
-
-The script uses `gsutil cors set` to apply `scripts/cors.json` to the bucket `gs://csaefloripa.appspot.com`.
+## 8. Pendências Conhecidas (Backlog)
+- [ ] Implementar gestão completa do Processo de Enfermagem (Fase 2).
+- [ ] Refatorar tipos `any` remanescentes em serviços de banco de dados.
+- [ ] Migração de modelagem de dados para padrão FHIR/HL7.
+- [ ] Adicionar testes automatizados (unitários e e2e).
