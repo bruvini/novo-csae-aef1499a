@@ -6,34 +6,66 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from "lucide-react";
- 
- const Index = () => {
-   const [email, setEmail] = useState("");
-   const [senha, setSenha] = useState("");
-   const [carregando, setCarregando] = useState(false);
-   const { user, login, loading: checkingAuth } = useAuth();
-   const navigate = useNavigate();
-   const { toast } = useToast();
- 
-   useEffect(() => {
-     if (user) {
-       navigate("/dashboard", { replace: true });
-     }
-   }, [user, navigate]);
- 
-   const handleLogin = async (e: React.FormEvent) => {
-     e.preventDefault();
-     setCarregando(true);
- 
-     try {
-       await login(email, senha);
-     } catch (err: any) {
-       console.error("Erro no login:", err);
-     } finally {
-       setCarregando(false);
-     }
-   };
+import { HeartPulse, Loader2, LogIn, ClipboardCheck, ArrowRight, KeyRound } from "lucide-react";
+import { auth } from "@/services/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+
+const Index = () => {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const { user, login, loading: checkingAuth } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCarregando(true);
+
+    try {
+      await login(email, senha);
+    } catch (err: any) {
+      console.error("Erro no login:", err);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const handleEsqueciSenha = async () => {
+    if (!email) {
+      toast({
+        title: "E-mail necessário",
+        description: "Por favor, insira seu e-mail funcional no campo acima para redefinir a senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setResetLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Instruções enviadas",
+        description: "Um link de redefinição foi enviado para o seu e-mail.",
+      });
+    } catch (error: any) {
+      console.error("Erro na redefinição:", error);
+      toast({
+        title: "Erro no envio",
+        description: "Verifique o e-mail ou tente novamente em alguns instantes.",
+        variant: "destructive",
+      });
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   if (checkingAuth) {
     return (
@@ -53,13 +85,7 @@ import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from
             <span className="text-xl font-bold text-gray-800">Portal CSAE 2.0</span>
           </div>
           <div className="flex gap-4">
-            <Button variant="ghost" className="hidden sm:inline-flex" asChild>
-              <Link to="/registrar">
-                <UserPlus size={18} className="mr-2" />
-                Criar Conta
-              </Link>
-            </Button>
-            <Link to="/registrar" className="sm:hidden text-csae-green-600 font-medium">Cadastrar</Link>
+            {/* Registro centralizado no card de login conforme nova UX */}
           </div>
         </div>
       </nav>
@@ -108,7 +134,7 @@ import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from
           </div>
 
           <div className="flex justify-center order-1 md:order-2">
-            <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-csae-green-600 transform md:rotate-1 hover:rotate-0 transition-transform duration-500">
+            <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-csae-green-600 transition-all duration-300">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
                   <LogIn className="w-6 h-6 text-csae-green-600" />
@@ -120,37 +146,48 @@ import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail Corporativo</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="seu.nome@sms.floripa.sc.gov.br" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-12"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Senha</Label>
-                      <Link to="#" className="text-xs text-csae-green-600 hover:underline">Esqueceu a senha?</Link>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-700 font-semibold">E-mail Corporativo</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="Insira seu e-mail funcional aqui" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow"
+                        required
+                      />
                     </div>
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={senha}
-                      onChange={(e) => setSenha(e.target.value)}
-                      className="h-12"
-                      required
-                    />
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password" title="password" className="text-gray-700 font-semibold">Senha</Label>
+                        <button 
+                          type="button" 
+                          onClick={handleEsqueciSenha}
+                          disabled={resetLoading}
+                          className="text-xs text-csae-green-600 hover:text-csae-green-700 hover:underline flex items-center gap-1 font-semibold transition-colors"
+                        >
+                          {resetLoading ? <Loader2 size={12} className="animate-spin" /> : <KeyRound size={12} />}
+                          Esqueceu a senha?
+                        </button>
+                      </div>
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="Insira sua senha aqui"
+                        value={senha}
+                        onChange={(e) => setSenha(e.target.value)}
+                        className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow"
+                        required
+                      />
+                    </div>
                   </div>
-                  <Button type="submit" className="w-full bg-csae-green-600 hover:bg-csae-green-700 h-12 text-lg font-semibold" disabled={carregando}>
+                  <Button type="submit" className="w-full bg-csae-green-600 hover:bg-csae-green-700 h-12 text-lg font-semibold shadow-md active:scale-[0.98] transition-transform" disabled={carregando}>
                     {carregando ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Entrando...
+                        Autenticando...
                       </>
                     ) : (
                       <>
@@ -161,11 +198,11 @@ import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from
                   </Button>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col border-t bg-gray-50/80 rounded-b-lg">
-                <p className="text-sm text-center text-gray-500 py-4">
-                  Novo na rede? {" "}
-                  <Link to="/registrar" className="text-csae-green-600 hover:underline font-bold">
-                    Crie sua conta agora
+              <CardFooter className="flex flex-col border-t bg-gray-50/20 rounded-b-lg p-6">
+                <p className="text-sm text-center text-gray-600 leading-relaxed font-medium">
+                  Ainda fazendo evoluções manuais? {" "}
+                  <Link to="/registrar" className="text-csae-green-700 hover:underline font-bold inline-block md:block md:mt-1">
+                    Clique aqui para criar sua conta e conhecer o futuro da enfermagem.
                   </Link>
                 </p>
               </CardFooter>
