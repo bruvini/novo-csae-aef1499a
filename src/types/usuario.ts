@@ -1,4 +1,4 @@
-// src/types/usuario.ts
+
 import { Timestamp } from 'firebase/firestore';
 
 export interface DadosPessoais {
@@ -26,6 +26,11 @@ export interface DadosProfissionais {
   localCargo?: string;
 }
 
+export interface HistoricoAcesso {
+  dataHora: Timestamp;
+  ip?: string;
+}
+
 export interface Usuario {
   id?: string; // ID do Firestore
   uid: string; // UID do Auth
@@ -33,12 +38,14 @@ export interface Usuario {
   dadosPessoais: DadosPessoais;
   dadosProfissionais: DadosProfissionais;
   termoResponsabilidadeAceito: boolean;
-  termoResponsabilidadeData: Timestamp; // era any
+  termoResponsabilidadeData: Timestamp;
   ehAdmin: boolean;
   gestorConteudos: boolean;
-  tipoUsuario: 'Comum' | 'Admin';
-  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado';
-  dataCadastro?: Timestamp; // era any
-  dataRecusaAcesso?: Timestamp; // era any
-  dataLiberacaoAcesso?: Timestamp; // era any
+  tipoUsuario: 'Comum' | 'Admin' | 'Administrador';
+  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado';
+  paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
+  dataCadastro?: Timestamp;
+  dataRecusaAcesso?: Timestamp;
+  dataLiberacaoAcesso?: Timestamp;
+  historicoAcesso?: HistoricoAcesso[];
 }

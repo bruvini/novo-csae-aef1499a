@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   getDocs, 
@@ -61,7 +62,11 @@ export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
   }
 }
 
-export async function aprovarUsuario(userId: string, isAdmin: boolean): Promise<void> {
+export async function aprovarUsuario(
+  userId: string, 
+  isAdmin: boolean, 
+  paginasPermitidas: string[] = []
+): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     const updateData: any = {
@@ -69,15 +74,30 @@ export async function aprovarUsuario(userId: string, isAdmin: boolean): Promise<
       dataAprovacao: serverTimestamp()
     };
     
-    if (isAdmin) {
-      updateData.tipoUsuario = 'Administrador';
-    } else {
-      updateData.tipoUsuario = 'Comum';
-    }
-    
     await updateDoc(userRef, updateData);
   } catch (error) {
     console.error("Erro ao aprovar usuário:", error);
+    throw error;
+  }
+}
+
+export async function editarPrivilegiosUsuario(
+  userId: string,
+  isAdmin: boolean,
+  paginasPermitidas: string[] = []
+): Promise<void> {
+  try {
+    const userRef = doc(db, 'usuarios', userId);
+    const updateData: any = {
+      ehAdmin: isAdmin,
+      tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
+      paginasPermitidas: isAdmin ? [] : paginasPermitidas,
+      dataAtualizacaoPrivilegios: serverTimestamp()
+    };
+    
+    await updateDoc(userRef, updateData);
+  } catch (error) {
+    console.error("Erro ao editar privilégios do usuário:", error);
     throw error;
   }
 }

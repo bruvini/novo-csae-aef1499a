@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,16 +5,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, UserCheck, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Users, UserCheck, Search } from 'lucide-react';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { AppSidebar } from '@/components/AppSidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
 import ModalDetalhesUsuario from '@/components/gestao-usuarios/ModalDetalhesUsuario';
 import ModalConfirmacaoAprovacao from '@/components/gestao-usuarios/ModalConfirmacaoAprovacao';
+import ModalEdicaoPrivilegios from '@/components/gestao-usuarios/ModalEdicaoPrivilegios';
 import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import {
   buscarUsuariosAguardando,
   buscarUsuariosAprovados,
   aprovarUsuario,
+  editarPrivilegiosUsuario,
   recusarUsuario,
   excluirUsuario
 } from '@/services/bancodados';
@@ -45,6 +49,7 @@ const GestaoUsuarios = () => {
   const [modalDetalhesAberto, setModalDetalhesAberto] = useState(false);
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
   const [modalAprovacaoAberto, setModalAprovacaoAberto] = useState(false);
+  const [modalEdicaoPrivilegiosAberto, setModalEdicaoPrivilegiosAberto] = useState(false);
   const [modalRecusaAberto, setModalRecusaAberto] = useState(false);
   const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
 
@@ -74,10 +79,8 @@ const GestaoUsuarios = () => {
     carregarUsuarios();
   }, []);
 
-  // Função para filtrar usuários
   const filtrarUsuarios = (usuarios: Usuario[]) => {
     return usuarios.filter(usuario => {
-      // Filtro por texto de busca
       const nomeCompleto = usuario.dadosPessoais?.nomeCompleto?.toLowerCase() || '';
       const matricula = usuario.dadosProfissionais?.matricula?.toLowerCase() || '';
       const numeroCoren = usuario.dadosProfissionais?.numeroCoren?.toLowerCase() || '';
@@ -88,7 +91,6 @@ const GestaoUsuarios = () => {
         matricula.includes(buscaLower) || 
         numeroCoren.includes(buscaLower);
       
-      // Filtro por formação
       const matchFormacao = filtroFormacao === 'todos' || 
         usuario.dadosProfissionais?.formacao === filtroFormacao;
       
@@ -96,7 +98,6 @@ const GestaoUsuarios = () => {
     });
   };
 
-  // Memoização dos usuários filtrados
   const usuariosAguardandoFiltrados = useMemo(() => 
     filtrarUsuarios(usuariosAguardando), 
     [usuariosAguardando, textoBusca, filtroFormacao]
@@ -117,6 +118,11 @@ const GestaoUsuarios = () => {
     setModalAprovacaoAberto(true);
   };
 
+  const handleEditarPrivilegios = (usuario: Usuario) => {
+    setUsuarioSelecionado(usuario);
+    setModalEdicaoPrivilegiosAberto(true);
+  };
+
   const handleRecusar = (usuario: Usuario) => {
     setUsuarioSelecionado(usuario);
     setModalRecusaAberto(true);
@@ -127,14 +133,14 @@ const GestaoUsuarios = () => {
     setModalExclusaoAberto(true);
   };
 
-  const confirmarAprovacao = async (isAdmin: boolean) => {
+  const confirmarAprovacao = async (isAdmin: boolean, paginasPermitidas: string[]) => {
     if (!usuarioSelecionado?.id) return;
     
     try {
-      await aprovarUsuario(usuarioSelecionado.id, isAdmin);
+      await aprovarUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas);
       toast({
         title: 'Usuário aprovado!',
-        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi aprovado com sucesso.`
+        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi aprovado como ${isAdmin ? 'Administrador' : 'Usuário Comum'}.`
       });
       setModalAprovacaoAberto(false);
       setUsuarioSelecionado(null);
@@ -144,6 +150,28 @@ const GestaoUsuarios = () => {
       toast({
         title: 'Erro',
         description: 'Não foi possível aprovar o usuário.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const confirmarEdicaoPrivilegios = async (isAdmin: boolean, paginasPermitidas: string[]) => {
+    if (!usuarioSelecionado?.id) return;
+    
+    try {
+      await editarPrivilegiosUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas);
+      toast({
+        title: 'Privilégios atualizados!',
+        description: `Os privilégios de ${usuarioSelecionado.dadosPessoais?.nomeCompleto} foram atualizados.`
+      });
+      setModalEdicaoPrivilegiosAberto(false);
+      setUsuarioSelecionado(null);
+      carregarUsuarios();
+    } catch (error) {
+      console.error('Erro ao editar privilégios:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível editar os privilégios do usuário.',
         variant: 'destructive'
       });
     }
@@ -195,12 +223,21 @@ const GestaoUsuarios = () => {
 
   if (carregando) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600 mx-auto mb-4"></div>
-          <p>Carregando usuários...</p>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <div className="flex-1 flex flex-col">
+            <Header />
+            <main className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-csae-green-600 mx-auto mb-4"></div>
+                <p>Carregando usuários...</p>
+              </div>
+            </main>
+            <Footer />
+          </div>
         </div>
-      </div>
+      </SidebarProvider>
     );
   }
 
@@ -215,103 +252,112 @@ const GestaoUsuarios = () => {
             </Link>
           </Button>
           
-          <h1 className="text-3xl font-bold text-csae-green-800 mb-2">
-            Gestão de Usuários
-          </h1>
-          <p className="text-gray-600">
-            Gerencie as solicitações de acesso e usuários aprovados do sistema.
-          </p>
-        </div>
+          <main className="flex-1 bg-gray-50">
+            <div className="container mx-auto px-4 py-8">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-csae-green-800 mb-2">
+                  Gestão de Usuários
+                </h1>
+                <p className="text-gray-600">
+                  Gerencie as solicitações de acesso e usuários aprovados do sistema.
+                </p>
+              </div>
 
-        {/* Filtros */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="busca" className="block text-sm font-medium mb-2">
-                  Buscar por nome, matrícula ou COREN
-                </label>
-                <Input
-                  id="busca"
-                  placeholder="Digite para buscar..."
-                  value={textoBusca}
-                  onChange={(e) => setTextoBusca(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="formacao" className="block text-sm font-medium mb-2">
-                  Filtrar por formação
-                </label>
-                <Select value={filtroFormacao} onValueChange={setFiltroFormacao}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma formação" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="Enfermeiro">Enfermeiro</SelectItem>
-                    <SelectItem value="Residente de Enfermagem">Residente de Enfermagem</SelectItem>
-                    <SelectItem value="Técnico de Enfermagem">Técnico de Enfermagem</SelectItem>
-                    <SelectItem value="Acadêmico de Enfermagem">Acadêmico de Enfermagem</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Filtros */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Search className="h-5 w-5" />
+                    Filtros
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="busca" className="block text-sm font-medium mb-2">
+                        Buscar por nome, matrícula ou COREN
+                      </label>
+                      <Input
+                        id="busca"
+                        placeholder="Digite para buscar..."
+                        value={textoBusca}
+                        onChange={(e) => setTextoBusca(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="formacao" className="block text-sm font-medium mb-2">
+                        Filtrar por formação
+                      </label>
+                      <Select value={filtroFormacao} onValueChange={setFiltroFormacao}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma formação" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="Enfermeiro">Enfermeiro</SelectItem>
+                          <SelectItem value="Residente de Enfermagem">Residente de Enfermagem</SelectItem>
+                          <SelectItem value="Técnico de Enfermagem">Técnico de Enfermagem</SelectItem>
+                          <SelectItem value="Acadêmico de Enfermagem">Acadêmico de Enfermagem</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Tabs defaultValue="aguardando" className="space-y-6">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="aguardando" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Aguardando ({usuariosAguardandoFiltrados.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="aprovados" className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4" />
+                    Aprovados ({usuariosAprovadosFiltrados.length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="aguardando">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Usuários Aguardando Aprovação</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TabelaUsuarios
+                        usuarios={usuariosAguardandoFiltrados}
+                        tipo="aguardando"
+                        onDetalhes={handleDetalhes}
+                        onAprovar={handleAprovar}
+                        onRecusar={handleRecusar}
+                        onExcluir={handleExcluir}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="aprovados">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Usuários Aprovados</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TabelaUsuarios
+                        usuarios={usuariosAprovadosFiltrados}
+                        tipo="aprovados"
+                        onDetalhes={handleDetalhes}
+                        onExcluir={handleExcluir}
+                        onEditarPrivilegios={handleEditarPrivilegios}
+                      />
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
-          </CardContent>
-        </Card>
+          </main>
 
-        <Tabs defaultValue="aguardando" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="aguardando" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Aguardando ({usuariosAguardandoFiltrados.length})
-            </TabsTrigger>
-            <TabsTrigger value="aprovados" className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              Aprovados ({usuariosAprovadosFiltrados.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="aguardando">
-            <Card>
-              <CardHeader>
-                <CardTitle>Usuários Aguardando Aprovação</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TabelaUsuarios
-                  usuarios={usuariosAguardandoFiltrados}
-                  tipo="aguardando"
-                  onDetalhes={handleDetalhes}
-                  onAprovar={handleAprovar}
-                  onRecusar={handleRecusar}
-                  onExcluir={handleExcluir}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="aprovados">
-            <Card>
-              <CardHeader>
-                <CardTitle>Usuários Aprovados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TabelaUsuarios
-                  usuarios={usuariosAprovadosFiltrados}
-                  tipo="aprovados"
-                  onDetalhes={handleDetalhes}
-                  onExcluir={handleExcluir}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+          <Footer />
+        </div>
+      </div>
 
       {/* Modais */}
       <ModalDetalhesUsuario
@@ -330,7 +376,19 @@ const GestaoUsuarios = () => {
           setUsuarioSelecionado(null);
         }}
         onConfirm={confirmarAprovacao}
+        usuario={usuarioSelecionado}
         nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''}
+      />
+
+      <ModalEdicaoPrivilegios
+        isOpen={modalEdicaoPrivilegiosAberto}
+        onClose={() => {
+          setModalEdicaoPrivilegiosAberto(false);
+          setUsuarioSelecionado(null);
+        }}
+        onConfirm={confirmarEdicaoPrivilegios}
+        usuario={usuarioSelecionado}
+        isNewApproval={false}
       />
 
       <ModalConfirmacaoExclusao
@@ -361,7 +419,7 @@ const GestaoUsuarios = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </SidebarProvider>
   );
 };
 
