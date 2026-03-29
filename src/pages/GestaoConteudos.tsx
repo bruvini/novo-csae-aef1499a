@@ -8,7 +8,6 @@ import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos
 import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
 import TabelaSinaisVitais from '@/components/gestao-conteudos/TabelaSinaisVitais';
 import TabelaExames from '@/components/gestao-conteudos/TabelaExames';
-import TabelaRevisaoSistemas from '@/components/gestao-conteudos/TabelaRevisaoSistemas';
 import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 import { Button } from '@/components/ui/button';
 
@@ -33,8 +32,68 @@ const GestaoConteudos = () => {
             </p>
           </div>
         </div>
+
+        {/* Indicadores */}
+        <IndicadoresConteudo />
+
+        {/* Bloco Principal: Conteúdos */}
+        <Card className="shadow-md">
+          <CardHeader>
+            <CardTitle className="text-xl text-csae-green-700">
+              Conteúdos do Processo de Enfermagem
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="exame-fisico" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="exame-fisico">Exame Físico</TabsTrigger>
+                <TabsTrigger value="subconjuntos">Subconjuntos</TabsTrigger>
+                <TabsTrigger value="diagnosticos">Diagnósticos de Enfermagem</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="exame-fisico" className="space-y-4">
+                <Tabs defaultValue="sinais-vitais" orientation="horizontal">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="sinais-vitais">Sinais Vitais</TabsTrigger>
+                    <TabsTrigger value="exames-diagnosticos">Exames Diagnósticos</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="sinais-vitais">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Sinais Vitais</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TabelaSinaisVitais />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="exames-diagnosticos">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-lg">Exames Diagnósticos</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TabelaExames />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="subconjuntos" className="space-y-6">
+                <TabelaSubconjuntos />
+              </TabsContent>
+
+              <TabsContent value="diagnosticos" className="space-y-6">
+                <TabelaDiagnosticos />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
