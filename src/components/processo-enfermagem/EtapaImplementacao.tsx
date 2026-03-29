@@ -85,7 +85,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
   // Verificar se todos os requisitos do planejamento foram atendidos
   const planejamentoCompleto = diagnosticosPlanjados.every(diag => {
     const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
-    const temResultado = !diag.resultadoEsperadoSelecionado || diag.resultadoEsperadoSelecionado.trim() !== '';
+    const temResultado = !!(diag.resultadoEsperadoSelecionado && diag.resultadoEsperadoSelecionado.trim() !== '');
     return temIntervencoes && temResultado;
   });
 

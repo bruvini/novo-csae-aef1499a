@@ -1,92 +1,39 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "@/services/firebase";
-import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { HeartPulse, Loader2, LogIn, UserPlus, ClipboardCheck, ArrowRight } from "lucide-react";
-
-const Index = () => {
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [carregando, setCarregando] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        navigate("/dashboard", { replace: true });
-      }
-      setCheckingAuth(false);
-    });
-    return () => unsubscribe();
-  }, [navigate]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCarregando(true);
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-      const user = userCredential.user;
-
-      const userDoc = await getDoc(doc(db, "usuarios", user.uid));
-      
-      if (!userDoc.exists()) {
-        toast({
-          title: "Usuário não encontrado",
-          description: "Não encontramos um perfil associado a esta conta.",
-          variant: "destructive",
-        });
-        setCarregando(false);
-        return;
-      }
-
-      const userData = userDoc.data();
-      
-      if (userData.statusAcesso === "Aguardando") {
-        toast({
-          title: "Acesso em análise",
-          description: "Seu cadastro ainda está sendo analisado pela administração.",
-        });
-        navigate("/waiting-approval");
-      } else if (userData.statusAcesso === "Recusado") {
-        toast({
-          title: "Acesso negado",
-          description: "Infelizmente seu acesso foi recusado pelo administrador.",
-          variant: "destructive",
-        });
-      } else if (userData.statusAcesso === "Liberado") {
-        toast({
-          title: "Bem-vindo!",
-          description: `Login realizado com sucesso.`,
-        });
-        navigate("/dashboard");
-      }
-
-    } catch (err: unknown) {
-      const error = err as any;
-      console.error("Erro no login:", error);
-      let mensagem = "Erro ao realizar o login. Tente novamente.";
-      if (error.code === "auth/invalid-credential" || error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
-        mensagem = "Credenciais inválidas. Verifique seu e-mail e senha.";
-      }
-      toast({
-        title: "Erro no login",
-        description: mensagem,
-        variant: "destructive",
-      });
-    } finally {
-      setCarregando(false);
-    }
-  };
+ 
+ const Index = () => {
+   const [email, setEmail] = useState("");
+   const [senha, setSenha] = useState("");
+   const [carregando, setCarregando] = useState(false);
+   const { user, login, loading: checkingAuth } = useAuth();
+   const navigate = useNavigate();
+   const { toast } = useToast();
+ 
+   useEffect(() => {
+     if (user) {
+       navigate("/dashboard", { replace: true });
+     }
+   }, [user, navigate]);
+ 
+   const handleLogin = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setCarregando(true);
+ 
+     try {
+       await login(email, senha);
+     } catch (err: any) {
+       console.error("Erro no login:", err);
+     } finally {
+       setCarregando(false);
+     }
+   };
 
   if (checkingAuth) {
     return (

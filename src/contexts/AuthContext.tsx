@@ -399,7 +399,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         className: "bg-green-50 border-green-200",
       });
 
-      navigate('/');
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Erro no login:', error);
       let errorMessage = "Erro ao efetuar login. Tente novamente mais tarde.";

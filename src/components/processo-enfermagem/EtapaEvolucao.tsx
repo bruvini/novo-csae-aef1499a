@@ -9,6 +9,9 @@ import { Copy, Download, Info, CheckCircle } from 'lucide-react';
 import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
+import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
+import { getExames } from '@/services/bancodados/examesDB';
+import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
 
 interface EtapaEvolucaoProps {
   processo: ProcessoEnfermagem;
@@ -23,26 +26,53 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
 }) => {
   const [textoEvolucao, setTextoEvolucao] = useState('');
   const { toast } = useToast();
+  const [sinaisVitais, setSinaisVitais] = useState<any[]>([]);
+  const [exames, setExames] = useState<any[]>([]);
+  const [sistemas, setSistemas] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Carregar catálogos para agrupamento na evolução
+    const loadCatalogs = async () => {
+      try {
+        const [sv, ex, sist] = await Promise.all([
+          new Promise<any[]>((resolve) => {
+             const unsubscribe = getSinaisVitais((data) => {
+               resolve(data);
+               unsubscribe();
+             });
+          }),
+          new Promise<any[]>((resolve) => {
+            const unsubscribe = getExames((data) => {
+              resolve(data);
+              unsubscribe();
+            });
+          }),
+          getSistemas()
+        ]);
+        setSinaisVitais(sv);
+        setExames(ex);
+        setSistemas(sist);
+      } catch (err) {
+        console.error('Erro ao carregar catálogos para evolução:', err);
+      }
+    };
+    loadCatalogs();
+  }, []);
 
   // Verificar se a implementação atende aos critérios
   const verificarCriteriosImplementacao = () => {
     const implementacao = processo.implementacao || {};
     let peloMenosUmaImplementada = false;
-    let todasPadroesTemExecutor = true;
 
     Object.values(implementacao).forEach(diagnostico => {
       diagnostico.intervencoes.forEach(intervencao => {
         if (intervencao.implementadoNestaConsulta) {
           peloMenosUmaImplementada = true;
-          
-          if (intervencao.tipo === 'padrao' && !intervencao.quemExecuta) {
-            todasPadroesTemExecutor = false;
-          }
         }
       });
     });
 
-    return peloMenosUmaImplementada && todasPadroesTemExecutor;
+    return peloMenosUmaImplementada;
   };
 
   const gerarTextoEvolucao = () => {
@@ -51,26 +81,65 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
     // Cabeçalho
     linhas.push(`EVOLUÇÃO DE ENFERMAGEM`);
     linhas.push(`Paciente: ${paciente.nomeCompleto}`);
-    linhas.push(`Gerado no Portal CSAE Floripa`);
-    linhas.push(`Data: ${new Date().toLocaleDateString('pt-BR')}`);
+    linhas.push(`Unidade: Unidade de Saúde Floripa`);
+    linhas.push(`Data: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+    linhas.push(`-`.repeat(50));
     linhas.push('');
 
-    // Avaliação
+    // Avaliação Subjetiva
     if (processo.avaliacao.coletaDeDadosSubjetivos) {
-      linhas.push('AVALIAÇÃO DE ENFERMAGEM:');
+      linhas.push('AVALIAÇÃO / COLETA DE DADOS:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
-    // Exame Físico
+    // Exame Físico - AGRUPADO
     const exameFisico = processo.avaliacao.exameFisico || {};
     if (Object.keys(exameFisico).length > 0) {
       linhas.push('EXAME FÍSICO:');
-      Object.entries(exameFisico).forEach(([parametro, valor]) => {
-        if (valor !== null && valor !== undefined && valor !== '') {
-          linhas.push(`${parametro}: ${valor}`);
-        }
+      
+      // 1. Sinais Vitais
+      const svAtivos = sinaisVitais.filter(s => exameFisico[s.sinalVitalNome]);
+      if (svAtivos.length > 0) {
+        linhas.push('  [SINAIS VITAIS]');
+        svAtivos.forEach(s => {
+          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisico[s.sinalVitalNome]}`);
+        });
+      }
+
+      // 2. Exames
+      const exMap = new Map();
+      exames.forEach(ex => {
+        ex.componentes.forEach((c: any) => {
+          if (exameFisico[c.componenteAnalisado]) {
+            const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
+            if (!exMap.has(grp)) exMap.set(grp, []);
+            exMap.get(grp).push(`${c.componenteAnalisado}: ${exameFisico[c.componenteAnalisado]}`);
+          }
+        });
       });
+      if (exMap.size > 0) {
+        linhas.push('  [EXAMES DIAGNÓSTICOS]');
+        exMap.forEach((vals, titulo) => {
+          linhas.push(`  • ${titulo}: ${vals.join(', ')}`);
+        });
+      }
+
+      // 3. Revisão de Sistemas
+      const rsEncontrados: string[] = [];
+      sistemas.forEach(s => {
+        s.exames.forEach((e: any) => {
+          if (exameFisico[e.nomeExame]) {
+            rsEncontrados.push(`${e.nomeExame}: ${exameFisico[e.nomeExame]}`);
+          }
+        });
+      });
+      if (rsEncontrados.length > 0) {
+        linhas.push('  [REVISÃO DE SISTEMAS]');
+        rsEncontrados.forEach(item => {
+          linhas.push(`  • ${item}`);
+        });
+      }
       linhas.push('');
     }
 
@@ -83,8 +152,8 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
       linhas.push('');
     }
 
-    // Planejamento
-    if (processo.planejamento.diagnosticosPlanejados.length > 0) {
+    // Planejamento (Restaurado)
+    if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
       linhas.push('PLANEJAMENTO DE ENFERMAGEM:');
       const diagnosticosOrdenados = [...processo.planejamento.diagnosticosPlanejados]
         .sort((a, b) => a.ordemPrioridade - b.ordemPrioridade);
@@ -96,46 +165,44 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
           linhas.push(`   Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
         }
         
-        if (diag.intervencoesSelecionadas.length > 0) {
+        if (diag.intervencoesSelecionadas?.length > 0) {
           linhas.push('   Intervenções Planejadas:');
           diag.intervencoesSelecionadas.forEach(int => {
             linhas.push(`   - ${int.acaoPrescrita}`);
           });
         }
-        linhas.push('');
-      });
-    }
-
-    // Implementação
-    const implementacao = processo.implementacao || {};
-    const intervencoesImplementadas: string[] = [];
-
-    Object.entries(implementacao).forEach(([, diagnostico]) => {
-      diagnostico.intervencoes.forEach(intervencao => {
-        if (intervencao.implementadoNestaConsulta) {
-          let textoIntervencao = intervencao.acaoPrescrita;
-          
-          // Adicionar informação sobre prazo se existir
-          if (intervencao.prazo && intervencao.prazoUnidade) {
-            textoIntervencao += ` - Prazo: ${intervencao.prazo} ${intervencao.prazoUnidade}`;
-          }
-          
-          intervencoesImplementadas.push(textoIntervencao);
-        }
-      });
-    });
-
-    if (intervencoesImplementadas.length > 0) {
-      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
-      intervencoesImplementadas.forEach(int => {
-        linhas.push(`• ${int}`);
       });
       linhas.push('');
     }
 
-    linhas.push('---');
+    // Implementação
+    const implementacao = processo.implementacao || {};
+    const possuiImplementacao = Object.values(implementacao).some(d => d.intervencoes?.some(i => i.implementadoNestaConsulta));
+
+    if (possuiImplementacao) {
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      Object.entries(implementacao).forEach(([tituloDiag, dados]) => {
+        const implementadas = dados.intervencoes.filter(i => i.implementadoNestaConsulta);
+        if (implementadas.length > 0) {
+          linhas.push(`  [${tituloDiag}]`);
+          implementadas.forEach(int => {
+            let itemStr = `  • ${int.acaoPrescrita}`;
+            if (int.prazo && int.prazoUnidade) {
+               itemStr += ` - Prazo: ${int.prazo} ${int.prazoUnidade}`;
+            }
+            if (int.quemExecuta) {
+               itemStr += ` (Executor: ${int.quemExecuta})`;
+            }
+            linhas.push(itemStr);
+          });
+        }
+      });
+      linhas.push('');
+    }
+
+    linhas.push('-'.repeat(50));
     linhas.push('Enfermeiro Responsável: [Nome do Enfermeiro]');
-    linhas.push('COREN: [Número do COREN]');
+    linhas.push('COREN: [Número / UF]');
 
     return linhas.join('\n');
   };
@@ -166,8 +233,6 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
   };
 
   const obterIntervencoesMateriais = () => {
-    // Esta função seria implementada para buscar materiais de apoio
-    // Por enquanto, retorna um array vazio pois não temos acesso ao rolEnfermagem
     return [];
   };
 
@@ -184,7 +249,6 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
           <Alert>
             <AlertDescription>
               Para acessar a etapa de Evolução, é necessário implementar pelo menos uma intervenção na etapa anterior. 
-              Todas as intervenções padrão implementadas devem ter um executor definido.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -361,39 +425,6 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-        </CardContent>
-      </Card>
-
-      {/* Materiais de Apoio */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Materiais de Apoio Recomendados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {obterIntervencoesMateriais().length > 0 ? (
-            <div className="space-y-3">
-              {obterIntervencoesMateriais().map((material: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded">
-                  <div>
-                    <h4 className="font-medium">{material.titulo}</h4>
-                    <p className="text-sm text-muted-foreground">{material.descricao}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open(material.url, '_blank')}
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Acessar
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">
-              Nenhum material de apoio específico foi identificado para as intervenções implementadas.
-            </p>
-          )}
         </CardContent>
       </Card>
 

@@ -125,35 +125,89 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }));
   };
 
-  // Função genérica para salvar valor do exame físico no processo (mantendo imutabilidade)
-  const saveExameFisicoValue = (parametro: string, value: string | number) => {
+  // Função centralizada para recalcular todas as NHBs do processo
+  const calculateAllNhbs = (tempExameFisico: any) => {
+    const novaLista: { parametro: string; nhb: string }[] = [];
+    
+    // Sinais Vitais
+    sinaisVitais.forEach(sv => {
+      const val = tempExameFisico[sv.sinalVitalNome];
+      if (val !== undefined && val !== '') {
+        const v = getNumericValidation(sv.sinalVitalNome, val, 'sinal');
+        if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: sv.sinalVitalNome, nhb: v.nhb });
+      }
+    });
+
+    // Exames
+    exames.forEach(ex => {
+      ex.componentes.forEach(comp => {
+        const val = tempExameFisico[comp.componenteAnalisado];
+        if (val !== undefined && val !== '') {
+          const v = ex.tipoExame === 'Laboratorial' 
+            ? getNumericValidation(comp.componenteAnalisado, val, 'exameLab')
+            : getImagemValidation(comp.componenteAnalisado, String(val));
+          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
+        }
+      });
+    });
+
+    // Revisão de Sistemas
+    sistemas.forEach(sist => {
+      sist.exames.forEach(ex => {
+        const val = tempExameFisico[ex.nomeExame];
+        if (val !== undefined && val !== '') {
+          const v = getSistemaValidation(ex.nomeExame, String(val));
+          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: v.nhb });
+        }
+      });
+    });
+
+    return novaLista;
+  };
+
+  // ATUALIZAÇÃO ATÔMICA: Calcula Exame Físico e NHBs sincronizadamente
+  const updateAvaliacaoAtomic = (
+    parametro: string,
+    value: string | number,
+    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string }
+  ) => {
+    // 1. Monta o novo estado do Exame Físico
     const novoExameFisico = {
-      ...processo.avaliacao.exameFisico,
+      ...(processo.avaliacao?.exameFisico || {}),
       [parametro]: value,
     };
 
-    const novaAvaliacao: AvaliacaoEnfermagem = {
+    // 2. Recalcula TODAS as NHBs com base no novo mapa total
+    const novaListaNhbs = calculateAllNhbs(novoExameFisico);
+
+    // 3. Atualiza estados locais para feedback visual
+    setNhbsAfetadas(novaListaNhbs);
+    setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb);
+
+    // 4. Envia atualização completa para o pai
+    onUpdateAvaliacao({
       ...processo.avaliacao,
       exameFisico: novoExameFisico,
-      nhbsAfetadas,
-    };
+      nhbsAfetadas: novaListaNhbs,
+    });
+  };
 
-    onUpdateAvaliacao(novaAvaliacao);
+  // Normalização de normalidade por texto clínico (fallback para quando não há faixa ou o resultado é classificatório)
+  const isTextoNormal = (nomeAlt?: string | null) => {
+    if (!nomeAlt || nomeAlt.trim() === '') return true;
+    const termosNormais = ['Normal', 'Normalidade', 'Ótima', 'Ótimo', 'Bom', 'Boa', 'Bem', 'Adequada', 'Adequado', 'Eupneico', 'Eufônico', 'Preservado', 'Normo', 'Ausente', 'Negat'];
+    return termosNormais.some(t => nomeAlt.toLowerCase().includes(t.toLowerCase()));
   };
 
   // Validação para valores numéricos (sinais vitais e exames laboratoriais)
-  const validateNumeric = (parametro: string, value: string | number, type: 'sinal' | 'exameLab') => {
+  const getNumericValidation = (parametro: string, value: string | number, type: 'sinal' | 'exameLab'): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     if (value === '' || value === null || typeof value === 'undefined') {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
+      return { status: 'neutro' };
     }
 
     const numValue = Number(value);
     if (isNaN(numValue)) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
+      return { status: 'neutro' };
     }
 
     const idade = calculateAge(paciente.dataNascimento);
@@ -165,7 +219,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       const sinal = sinaisVitais.find((s) => s.sinalVitalNome === parametro);
       referenceData = (sinal?.valoresDeReferencia || []) as ValorReferenciaVital[];
     } else {
-      // exameLab
       const exame = exames.find(
         (e) => e.tipoExame === 'Laboratorial' && e.componentes.some((c) => c.componenteAnalisado === parametro)
       );
@@ -174,57 +227,46 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
 
     if (!referenceData.length) {
-      // Sem referência -> neutro
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
+      return { status: 'neutro' };
     }
 
-    // Encontra faixa compatível por idade e sexo
-    const matchingRange = referenceData.find((ref: any) => {
+    // 1. Filtrar referências compatíveis por idade e sexo
+    const possibleRanges = referenceData.filter((ref: any) => {
       const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
       const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
       const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === sexo;
       return idadeMinOk && idadeMaxOk && sexoOk;
+    });
+
+    if (possibleRanges.length === 0) return { status: 'neutro' };
+
+    // 2. Encontrar a faixa específica onde o VALOR se encaixa
+    const matchingRange = possibleRanges.find((ref: any) => {
+      const min = ref.valorMinimo;
+      const max = ref.valorMaximo;
+      
+      if (min != null && max != null) return numValue >= min && numValue <= max;
+      if (min != null) return numValue >= min;
+      if (max != null) return numValue <= max;
+      return false;
     }) as any;
 
     if (!matchingRange) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
+      return { status: 'neutro' };
     }
 
-    // Considera "Normal"/"Normalidade" como normal; caso contrário, compara min/max quando existentes
     const nomeAlt: string | null | undefined = matchingRange.nomeAlteracao;
     const nhb: string | undefined = matchingRange.subconjuntoNHBVinculado;
+    const isNormal = isTextoNormal(nomeAlt);
 
-    const nomeIndicaNormal =
-      nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt === '' || nomeAlt == null;
-
-    const min = (matchingRange as ResultadoExame).valorMinimo ?? (matchingRange as ValorReferenciaVital).valorMinimo;
-    const max = (matchingRange as ResultadoExame).valorMaximo ?? (matchingRange as ValorReferenciaVital).valorMaximo;
-
-    const dentroFaixa =
-      (min == null || numValue >= min) && (max == null || numValue <= max);
-
-    const isNormal = nomeIndicaNormal || dentroFaixa;
-
-    if (isNormal) {
-      setParametroValidation(parametro, 'normal');
-      updateNhbs(parametro, true);
-    } else {
-      setParametroValidation(parametro, 'alterado', nomeAlt || 'Alteração', nhb);
-      updateNhbs(parametro, false, nhb);
-    }
+    return isNormal 
+      ? { status: 'normal' } 
+      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
   };
 
-  // Validação para exames de imagem (seleção classificatória)
-  const validateImagem = (parametro: string, selected: string) => {
-    if (!selected) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
-    }
+  // Validação para exames de imagem
+  const getImagemValidation = (parametro: string, selected: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
+    if (!selected) return { status: 'neutro' };
 
     const exame = exames.find(
       (e) => e.tipoExame === 'Imagem' && e.componentes.some((c) => c.componenteAnalisado === parametro)
@@ -232,34 +274,21 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
     const resultado = componente?.resultados.find((r) => r.resultadoClassificatorio === selected);
 
-    if (!resultado) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
-    }
+    if (!resultado) return { status: 'neutro' };
 
     const nomeAlt = resultado.nomeAlteracao;
     const nhb = resultado.subconjuntoNHBVinculado;
-    const isNormal = nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt == null || nomeAlt === '';
+    const isNormal = isTextoNormal(nomeAlt);
 
-    if (isNormal) {
-      setParametroValidation(parametro, 'normal');
-      updateNhbs(parametro, true);
-    } else {
-      setParametroValidation(parametro, 'alterado', nomeAlt, nhb);
-      updateNhbs(parametro, false, nhb);
-    }
+    return isNormal 
+      ? { status: 'normal' } 
+      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
   };
 
-  // Validação para revisão de sistemas (achados propedêuticos)
-  const validateSistema = (parametro: string, selectedDescricao: string) => {
-    if (!selectedDescricao) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
-    }
+  // Validação para revisão de sistemas
+  const getSistemaValidation = (parametro: string, selectedDescricao: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
+    if (!selectedDescricao) return { status: 'neutro' };
 
-    // Encontrar o exame e achado correspondente pelo nome do "parametro" (utilizamos exame.nomeExame como parâmetro)
     let achadoSelecionado: Achado | undefined = undefined;
     sistemas.some((sist) => {
       const exame = sist.exames.find((ex) => ex.nomeExame === parametro);
@@ -270,23 +299,15 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       return false;
     });
 
-    if (!achadoSelecionado) {
-      setParametroValidation(parametro, 'neutro');
-      updateNhbs(parametro, true);
-      return;
-    }
+    if (!achadoSelecionado) return { status: 'neutro' };
 
-    const nomeAlt = achadoSelecionado.nomeAlteracao;
-    const nhb = achadoSelecionado.subconjuntoNHBVinculado;
-    const isNormal = nomeAlt === 'Normal' || nomeAlt === 'Normalidade' || nomeAlt == null || nomeAlt === '';
+    const nomeAlt = (achadoSelecionado as Achado).nomeAlteracao;
+    const nhb = (achadoSelecionado as Achado).subconjuntoNHBVinculado;
+    const isNormal = isTextoNormal(nomeAlt);
 
-    if (isNormal) {
-      setParametroValidation(parametro, 'normal');
-      updateNhbs(parametro, true);
-    } else {
-      setParametroValidation(parametro, 'alterado', nomeAlt, nhb);
-      updateNhbs(parametro, false, nhb);
-    }
+    return isNormal 
+      ? { status: 'normal' } 
+      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
   };
 
   const handleColetaDadosChange = (value: string) => {
@@ -591,8 +612,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                           value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''}
                           onChange={(e) => {
                             const val = e.target.value;
-                            saveExameFisicoValue(sinal.sinalVitalNome, val);
-                            validateNumeric(sinal.sinalVitalNome, val, 'sinal');
+                            const validation = getNumericValidation(sinal.sinalVitalNome, val, 'sinal');
+                            updateAvaliacaoAtomic(sinal.sinalVitalNome, val, validation);
                           }}
                           className={getInputClassName(sinal.sinalVitalNome)}
                         />
@@ -638,9 +659,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     options={opcoes}
                                     value={String(valorAtual)}
                                     onValueChange={(selected) => {
-                                      // Limpar seleção (""), ou salvar seleção
-                                      saveExameFisicoValue(parametro, selected);
-                                      validateImagem(parametro, selected);
+                                      const validation = getImagemValidation(parametro, selected);
+                                      updateAvaliacaoAtomic(parametro, selected, validation);
                                     }}
                                     placeholder="Selecione o resultado..."
                                     searchPlaceholder="Buscar resultado..."
@@ -663,8 +683,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   value={valorAtual}
                                   onChange={(e) => {
                                     const val = e.target.value;
-                                    saveExameFisicoValue(parametro, val);
-                                    validateNumeric(parametro, val, 'exameLab');
+                                    const validation = getNumericValidation(parametro, val, 'exameLab');
+                                    updateAvaliacaoAtomic(parametro, val, validation);
                                   }}
                                   className={getInputClassName(parametro)}
                                 />
@@ -709,8 +729,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   options={opcoesAchados}
                                   value={String(valorAtual)}
                                   onValueChange={(selected) => {
-                                    saveExameFisicoValue(parametro, selected);
-                                    validateSistema(parametro, selected);
+                                    const validation = getSistemaValidation(parametro, selected);
+                                    updateAvaliacaoAtomic(parametro, selected, validation);
                                   }}
                                   placeholder="Selecione o achado..."
                                   searchPlaceholder="Buscar achado..."

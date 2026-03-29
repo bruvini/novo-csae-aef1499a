@@ -28,6 +28,8 @@ import {
   buscarProcessoAtivo,
   buscarProcessoPorId,
   excluirProcesso,
+  iniciarNovaSessao,
+  finalizarSessaoAtual,
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
@@ -106,57 +108,62 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     const carregarOuCriarProcesso = async () => {
       try {
+        let processoAtual: ProcessoEnfermagem | null = null;
+
         if (processoInicial) {
-          setProcesso(processoInicial);
-          setEtapaAtual(processoInicial.etapaAtual);
+          processoAtual = processoInicial;
+        } else {
+          // Tentar buscar processo ativo
+          processoAtual = await buscarProcessoAtivo(paciente.id, enfermeiroId);
+        }
 
-          const etapasConcluidas: number[] = [];
-          if (processoInicial.avaliacao && processoInicial.avaliacao.coletaDeDadosSubjetivos) {
-            etapasConcluidas.push(1);
+        if (processoAtual) {
+          // Iniciar nova sessão de trabalho para monitorar tempo ativo
+          await iniciarNovaSessao(paciente.id, processoAtual.id);
+          
+          // Re-buscar para obter a sessão iniciada e garantir o contador em tempo real
+          const atualizado = await buscarProcessoPorId(paciente.id, processoAtual.id);
+          if (atualizado) {
+            setProcesso(atualizado);
+            setEtapaAtual(atualizado.etapaAtual);
+
+            const etapasConcluidas: number[] = [];
+            
+            // Etapa 1 completa? (Dados Subjetivos + Exame Físico)
+            const temColeta = !!(atualizado.avaliacao?.coletaDeDadosSubjetivos?.trim());
+            const temExameFisico = Object.keys(atualizado.avaliacao?.exameFisico || {}).length > 0;
+            if (temColeta && temExameFisico) etapasConcluidas.push(1);
+            
+            // Etapa 2 completa? (Diagnósticos Selecionados)
+            if (atualizado.diagnostico?.diagnosticosSelecionados?.length > 0) etapasConcluidas.push(2);
+            
+            // Etapa 3 completa? (Planejamento: Todos Diags com Resultado e Intervenção)
+            const diagnosticosPlanejados = atualizado.planejamento?.diagnosticosPlanejados || [];
+            const planejamentoOk = diagnosticosPlanejados.length > 0 && diagnosticosPlanejados.every(diag => {
+              const temIntervenções = diag.intervencoesSelecionadas?.length > 0;
+              const temResultado = !!(diag.resultadoEsperadoSelecionado?.trim());
+              return temIntervenções && temResultado;
+            });
+            if (planejamentoOk) etapasConcluidas.push(3);
+            
+            // Etapa 4 completa? (Implementação: Pelo menos 1 implementado)
+            let peloMenosUmaImplementada = false;
+            Object.values(atualizado.implementacao || {}).forEach((d: any) => {
+              d.intervencoes?.forEach((i: any) => {
+                if (i.implementadoNestaConsulta) peloMenosUmaImplementada = true;
+              });
+            });
+            if (peloMenosUmaImplementada) etapasConcluidas.push(4);
+            
+            // Etapa 5 (Evolução) - Sempre disponível se a 4 estiver completa ou se já salva
+            if (atualizado.evolucao?.resumoGerado) etapasConcluidas.push(5);
+            
+            setEtapasCompletadas(etapasConcluidas);
           }
-          if (processoInicial.diagnostico && processoInicial.diagnostico.diagnosticosSelecionados.length > 0) {
-            etapasConcluidas.push(2);
-          }
-          if (processoInicial.planejamento && processoInicial.planejamento.diagnosticosPlanejados.length > 0) {
-            etapasConcluidas.push(3);
-          }
-          if (processoInicial.implementacao && Object.keys(processoInicial.implementacao).length > 0) {
-            etapasConcluidas.push(4);
-          }
-          if (processoInicial.evolucao) {
-            etapasConcluidas.push(5);
-          }
-          setEtapasCompletadas(etapasConcluidas);
           return;
         }
 
-        // Tentar buscar processo ativo
-        const existente = await buscarProcessoAtivo(paciente.id, enfermeiroId);
-        if (existente) {
-          setProcesso(existente);
-          setEtapaAtual(existente.etapaAtual);
-
-          const etapasConcluidas: number[] = [];
-          if (existente.avaliacao && existente.avaliacao.coletaDeDadosSubjetivos) {
-            etapasConcluidas.push(1);
-          }
-          if (existente.diagnostico && existente.diagnostico.diagnosticosSelecionados.length > 0) {
-            etapasConcluidas.push(2);
-          }
-          if (existente.planejamento && existente.planejamento.diagnosticosPlanejados.length > 0) {
-            etapasConcluidas.push(3);
-          }
-          if (existente.implementacao && Object.keys(existente.implementacao).length > 0) {
-            etapasConcluidas.push(4);
-          }
-          if (existente.evolucao) {
-            etapasConcluidas.push(5);
-          }
-          setEtapasCompletadas(etapasConcluidas);
-          return;
-        }
-
-        // Se não existir, cria novo
+        // Se não existir, cria novo (já inicia sessão internamente)
         await criarNovoProcesso();
       } catch (error) {
         console.error('Erro ao carregar ou criar processo:', error);
@@ -278,8 +285,16 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleSaveAndClose = async () => {
-    await handleSalvarProgresso();
-    onClose();
+    setIsSaving(true);
+    try {
+      await handleSalvarProgresso();
+      await finalizarSessaoAtual(paciente.id, processo.id);
+      onClose();
+    } catch (error) {
+      console.error('Erro ao fechar processo:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConcluirProcesso = async () => {
@@ -441,14 +456,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 >
                   <History className="h-4 w-4 mr-2" />
                   Histórico
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSaveAndClose}
-                  disabled={isSaving}
-                >
-                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>

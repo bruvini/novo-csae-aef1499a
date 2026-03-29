@@ -97,26 +97,54 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
       linhas.push('');
     }
 
-    // Implementação
-    const implementacao = processo.implementacao || {};
-    const intervencoesImplementadas: string[] = [];
+    // Planejamento (Restaurado)
+    if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
+      linhas.push('PLANEJAMENTO DE ENFERMAGEM:');
+      const diagnosticosOrdenados = [...processo.planejamento.diagnosticosPlanejados]
+        .sort((a, b) => a.ordemPrioridade - b.ordemPrioridade);
 
-    Object.entries(implementacao).forEach(([, diagnostico]) => {
-      diagnostico.intervencoes.forEach(intervencao => {
-        if (intervencao.implementadoNestaConsulta) {
-          intervencoesImplementadas.push(intervencao.acaoPrescrita);
+      diagnosticosOrdenados.forEach((diag, index) => {
+        linhas.push(`${index + 1}º) ${diag.tituloDiagnostico}`);
+        if (diag.resultadoEsperadoSelecionado) {
+          linhas.push(`   Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
         }
-      });
-    });
-
-    if (intervencoesImplementadas.length > 0) {
-      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
-      intervencoesImplementadas.forEach(int => {
-        linhas.push(`• ${int}`);
+        if (diag.intervencoesSelecionadas?.length > 0) {
+          linhas.push('   Intervenções Planejadas:');
+          diag.intervencoesSelecionadas.forEach(int => {
+            linhas.push(`   - ${int.acaoPrescrita}`);
+          });
+        }
       });
       linhas.push('');
     }
 
+    // Implementação
+    const implementacao = processo.implementacao || {};
+    const possuiImplementacao = Object.values(implementacao).some(d => d.intervencoes?.some(i => i.implementadoNestaConsulta));
+
+    if (possuiImplementacao) {
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      Object.entries(implementacao).forEach(([tituloDiag, dados]) => {
+        const implementadas = dados.intervencoes.filter(i => i.implementadoNestaConsulta);
+        if (implementadas.length > 0) {
+          linhas.push(`  [${tituloDiag}]`);
+          implementadas.forEach(int => {
+            let itemStr = `  • ${int.acaoPrescrita}`;
+            if (int.prazo && int.prazoUnidade) {
+               itemStr += ` - Prazo: ${int.prazo} ${int.prazoUnidade}`;
+            }
+            if (int.quemExecuta) {
+               itemStr += ` (Executor: ${int.quemExecuta})`;
+            }
+            linhas.push(itemStr);
+          });
+        }
+      });
+      linhas.push('');
+    }
+
+    linhas.push('-'.repeat(40));
+    linhas.push(`Enfermeiro Responsável: [${processo.enfermeiroId || 'Identificado no Sistema'}]`);
     return linhas.join('\n');
   };
 

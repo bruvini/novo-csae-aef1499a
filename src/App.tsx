@@ -10,8 +10,10 @@ import Dashboard from "./pages/Dashboard";
 import WaitingApproval from "./pages/WaitingApproval";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import GestaoConteudos from "./pages/GestaoConteudos";
+import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -19,43 +21,53 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Index />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/registrar" element={<Register />} />
-            <Route path="/waiting-approval" element={<WaitingApproval />} />
-            
-            {/* Authenticated Routes */}
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/gestao-usuarios" 
-              element={
-                <ProtectedRoute requireAdmin>
-                  <GestaoUsuarios />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/gestao-conteudos" 
-              element={
-                <ProtectedRoute requireGestor>
-                  <GestaoConteudos />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="*" element={<Index />} />
-          </Routes>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Index />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/registrar" element={<Register />} />
+              <Route path="/waiting-approval" element={<WaitingApproval />} />
+              
+              {/* Authenticated Routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/gestao-usuarios" 
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <GestaoUsuarios />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/gestao-conteudos" 
+                element={
+                  <ProtectedRoute requireGestor>
+                    <GestaoConteudos />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/processo-enfermagem" 
+                element={
+                  <ProtectedRoute>
+                    <ProcessoEnfermagem />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="*" element={<Index />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

@@ -9,6 +9,7 @@ interface IndicadoresTempoReal {
   processosAtivos: number;
   processosConcluidos: number;
   mediaProcessosPorPaciente: number;
+  tempoMedioEvolucao: number; // em minutos
 }
 
 export const useIndicadoresTempoReal = () => {
@@ -16,7 +17,8 @@ export const useIndicadoresTempoReal = () => {
     totalPacientes: 0,
     processosAtivos: 0,
     processosConcluidos: 0,
-    mediaProcessosPorPaciente: 0
+    mediaProcessosPorPaciente: 0,
+    tempoMedioEvolucao: 0
   });
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -24,73 +26,64 @@ export const useIndicadoresTempoReal = () => {
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribers: (() => void)[] = [];
-
-    // Listener para pacientes
-    const pacientesQuery = query(
+    // Listener para a coleção de pacientes do usuário
+    const q = query(
       collection(db, 'pacientesProcessoEnfermagem'),
       where('uidUsuario', '==', user.uid)
     );
 
-    const unsubscribePacientes = onSnapshot(pacientesQuery, (snapshot) => {
-      setIndicadores(prev => ({
-        ...prev,
-        totalPacientes: snapshot.size
-      }));
-    });
-    unsubscribers.push(unsubscribePacientes);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let totalProcessos = 0;
+      let ativos = 0;
+      let concluidos = 0;
+      let tempoTotalMinutos = 0;
+      let countComTempo = 0;
 
-    // Listener para processos ativos
-    const processosAtivosQuery = query(
-      collection(db, 'processosEnfermagem'),
-      where('enfermeiroId', '==', user.uid),
-      where('status', '==', 'em_andamento')
-    );
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const processos = data.processosEnfermagem || [];
+        
+        totalProcessos += processos.length;
+        
+        processos.forEach((p: any) => {
+          if (p.status === 'concluido') {
+            concluidos++;
+            
+            // Calcular tempo ativo deste processo
+            if (p.sessoesDeTrabalho && Array.isArray(p.sessoesDeTrabalho)) {
+              let tempoProcessoSegundos = 0;
+              p.sessoesDeTrabalho.forEach((s: any) => {
+                if (s.inicioSessao && s.fimSessao) {
+                  const inicio = s.inicioSessao.toDate().getTime();
+                  const fim = s.fimSessao.toDate().getTime();
+                  tempoProcessoSegundos += (fim - inicio) / 1000;
+                }
+              });
+              
+              if (tempoProcessoSegundos > 0) {
+                tempoTotalMinutos += tempoProcessoSegundos / 60;
+                countComTempo++;
+              }
+            }
+          } else if (p.status === 'em_andamento') {
+            ativos++;
+          }
+        });
+      });
 
-    const unsubscribeAtivos = onSnapshot(processosAtivosQuery, (snapshot) => {
-      setIndicadores(prev => ({
-        ...prev,
-        processosAtivos: snapshot.size
-      }));
-    });
-    unsubscribers.push(unsubscribeAtivos);
-
-    // Listener para processos concluídos
-    const processosConcluidos = query(
-      collection(db, 'processosEnfermagem'),
-      where('enfermeiroId', '==', user.uid),
-      where('status', '==', 'concluido')
-    );
-
-    const unsubscribeConcluidos = onSnapshot(processosConcluidos, (snapshot) => {
-      setIndicadores(prev => ({
-        ...prev,
-        processosConcluidos: snapshot.size
-      }));
-    });
-    unsubscribers.push(unsubscribeConcluidos);
-
-    // Listener para todos os processos (para calcular média)
-    const todosProcessosQuery = query(
-      collection(db, 'processosEnfermagem'),
-      where('enfermeiroId', '==', user.uid)
-    );
-
-    const unsubscribeTodos = onSnapshot(todosProcessosQuery, (snapshot) => {
-      const totalProcessos = snapshot.size;
-      setIndicadores(prev => ({
-        ...prev,
-        mediaProcessosPorPaciente: prev.totalPacientes > 0 ? 
-          Math.round((totalProcessos / prev.totalPacientes) * 10) / 10 : 0
-      }));
+      setIndicadores({
+        totalPacientes: snapshot.size,
+        processosAtivos: ativos,
+        processosConcluidos: concluidos,
+        mediaProcessosPorPaciente: snapshot.size > 0 ? 
+          Math.round((totalProcessos / snapshot.size) * 10) / 10 : 0,
+        tempoMedioEvolucao: countComTempo > 0 ? 
+          Math.round(tempoTotalMinutos / countComTempo) : 0
+      });
       setLoading(false);
     });
-    unsubscribers.push(unsubscribeTodos);
 
-    // Cleanup function
-    return () => {
-      unsubscribers.forEach(unsubscribe => unsubscribe());
-    };
+    return () => unsubscribe();
   }, [user]);
 
   return { indicadores, loading };

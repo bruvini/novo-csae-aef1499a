@@ -1,80 +1,101 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Menu } from 'lucide-react';
-import { useSidebar } from '@/components/ui/sidebar';
+import { LogOut, User, Home, Heart, Database, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const { toggleSidebar } = useSidebar();
   const { sessionData, logout } = useAuth();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsScrolled(scrollTop > 20);
-    };
+  const navigationItems = [
+    { title: 'Dashboard', url: '/dashboard', icon: Home, roles: ['any'] },
+    { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart, roles: ['any'] },
+    { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, roles: ['gestor', 'admin'] },
+    { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, roles: ['admin'] },
+  ];
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const filteredItems = navigationItems.filter(item => {
+    if (item.roles.includes('any')) return true;
+    if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
+    if (item.roles.includes('gestor') && (sessionData?.gestorConteudos || sessionData?.ehAdmin)) return true;
+    return false;
+  });
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
-      isScrolled 
-        ? 'bg-white/80 backdrop-blur-md shadow-lg border-csae-green-200/50' 
-        : 'bg-white shadow-sm border-csae-green-200'
-    }`}>
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Logo, toggle button e título */}
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSidebar}
-              className="h-8 w-8 hover:bg-csae-green-100"
-              aria-label="Abrir/fechar menu lateral"
-            >
-              <Menu className="h-4 w-4 text-csae-green-700" />
-            </Button>
-            
-            <div className="h-10 w-10 bg-csae-green-100 rounded-lg flex items-center justify-center">
-              <div className="w-6 h-6 bg-csae-green-600 rounded-sm"></div>
+    <header className="sticky top-0 z-50 w-full flex flex-col bg-white border-b border-csae-green-200">
+      {/* Container Principal: Logo e Ações */}
+      <div className="w-full bg-white px-4 h-16 flex items-center justify-between border-b border-gray-100 shadow-sm sm:px-8">
+        <div className="flex items-center space-x-4">
+          <NavLink to="/dashboard" className="flex items-center space-x-3 group">
+            <div className="h-10 flex items-center justify-center overflow-hidden">
+              <img 
+                src="/logo_csae.png" 
+                alt="CSAE Floripa Logo" 
+                className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+              />
             </div>
-            
-            <div>
-              <h1 className="text-lg font-bold text-csae-green-800 sm:text-xl">
-                Portal CSAE Floripa 2.0
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold text-csae-green-800 tracking-tight leading-tight">
+                Portal CSAE
               </h1>
-              <p className="text-xs text-gray-600 hidden sm:block">
-                Tecnologia e Cuidado de Mãos Dadas
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-widest">
+                Florianópolis v2.0
               </p>
             </div>
-          </div>
+          </NavLink>
+        </div>
 
-          {/* Área do usuário e logout */}
-          <div className="flex items-center space-x-3">
-            {sessionData && (
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-700">
-                <User className="w-4 h-4" />
-                <span>Bem-vindo(a), {sessionData.nomeCompleto.split(' ')[0]}!</span>
+        {/* User Info and Logout */}
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {sessionData && (
+            <div className="hidden md:flex items-center space-x-2 text-sm text-gray-700 bg-csae-green-50/50 px-3 py-1.5 rounded-full border border-csae-green-100/50">
+              <div className="w-6 h-6 bg-csae-green-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                {sessionData.nomeCompleto.charAt(0).toUpperCase()}
               </div>
-            )}
-            <Button
-              onClick={logout}
-              variant="outline"
-              size="sm"
-              className="csae-btn-secondary"
-              aria-label="Sair do sistema"
-            >
-              <LogOut className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Sair</span>
-            </Button>
-          </div>
+              <span className="font-medium whitespace-nowrap">
+                {sessionData.nomeCompleto.split(' ')[0]}
+              </span>
+            </div>
+          )}
+          <Button
+            onClick={logout}
+            variant="ghost"
+            size="sm"
+            className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+            aria-label="Sair"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Sair</span>
+          </Button>
         </div>
       </div>
+
+      {/* Barra de Navegação Horizontal */}
+      <nav className="w-full bg-white overflow-x-auto no-scrollbar scroll-smooth">
+        <div className="flex items-center px-4 md:px-8 h-12">
+          {filteredItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.url}
+                to={item.url}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center space-x-2 px-6 h-full border-b-2 transition-all duration-200 text-sm font-medium whitespace-nowrap",
+                    isActive
+                      ? "border-csae-green-600 text-csae-green-700 bg-csae-green-50/50"
+                      : "border-transparent text-gray-500 hover:text-csae-green-600 hover:bg-gray-50"
+                  )
+                }
+              >
+                <Icon className="w-4 h-4" />
+                <span>{item.title}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
     </header>
   );
 };

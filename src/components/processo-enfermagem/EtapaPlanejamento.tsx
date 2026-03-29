@@ -292,24 +292,35 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
               <Accordion type="multiple" className="w-full">
                 {diagnosticosPriorizados.map((diagnostico) => {
                   const diagnosticoDetalhado = getDiagnosticoDetalhado(diagnostico.diagnosticoId);
+                  const isIncompleto = !diagnostico.resultadoEsperadoSelecionado;
+                  
                   return (
-                    <AccordionItem key={diagnostico.diagnosticoId} value={diagnostico.diagnosticoId}>
+                    <AccordionItem 
+                      key={diagnostico.diagnosticoId} 
+                      value={diagnostico.diagnosticoId}
+                      className={isIncompleto ? "bg-red-50/50 rounded-lg px-2" : ""}
+                    >
                       <AccordionTrigger>
                         <span className="flex items-center gap-2">
                           <span className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">
                             {diagnostico.ordemPrioridade}º
                           </span>
                           {diagnostico.tituloDiagnostico}
+                          {isIncompleto && (
+                            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] uppercase font-bold rounded-full">
+                              Incompleto (Falta Resultado)
+                            </span>
+                          )}
                         </span>
                       </AccordionTrigger>
-                      <AccordionContent>
+                      <AccordionContent className="px-1 pb-4">
                         {diagnosticoDetalhado ? (
                           <RadioGroup
                             value={diagnostico.resultadoEsperadoSelecionado || ""}
                             onValueChange={(value) => handleResultadoChange(diagnostico.diagnosticoId, value)}
                           >
                             {diagnosticoDetalhado.resultadosEsperados.map((resultado, index) => (
-                              <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg">
+                              <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
                                 <RadioGroupItem value={resultado.tituloResultado} id={`${diagnostico.diagnosticoId}-${index}`} />
                                 <div className="flex-1">
                                   <Label htmlFor={`${diagnostico.diagnosticoId}-${index}`} className="font-medium cursor-pointer">
@@ -348,18 +359,31 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                   const intervencoes = diagnostico.resultadoEsperadoSelecionado 
                     ? getIntervencoesDoResultado(diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado)
                     : [];
+                  
+                  const semIntervencoes = !diagnostico.intervencoesSelecionadas || diagnostico.intervencoesSelecionadas.length === 0;
+                  const semResultado = !diagnostico.resultadoEsperadoSelecionado;
+                  const isIncompleto = semIntervencoes || semResultado;
 
                   return (
-                    <AccordionItem key={diagnostico.diagnosticoId} value={diagnostico.diagnosticoId}>
+                    <AccordionItem 
+                      key={diagnostico.diagnosticoId} 
+                      value={diagnostico.diagnosticoId}
+                      className={isIncompleto ? "bg-red-50/50 rounded-lg px-2" : ""}
+                    >
                       <AccordionTrigger>
                         <span className="flex items-center gap-2">
                           <span className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs">
                             {diagnostico.ordemPrioridade}º
                           </span>
                           {diagnostico.tituloDiagnostico}
+                          {isIncompleto && (
+                            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] uppercase font-bold rounded-full">
+                              Incompleto ({semResultado ? 'Falta Resultado' : 'Falta Intervenção'})
+                            </span>
+                          )}
                         </span>
                       </AccordionTrigger>
-                      <AccordionContent>
+                      <AccordionContent className="px-1 pb-4">
                         <div className="space-y-4">
                           {diagnostico.resultadoEsperadoSelecionado ? (
                             <div className="p-3 bg-muted rounded-lg">
@@ -367,7 +391,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                               <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
                             </div>
                           ) : (
-                            <Alert>
+                            <Alert variant="destructive" className="bg-red-100 border-red-200 text-red-800">
                               <AlertDescription>
                                 Selecione primeiro um resultado esperado na Fase II para visualizar as intervenções disponíveis.
                               </AlertDescription>
@@ -378,7 +402,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                             <div className="space-y-3">
                               <h4 className="font-medium">Intervenções Padrão:</h4>
                               {intervencoes.map((intervencao, index) => (
-                                <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg">
+                                <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
                                   <Checkbox
                                     id={`${diagnostico.diagnosticoId}-int-${index}`}
                                     checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}

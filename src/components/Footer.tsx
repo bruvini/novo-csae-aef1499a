@@ -1,96 +1,57 @@
-
 import React from 'react';
-import { Instagram, Facebook, Mail } from 'lucide-react';
+import { Instagram, Mail } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-csae-green-800 text-white py-8" role="contentinfo">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Informações do Portal */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold">Portal CSAE Floripa 2.0</h3>
-            <p className="text-sm text-green-100 leading-relaxed">
-              Plataforma desenvolvida para profissionais de enfermagem da rede pública de saúde de Florianópolis, 
-              com foco na excelência do cuidado e inovação tecnológica.
+    <footer className="bg-csae-green-900 text-white py-8 mt-auto" role="contentinfo">
+      <div className="container mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+          {/* Logo e Missão */}
+          <div className="md:col-span-2 space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
+                <img src="/logo_csae.png" alt="Logo" className="h-6 w-auto brightness-0 invert" />
+              </div>
+              <h3 className="text-lg font-black tracking-tighter uppercase italic">Portal CSAE <span className="text-csae-green-400">2.0</span></h3>
+            </div>
+            <p className="text-sm text-csae-green-100/70 leading-relaxed max-w-md">
+              Tecnologia a serviço da enfermagem pública de Florianópolis. 
+              Um ecossistema de dados para a excelência do cuidado técnico-científico.
             </p>
-            <div className="bg-green-700 p-3 rounded-lg">
-              <p className="text-xs font-medium text-green-100">
-                <strong>Importante:</strong> Acesso exclusivo para profissionais da rede municipal de saúde de Florianópolis. 
-                Dados verificados pela Gerência Técnica de Enfermagem.
-              </p>
-            </div>
           </div>
 
-          {/* Redes Sociais */}
+          {/* Social & Contact */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">Siga-nos</h3>
-            <div className="space-y-3">
-              <a
-                href="https://instagram.com/enfermagemfloripa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-green-100 hover:text-white transition-colors"
-                aria-label="Instagram da Enfermagem de Floripa"
-              >
-                <Instagram className="w-5 h-5" />
-                <span className="text-sm">@enfermagemfloripa</span>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-csae-green-400">Conectar</h4>
+            <div className="flex flex-col space-y-2">
+              <a href="https://instagram.com/enfermagemfloripa" target="_blank" rel="noopener" className="flex items-center gap-2 text-sm text-csae-green-100/80 hover:text-white transition-colors">
+                <Instagram className="w-4 h-4" /> @enfermagemfloripa
               </a>
-              <a
-                href="https://instagram.com/bruvini"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-green-100 hover:text-white transition-colors"
-                aria-label="Instagram do desenvolvedor Bruno"
-              >
-                <Instagram className="w-5 h-5" />
-                <span className="text-sm">@bruvini (Desenvolvedor)</span>
-              </a>
-              <a
-                href="https://instagram.com/portalcsaefloripa"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-green-100 hover:text-white transition-colors"
-                aria-label="Instagram oficial do Portal CSAE Floripa"
-              >
-                <Instagram className="w-5 h-5" />
-                <span className="text-sm">@portalcsaefloripa</span>
+              <a href="mailto:contato@portalcsaefloripa.com.br" className="flex items-center gap-2 text-sm text-csae-green-100/80 hover:text-white transition-colors">
+                <Mail className="w-4 h-4" /> Suporte Técnico
               </a>
             </div>
           </div>
 
-          {/* Links Legais */}
+          {/* Legal */}
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">Informações Legais</h3>
-            <div className="space-y-2">
-              <a href="#" className="block text-sm text-green-100 hover:text-white transition-colors">
-                Termos de Uso
-              </a>
-              <a href="#" className="block text-sm text-green-100 hover:text-white transition-colors">
-                Política de Privacidade
-              </a>
-              <a href="#" className="block text-sm text-green-100 hover:text-white transition-colors">
-                LGPD - Lei Geral de Proteção de Dados
-              </a>
-              <a 
-                href="mailto:contato@portalcsaefloripa.com.br" 
-                className="flex items-center space-x-2 text-sm text-green-100 hover:text-white transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-                <span>Contato</span>
-              </a>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-csae-green-400">Transparência</h4>
+            <div className="flex flex-col space-y-2">
+              <a href="#" className="text-sm text-csae-green-100/80 hover:text-white transition-colors">Termos & LGPD</a>
+              <a href="#" className="text-sm text-csae-green-100/80 hover:text-white transition-colors">Política de Privacidade</a>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-green-700 mt-8 pt-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <p className="text-sm text-green-100">
-              © 2025 Portal CSAE Floripa 2.0 - Todos os direitos reservados
-            </p>
-            <p className="text-xs text-green-200">
-              Versão 2.0 | Desenvolvido com ❤️ para a enfermagem de Floripa
-            </p>
+        {/* Bottom Bar */}
+        <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="text-[10px] text-csae-green-100/40 uppercase tracking-[0.2em] font-medium text-center md:text-left">
+            Gerência Técnica de Enfermagem <span className="mx-2">|</span> SMS Florianópolis
+          </div>
+          <div className="flex items-center gap-6">
+            <p className="text-[10px] text-csae-green-100/60 font-medium">© 2025 PORTAL CSAE</p>
+            <div className="h-4 w-[1px] bg-white/10 hidden md:block"></div>
+            <p className="text-[10px] text-csae-green-100/60 font-medium">DESIGN BY BRUVINI</p>
           </div>
         </div>
       </div>

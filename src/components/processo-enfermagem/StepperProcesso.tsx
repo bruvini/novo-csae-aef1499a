@@ -37,8 +37,10 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
 
     // Lógica específica para etapa de Diagnóstico (etapa 2)
     if (numeroEtapa === 2 && processo) {
-      return !!(processo.avaliacao.coletaDeDadosSubjetivos && 
+      const temColeta = !!(processo.avaliacao.coletaDeDadosSubjetivos && 
                 processo.avaliacao.coletaDeDadosSubjetivos.trim() !== '');
+      const temExameFisico = Object.keys(processo.avaliacao.exameFisico || {}).length > 0;
+      return temColeta && temExameFisico;
     }
 
     // Lógica específica para etapa de Planejamento (etapa 3)
@@ -51,18 +53,12 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
     if (numeroEtapa === 4 && processo) {
       const diagnosticosPlanjados = processo.planejamento?.diagnosticosPlanejados || [];
       
-      if (diagnosticosPlanjados.length === 0) {
-        return false;
-      }
+      if (diagnosticosPlanjados.length === 0) return false;
 
-      // Verificar se todos têm resultado esperado (quando aplicável) e intervenções
+      // Verificar se todos têm resultado esperado e pelo menos uma intervenção
       return diagnosticosPlanjados.every(diag => {
-        // Todos devem ter pelo menos uma intervenção
         const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
-        
-        // Se tem resultado esperado definido no planejamento, deve estar preenchido
-        const temResultado = !diag.resultadoEsperadoSelecionado || diag.resultadoEsperadoSelecionado.trim() !== '';
-        
+        const temResultado = !!(diag.resultadoEsperadoSelecionado && diag.resultadoEsperadoSelecionado.trim() !== '');
         return temIntervencoes && temResultado;
       });
     }
@@ -71,27 +67,38 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
     if (numeroEtapa === 5 && processo) {
       const implementacao = processo.implementacao || {};
       
-      // Verificar se pelo menos uma intervenção foi implementada
+      // Pelo menos uma intervenção marcada como implementada na consulta
       let peloMenosUmaImplementada = false;
-      let todasPadroesTemExecutor = true;
-
       Object.values(implementacao).forEach(diagnostico => {
         diagnostico.intervencoes.forEach(intervencao => {
           if (intervencao.implementadoNestaConsulta) {
             peloMenosUmaImplementada = true;
-            
-            // Se é padrão e foi implementada, deve ter executor
-            if (intervencao.tipo === 'padrao' && !intervencao.quemExecuta) {
-              todasPadroesTemExecutor = false;
-            }
           }
         });
       });
 
-      return peloMenosUmaImplementada && todasPadroesTemExecutor;
+      return peloMenosUmaImplementada;
     }
 
     return false;
+  };
+
+  const getMotivoBloqueio = (numeroEtapa: number) => {
+    if (isEtapaAcessivel(numeroEtapa)) return null;
+
+    if (numeroEtapa === 2) {
+      return "Para liberar esta etapa, preencha a coleta de dados subjetivos e pelo menos um item do exame físico.";
+    }
+    if (numeroEtapa === 3) {
+      return "Para liberar esta etapa, selecione pelo menos um diagnóstico de enfermagem na etapa anterior.";
+    }
+    if (numeroEtapa === 4) {
+      return "Para liberar esta etapa, todos os diagnósticos precisam ter um resultado esperado e pelo menos uma intervenção definida no planejamento.";
+    }
+    if (numeroEtapa === 5) {
+      return "Para liberar esta etapa, marque pelo menos uma intervenção como implementada na etapa anterior.";
+    }
+    return "Complete as etapas anteriores para liberar.";
   };
 
   return (
@@ -114,6 +121,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
             const isAtual = etapa.numero === etapaAtual;
             const isCompletada = etapasCompletadas.includes(etapa.numero);
             const isAcessivel = isEtapaAcessivel(etapa.numero);
+            const motivoBloqueio = getMotivoBloqueio(etapa.numero);
 
             return (
               <Tooltip key={etapa.numero}>
@@ -144,9 +152,20 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
                     </span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-sm">
-                  <p className="font-medium">{etapa.nome}</p>
-                  <p className="text-sm text-gray-600 mt-1">{etapa.descricao}</p>
+                <TooltipContent side="bottom" className="max-w-sm p-3">
+                  <div className="space-y-1">
+                    <p className="font-bold text-sm flex items-center gap-2">
+                       {etapa.numero}. {etapa.nome}
+                       {!isAcessivel && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase">Bloqueado</span>}
+                    </p>
+                    {motivoBloqueio ? (
+                      <p className="text-xs text-red-600 font-medium bg-red-50 p-2 rounded border border-red-100 italic">
+                        {motivoBloqueio}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-600">{etapa.descricao}</p>
+                    )}
+                  </div>
                 </TooltipContent>
               </Tooltip>
             );
