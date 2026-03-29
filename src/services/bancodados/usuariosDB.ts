@@ -34,7 +34,7 @@ export interface UsuarioData {
   dadosPessoais: DadosPessoais;
   dadosProfissionais: DadosProfissionais;
   termoResponsabilidadeAceito: boolean;
-  termoResponsabilidadeData: any;
+  termoResponsabilidadeData: unknown;
   ehAdmin: boolean;
   gestorConteudos: boolean;
   tipoUsuario: "Comum" | "Admin";

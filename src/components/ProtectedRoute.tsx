@@ -9,12 +9,14 @@ import LoadingOverlay from "./LoadingOverlay";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireGestor?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false, requireGestor = false }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isGestor, setIsGestor] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const location = useLocation();
 
@@ -28,6 +30,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setIsAdmin(userData.ehAdmin === true);
+          setIsGestor(userData.gestorConteudos === true || userData.ehAdmin === true);
           setStatus(userData.statusAcesso || "Aguardando");
         } else {
           setStatus("SemPerfil");
@@ -35,6 +38,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
       } else {
         setAuthenticated(false);
         setIsAdmin(false);
+        setIsGestor(false);
         setStatus(null);
       }
       setLoading(false);
@@ -67,7 +71,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   }
 
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requireGestor && !isGestor) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;

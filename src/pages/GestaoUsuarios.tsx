@@ -209,7 +209,7 @@ const GestaoUsuarios = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button variant="outline" asChild className="mb-4">
-            <Link to="/">
+            <Link to="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Voltar ao Início
             </Link>
