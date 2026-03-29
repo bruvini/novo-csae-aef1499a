@@ -13,16 +13,17 @@ import { Badge } from '@/components/ui/badge';
 import { Usuario } from '@/types/usuario';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, Check, X, Trash2, Settings } from 'lucide-react';
+import { Eye, Check, X, Trash2, Settings, Undo } from 'lucide-react';
 
 interface TabelaUsuariosProps {
   usuarios: Usuario[];
-  tipo: 'aguardando' | 'aprovados';
+  tipo: 'aguardando' | 'aprovados' | 'recusados';
   onDetalhes: (usuario: Usuario) => void;
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
   onExcluir: (usuario: Usuario) => void;
   onEditarPrivilegios?: (usuario: Usuario) => void;
+  onRestaurar?: (usuario: Usuario) => void;
 }
 
 const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
@@ -32,7 +33,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   onAprovar,
   onRecusar,
   onExcluir,
-  onEditarPrivilegios
+  onEditarPrivilegios,
+  onRestaurar
 }) => {
   const formatarData = (timestamp: any) => {
     if (!timestamp) return 'Não informado';
@@ -52,29 +54,33 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   };
 
   if (usuarios.length === 0) {
+    const mensagens = {
+      aguardando: 'Nenhum usuário aguardando aprovação',
+      aprovados: 'Nenhum usuário aprovado encontrado',
+      recusados: 'Nenhum usuário recusado encontrado'
+    };
     return (
       <div className="text-center py-8 text-gray-500">
-        {tipo === 'aguardando' 
-          ? 'Nenhum usuário aguardando aprovação' 
-          : 'Nenhum usuário aprovado encontrado'}
+        {mensagens[tipo]}
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-white shadow-sm overflow-hidden">
       <Table>
-        <TableHeader>
+        <TableHeader className="bg-slate-50">
           <TableRow>
-            <TableHead>Nome Completo</TableHead>
-            {tipo === 'aprovados' && <TableHead>Tipo de Usuário</TableHead>}
-            <TableHead>Data de Cadastro</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
+            <TableHead className="font-bold">Nome Completo</TableHead>
+            {tipo === 'aprovados' && <TableHead className="font-bold">Tipo de Usuário</TableHead>}
+            <TableHead className="font-bold">Data de Cadastro</TableHead>
+            {tipo === 'recusados' && <TableHead className="font-bold">Motivo da Recusa</TableHead>}
+            <TableHead className="text-right font-bold w-[250px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {usuarios.map((usuario) => (
-            <TableRow key={usuario.id}>
+            <TableRow key={usuario.id} className="hover:bg-slate-50/50">
               <TableCell className="font-medium">
                 {usuario.dadosPessoais?.nomeCompleto || 'Nome não informado'}
               </TableCell>
@@ -86,15 +92,24 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
               <TableCell>
                 {formatarData(usuario.dataCadastro)}
               </TableCell>
+              {tipo === 'recusados' && (
+                <TableCell className="max-w-[300px]">
+                  <p className="text-sm text-gray-600 italic line-clamp-2" title={usuario.motivoRecusa}>
+                    {usuario.motivoRecusa || 'Sem motivo registrado'}
+                  </p>
+                </TableCell>
+              )}
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    className="h-8 px-2"
                     onClick={() => onDetalhes(usuario)}
+                    title="Ver detalhes"
                   >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Detalhes
+                    <Eye className="h-4 w-4" />
+                    <span className="sr-only">Detalhes</span>
                   </Button>
                   
                   {tipo === 'aguardando' && onAprovar && onRecusar && (
@@ -102,18 +117,19 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                       <Button
                         variant="default"
                         size="sm"
+                        className="h-8 bg-green-600 hover:bg-green-700 text-xs gap-1"
                         onClick={() => onAprovar(usuario)}
-                        className="bg-green-600 hover:bg-green-700"
                       >
-                        <Check className="h-4 w-4 mr-1" />
+                        <Check className="h-3.5 w-3.5" />
                         Aceitar
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="h-8 text-xs gap-1"
                         onClick={() => onRecusar(usuario)}
                       >
-                        <X className="h-4 w-4 mr-1" />
+                        <X className="h-3.5 w-3.5" />
                         Recusar
                       </Button>
                     </>
@@ -123,20 +139,35 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
+                      className="h-8 text-xs gap-1"
                       onClick={() => onEditarPrivilegios(usuario)}
                     >
-                      <Settings className="h-4 w-4 mr-1" />
-                      Alterar Privilégios
+                      <Settings className="h-3.5 w-3.5" />
+                      Privilégios
+                    </Button>
+                  )}
+
+                  {tipo === 'recusados' && onRestaurar && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-amber-600 text-amber-700 hover:bg-amber-50 text-xs gap-1"
+                      onClick={() => onRestaurar(usuario)}
+                    >
+                      <Undo className="h-3.5 w-3.5" />
+                      Restaurar
                     </Button>
                   )}
                   
                   <Button
                     variant="destructive"
                     size="sm"
+                    className="h-8 px-2"
                     onClick={() => onExcluir(usuario)}
+                    title="Excluir permanentemente"
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Excluir
+                    <Trash2 className="h-4 w-4" />
+                    <span className="sr-only">Excluir</span>
                   </Button>
                 </div>
               </TableCell>

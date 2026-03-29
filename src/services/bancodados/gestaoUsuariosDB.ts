@@ -16,19 +16,17 @@ import { Usuario } from '@/types/usuario';
 
 export async function buscarUsuariosAguardando(): Promise<Usuario[]> {
   try {
-    const q = query(
-      collection(db, 'usuarios'), 
-      where('statusAcesso', '==', 'Aguardando'),
-      orderBy('dataCadastro', 'desc')
-    );
+    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
     const querySnapshot = await getDocs(q);
     
     const usuarios: Usuario[] = [];
     querySnapshot.forEach((doc) => {
-      usuarios.push({
-        ...doc.data() as Usuario,
-        id: doc.id
-      });
+      const data = doc.data() as Usuario;
+      const status = (data.statusAcesso || '').toLowerCase();
+      // Capturar variantes de 'Aguardando'
+      if (status === 'aguardando' || status === 'pendente' || status === '') {
+        usuarios.push({ ...data, id: doc.id });
+      }
     });
     
     return usuarios;
@@ -40,24 +38,44 @@ export async function buscarUsuariosAguardando(): Promise<Usuario[]> {
 
 export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
   try {
-    const q = query(
-      collection(db, 'usuarios'), 
-      where('statusAcesso', '==', 'Liberado'),
-      orderBy('dataCadastro', 'desc')
-    );
+    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
     const querySnapshot = await getDocs(q);
     
     const usuarios: Usuario[] = [];
     querySnapshot.forEach((doc) => {
-      usuarios.push({
-        ...doc.data() as Usuario,
-        id: doc.id
-      });
+      const data = doc.data() as Usuario;
+      const status = (data.statusAcesso || '').toLowerCase();
+      // Capturar variantes de 'Liberado' ou 'Aprovado'
+      if (status === 'liberado' || status === 'aprovado') {
+        usuarios.push({ ...data, id: doc.id });
+      }
     });
     
     return usuarios;
   } catch (error) {
     console.error("Erro ao buscar usuários aprovados:", error);
+    return [];
+  }
+}
+
+export async function buscarUsuariosRecusados(): Promise<Usuario[]> {
+  try {
+    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const usuarios: Usuario[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as Usuario;
+      const status = (data.statusAcesso || '').toLowerCase();
+      // Capturar variantes de 'Recusado' ou 'Rejeitado'
+      if (status === 'recusado' || status === 'rejeitado') {
+        usuarios.push({ ...data, id: doc.id });
+      }
+    });
+    
+    return usuarios;
+  } catch (error) {
+    console.error("Erro ao buscar usuários recusados:", error);
     return [];
   }
 }
@@ -71,7 +89,10 @@ export async function aprovarUsuario(
     const userRef = doc(db, 'usuarios', userId);
     const updateData: any = {
       statusAcesso: 'Liberado',
-      dataAprovacao: serverTimestamp()
+      dataAprovacao: serverTimestamp(),
+      ehAdmin: isAdmin,
+      tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
+      paginasPermitidas: isAdmin ? [] : paginasPermitidas
     };
     
     await updateDoc(userRef, updateData);
@@ -102,12 +123,13 @@ export async function editarPrivilegiosUsuario(
   }
 }
 
-export async function recusarUsuario(userId: string): Promise<void> {
+export async function recusarUsuario(userId: string, motivo: string): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     await updateDoc(userRef, {
       statusAcesso: 'Recusado',
-      dataRevogacao: serverTimestamp()
+      motivoRecusa: motivo,
+      dataRecusa: serverTimestamp()
     });
   } catch (error) {
     console.error("Erro ao recusar usuário:", error);
@@ -115,23 +137,24 @@ export async function recusarUsuario(userId: string): Promise<void> {
   }
 }
 
+export async function restaurarUsuarioParaAguardando(userId: string): Promise<void> {
+  try {
+    const userRef = doc(db, 'usuarios', userId);
+    await updateDoc(userRef, {
+      statusAcesso: 'Aguardando',
+      dataRestauracao: serverTimestamp()
+      // Mantemos o motivoRecusa anterior para histórico, se necessário consultar depois
+    });
+  } catch (error) {
+    console.error("Erro ao restaurar usuário:", error);
+    throw error;
+  }
+}
+
 export async function excluirUsuario(userId: string, uid: string): Promise<void> {
   try {
-    // Excluir documento do Firestore
     const userRef = doc(db, 'usuarios', userId);
     await deleteDoc(userRef);
-    
-    // Tentar excluir do Firebase Authentication
-    // Nota: Esta operação pode falhar se o usuário não estiver autenticado ou não tiver permissões
-    try {
-      const userAuth = auth.currentUser;
-      if (userAuth && userAuth.uid === uid) {
-        await deleteUser(userAuth);
-      }
-    } catch (authError) {
-      console.warn("Não foi possível excluir o usuário do Authentication:", authError);
-      // Continuamos mesmo se não conseguirmos excluir do Auth
-    }
   } catch (error) {
     console.error("Erro ao excluir usuário:", error);
     throw error;

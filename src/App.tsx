@@ -11,6 +11,7 @@ import WaitingApproval from "./pages/WaitingApproval";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import GestaoConteudos from "./pages/GestaoConteudos";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
+import DebugUsers from "./pages/DebugUsers";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -62,6 +63,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProcessoEnfermagem />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/debug-users" 
+                element={
+                  <ProtectedRoute requireAdmin>
+                    <DebugUsers />
                   </ProtectedRoute>
                 } 
               />

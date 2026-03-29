@@ -142,8 +142,14 @@ const ModalDetalhesUsuario: React.FC<ModalDetalhesUsuarioProps> = ({
             </div>
             <div>
               <span className="font-medium">Status de Acesso:</span>
-              <p className="text-gray-700">{usuario.statusAcesso}</p>
+              <p className="text-gray-700">{usuario.statusAcesso || 'Não informado'}</p>
             </div>
+            {usuario.motivoRecusa && (
+              <div className="md:col-span-2 bg-red-50 p-3 rounded border border-red-100">
+                <span className="font-medium text-red-700 flex items-center gap-1">Motivo da Recusa:</span>
+                <p className="text-red-900 mt-1">{usuario.motivoRecusa}</p>
+              </div>
+            )}
             <div>
               <span className="font-medium">Tipo de Usuário:</span>
               <p className="text-gray-700">{usuario.tipoUsuario || 'Não definido'}</p>
@@ -152,10 +158,16 @@ const ModalDetalhesUsuario: React.FC<ModalDetalhesUsuarioProps> = ({
               <span className="font-medium">Data de Cadastro:</span>
               <p className="text-gray-700">{formatarData(usuario.dataCadastro)}</p>
             </div>
-            {usuario.dataLiberacaoAcesso && (
-              <div>
-                <span className="font-medium">Data de Liberação:</span>
-                <p className="text-gray-700">{formatarData(usuario.dataLiberacaoAcesso)}</p>
+            {usuario.dataRecusa && (
+              <div className="bg-red-50 p-2 rounded">
+                <span className="font-medium text-red-700">Data da Recusa:</span>
+                <p className="text-red-900">{formatarData(usuario.dataRecusa)}</p>
+              </div>
+            )}
+            {usuario.dataAprovacao && (
+              <div className="bg-green-50 p-2 rounded">
+                <span className="font-medium text-green-700">Data de Aprovação:</span>
+                <p className="text-green-900">{formatarData(usuario.dataAprovacao)}</p>
               </div>
             )}
             <div>
