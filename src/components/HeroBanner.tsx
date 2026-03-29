@@ -1,8 +1,15 @@
-import React from 'react';
+interface HeroBannerProps {
+  stats?: {
+    profissionaisAprovados: number;
+    processosAndamento: number;
+    processosConcluidos: number;
+  };
+  loading?: boolean;
+}
 
-const HeroBanner = () => {
+const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
   return (
-    <section className="relative w-full overflow-hidden rounded-3xl" role="banner">
+    <section className="relative w-full overflow-hidden rounded-3xl h-full" role="banner">
       {/* Background with multiple gradients for depth */}
       <div className="absolute inset-0 bg-csae-green-800">
         <div className="absolute inset-0 bg-gradient-to-br from-csae-green-600/80 via-transparent to-transparent"></div>
@@ -13,8 +20,8 @@ const HeroBanner = () => {
         }}></div>
       </div>
 
-      <div className="container relative mx-auto px-6 py-12 lg:px-12 lg:py-20 z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      <div className="container relative mx-auto px-6 py-12 lg:px-12 lg:py-16 z-10 flex flex-col justify-center h-full">
+        <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-14">
           {/* Left Column - Content */}
           <div className="flex-1 text-white text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-6 transition-all hover:bg-white/20 underline-offset-4 decoration-white/30 decoration-1">
@@ -22,46 +29,49 @@ const HeroBanner = () => {
               <span className="text-xs font-bold tracking-widest uppercase">Portal Oficial v2.0</span>
             </div>
             
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 tracking-tight">
-              Empoderando o cuidado <br />
-              de <span className="text-transparent bg-clip-text bg-gradient-to-r from-csae-green-200 to-white">enfermagem</span>
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.1] mb-6 tracking-tight">
+              Sua plataforma para o <br />
+              trabalho em <span className="text-transparent bg-clip-text bg-gradient-to-r from-csae-green-100 to-white">enfermagem</span>
             </h2>
             
-            <p className="text-lg sm:text-xl text-csae-green-100/90 leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0 font-medium whitespace-pre-line">
-              Uma plataforma inovadora desenvolvida especialmente para os profissionais da rede pública de Florianópolis.
+            <p className="text-lg text-csae-green-100/90 leading-relaxed mb-10 max-w-xl mx-auto lg:mx-0 font-medium line-clamp-2">
+              Transformando o cuidado com ferramentas tecnológicas desenvolvidas especialmente para a rede municipal de Florianópolis.
             </p>
             
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
-              <div className="flex -space-x-3 overflow-hidden">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-csae-green-800 bg-csae-green-100 flex items-center justify-center text-[10px] font-bold text-csae-green-900 border border-white/10 uppercase">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
+              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                <p className="text-xs text-csae-green-200 uppercase font-black tracking-widest mb-1">Profissionais</p>
+                <p className="text-2xl font-black text-white decoration-csae-green-400 decoration-2">
+                  {loading ? '---' : stats?.profissionaisAprovados || 0}
+                </p>
               </div>
-              <p className="text-sm font-medium text-csae-green-100">
-                <span className="font-bold text-white">+500</span> profissionais ativos na rede
-              </p>
+              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                <p className="text-xs text-csae-green-200 uppercase font-black tracking-widest mb-1">Em Andamento</p>
+                <p className="text-2xl font-black text-white decoration-csae-green-400 decoration-2">
+                  {loading ? '---' : stats?.processosAndamento || 0}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                <p className="text-xs text-csae-green-200 uppercase font-black tracking-widest mb-1">Concluídas</p>
+                <p className="text-2xl font-black text-white decoration-csae-green-400 decoration-2">
+                  {loading ? '---' : stats?.processosConcluidos || 0}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Right Column - Visual */}
-          <div className="flex-shrink-0 relative group">
+          <div className="flex-shrink-0 relative group hidden lg:block">
             {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-csae-green-400 to-blue-400 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+            <div className="absolute -inset-2 bg-gradient-to-r from-csae-green-400/30 to-blue-400/30 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition duration-1000"></div>
             
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 rounded-3xl overflow-hidden shadow-2xl overflow-hidden border border-white/20 transform transition-all duration-500 group-hover:scale-[1.02]">
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-80 lg:h-80 rounded-full overflow-hidden shadow-2xl border border-white/20 transform transition-all duration-700 group-hover:scale-[1.03] group-hover:rotate-1">
               <img
                 src="/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png"
                 alt="Profissional de enfermagem CSAE"
                 className="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] group-hover:grayscale-0 transition-all duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-csae-green-900/60 via-transparent to-transparent"></div>
-              
-              <div className="absolute bottom-6 left-6 right-6 p-4 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-lg">
-                <p className="text-xs font-bold text-white uppercase tracking-widest mb-1">Destaque do Mês</p>
-                <p className="text-sm font-medium text-white/90">Protocolos atualizados com sucesso conforme CIPE® 2025.</p>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/60 to-transparent"></div>
             </div>
           </div>
         </div>

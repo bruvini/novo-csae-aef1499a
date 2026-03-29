@@ -43,7 +43,7 @@ const NavigationCards = () => {
       href: '/gestao-conteudos',
       status: 'Disponível',
       disabled: false,
-      roles: ['gestor', 'admin'],
+      roles: ['admin'],
     },
     {
       id: 'gestao-usuarios',
@@ -64,7 +64,6 @@ const NavigationCards = () => {
   const filteredItems = navigationItems.filter(item => {
     if (item.roles.includes('any')) return true;
     if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
-    if (item.roles.includes('gestor') && (sessionData?.gestorConteudos || sessionData?.ehAdmin)) return true;
     return false;
   });
 

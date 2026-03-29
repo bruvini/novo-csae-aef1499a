@@ -7,13 +7,16 @@ import { doc, getDoc } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
+import { buscarEstatisticasGlobais } from '@/services/bancodados';
 
 const Dashboard = () => {
   const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchDashboardData = async () => {
       const user = auth.currentUser;
       if (user) {
         const userDoc = await getDoc(doc(db, "usuarios", user.uid));
@@ -22,9 +25,18 @@ const Dashboard = () => {
         }
       }
       setLoading(false);
+
+      try {
+        const globalStats = await buscarEstatisticasGlobais();
+        setStats(globalStats);
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas:", error);
+      } finally {
+        setStatsLoading(false);
+      }
     };
 
-    fetchUserData();
+    fetchDashboardData();
   }, []);
 
   if (loading) {
@@ -38,8 +50,8 @@ const Dashboard = () => {
   return (
     <AuthenticatedLayout>
       <div className="space-y-8 pb-12">
-        {/* Banner de Boas-vindas */}
-        <HeroBanner />
+        {/* Banner de Boas-vindas Dinâmico */}
+        <HeroBanner stats={stats} loading={statsLoading} />
 
         {/* Atalhos Rápidos / Cards de Navegação */}
         <NavigationCards />

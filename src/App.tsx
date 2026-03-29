@@ -53,7 +53,7 @@ function App() {
               <Route 
                 path="/gestao-conteudos" 
                 element={
-                  <ProtectedRoute requireGestor>
+                  <ProtectedRoute requireAdmin>
                     <GestaoConteudos />
                   </ProtectedRoute>
                 } 

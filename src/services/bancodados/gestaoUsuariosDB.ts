@@ -160,3 +160,51 @@ export async function excluirUsuario(userId: string, uid: string): Promise<void>
     throw error;
   }
 }
+
+export async function buscarEstatisticasGlobais(): Promise<{
+  profissionaisAprovados: number;
+  processosAndamento: number;
+  processosConcluidos: number;
+}> {
+  try {
+    // 1. Contar profissionais aprovados
+    const usersSnap = await getDocs(collection(db, 'usuarios'));
+    let aprovados = 0;
+    usersSnap.forEach(doc => {
+      const status = (doc.data().statusAcesso || '').toLowerCase();
+      if (status === 'liberado' || status === 'aprovado') {
+        aprovados++;
+      }
+    });
+
+    // 2. Contar processos
+    const processosSnap = await getDocs(collection(db, 'pacientesProcessoEnfermagem'));
+    let andamento = 0;
+    let concluidos = 0;
+    
+    processosSnap.forEach(doc => {
+      const data = doc.data();
+      const processos = data.processosEnfermagem || [];
+      processos.forEach((p: any) => {
+        if (p.status === 'concluido') {
+          concluidos++;
+        } else if (p.status === 'em_andamento') {
+          andamento++;
+        }
+      });
+    });
+
+    return {
+      profissionaisAprovados: aprovados,
+      processosAndamento: andamento,
+      processosConcluidos: concluidos
+    };
+  } catch (error) {
+    console.error("Erro ao buscar estatísticas globais:", error);
+    return {
+      profissionaisAprovados: 0,
+      processosAndamento: 0,
+      processosConcluidos: 0
+    };
+  }
+}

@@ -6,10 +6,9 @@ import LoadingOverlay from "./LoadingOverlay";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  requireGestor?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false, requireGestor = false }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
   const { user, sessionData, loading, logout } = useAuth();
   const location = useLocation();
 
@@ -33,10 +32,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   }
 
   if (requireAdmin && !sessionData.ehAdmin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  if (requireGestor && !sessionData.gestorConteudos && !sessionData.ehAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
 
