@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, increment } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -354,7 +354,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           historicoAcesso: arrayUnion({
             dataHora: serverTimestamp(),
             ip: 'N/A',
-          })
+          }),
+          totalAcessos: increment(1)
         });
         console.log('Histórico de acesso registrado com sucesso');
       } catch (error) {

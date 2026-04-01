@@ -44,6 +44,7 @@ export interface Usuario {
   tipoUsuario: 'Comum' | 'Admin' | 'Administrador';
   statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado' | 'Rejeitado';
   paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
+  totalAcessos?: number;
   dataCadastro?: Timestamp;
   dataRecusa?: Timestamp;
   dataAprovacao?: Timestamp;

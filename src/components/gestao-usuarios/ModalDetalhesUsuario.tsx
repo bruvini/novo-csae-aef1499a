@@ -155,9 +155,15 @@ const ModalDetalhesUsuario: React.FC<ModalDetalhesUsuarioProps> = ({
               <p className="text-gray-700">{usuario.tipoUsuario || 'Não definido'}</p>
             </div>
             <div>
-              <span className="font-medium">Data de Cadastro:</span>
-              <p className="text-gray-700">{formatarData(usuario.dataCadastro)}</p>
+              <span className="font-medium text-slate-600">Data de Cadastro:</span>
+              <p className="text-gray-700 font-medium">{formatarData(usuario.dataCadastro)}</p>
             </div>
+            {usuario.totalAcessos !== undefined && (
+              <div>
+                <span className="font-medium text-slate-600">Total de Acessos:</span>
+                <p className="text-csae-green-700 font-bold text-lg">{usuario.totalAcessos}</p>
+              </div>
+            )}
             {usuario.dataRecusa && (
               <div className="bg-red-50 p-2 rounded">
                 <span className="font-medium text-red-700">Data da Recusa:</span>

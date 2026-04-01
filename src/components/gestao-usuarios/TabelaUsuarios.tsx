@@ -73,7 +73,9 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
           <TableRow>
             <TableHead className="font-bold">Nome Completo</TableHead>
             {tipo === 'aprovados' && <TableHead className="font-bold">Tipo de Usuário</TableHead>}
-            <TableHead className="font-bold">Data de Cadastro</TableHead>
+            {tipo === 'aguardando' && <TableHead className="font-bold">Data de Cadastro</TableHead>}
+            {tipo === 'aprovados' && <TableHead className="font-bold">Data de Aprovação</TableHead>}
+            {tipo === 'recusados' && <TableHead className="font-bold">Data de Recusa</TableHead>}
             {tipo === 'recusados' && <TableHead className="font-bold">Motivo da Recusa</TableHead>}
             <TableHead className="text-right font-bold w-[250px]">Ações</TableHead>
           </TableRow>
@@ -90,7 +92,12 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                 </TableCell>
               )}
               <TableCell>
-                {formatarData(usuario.dataCadastro)}
+                {tipo === 'aprovados' 
+                  ? formatarData(usuario.dataAprovacao || usuario.dataCadastro)
+                  : tipo === 'recusados'
+                    ? formatarData(usuario.dataRecusa || usuario.dataCadastro)
+                    : formatarData(usuario.dataCadastro)
+                }
               </TableCell>
               {tipo === 'recusados' && (
                 <TableCell className="max-w-[300px]">
