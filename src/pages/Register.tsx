@@ -8,7 +8,7 @@ import { ArrowLeft, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
 import { serverTimestamp } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 import {
@@ -192,17 +192,34 @@ const Register = () => {
 
       const sanitizedData = sanitizarDados(data);
 
-      await cadastrarUsuario({
-        uid: usuarioAuth.uid,
-        email: data.email.trim().toLowerCase(),
-        ...sanitizedData,
-        termoResponsabilidadeAceito: true,
-        termoResponsabilidadeData: serverTimestamp(),
-        ehAdmin: false,
-        gestorConteudos: false,
-        tipoUsuario: "Comum",
-        statusAcesso: "Aguardando", // Explicitamente definindo status inicial
-      });
+      try {
+        await cadastrarUsuario({
+          uid: usuarioAuth.uid,
+          email: data.email.trim().toLowerCase(),
+          ...sanitizedData,
+          termoResponsabilidadeAceito: true,
+          termoResponsabilidadeData: serverTimestamp(),
+          ehAdmin: false,
+          gestorConteudos: false,
+          tipoUsuario: "Comum",
+          statusAcesso: "Aguardando", // Explicitamente definindo status inicial
+        });
+      } catch (firestoreError) {
+        console.error("Erro ao gravar documento no Firestore:", firestoreError);
+        // Rollback: excluir usuário do Authentication se Firestore falhar
+        try {
+          await deleteUser(usuarioAuth);
+          console.log("Rollback executado: usuário removido do Auth.");
+        } catch (rollbackError) {
+          console.error("Erro severo ao realizar rollback no Auth:", rollbackError);
+        }
+        
+        // Relançar um erro claro
+        if (firestoreError instanceof Error && firestoreError.message.includes('permission-denied')) {
+            throw new Error("Permissão negada no Firestore (permission-denied). Contate o suporte.");
+        }
+        throw new Error("Falha na gravação do Firestore. O cadastro foi revertido.");
+      }
 
       await signOut(auth);
 
@@ -222,6 +239,8 @@ const Register = () => {
         } else if (firebaseError.code === 'auth/weak-password') {
             description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
         }
+      } else if (error instanceof Error) {
+        description = error.message; // Mostrar a mensagem real de erro caso não seja firebase auth
       }
       toast({
         title: "Erro no cadastro",
