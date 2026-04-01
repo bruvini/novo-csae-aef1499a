@@ -158,12 +158,10 @@ const ModalDetalhesUsuario: React.FC<ModalDetalhesUsuarioProps> = ({
               <span className="font-medium text-slate-600">Data de Cadastro:</span>
               <p className="text-gray-700 font-medium">{formatarData(usuario.dataCadastro)}</p>
             </div>
-            {usuario.totalAcessos !== undefined && (
-              <div>
-                <span className="font-medium text-slate-600">Total de Acessos:</span>
-                <p className="text-csae-green-700 font-bold text-lg">{usuario.totalAcessos}</p>
-              </div>
-            )}
+            <div>
+              <span className="font-medium text-slate-600">Total de Acessos:</span>
+              <p className="text-csae-green-700 font-bold text-lg">{usuario.totalAcessos || 0}</p>
+            </div>
             {usuario.dataRecusa && (
               <div className="bg-red-50 p-2 rounded">
                 <span className="font-medium text-red-700">Data da Recusa:</span>

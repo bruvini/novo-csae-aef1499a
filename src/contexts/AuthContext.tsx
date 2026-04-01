@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, increment, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -347,20 +347,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Status aprovado - registrar histórico de acesso
+      // Status aprovado - registrar histórico e estatísticas de acesso
       try {
         const updateRef = doc(db, 'usuarios', userDoc.id);
+        
+        // 1. Atualizar contador e data do último acesso (Operação Segura)
+        await updateDoc(updateRef, {
+          totalAcessos: increment(1),
+          ultimoAcesso: serverTimestamp()
+        });
+        console.log(`[Auth] Contador de acessos incrementado para UID: ${user.uid}`);
+
+        // 2. Adicionar ao array de histórico (Operação separada para evitar erros de serverTimestamp no arrayUnion)
         await updateDoc(updateRef, {
           historicoAcesso: arrayUnion({
-            dataHora: serverTimestamp(),
+            dataHora: Timestamp.now(), // Usando Timestamp do cliente para permitir gravação no array
             ip: 'N/A',
-          }),
-          totalAcessos: increment(1)
+          })
         });
-        console.log('Histórico de acesso registrado com sucesso');
+        console.log(`[Auth] Histórico de acesso registrado para UID: ${user.uid}`);
       } catch (error) {
-        console.error('Erro ao registrar histórico de acesso:', error);
-        // Não impedir o login por erro no histórico
+        console.error('[Auth] Erro crítico ao atualizar metadados de acesso no Firestore:', error);
+        // Não impedimos o fluxo de login se apenas as estatísticas falharem
       }
 
       // Garantir que usuários existentes tenham paginasPermitidas definidas
