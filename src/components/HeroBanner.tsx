@@ -78,7 +78,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 200 200">
                 <path id="innerCurve" fill="transparent" d="M 10,100 a 90,90 0 0,0 180,0" />
                 <text className="text-[10px] fill-white/60 font-medium tracking-wide">
-                  <textPath href="#innerCurve" startOffset="65%">
+                  <textPath href="#innerCurve" startOffset="55%">
                     Imagem gerada por IA
                   </textPath>
                 </text>
