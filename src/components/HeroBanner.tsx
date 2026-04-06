@@ -40,13 +40,13 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Profissionais Conectados</p>
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Profissionais Ativos</p>
                 <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.profissionaisAprovados || 0}
                 </p>
               </div>
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Cuidados Sistematizados</p>
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Processos de Enfermagem Realizados</p>
                 <div className="flex items-baseline gap-2 mt-auto">
                   <p className="text-2xl font-black text-white">
                     {loading ? '---' : totalProcessos}
@@ -55,7 +55,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               </div>
               
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Engajamento da Rede</p>
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Acessos ao Portal</p>
                 <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.totalAcessosPlataforma || 0}
                 </p>

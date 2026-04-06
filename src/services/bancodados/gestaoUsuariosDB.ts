@@ -176,31 +176,21 @@ export async function buscarEstatisticasGlobais(): Promise<{
     let andamento = 0;
     let concluidos = 0;
 
-    // 1. Contar profissionais aprovados e somar acessos via Aggregation Query
-    const qAcesso = query(
-      collection(db, 'usuarios'),
-      where('statusAcesso', 'in', ['Aprovado', 'Liberado', 'aprovado', 'liberado'])
-    );
-    
+    // 1. Contar profissionais aprovados e somar acessos via Iteração Client-side (visto flutuação na base)
     try {
-      const aggSnapshot = await getAggregateFromServer(qAcesso, {
-        totalAcessos: sum('totalAcessos'),
-        totalAprovados: count()
-      });
+      const usuariosSnap = await getDocs(collection(db, 'usuarios'));
       
-      totalAcessosPlataforma = aggSnapshot.data().totalAcessos || 0;
-      aprovados = aggSnapshot.data().totalAprovados || 0;
-    } catch (aggError) {
-      console.error("Erro na aggregation de acessos. Tentando fallback manual:", aggError);
-      try {
-        const fallbackSnap = await getDocs(qAcesso);
-        aprovados = fallbackSnap.size;
-        fallbackSnap.forEach(doc => {
-          totalAcessosPlataforma += (doc.data().totalAcessos || 0);
-        });
-      } catch (fallbackError) {
-        console.error("Erro no fallback de usuários globais:", fallbackError);
-      }
+      usuariosSnap.forEach(doc => {
+        const data = doc.data();
+        const status = (data.statusAcesso || '').toLowerCase().trim();
+        
+        if (status === 'aprovado' || status === 'liberado') {
+          aprovados++;
+          totalAcessosPlataforma += (data.totalAcessos || 0);
+        }
+      });
+    } catch (userError) {
+      console.error("Erro ao iterar usuários globais:", userError);
     }
 
     // 2. Contar processos globalmente (estritamente global, sem uid)
