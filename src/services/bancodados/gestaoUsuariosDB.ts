@@ -173,14 +173,16 @@ export async function buscarEstatisticasGlobais(): Promise<{
   try {
     let aprovados = 0;
     let totalAcessosPlataforma = 0;
+    let andamento = 0;
+    let concluidos = 0;
 
     // 1. Contar profissionais aprovados e somar acessos via Aggregation Query
+    const qAcesso = query(
+      collection(db, 'usuarios'),
+      where('statusAcesso', 'in', ['Aprovado', 'Liberado', 'aprovado', 'liberado'])
+    );
+    
     try {
-      const qAcesso = query(
-        collection(db, 'usuarios'),
-        where('statusAcesso', 'in', ['Aprovado', 'Liberado', 'aprovado', 'liberado'])
-      );
-      
       const aggSnapshot = await getAggregateFromServer(qAcesso, {
         totalAcessos: sum('totalAcessos'),
         totalAprovados: count()
@@ -189,25 +191,36 @@ export async function buscarEstatisticasGlobais(): Promise<{
       totalAcessosPlataforma = aggSnapshot.data().totalAcessos || 0;
       aprovados = aggSnapshot.data().totalAprovados || 0;
     } catch (aggError) {
-      console.error("Erro na aggregation de acessos:", aggError);
+      console.error("Erro na aggregation de acessos. Tentando fallback manual:", aggError);
+      try {
+        const fallbackSnap = await getDocs(qAcesso);
+        aprovados = fallbackSnap.size;
+        fallbackSnap.forEach(doc => {
+          totalAcessosPlataforma += (doc.data().totalAcessos || 0);
+        });
+      } catch (fallbackError) {
+        console.error("Erro no fallback de usuários globais:", fallbackError);
+      }
     }
 
-    // 2. Contar processos
-    const processosSnap = await getDocs(collection(db, 'pacientesProcessoEnfermagem'));
-    let andamento = 0;
-    let concluidos = 0;
-    
-    processosSnap.forEach(doc => {
-      const data = doc.data();
-      const processos = data.processosEnfermagem || [];
-      processos.forEach((p: any) => {
-        if (p.status === 'concluido') {
-          concluidos++;
-        } else if (p.status === 'em_andamento') {
-          andamento++;
-        }
+    // 2. Contar processos globalmente (estritamente global, sem uid)
+    try {
+      const processosSnap = await getDocs(collection(db, 'pacientesProcessoEnfermagem'));
+      
+      processosSnap.forEach(doc => {
+        const data = doc.data();
+        const processos = data.processosEnfermagem || [];
+        processos.forEach((p: any) => {
+          if (p.status === 'concluido') {
+            concluidos++;
+          } else if (p.status === 'em_andamento') {
+            andamento++;
+          }
+        });
       });
-    });
+    } catch (procError) {
+      console.error("Erro na busca global de processos:", procError);
+    }
 
     return {
       profissionaisAprovados: aprovados,
@@ -216,7 +229,7 @@ export async function buscarEstatisticasGlobais(): Promise<{
       totalAcessosPlataforma
     };
   } catch (error) {
-    console.error("Erro ao buscar estatísticas globais:", error);
+    console.error("Erro critico ao buscar estatísticas globais:", error);
     return {
       profissionaisAprovados: 0,
       processosAndamento: 0,

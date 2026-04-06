@@ -39,24 +39,24 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-1">Profissionais cadastrados</p>
-                <p className="text-2xl font-black text-white">
+              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Profissionais Conectados</p>
+                <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.profissionaisAprovados || 0}
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-1">Processos de Enfermagem realizados</p>
-                <div className="flex items-baseline gap-2">
+              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Cuidados Sistematizados</p>
+                <div className="flex items-baseline gap-2 mt-auto">
                   <p className="text-2xl font-black text-white">
                     {loading ? '---' : totalProcessos}
                   </p>
                 </div>
               </div>
               
-              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-1">Total de Acessos</p>
-                <p className="text-2xl font-black text-white">
+              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Engajamento da Rede</p>
+                <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.totalAcessosPlataforma || 0}
                 </p>
               </div>
@@ -70,15 +70,15 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
             
             <div className="relative w-56 h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden shadow-2xl border border-white/20 transform transition-all duration-700 group-hover:scale-[1.03]">
               <img
-                src="/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png"
+                src="/enfermeira-capa.png"
                 alt="Profissional de enfermagem CSAE"
                 className="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] group-hover:grayscale-0 transition-all duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/60 to-transparent"></div>
               <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 200 200">
-                <path id="innerCurve" fill="transparent" d="M 100,10 a 90,90 0 1,1 0,180 a 90,90 0 1,1 0,-180" />
+                <path id="innerCurve" fill="transparent" d="M 10,100 a 90,90 0 0,0 180,0" />
                 <text className="text-[10px] fill-white/60 font-medium tracking-wide">
-                  <textPath href="#innerCurve" startOffset="33%">
+                  <textPath href="#innerCurve" startOffset="65%">
                     Imagem gerada por IA
                   </textPath>
                 </text>
