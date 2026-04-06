@@ -8,7 +8,10 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  orderBy
+  orderBy,
+  getAggregateFromServer,
+  sum,
+  count
 } from 'firebase/firestore';
 import { deleteUser } from 'firebase/auth';
 import { db, auth } from '../firebase';
@@ -165,17 +168,29 @@ export async function buscarEstatisticasGlobais(): Promise<{
   profissionaisAprovados: number;
   processosAndamento: number;
   processosConcluidos: number;
+  totalAcessosPlataforma: number;
 }> {
   try {
-    // 1. Contar profissionais aprovados
-    const usersSnap = await getDocs(collection(db, 'usuarios'));
     let aprovados = 0;
-    usersSnap.forEach(doc => {
-      const status = (doc.data().statusAcesso || '').toLowerCase();
-      if (status === 'liberado' || status === 'aprovado') {
-        aprovados++;
-      }
-    });
+    let totalAcessosPlataforma = 0;
+
+    // 1. Contar profissionais aprovados e somar acessos via Aggregation Query
+    try {
+      const qAcesso = query(
+        collection(db, 'usuarios'),
+        where('statusAcesso', 'in', ['Aprovado', 'Liberado', 'aprovado', 'liberado'])
+      );
+      
+      const aggSnapshot = await getAggregateFromServer(qAcesso, {
+        totalAcessos: sum('totalAcessos'),
+        totalAprovados: count()
+      });
+      
+      totalAcessosPlataforma = aggSnapshot.data().totalAcessos || 0;
+      aprovados = aggSnapshot.data().totalAprovados || 0;
+    } catch (aggError) {
+      console.error("Erro na aggregation de acessos:", aggError);
+    }
 
     // 2. Contar processos
     const processosSnap = await getDocs(collection(db, 'pacientesProcessoEnfermagem'));
@@ -197,14 +212,16 @@ export async function buscarEstatisticasGlobais(): Promise<{
     return {
       profissionaisAprovados: aprovados,
       processosAndamento: andamento,
-      processosConcluidos: concluidos
+      processosConcluidos: concluidos,
+      totalAcessosPlataforma
     };
   } catch (error) {
     console.error("Erro ao buscar estatísticas globais:", error);
     return {
       profissionaisAprovados: 0,
       processosAndamento: 0,
-      processosConcluidos: 0
+      processosConcluidos: 0,
+      totalAcessosPlataforma: 0
     };
   }
 }

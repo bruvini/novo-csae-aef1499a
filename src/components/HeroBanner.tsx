@@ -3,6 +3,7 @@ interface HeroBannerProps {
     profissionaisAprovados: number;
     processosAndamento: number;
     processosConcluidos: number;
+    totalAcessosPlataforma: number;
   };
   loading?: boolean;
 }
@@ -26,10 +27,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Left Column - Content */}
           <div className="flex-1 text-white text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full border border-white/20 mb-4 transition-all hover:bg-white/20 underline-offset-4 decoration-white/30 decoration-1">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-csae-green-400 animate-pulse"></span>
-              <span className="text-[10px] font-bold tracking-widest uppercase">Portal Oficial v2.0</span>
-            </div>
+
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.1] mb-4 tracking-tight">
               Sua plataforma para o <br />
@@ -40,7 +38,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               Transformando o cuidado com ferramentas tecnológicas desenvolvidas especialmente para a rede municipal de Florianópolis.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
               <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
                 <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-1">Profissionais cadastrados</p>
                 <p className="text-2xl font-black text-white">
@@ -53,12 +51,14 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
                   <p className="text-2xl font-black text-white">
                     {loading ? '---' : totalProcessos}
                   </p>
-                  {!loading && (
-                    <span className="text-[10px] text-white/40 font-medium">
-                      ({stats?.processosAndamento} ativos / {stats?.processosConcluidos} concluídos)
-                    </span>
-                  )}
                 </div>
+              </div>
+              
+              <div className="bg-white/5 backdrop-blur-sm p-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-1">Total de Acessos</p>
+                <p className="text-2xl font-black text-white">
+                  {loading ? '---' : stats?.totalAcessosPlataforma || 0}
+                </p>
               </div>
             </div>
           </div>
@@ -75,6 +75,14 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
                 className="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] group-hover:grayscale-0 transition-all duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/60 to-transparent"></div>
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 200 200">
+                <path id="innerCurve" fill="transparent" d="M 100,10 a 90,90 0 1,1 0,180 a 90,90 0 1,1 0,-180" />
+                <text className="text-[10px] fill-white/60 font-medium tracking-wide">
+                  <textPath href="#innerCurve" startOffset="33%">
+                    Imagem gerada por IA
+                  </textPath>
+                </text>
+              </svg>
             </div>
           </div>
         </div>

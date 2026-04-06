@@ -61,7 +61,7 @@ O deploy é automatizado via Firebase Hosting.
 - **Termo de Responsabilidade**: É obrigatório o aceite do termo no primeiro acesso (modal em `src/components/TermoResponsabilidadeModal.tsx`).
 
 ## 8. Pendências Conhecidas (Backlog)
-- [ ] Implementar gestão completa do Processo de Enfermagem (Fase 2). Adotar como requisito de arquitetura futura os padrões FHIR, protocolo HL7 para mensageria e vocabulário SNOMED CT para codificação dos dados clínicos.
+- [ ] Implementar gestão completa do Processo de Enfermagem (Fase 2). Adotar como requisito de arquitetura futura os padrões FHIR, protocolo HL7 para mensageria e vocabulário SNOMED CT para codificação dos dados clínicos. Lembrete: qualquer manipulação da entidade "Processos de Enfermagem" deve garantir aderência imediata ao modelo de recursos FHIR.
 - [ ] Refatorar tipos `any` remanescentes em serviços de banco de dados.
 - [ ] Migração de modelagem de dados para padrão FHIR/HL7.
 - [ ] Adicionar testes automatizados (unitários e e2e).
