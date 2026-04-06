@@ -10,9 +10,10 @@ O sistema manipula dados sensíveis de saúde e informações pessoais (CPF, RG,
 - **Dívida Técnica**: No futuro, considerar criptografia adicional para campos extremamente sensíveis em repouso.
 
 ## 2. Autenticação e Autorização
-- **Autenticação**: Gerida pelo Firebase Auth.
+- **Autenticação**: Gerida pelo Firebase Auth. Implementada política de tempo de sessão curto através de `browserSessionPersistence`, exigindo re-autenticação se o navegador ou aba forem fechados.
 - **Autorização**: Realizada através de verificação no Firestore (`usuarios/{uid}`). O campo `ehAdmin` determina permissões administrativas.
 - **Proteção de Rotas**: Vias protegidas pelo componente `ProtectedRoute`. Nenhuma rota administrativa deve ser acessível sem autenticação e autorização adequadas.
+- **Auditoria**: O sistema audita e registra sempre o último acesso do usuário logado, assim como o total de acessos para acompanhamento e segurança.
 
 ## 3. Estratégia de Segredos e Variáveis de Ambiente
 - **Regra de Ouro**: Nenhuma senha, chave privada ou API Key real deve permanecer hardcoded no código versionado.

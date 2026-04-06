@@ -74,6 +74,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
             <TableHead className="font-bold">Nome Completo</TableHead>
             {tipo === 'aprovados' && <TableHead className="font-bold">Tipo de Usuário</TableHead>}
             {tipo === 'aguardando' && <TableHead className="font-bold">Data de Cadastro</TableHead>}
+            {tipo === 'aprovados' && <TableHead className="font-bold">Qtd. Acessos</TableHead>}
+            {tipo === 'aprovados' && <TableHead className="font-bold">Último Acesso</TableHead>}
             {tipo === 'aprovados' && <TableHead className="font-bold">Data de Aprovação</TableHead>}
             {tipo === 'recusados' && <TableHead className="font-bold">Data de Recusa</TableHead>}
             {tipo === 'recusados' && <TableHead className="font-bold">Motivo da Recusa</TableHead>}
@@ -87,9 +89,17 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                 {usuario.dadosPessoais?.nomeCompleto || 'Nome não informado'}
               </TableCell>
               {tipo === 'aprovados' && (
-                <TableCell>
-                  {getTipoUsuarioBadge(usuario)}
-                </TableCell>
+                <>
+                  <TableCell>
+                    {getTipoUsuarioBadge(usuario)}
+                  </TableCell>
+                  <TableCell>
+                    {usuario.totalAcessos || 0}
+                  </TableCell>
+                  <TableCell>
+                    {formatarData(usuario.ultimoAcesso)}
+                  </TableCell>
+                </>
               )}
               <TableCell>
                 {tipo === 'aprovados' 

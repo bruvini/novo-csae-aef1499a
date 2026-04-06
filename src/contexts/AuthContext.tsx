@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, increment, Timestamp } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -244,7 +244,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         // Configurar persistência local
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(auth, browserSessionPersistence);
         
         // Monitorar mudanças no estado de autenticação
         const unsubscribe = onAuthStateChanged(auth, async (user) => {

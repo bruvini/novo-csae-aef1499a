@@ -27,7 +27,7 @@ O projeto utiliza uma stack moderna baseada em:
 ## 4. Critérios de Qualidade
 - **Linting**: O comando `npm run lint` não deve retornar erros bloqueantes.
 - **Build**: O comando `npm run build` deve passar sem falhas.
-- **Segurança**: Nenhuma credencial ou segredo deve ser versionado no código-fonte. Uso obrigatório de `.env`.
+- **Segurança**: Nenhuma credencial ou segredo deve ser versionado no código-fonte. Uso obrigatório de `.env`. Uso obrigatório de política de sessão curta (`browserSessionPersistence`) e auditoria contínua de últimos acessos dos usuários.
 
 ## 5. Papéis e Responsabilidades
 - **Desenvolvedor**: Responsável pela implementação e testes unitários.
