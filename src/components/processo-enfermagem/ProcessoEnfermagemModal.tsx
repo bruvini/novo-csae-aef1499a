@@ -42,6 +42,7 @@ import EtapaDiagnostico from './EtapaDiagnostico';
 import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
+import EtapaResumo from './EtapaResumo';
 import { ImplementacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 
@@ -155,8 +156,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             });
             if (peloMenosUmaImplementada) etapasConcluidas.push(4);
             
-            // Etapa 5 (Evolução) - Sempre disponível se a 4 estiver completa ou se já salva
-            if (atualizado.evolucao?.resumoGerado) etapasConcluidas.push(5);
+            // Etapa 5 (Evolução / Checklist)
+            if (atualizado.evolucao?.intervencoesExecutadas && Object.keys(atualizado.evolucao.intervencoesExecutadas).length > 0) etapasConcluidas.push(5);
+            
+            // Etapa 6 (Resumo Final)
+            if (atualizado.evolucao?.resumoGerado) etapasConcluidas.push(6);
             
             setEtapasCompletadas(etapasConcluidas);
           }
@@ -420,6 +424,14 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             onUpdateEvolucao={handleUpdateEvolucao}
           />
         );
+      case 6:
+        return (
+          <EtapaResumo
+            processo={processo}
+            paciente={paciente}
+            onUpdateEvolucao={handleUpdateEvolucao}
+          />
+        );
       default:
         return null;
     }
@@ -494,14 +506,28 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Salvar Progresso
             </Button>
-            <Button 
-              type="button" 
-              onClick={handleConcluirProcesso}
-              disabled={etapaAtual !== 5 || isSaving}
-            >
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Concluir Processo
-            </Button>
+            
+            {etapaAtual < 6 ? (
+              <Button 
+                type="button" 
+                onClick={() => {
+                   handleSalvarProgresso();
+                   handleEtapaChange(etapaAtual + 1);
+                }}
+                disabled={isSaving}
+              >
+                Avançar
+              </Button>
+            ) : (
+              <Button 
+                type="button" 
+                onClick={handleConcluirProcesso}
+                disabled={isSaving}
+              >
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Concluir Processo
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

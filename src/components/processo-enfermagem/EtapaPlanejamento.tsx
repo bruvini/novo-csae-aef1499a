@@ -86,18 +86,18 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     salvarPlanejamento(updated);
   };
 
-  const handleIntervencaoChange = (diagnosticoId: string, intervencao: string, checked: boolean) => {
+  const handleIntervencaoChange = (diagnosticoId: string, acaoPrescrita: string, acaoEnfermeiro: string | undefined, checked: boolean) => {
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
         const intervencoes = diag.intervencoesSelecionadas || [];
         if (checked) {
           // Adicionar intervenção se não existir
-          if (!intervencoes.some(i => i.acaoPrescrita === intervencao)) {
-            intervencoes.push({ acaoPrescrita: intervencao, tipo: 'padrao' });
+          if (!intervencoes.some(i => i.acaoPrescrita === acaoPrescrita)) {
+            intervencoes.push({ acaoPrescrita, acaoEnfermeiro, tipo: 'padrao' });
           }
         } else {
           // Remover intervenção
-          const index = intervencoes.findIndex(i => i.acaoPrescrita === intervencao);
+          const index = intervencoes.findIndex(i => i.acaoPrescrita === acaoPrescrita);
           if (index > -1) {
             intervencoes.splice(index, 1);
           }
@@ -407,7 +407,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                     id={`${diagnostico.diagnosticoId}-int-${index}`}
                                     checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}
                                     onCheckedChange={(checked) => 
-                                      handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, checked as boolean)
+                                      handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, intervencao.acaoEnfermeiro, checked as boolean)
                                     }
                                   />
                                   <Label htmlFor={`${diagnostico.diagnosticoId}-int-${index}`} className="flex-1 cursor-pointer">

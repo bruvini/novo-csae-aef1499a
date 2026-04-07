@@ -27,6 +27,7 @@ export interface DiagnosticoEnfermagem {
 // NOVOS TIPOS para a Etapa de Planejamento
 export interface IntervencaoSelecionada {
   acaoPrescrita: string;
+  acaoEnfermeiro?: string;
   tipo: 'padrao' | 'autoral'; // 'padrao' para as do sistema, 'autoral' para as customizadas
 }
 
@@ -60,6 +61,7 @@ export interface ImplementacaoEnfermagem {
 // NOVO TIPO para a Etapa de Evolução
 export interface EvolucaoEnfermagem {
   resumoGerado: string; // Armazenará o texto copiado para o histórico
+  intervencoesExecutadas?: { [tituloDiagnostico: string]: string[] };
 }
 
 export interface ProcessoEnfermagem {
@@ -67,7 +69,7 @@ export interface ProcessoEnfermagem {
   pacienteId: string;
   enfermeiroId: string;
   status: 'em_andamento' | 'concluido';
-  etapaAtual: number; // de 1 a 5
+  etapaAtual: number; // de 1 a 6
   dataInicio: Timestamp;
   dataConclusao?: Timestamp;
   sessoesDeTrabalho: SessaoDeTrabalho[]; // NOVO CAMPO: um array para registrar todas as sessões
@@ -116,5 +118,11 @@ export const ETAPAS_PROCESSO: EtapaProcesso[] = [
     nome: "Evolução",
     descricao: "Evolução de Enfermagem – compreende a avaliação dos resultados alcançados de enfermagem e saúde da pessoa, família, coletividade e grupos especiais. Esta etapa permite a análise e a revisão de todo o Processo de Enfermagem.",
     icone: "TrendingUp"
+  },
+  {
+    numero: 6,
+    nome: "Resumo Final",
+    descricao: "Geração e revisão do prontuário final contendo todas as etapas do processo, incluindo a evolução das ações executadas.",
+    icone: "CheckCircle"
   }
 ];

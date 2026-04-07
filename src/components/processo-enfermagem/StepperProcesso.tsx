@@ -19,7 +19,8 @@ const ICONES_ETAPAS = {
   FileText,
   Target,
   Play,
-  TrendingUp
+  TrendingUp,
+  CheckCircle
 };
 
 const StepperProcesso: React.FC<StepperProcessoProps> = ({
@@ -28,7 +29,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
   etapasCompletadas,
   processo
 }) => {
-  const progressoAtual = (etapaAtual / 5) * 100;
+  const progressoAtual = (etapaAtual / 6) * 100;
 
   const isEtapaAcessivel = (numeroEtapa: number) => {
     if (numeroEtapa <= etapaAtual || etapasCompletadas.includes(numeroEtapa)) {
@@ -80,6 +81,18 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
       return peloMenosUmaImplementada;
     }
 
+    if (numeroEtapa === 6 && processo) {
+      // Para acessar o resumo, a evolução (etapa 5) já precisa estar liberada.
+      const implementacao = processo.implementacao || {};
+      let peloMenosUmaImplementada = false;
+      Object.values(implementacao).forEach(diagnostico => {
+        diagnostico.intervencoes.forEach(intervencao => {
+          if (intervencao.implementadoNestaConsulta) { peloMenosUmaImplementada = true; }
+        });
+      });
+      return peloMenosUmaImplementada;
+    }
+
     return false;
   };
 
@@ -95,8 +108,8 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
     if (numeroEtapa === 4) {
       return "Para liberar esta etapa, todos os diagnósticos precisam ter um resultado esperado e pelo menos uma intervenção definida no planejamento.";
     }
-    if (numeroEtapa === 5) {
-      return "Para liberar esta etapa, marque pelo menos uma intervenção como implementada na etapa anterior.";
+    if (numeroEtapa === 5 || numeroEtapa === 6) {
+      return "Para liberar esta etapa, marque pelo menos uma intervenção como implementada na Etapa 4.";
     }
     return "Complete as etapas anteriores para liberar.";
   };
@@ -109,7 +122,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
             Progresso do Processo de Enfermagem
           </h3>
           <span className="text-sm text-gray-600">
-            Etapa {etapaAtual} de 5
+            Etapa {etapaAtual} de 6
           </span>
         </div>
 
