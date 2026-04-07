@@ -6,13 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { HeartPulse, Loader2, LogIn, ClipboardCheck, ArrowRight, KeyRound } from "lucide-react";
+import { Loader2, LogIn, ArrowRight, KeyRound, Eye, EyeOff } from "lucide-react";
 import { auth } from "@/services/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 
 const Index = () => {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const { user, login, loading: checkingAuth } = useAuth();
@@ -31,7 +32,7 @@ const Index = () => {
 
     try {
       await login(email, senha);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Erro no login:", err);
     } finally {
       setCarregando(false);
@@ -55,7 +56,7 @@ const Index = () => {
         title: "Instruções enviadas",
         description: "Um link de redefinição foi enviado para o seu e-mail.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro na redefinição:", error);
       toast({
         title: "Erro no envio",
@@ -65,6 +66,10 @@ const Index = () => {
     } finally {
       setResetLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setMostrarSenha(!mostrarSenha);
   };
 
   if (checkingAuth) {
@@ -77,30 +82,23 @@ const Index = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 overflow-x-hidden">
-      {/* Navbar Simple */}
-      <nav className="py-6 px-4 md:px-8 bg-white border-b absolute top-0 w-full z-20">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <HeartPulse className="w-8 h-8 text-csae-green-600" />
-            <span className="text-xl font-bold text-gray-800">Portal CSAE 2.0</span>
-          </div>
-          <div className="flex gap-4">
-            {/* Registro centralizado no card de login conforme nova UX */}
-          </div>
-        </div>
-      </nav>
-
       {/* Hero-like Section with Login */}
-      <main className="flex-1 container mx-auto px-4 pt-32 pb-12 flex flex-col items-center justify-center">
+      <main className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center">
         <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
           
           <div className="text-left space-y-8 animate-fade-in order-2 md:order-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-csae-green-100 text-csae-green-700 text-sm font-semibold mb-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-csae-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-csae-green-500"></span>
-              </span>
-              Plataforma Oficial SMS Florianópolis
+            <div className="flex items-center gap-6 mb-8">
+              <img 
+                src="/logo_csae.png" 
+                alt="Logo CSAE Floripa" 
+                className="h-24 w-auto object-contain" 
+              />
+              <img 
+                src="/logo_enfermagem_floripa.jpg" 
+                alt="Logo Enfermagem Floripa" 
+                className="h-24 w-auto object-contain mix-blend-multiply" 
+                style={{ filter: "contrast(1.1) brightness(1.05)" }}
+              />
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
@@ -111,26 +109,6 @@ const Index = () => {
             <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
               Padronização, segurança de dados e agilidade na assistência à saúde da rede municipal. O Portal CSAE simplifica o registro e a consulta clínica.
             </p>
-
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center gap-4 group">
-                <div className="bg-white p-3 rounded-2xl shadow-sm border group-hover:border-csae-green-500 transition-colors">
-                  <ClipboardCheck className="text-csae-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800">Portal em Evolução</h3>
-                  <p className="text-sm text-gray-500">Garantindo a melhor experiência para os enfermeiros.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="pt-4">
-              <img 
-                src="/logo_csae.png" 
-                alt="Logo CSAE Floripa" 
-                className="h-16 w-auto opacity-40 grayscale hover:grayscale-0 transition-all" 
-              />
-            </div>
           </div>
 
           <div className="flex justify-center order-1 md:order-2">
@@ -172,15 +150,28 @@ const Index = () => {
                           Esqueceu a senha?
                         </button>
                       </div>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        placeholder="Insira sua senha aqui"
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow"
-                        required
-                      />
+                      <div className="relative">
+                        <Input 
+                          id="password" 
+                          type={mostrarSenha ? "text" : "password"} 
+                          placeholder="Insira sua senha aqui"
+                          value={senha}
+                          onChange={(e) => setSenha(e.target.value)}
+                          className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow pr-12"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={togglePasswordVisibility}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                        >
+                          {mostrarSenha ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <Button type="submit" className="w-full bg-csae-green-600 hover:bg-csae-green-700 h-12 text-lg font-semibold shadow-md active:scale-[0.98] transition-transform" disabled={carregando}>
@@ -212,7 +203,7 @@ const Index = () => {
       </main>
 
       <footer className="py-8 bg-white border-t text-gray-500 text-sm text-center mt-auto">
-        <p>© 2026 Secretaria Municipal de Saúde de Florianópolis. Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Portal CSAE Floripa 2.0. Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) e Enf. Bruno Vinícius - Todos os direitos reservados</p>
       </footer>
     </div>
   );
