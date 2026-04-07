@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames } from '@/services/bancodados/examesDB';
 import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
+import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -32,6 +33,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const [sinaisVitais, setSinaisVitais] = useState<any[]>([]);
   const [exames, setExames] = useState<any[]>([]);
   const [sistemas, setSistemas] = useState<any[]>([]);
+  const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
 
   useEffect(() => {
     const loadCatalogs = async () => {
@@ -53,6 +55,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       }
     };
     loadCatalogs();
+
+    // Carregar o Rol de enfermagem para cruzamento de dados
+    const unsubDiag = getDiagnosticos((data) => setDiagnosticosRol(data));
+    return () => unsubDiag();
   }, []);
 
   const gerarTextoEvolucao = () => {
@@ -202,14 +208,24 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
   // ─── Dados derivados ──────────────────────────────────────────────────────────
   const exameFisico = processo.avaliacao?.exameFisico || {};
-  const nhbsAfetadas: string[] = processo.avaliacao?.nhbsAfetadas || [];
+  // nhbsAfetadas pode ter objetos { parametro, nhb } ou strings legadas
+  const nhbsAfetadas: any[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
+    ? processo.avaliacao.nhbsAfetadas
+    : [];
 
-  // Diagnósticos agrupados por subconjunto
-  const diagnosticosPorSubconjunto: Record<string, any[]> = {};
+  // Diagnósticos agrupados por subconjunto via cruzamento com o Rol de Enfermagem
+  const diagnosticosPorSubconjunto: Record<string, string[]> = {};
   (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d: any) => {
-    const grupo = d.subconjunto || 'Outros';
-    if (!diagnosticosPorSubconjunto[grupo]) diagnosticosPorSubconjunto[grupo] = [];
-    diagnosticosPorSubconjunto[grupo].push(d);
+    // Busca o documento completo no Rol para extrair os subconjuntos reais
+    const docRol = diagnosticosRol.find((r) => r.id === d.id || r.tituloDiagnostico === d.tituloDiagnostico);
+    const subconjuntos = docRol?.subconjuntos;
+    const nomeGrupo =
+      subconjuntos && subconjuntos.length > 0
+        ? subconjuntos[0].tituloSubconjunto || subconjuntos[0].tipoSubconjunto || 'Outros'
+        : 'Outros';
+
+    if (!diagnosticosPorSubconjunto[nomeGrupo]) diagnosticosPorSubconjunto[nomeGrupo] = [];
+    diagnosticosPorSubconjunto[nomeGrupo].push(d.tituloDiagnostico);
   });
 
   const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
@@ -260,13 +276,29 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               {nhbsAfetadas.length > 0 && (
                 <InfoCard>
                   <SectionHeader label="Necessidades Humanas Básicas Afetadas" />
-                  <div className="flex flex-wrap gap-1.5">
-                    {nhbsAfetadas.map((nhb: string, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-xs gap-1">
-                        <Heart className="w-3 h-3" /> {nhb}
-                      </Badge>
-                    ))}
-                  </div>
+                  <ul className="space-y-1">
+                    {nhbsAfetadas.map((item: any, i: number) => {
+                      // Suporta objetos { parametro, nhb } e strings legadas
+                      if (item && typeof item === 'object') {
+                        return (
+                          <li key={i} className="flex items-baseline gap-1 text-sm">
+                            <Heart className="w-3 h-3 text-rose-400 flex-shrink-0 mt-0.5" />
+                            {item.parametro && (
+                              <span className="font-semibold text-gray-700">{item.parametro}:</span>
+                            )}
+                            <span className="text-gray-600">{item.nhb ?? String(item)}</span>
+                          </li>
+                        );
+                      }
+                      // Fallback para string
+                      return (
+                        <li key={i} className="flex items-center gap-1.5 text-sm">
+                          <Heart className="w-3 h-3 text-rose-400 flex-shrink-0" />
+                          <span className="text-gray-700">{String(item)}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </InfoCard>
               )}
             </AccordionContent>
@@ -280,14 +312,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {Object.entries(diagnosticosPorSubconjunto).map(([grupo, diags]) => (
+              {Object.entries(diagnosticosPorSubconjunto).map(([grupo, titulos]) => (
                 <InfoCard key={grupo}>
                   <SectionHeader label={grupo} />
                   <div className="space-y-2">
-                    {diags.map((d: any, i: number) => (
+                    {titulos.map((titulo: string, i: number) => (
                       <div key={i} className="flex items-start gap-2">
                         <Stethoscope className="w-4 h-4 text-csae-green-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm font-medium text-gray-800">{d.tituloDiagnostico}</p>
+                        <p className="text-sm font-medium text-gray-800">{titulo}</p>
                       </div>
                     ))}
                   </div>
