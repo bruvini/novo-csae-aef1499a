@@ -18,7 +18,9 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
   const handleImplementadoChange = (checked: boolean) => {
     onUpdate({
       ...intervencao,
-      implementadoNestaConsulta: checked
+      implementadoNestaConsulta: checked,
+      // Limpar executor ao desmarcar para evitar dados fantasmas no banco
+      quemExecuta: checked ? intervencao.quemExecuta : undefined
     });
   };
 

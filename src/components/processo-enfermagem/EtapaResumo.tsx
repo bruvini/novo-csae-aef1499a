@@ -2,8 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Copy, CheckCircle, Search, FileText, Target, Play, TrendingUp, BadgeCheck } from 'lucide-react';
+import {
+  Copy, Search, FileText, Target, Play, TrendingUp, BadgeCheck,
+  Stethoscope, Heart, AlertTriangle, CheckCircle2
+} from 'lucide-react';
 import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
@@ -33,16 +38,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       try {
         const [sv, ex, sist] = await Promise.all([
           new Promise<any[]>((resolve) => {
-             const unsubscribe = getSinaisVitais((data) => {
-               resolve(data);
-               unsubscribe();
-             });
+            const unsubscribe = getSinaisVitais((data) => { resolve(data); unsubscribe(); });
           }),
           new Promise<any[]>((resolve) => {
-            const unsubscribe = getExames((data) => {
-              resolve(data);
-              unsubscribe();
-            });
+            const unsubscribe = getExames((data) => { resolve(data); unsubscribe(); });
           }),
           getSistemas()
         ]);
@@ -58,89 +57,77 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
   const gerarTextoEvolucao = () => {
     const linhas: string[] = [];
-    
-    linhas.push(`EVOLUÇÃO DE ENFERMAGEM`);
+
+    linhas.push('EVOLUÇÃO DE ENFERMAGEM');
     linhas.push(`Paciente: ${paciente.nomeCompleto}`);
-    linhas.push(`Unidade: Unidade de Saúde Floripa`);
+    linhas.push('Unidade: Unidade de Saúde Floripa');
     linhas.push(`Data: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
-    linhas.push(`-`.repeat(50));
+    linhas.push('-'.repeat(50));
     linhas.push('');
 
-    if (processo.avaliacao.coletaDeDadosSubjetivos) {
+    if (processo.avaliacao?.coletaDeDadosSubjetivos) {
       linhas.push('AVALIAÇÃO / COLETA DE DADOS:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
-    const exameFisico = processo.avaliacao.exameFisico || {};
+    const exameFisico = processo.avaliacao?.exameFisico || {};
     if (Object.keys(exameFisico).length > 0) {
       linhas.push('EXAME FÍSICO:');
-      
       const svAtivos = sinaisVitais.filter(s => exameFisico[s.sinalVitalNome]);
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => {
-          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisico[s.sinalVitalNome]}`);
-        });
+        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisico[s.sinalVitalNome]}`));
       }
-
-      const exMap = new Map();
+      const exMap = new Map<string, string[]>();
       exames.forEach(ex => {
         ex.componentes.forEach((c: any) => {
           if (exameFisico[c.componenteAnalisado]) {
             const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
             if (!exMap.has(grp)) exMap.set(grp, []);
-            exMap.get(grp).push(`${c.componenteAnalisado}: ${exameFisico[c.componenteAnalisado]}`);
+            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisico[c.componenteAnalisado]}`);
           }
         });
       });
       if (exMap.size > 0) {
         linhas.push('  [EXAMES DIAGNÓSTICOS]');
-        exMap.forEach((vals, titulo) => {
-          linhas.push(`  • ${titulo}: ${vals.join(', ')}`);
-        });
+        exMap.forEach((vals, titulo) => linhas.push(`  • ${titulo}: ${vals.join(', ')}`));
       }
-
       const rsEncontrados: string[] = [];
       sistemas.forEach(s => {
         s.exames.forEach((e: any) => {
-          if (exameFisico[e.nomeExame]) {
-            rsEncontrados.push(`${e.nomeExame}: ${exameFisico[e.nomeExame]}`);
-          }
+          if (exameFisico[e.nomeExame]) rsEncontrados.push(`${e.nomeExame}: ${exameFisico[e.nomeExame]}`);
         });
       });
       if (rsEncontrados.length > 0) {
         linhas.push('  [REVISÃO DE SISTEMAS]');
-        rsEncontrados.forEach(item => {
-          linhas.push(`  • ${item}`);
-        });
+        rsEncontrados.forEach(item => linhas.push(`  • ${item}`));
       }
       linhas.push('');
     }
 
-    if (processo.diagnostico.diagnosticosSelecionados.length > 0) {
+    if (processo.diagnostico?.diagnosticosSelecionados?.length > 0) {
       linhas.push('DIAGNÓSTICOS DE ENFERMAGEM:');
-      processo.diagnostico.diagnosticosSelecionados.forEach(diag => {
+      processo.diagnostico.diagnosticosSelecionados.forEach((diag: any) => {
         linhas.push(`• ${diag.tituloDiagnostico}`);
       });
       linhas.push('');
     }
 
     const implementacao = processo.implementacao || {};
-    const possuiImplementacao = Object.values(implementacao).some(d => d.intervencoes?.some(i => i.implementadoNestaConsulta));
-
+    const possuiImplementacao = Object.values(implementacao).some((d: any) => d.intervencoes?.some((i: any) => i.implementadoNestaConsulta));
     if (possuiImplementacao) {
       linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
-      Object.entries(implementacao).forEach(([tituloDiag, dados]) => {
-        const implementadas = dados.intervencoes.filter(i => i.implementadoNestaConsulta);
+      Object.entries(implementacao).forEach(([tituloDiag, dados]: any) => {
+        const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find((p: any) => p.tituloDiagnostico === tituloDiag);
+        const implementadas = dados.intervencoes.filter((i: any) => i.implementadoNestaConsulta);
         if (implementadas.length > 0) {
           linhas.push(`  [${tituloDiag}]`);
-          implementadas.forEach(int => {
-            let itemStr = `  • ${int.acaoPrescrita}.`;
-            if (int.quemExecuta) {
-               itemStr += ` (Executor: ${int.quemExecuta})`;
-            }
-            linhas.push(itemStr);
+          if (planejadoDiag?.resultadoEsperadoSelecionado) {
+            linhas.push(`  Resultado Esperado: ${planejadoDiag.resultadoEsperadoSelecionado}`);
+          }
+          implementadas.forEach((int: any) => {
+            linhas.push(`  • ${int.acaoPrescrita}. (Executor: ${int.quemExecuta || '?'})`);
           });
         }
       });
@@ -148,19 +135,15 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     }
 
     const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
-    const temExecutada = Object.values(intervencoesExecutadas).some(lista => lista.length > 0);
-    
+    const temExecutada = Object.values(intervencoesExecutadas).some((lista: any) => lista.length > 0);
     if (temExecutada) {
       linhas.push('EVOLUÇÃO DE ENFERMAGEM (Ações Técnicas Realizadas pelo Enfermeiro):');
-      Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]) => {
+      Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]: any) => {
         if (acoesMarcadas.length === 0) return;
         linhas.push(`  [${tituloDiag}]`);
-        
-        acoesMarcadas.forEach(acaoPresc => {
-          // Buscar texto presente no planejamento ou implementação
-          const dxImplementacao = processo.implementacao?.[tituloDiag];
-          const intv = dxImplementacao?.intervencoes.find(i => i.acaoPrescrita === acaoPresc);
-          
+        acoesMarcadas.forEach((acaoPresc: string) => {
+          const dxImpl = processo.implementacao?.[tituloDiag];
+          const intv = dxImpl?.intervencoes.find((i: any) => i.acaoPrescrita === acaoPresc);
           linhas.push(`  • ${intv?.acaoEnfermeiro || acaoPresc}`);
         });
       });
@@ -170,7 +153,6 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     linhas.push('-'.repeat(50));
     linhas.push('Enfermeiro Responsável: [Nome do Enfermeiro]');
     linhas.push('COREN: [Número / UF]');
-
     return linhas.join('\n');
   };
 
@@ -180,158 +162,254 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     try {
       await navigator.clipboard.writeText(texto);
       onUpdateEvolucao({ ...processo.evolucao, resumoGerado: texto });
-      toast({ title: "Sucesso", description: "Prontuário copiado para a área de transferência!" });
-    } catch (error) {
-      toast({ title: "Erro", description: "Falha ao copiar texto.", variant: "destructive" });
+      toast({ title: 'Sucesso', description: 'Prontuário copiado para a área de transferência!' });
+    } catch {
+      toast({ title: 'Erro', description: 'Falha ao copiar texto.', variant: 'destructive' });
     }
   };
 
+  // ─── Helpers visuais ─────────────────────────────────────────────────────────
+
+  /** Header interno de seção dentro de um AccordionContent */
+  const SectionHeader = ({ label }: { label: string }) => (
+    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">{label}</p>
+  );
+
+  /** Card estilizado reutilizável */
+  const InfoCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <div className={`rounded-lg border bg-slate-50 p-3 ${className}`}>{children}</div>
+  );
+
+  /** Diagnóstico → Resultado → Intervenções */
+  const DiagnosticoBlock = ({ titulo, resultado, intervencoes, renderIntervencao }: {
+    titulo: string;
+    resultado?: string;
+    intervencoes: any[];
+    renderIntervencao: (int: any, idx: number) => React.ReactNode;
+  }) => (
+    <InfoCard>
+      <p className="font-bold text-sm text-gray-900 mb-1">{titulo}</p>
+      {resultado && (
+        <p className="text-xs text-emerald-700 border-l-2 border-emerald-400 pl-2 mb-2 italic">
+          Resultado Esperado: {resultado}
+        </p>
+      )}
+      <ul className="space-y-1.5">
+        {intervencoes.map((int, idx) => renderIntervencao(int, idx))}
+      </ul>
+    </InfoCard>
+  );
+
+  // ─── Dados derivados ──────────────────────────────────────────────────────────
+  const exameFisico = processo.avaliacao?.exameFisico || {};
+  const nhbsAfetadas: string[] = processo.avaliacao?.nhbsAfetadas || [];
+
+  // Diagnósticos agrupados por subconjunto
+  const diagnosticosPorSubconjunto: Record<string, any[]> = {};
+  (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d: any) => {
+    const grupo = d.subconjunto || 'Outros';
+    if (!diagnosticosPorSubconjunto[grupo]) diagnosticosPorSubconjunto[grupo] = [];
+    diagnosticosPorSubconjunto[grupo].push(d);
+  });
+
+  const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
+  const temExecutada = Object.values(intervencoesExecutadas).some((l: any) => l.length > 0);
+
   return (
     <div className="space-y-8">
-      {/* Interface Path Traveled / Timeline */}
+      {/* ─── Caminho Trilhado ──────────────────────────────────────────────── */}
       <section className="space-y-3">
         <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-           <BadgeCheck className="w-4 h-4" /> Resumo do Caminho Trilhado
+          <BadgeCheck className="w-4 h-4" /> Resumo do Caminho Trilhado
         </h3>
-        
+
         <Accordion type="single" collapsible className="space-y-2">
-           {/* Etapa 1 */}
-           <AccordionItem value="etapa1" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
-             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
-               <span className="flex items-center gap-3">
-                 <Search className="w-5 h-5 text-csae-green-600" /> 1. Avaliação de Enfermagem
-               </span>
-             </AccordionTrigger>
-             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-4">
-                <div>
-                  <h4 className="font-bold underline mb-1">Coleta Subjetiva:</h4>
-                  <p className="text-gray-600">{processo.avaliacao.coletaDeDadosSubjetivos || "Não informado"}</p>
-                </div>
-                 <div>
-                  <h4 className="font-bold underline mb-1">Exame Físico (Parâmetros):</h4>
-                  <ul className="text-gray-600 space-y-1 list-disc ml-4">
-                    {Object.entries(processo.avaliacao?.exameFisico || {}).map(([chave, valor]: any) => (
-                      <li key={chave}>
-                        <strong>{chave}</strong>: {valor}
+
+          {/* ── Etapa 1: Avaliação ──────────────────────────────────────── */}
+          <AccordionItem value="etapa1" className="border rounded-xl bg-white shadow-sm overflow-hidden">
+            <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3 px-4">
+              <span className="flex items-center gap-3">
+                <Search className="w-5 h-5 text-csae-green-600" /> 1. Avaliação de Enfermagem
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              {/* Coleta Subjetiva */}
+              <InfoCard>
+                <SectionHeader label="Coleta Subjetiva" />
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {processo.avaliacao?.coletaDeDadosSubjetivos || 'Não informado'}
+                </p>
+              </InfoCard>
+
+              {/* Exame Físico */}
+              {Object.keys(exameFisico).length > 0 && (
+                <InfoCard>
+                  <SectionHeader label="Exame Físico / Parâmetros Registrados" />
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
+                    {Object.entries(exameFisico).map(([chave, valor]: any) => (
+                      <li key={chave} className="flex items-baseline gap-1 text-sm">
+                        <span className="font-semibold text-gray-700">{chave}:</span>
+                        <span className="text-gray-600">{valor}</span>
                       </li>
                     ))}
                   </ul>
-                </div>
-             </AccordionContent>
-           </AccordionItem>
+                </InfoCard>
+              )}
 
-           {/* Etapa 2 */}
-           <AccordionItem value="etapa2" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
-             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
-               <span className="flex items-center gap-3">
-                 <FileText className="w-5 h-5 text-csae-green-600" /> 2. Diagnóstico
-               </span>
-             </AccordionTrigger>
-             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4">
-                <ul className="space-y-1">
-                  {processo.diagnostico.diagnosticosSelecionados.map((d: any, i: number) => (
-                    <li key={i} className="flex gap-2"><span>•</span> <strong>{d.tituloDiagnostico}</strong></li>
-                  ))}
-                </ul>
-             </AccordionContent>
-           </AccordionItem>
-
-           {/* Etapa 3 */}
-           <AccordionItem value="etapa3" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
-             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
-               <span className="flex items-center gap-3">
-                 <Target className="w-5 h-5 text-csae-green-600" /> 3. Planejamento de Enfermagem
-               </span>
-             </AccordionTrigger>
-             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-4">
-                {processo.planejamento?.diagnosticosPlanejados?.map((diag: any, index: number) => (
-                  <div key={index}>
-                    <h4 className="font-bold">{diag.tituloDiagnostico}</h4>
-                    {diag.resultadoEsperadoSelecionado && (
-                      <p className="text-csae-green-700 italic border-l-2 border-csae-green-500 pl-2 mt-1">
-                        Resultado Esperado: {diag.resultadoEsperadoSelecionado}
-                      </p>
-                    )}
-                    <div className="mt-2">
-                       <span className="text-xs font-bold uppercase text-muted-foreground">Intervenções Planejadas:</span>
-                       <ul className="list-disc ml-4 mt-1">
-                         {diag.intervencoesSelecionadas?.map((int: any, j: number) => (
-                           <li key={j} className="text-gray-700">{int.acaoPrescrita}</li>
-                         ))}
-                       </ul>
-                    </div>
+              {/* NHBs */}
+              {nhbsAfetadas.length > 0 && (
+                <InfoCard>
+                  <SectionHeader label="Necessidades Humanas Básicas Afetadas" />
+                  <div className="flex flex-wrap gap-1.5">
+                    {nhbsAfetadas.map((nhb: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-xs gap-1">
+                        <Heart className="w-3 h-3" /> {nhb}
+                      </Badge>
+                    ))}
                   </div>
-                ))}
-             </AccordionContent>
-           </AccordionItem>
+                </InfoCard>
+              )}
+            </AccordionContent>
+          </AccordionItem>
 
-           {/* Etapa 4 */}
-           <AccordionItem value="etapa4" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
-             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
-               <span className="flex items-center gap-3">
-                 <Play className="w-5 h-5 text-csae-green-600" /> 4. Implementação de Cuidados
-               </span>
-             </AccordionTrigger>
-             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-3">
-                {Object.entries(processo.implementacao || {}).map(([titulo, dados]: any, i: number) => {
-                  const items = dados.intervencoes.filter((iv: any) => iv.implementadoNestaConsulta);
-                  if (items.length === 0) return null;
-                  return (
-                    <div key={i}>
-                      <h4 className="font-bold">{titulo}</h4>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                         {items.map((iv: any, idx: number) => (
-                           <span key={idx} className="bg-white border rounded px-2 py-0.5 text-[10px] font-medium">
-                             {iv.acaoPrescrita} ({iv.quemExecuta})
-                           </span>
-                         ))}
+          {/* ── Etapa 2: Diagnósticos ───────────────────────────────────── */}
+          <AccordionItem value="etapa2" className="border rounded-xl bg-white shadow-sm overflow-hidden">
+            <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3 px-4">
+              <span className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-csae-green-600" /> 2. Diagnósticos de Enfermagem
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              {Object.entries(diagnosticosPorSubconjunto).map(([grupo, diags]) => (
+                <InfoCard key={grupo}>
+                  <SectionHeader label={grupo} />
+                  <div className="space-y-2">
+                    {diags.map((d: any, i: number) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <Stethoscope className="w-4 h-4 text-csae-green-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm font-medium text-gray-800">{d.tituloDiagnostico}</p>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                </InfoCard>
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Etapa 3: Planejamento ───────────────────────────────────── */}
+          <AccordionItem value="etapa3" className="border rounded-xl bg-white shadow-sm overflow-hidden">
+            <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3 px-4">
+              <span className="flex items-center gap-3">
+                <Target className="w-5 h-5 text-csae-green-600" /> 3. Planejamento de Enfermagem
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag: any, index: number) => (
+                <DiagnosticoBlock
+                  key={index}
+                  titulo={diag.tituloDiagnostico}
+                  resultado={diag.resultadoEsperadoSelecionado}
+                  intervencoes={diag.intervencoesSelecionadas || []}
+                  renderIntervencao={(int, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <span className="text-csae-green-500 font-bold mt-0.5">•</span>
+                      {int.acaoPrescrita}
+                    </li>
+                  )}
+                />
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Etapa 4: Implementação ──────────────────────────────────── */}
+          <AccordionItem value="etapa4" className="border rounded-xl bg-white shadow-sm overflow-hidden">
+            <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3 px-4">
+              <span className="flex items-center gap-3">
+                <Play className="w-5 h-5 text-csae-green-600" /> 4. Implementação de Enfermagem
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              {Object.entries(processo.implementacao || {}).map(([titulo, dados]: any, i: number) => {
+                const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
+                  (p: any) => p.tituloDiagnostico === titulo
+                );
+                const implementadas = dados.intervencoes.filter((iv: any) => iv.implementadoNestaConsulta);
+                if (implementadas.length === 0) return null;
+                return (
+                  <DiagnosticoBlock
+                    key={i}
+                    titulo={titulo}
+                    resultado={planejadoDiag?.resultadoEsperadoSelecionado}
+                    intervencoes={implementadas}
+                    renderIntervencao={(iv, idx) => (
+                      <li key={idx} className="flex items-start justify-between gap-2">
+                        <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          {iv.acaoPrescrita}
+                        </span>
+                        {iv.quemExecuta && (
+                          <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
+                            Executor: {iv.quemExecuta}
+                          </Badge>
+                        )}
+                      </li>
+                    )}
+                  />
+                );
+              })}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* ── Etapa 5: Evolução ───────────────────────────────────────── */}
+          <AccordionItem value="etapa5" className="border rounded-xl bg-white shadow-sm overflow-hidden">
+            <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3 px-4">
+              <span className="flex items-center gap-3">
+                <TrendingUp className="w-5 h-5 text-csae-green-600" /> 5. Evolução de Enfermagem
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4 space-y-3">
+              {!temExecutada ? (
+                <Alert className="border-orange-300 bg-orange-50">
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
+                  <AlertDescription className="font-bold text-orange-700">
+                    Não executei nenhuma intervenção nesta consulta
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                Object.entries(intervencoesExecutadas).map(([titulo, lista]: any, i) => {
+                  if (lista.length === 0) return null;
+                  const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
+                    (d: any) => d.tituloDiagnostico === titulo
                   );
-                })}
-             </AccordionContent>
-           </AccordionItem>
+                  const resultadoExp = planejadoDiag?.resultadoEsperadoSelecionado;
+                  return (
+                    <DiagnosticoBlock
+                      key={i}
+                      titulo={titulo}
+                      resultado={resultadoExp}
+                      intervencoes={lista}
+                      renderIntervencao={(acaoPresc: string, idx: number) => {
+                        const dxImpl = processo.implementacao?.[titulo];
+                        const intv = dxImpl?.intervencoes.find((inv: any) => inv.acaoPrescrita === acaoPresc);
+                        const textoPresente = intv?.acaoEnfermeiro || acaoPresc;
+                        return (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                            <CheckCircle2 className="w-4 h-4 text-csae-green-500 mt-0.5 flex-shrink-0" />
+                            <span className="italic">{textoPresente}</span>
+                          </li>
+                        );
+                      }}
+                    />
+                  );
+                })
+              )}
+            </AccordionContent>
+          </AccordionItem>
 
-           {/* Etapa 5 */}
-           <AccordionItem value="etapa5" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
-             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
-               <span className="flex items-center gap-3">
-                 <TrendingUp className="w-5 h-5 text-csae-green-600" /> 5. Evolução (Ações Técnicas)
-               </span>
-             </AccordionTrigger>
-             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4">
-                <p className="text-xs text-muted-foreground mb-3">Intervenções marcadas como executadas diretamente pelo enfermeiro nesta consulta.</p>
-                {Object.keys(processo.evolucao?.intervencoesExecutadas || {}).length > 0 ? (
-                  Object.entries(processo.evolucao?.intervencoesExecutadas || {}).map(([titulo, lista]: any, i) => (
-                    lista.length > 0 && (
-                      <div key={i} className="mb-2">
-                         <h4 className="font-bold text-xs">{titulo}:</h4>
-                         <ul className="list-disc ml-4 text-gray-600 italic">
-                            {lista.map((acao: string, j: number) => {
-                              // Buscar verbo no presente se disponível
-                              const diagnosticoOriginal = processo.planejamento?.diagnosticosPlanejados?.find(
-                                (d: any) => d.tituloDiagnostico === titulo
-                              );
-                              const intervencaoOriginal = diagnosticoOriginal?.intervencoesSelecionadas?.find(
-                                (inv: any) => inv.acaoPrescrita === acao
-                              );
-                              return (
-                                <li key={j}>{intervencaoOriginal?.acaoEnfermeiro || acao}</li>
-                              )
-                            })}
-                         </ul>
-                      </div>
-                    )
-                  ))
-                ) : (
-                  <p className="font-bold text-red-600">Não executei nenhuma intervenção nesta consulta</p>
-                )}
-             </AccordionContent>
-           </AccordionItem>
         </Accordion>
       </section>
 
-      {/* Gerador de Prontuário */}
+      {/* ─── Gerador de Prontuário ─────────────────────────────────────────── */}
       <Card className="border-none shadow-xl bg-white overflow-hidden">
         <CardHeader className="bg-csae-green-900 text-white min-h-[120px] flex flex-row items-center justify-between">
           <div className="space-y-1">
