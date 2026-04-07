@@ -40,5 +40,5 @@ export {
 
 // Changelog exports
 export type { Changelog } from './changelogDB';
-export { buscarChangelogsRecentes, seedChangelogInicial } from './changelogDB';
+export { buscarChangelogsRecentes, seedChangelogInicial, salvarChangelog } from './changelogDB';
 

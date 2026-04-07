@@ -6,6 +6,7 @@ import {
   orderBy,
   limit,
   Timestamp,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
@@ -43,4 +44,14 @@ export async function seedChangelogInicial(): Promise<void> {
     });
     console.log('[Changelog] Seed inicial inserido com sucesso.');
   }
+}
+
+// ─── Salvar novo changelog ───────────────────────────────────
+export async function salvarChangelog(titulo: string, descricao: string): Promise<void> {
+  const ref = collection(db, 'changelogs');
+  await addDoc(ref, {
+    titulo,
+    descricao,
+    dataHora: serverTimestamp(),
+  });
 }

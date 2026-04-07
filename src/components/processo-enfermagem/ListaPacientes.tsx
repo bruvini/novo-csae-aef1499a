@@ -16,16 +16,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal, Edit, Trash2, Play, History } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Edit, Trash2, Play, PlayCircle, History } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from '@/contexts/AuthContext';
-import { Paciente, StatusPaciente, determinarStatusPaciente } from '@/types/paciente';
+import { Paciente, determinarStatusPaciente } from '@/types/paciente';
 import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
 import ModalEditarPaciente from './ModalEditarPaciente';
-import { excluirPaciente, buscarPacientesUsuario } from '@/services/bancodados/pacientesDB';
+import { excluirPaciente } from '@/services/bancodados/pacientesDB';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 import {
   AlertDialog,
@@ -129,10 +128,11 @@ const ListaPacientes: React.FC = () => {
       });
       setShowDeleteAlert(false);
       setPacienteSelecionado(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Erro ao excluir paciente.";
       toast({
         title: "Erro",
-        description: error.message || "Erro ao excluir paciente.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -152,23 +152,28 @@ const ListaPacientes: React.FC = () => {
     () => [
       {
         accessorKey: "nomeCompleto",
-        header: "Nome",
+        header: "Nome do Paciente",
       },
       {
-        accessorKey: "dataNascimento",
-        header: "Nascimento",
+        id: "evolucoesConcluidas",
+        header: "Evoluções Concluídas",
         cell: ({ row }) => {
-          const dataNascimento = row.original.dataNascimento;
-          if (dataNascimento && typeof (dataNascimento as any).toDate === 'function') {
-            const data = (dataNascimento as any).toDate();
-            return data.toLocaleDateString('pt-BR');
-          }
-          return 'Data Inválida';
+          const paciente = row.original;
+          const total = paciente.processosEnfermagem?.filter(
+            (p) => p.status === 'concluido' || p.statusProcesso === 'Concluído'
+          ).length || 0;
+          return (
+            <div className="text-center">
+              <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                total > 0
+                  ? 'bg-csae-green-100 text-csae-green-700'
+                  : 'bg-gray-100 text-gray-400'
+              }`}>
+                {total}
+              </span>
+            </div>
+          );
         },
-      },
-      {
-        accessorKey: "sexo",
-        header: "Sexo",
       },
       {
         accessorKey: "status",
@@ -185,48 +190,93 @@ const ListaPacientes: React.FC = () => {
       },
       {
         id: "actions",
+        header: "Ações",
         enableHiding: false,
         cell: ({ row }) => {
           const paciente = row.original;
+          const status = determinarStatusPaciente(paciente);
+          const isEmAndamento = status === 'Em andamento';
 
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Abrir menu</span>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => handleAbrirProcesso(paciente)}
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  {determinarStatusPaciente(paciente) === 'Em andamento' ? 'Continuar Processo' : 'Iniciar Processo'}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleVisualizarHistorico(paciente)}
-                >
-                  <History className="mr-2 h-4 w-4" />
-                  Visualizar Histórico
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => handleEditarPaciente(paciente)}
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleExcluirClick(paciente)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <TooltipProvider delayDuration={200}>
+              <div className="flex items-center gap-1.5">
+                {/* A) Botão Play — Iniciar / Continuar */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-8 w-8 ${
+                        isEmAndamento
+                          ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                          : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                      }`}
+                      onClick={() => handleAbrirProcesso(paciente)}
+                    >
+                      {isEmAndamento ? (
+                        <PlayCircle className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>{isEmAndamento ? 'Continuar Processo de Enfermagem' : 'Iniciar Novo Processo'}</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* B) Botão Histórico */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                      onClick={() => handleVisualizarHistorico(paciente)}
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Visualizar Histórico de Evoluções</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* C) Botão Editar */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100"
+                      onClick={() => handleEditarPaciente(paciente)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Editar Dados do Paciente</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* D) Botão Excluir */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => handleExcluirClick(paciente)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Excluir Registro do Paciente</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
           );
         },
       },
