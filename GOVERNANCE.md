@@ -29,6 +29,7 @@ O projeto utiliza uma stack moderna baseada em:
 - **Build**: O comando `npm run build` deve passar sem falhas.
 - **Segurança**: Nenhuma credencial ou segredo deve ser versionado no código-fonte. Uso obrigatório de `.env`. Uso obrigatório de política de sessão curta (`browserSessionPersistence`) e auditoria contínua de últimos acessos dos usuários.
 - **Banco de Dados**: Todas as métricas totalizadoras em dashboards devem obrigatoriamente usar Aggregation Queries (sum, count, average) do Firestore para prevenir sobrecarga de faturamento.
+- **Business Intelligence**: O módulo "Painel Estatístico" atua como central de BI. Gráficos futuros devem ser implementados com queries agregadas nativas do servidor.
 
 ## 5. Papéis e Responsabilidades
 - **Desenvolvedor**: Responsável pela implementação e testes unitários.

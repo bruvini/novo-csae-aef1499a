@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, Database, Users, ArrowRight, Clock } from 'lucide-react';
+import { Home, Heart, Database, Users, BarChart, ArrowRight, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarUsuariosAguardando } from '@/services/bancodados';
 
@@ -59,11 +59,26 @@ const NavigationCards = () => {
         variant: 'warning'
       } : null
     },
+    {
+      id: 'painel-estatistico',
+      title: 'Painel Estatístico',
+      description: 'Módulo de Business Intelligence com visão global de métricas e indicadores de produção da rede.',
+      icon: BarChart,
+      href: '/painel-estatistico',
+      status: 'Novo',
+      disabled: false,
+      roles: ['admin', 'PainelEstatistico'],
+    },
   ];
 
   const filteredItems = navigationItems.filter(item => {
     if (item.roles.includes('any')) return true;
     if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
+    
+    // Suporte para permissões granulares por ID de página
+    const paginasPermitidas = sessionData?.paginasPermitidas || [];
+    if (item.roles.some(role => paginasPermitidas.includes(role))) return true;
+
     return false;
   });
 

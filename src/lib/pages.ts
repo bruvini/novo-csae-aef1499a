@@ -1,8 +1,13 @@
-
 export interface PageInfo {
   id: string;
   label: string;
   description?: string;
+}
+
+export interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requireAdmin?: boolean;
+  allowedPageId?: string;
 }
 
 export const availablePages: PageInfo[] = [
@@ -20,5 +25,10 @@ export const availablePages: PageInfo[] = [
     id: "GestaoUsuarios", 
     label: "Gestão de Usuários",
     description: "Painel de controle para administrar profissionais cadastrados"
+  },
+  { 
+    id: "PainelEstatistico", 
+    label: "Painel Estatístico",
+    description: "Módulo Business Intelligence com visão global de métricas e indicadores de produção da rede"
   },
 ];

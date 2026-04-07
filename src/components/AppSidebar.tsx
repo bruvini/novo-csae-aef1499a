@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, Database, Users } from 'lucide-react';
+import { Home, Heart, Database, Users, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
@@ -18,6 +18,7 @@ const navigationItems = [
   { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart, roles: ['any'] },
   { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, roles: ['gestor', 'admin'] },
   { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, roles: ['admin'] },
+  { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChart, roles: ['admin', 'PainelEstatistico'] },
 ];
 
 export function AppSidebar() {
@@ -27,6 +28,11 @@ export function AppSidebar() {
     if (item.roles.includes('any')) return true;
     if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
     if (item.roles.includes('gestor') && (sessionData?.gestorConteudos || sessionData?.ehAdmin)) return true;
+  
+    // Suporte para permissões granulares por ID de página
+    const paginasPermitidas = sessionData?.paginasPermitidas || [];
+    if (item.roles.some(role => paginasPermitidas.includes(role))) return true;
+
     return false;
   });
 

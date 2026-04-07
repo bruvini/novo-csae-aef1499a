@@ -11,6 +11,7 @@ import WaitingApproval from "./pages/WaitingApproval";
 import GestaoUsuarios from "./pages/GestaoUsuarios";
 import GestaoConteudos from "./pages/GestaoConteudos";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
+import PainelEstatistico from "./pages/PainelEstatistico";
 import DebugUsers from "./pages/DebugUsers";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -63,6 +64,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <ProcessoEnfermagem />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/painel-estatistico" 
+                element={
+                  <ProtectedRoute requireAdmin={false} allowedPageId="PainelEstatistico">
+                    <PainelEstatistico />
                   </ProtectedRoute>
                 } 
               />
