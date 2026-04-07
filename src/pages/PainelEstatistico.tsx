@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +11,12 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   BarChart as BarChartIcon,
   Users,
   Activity,
@@ -19,13 +24,15 @@ import {
   Clock,
   ArrowRight,
   ListFilter,
+  MonitorSmartphone,
+  MousePointerClick
 } from 'lucide-react';
 import {
   PieChart,
   Pie,
   Cell,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   BarChart,
   Bar,
   XAxis,
@@ -90,11 +97,13 @@ const EvolucaoTooltip = ({
     <div className="bg-white shadow-xl rounded-xl p-3 border border-gray-100 text-sm min-w-[160px]">
       <p className="font-black text-gray-700 mb-1">{label}</p>
       <p className="text-csae-green-700">
-        <span className="font-bold">Novos:</span> {novos}
+        <span className="font-bold">No Período:</span> {novos}
       </p>
-      <p className="text-csae-green-900">
-        <span className="font-bold">Acumulado:</span> {acumulado}
-      </p>
+      {acumulado > 0 && (
+        <p className="text-csae-green-900">
+          <span className="font-bold">Acumulado:</span> {acumulado}
+        </p>
+      )}
       {showVariacao && variacao !== 0 && (
         <p className={variacao > 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}>
           Variação: {variacao > 0 ? '+' : ''}
@@ -120,12 +129,12 @@ const PainelEstatistico = () => {
   const [data, setData] = useState<EstatisticasBI | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('mensal');
+  const [viewModeAcessos, setViewModeAcessos] = useState<ViewMode>('mensal');
   const [lotacoesOpen, setLotacoesOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Força recálculo apagando cache temporariamente para refletir novo schema
         const stats = await obterEstatisticasUsuariosBI();
         setData(stats);
       } catch (error) {
@@ -148,7 +157,17 @@ const PainelEstatistico = () => {
     }
   }, [data, viewMode]);
 
-  const showVariacao = viewMode === 'mensal' || viewMode === 'anual';
+  const evolucaoAcessosAtiva = useCallback((): EvolucaoEntry[] => {
+    if (!data) return [];
+    switch (viewModeAcessos) {
+      case 'diario': return data.evolucaoAcessosDiaria || [];
+      case 'semanal': return data.evolucaoAcessosSemanal || [];
+      case 'mensal': return data.evolucaoAcessosMensal || [];
+      case 'anual': return data.evolucaoAcessosAnual || [];
+      default: return data.evolucaoAcessosMensal || [];
+    }
+  }, [data, viewModeAcessos]);
+
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
 
   if (loading) {
@@ -197,27 +216,68 @@ const PainelEstatistico = () => {
             </p>
           </div>
 
-          {/* ── LINHA 1: BIG NUMBERS ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card Total */}
+          {/* ── LINHA 1: BIG NUMBERS (5 CARDS) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            
+            {/* Card Cadastros */}
             <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Users className="w-20 h-20 text-csae-green-900" />
+                <Users className="w-16 h-16 text-csae-green-900" />
               </div>
               <CardHeader className="pb-2">
-                <CardDescription className="uppercase text-[10px] font-black tracking-widest text-csae-green-600">
-                  Total de Profissionais
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-csae-green-600">
+                  Solicitações de Cadastro
                 </CardDescription>
-                <CardTitle className="text-4xl font-black text-csae-green-900">
+                <CardTitle className="text-3xl font-black text-csae-green-900">
                   {data?.totalCadastrados || 0}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-xs font-semibold text-csae-green-700">
+                <div className="flex items-center text-[10px] font-semibold text-csae-green-700">
                   <ArrowRight className="w-3 h-3 mr-1" />
-                  Sendo{' '}
-                  <span className="font-black mx-1 text-csae-green-900">{data?.totalAprovados || 0}</span>{' '}
-                  aprovados
+                  Sendo <span className="font-black mx-1 text-csae-green-900">{data?.totalAprovados || 0}</span> liberados
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card Total de Acessos */}
+            <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <MonitorSmartphone className="w-16 h-16 text-blue-900" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-blue-600">
+                  Acessos à Plataforma
+                </CardDescription>
+                <CardTitle className="text-3xl font-black text-blue-900">
+                  {data?.totalAcessosPlataforma || 0}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-[10px] font-semibold text-blue-700">
+                  <MousePointerClick className="w-3 h-3 mr-1" />
+                  Sessões totais realizadas
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Card Média de Acessos */}
+            <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Activity className="w-16 h-16 text-emerald-900" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-emerald-600">
+                  Média por Usuário
+                </CardDescription>
+                <CardTitle className="text-3xl font-black text-emerald-900">
+                  {data?.mediaAcessosUsuario ? data.mediaAcessosUsuario.toFixed(1) : '0.0'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-[10px] font-semibold text-emerald-700">
+                  <ArrowRight className="w-3 h-3 mr-1" />
+                  Acessos médios / ativo
                 </div>
               </CardContent>
             </Card>
@@ -225,20 +285,20 @@ const PainelEstatistico = () => {
             {/* Card Taxa Aprovação */}
             <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Target className="w-20 h-20 text-emerald-900" />
+                <Target className="w-16 h-16 text-teal-900" />
               </div>
               <CardHeader className="pb-2">
-                <CardDescription className="uppercase text-[10px] font-black tracking-widest text-emerald-600">
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-teal-600">
                   Taxa de Aprovação
                 </CardDescription>
-                <CardTitle className="text-4xl font-black text-emerald-900">
+                <CardTitle className="text-3xl font-black text-teal-900">
                   {data?.taxaAprovacao || 0}%
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-teal-100 h-1.5 rounded-full overflow-hidden">
                   <div
-                    className="bg-emerald-500 h-full transition-all duration-1000"
+                    className="bg-teal-500 h-full transition-all duration-1000"
                     style={{ width: `${data?.taxaAprovacao || 0}%` }}
                   />
                 </div>
@@ -248,23 +308,24 @@ const PainelEstatistico = () => {
             {/* Card Tempo Médio */}
             <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Clock className="w-20 h-20 text-blue-900" />
+                <Clock className="w-16 h-16 text-indigo-900" />
               </div>
               <CardHeader className="pb-2">
-                <CardDescription className="uppercase text-[10px] font-black tracking-widest text-blue-600">
-                  Tempo Médio de Liberação
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-indigo-600">
+                  Tempo Médio / Liberação
                 </CardDescription>
-                <CardTitle className="text-4xl font-black text-blue-900">
+                <CardTitle className="text-3xl font-black text-indigo-900">
                   {data?.tempoMedioLiberacaoHoras || 0}h
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-xs font-semibold text-blue-700">
+                <div className="flex items-center text-[10px] font-semibold text-indigo-700">
                   <Activity className="w-3 h-3 mr-1" />
                   Média de horas para ativação
                 </div>
               </CardContent>
             </Card>
+
           </div>
 
           {/* ── LINHA 2: SITUAÇÃO DOS CADASTROS (Pizza) ── */}
@@ -293,7 +354,7 @@ const PainelEstatistico = () => {
                       />
                     ))}
                   </Pie>
-                  <Tooltip
+                  <RechartsTooltip
                     formatter={(val: any, name: any) => [val, name]}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   />
@@ -328,7 +389,7 @@ const PainelEstatistico = () => {
                         <Cell key={`form-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip
+                    <RechartsTooltip
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                     />
                   </PieChart>
@@ -356,7 +417,7 @@ const PainelEstatistico = () => {
                       <Cell fill="#059669" />
                       <Cell fill="#e11d48" />
                     </Pie>
-                    <Tooltip />
+                    <RechartsTooltip />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -383,24 +444,49 @@ const PainelEstatistico = () => {
                     <DialogTitle>Todas as Unidades de Lotação</DialogTitle>
                   </DialogHeader>
                   <ScrollArea className="h-[480px] pr-4">
-                    <div className="flex flex-col gap-2 mt-2">
-                      {(data?.todasLotacoes || []).map((lot, idx) => (
-                        <div
-                          key={lot.name}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 hover:bg-csae-green-50 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-[11px] font-black text-gray-400 w-5 text-right">
-                              {idx + 1}
+                    <TooltipProvider delayDuration={150}>
+                      <div className="flex flex-col gap-2 mt-2">
+                        {(data?.todasLotacoes || []).map((lot, idx) => (
+                          <div
+                            key={lot.name}
+                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 hover:bg-csae-green-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-[11px] font-black text-gray-400 w-5 text-right">
+                                {idx + 1}
+                              </span>
+                              
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help">
+                                  <span className="text-sm font-semibold text-gray-800 underline decoration-dashed underline-offset-2">
+                                    {lot.name}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-h-60 overflow-y-auto bg-gray-900 border-gray-800 text-white p-3 z-[99]">
+                                  <div className="font-bold mb-2 pb-2 border-b border-gray-700 text-xs uppercase tracking-wider text-gray-300">
+                                    {lot.name} — Usuários
+                                  </div>
+                                  <ul className="space-y-1.5 min-w-[200px]">
+                                    {(data?.usuariosPorLotacao?.[lot.name] || []).map((u, i) => (
+                                      <li key={i} className="text-xs flex justify-between gap-4 items-center">
+                                        <span className="flex-1 truncate pr-3" title={u.nome}>{u.nome}</span>
+                                        <span className="font-mono text-csae-green-400 font-bold whitespace-nowrap bg-gray-800 px-1.5 py-0.5 rounded">
+                                          {u.acessos} {u.acessos === 1 ? 'acesso' : 'acessos'}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </TooltipContent>
+                              </Tooltip>
+
+                            </div>
+                            <span className="text-sm font-black text-csae-green-700 bg-csae-green-100 px-2 py-0.5 rounded-full">
+                              {lot.value}
                             </span>
-                            <span className="text-sm font-semibold text-gray-800">{lot.name}</span>
                           </div>
-                          <span className="text-sm font-black text-csae-green-700 bg-csae-green-100 px-2 py-0.5 rounded-full">
-                            {lot.value}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    </TooltipProvider>
                   </ScrollArea>
                 </DialogContent>
               </Dialog>
@@ -419,7 +505,7 @@ const PainelEstatistico = () => {
                     width={170}
                     tick={{ fontSize: 11, fontWeight: 600 }}
                   />
-                  <Tooltip cursor={{ fill: '#f1f5f9' }} />
+                  <RechartsTooltip cursor={{ fill: '#f1f5f9' }} />
                   <Bar dataKey="value" fill="#059669" radius={[0, 4, 4, 0]}>
                     <LabelList dataKey="value" position="right" style={{ fontSize: 11, fontWeight: 700, fill: '#059669' }} />
                   </Bar>
@@ -428,7 +514,7 @@ const PainelEstatistico = () => {
             </CardContent>
           </Card>
 
-          {/* ── LINHA 5: EVOLUÇÃO DE CADASTROS (col-span-full + Tabs) ── */}
+          {/* ── LINHA 5: EVOLUÇÃO DE CADASTROS ── */}
           <Card className="border-none shadow-xl bg-white overflow-hidden w-full">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -474,20 +560,91 @@ const PainelEstatistico = () => {
                     height={60}
                   />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    content={<EvolucaoTooltip showVariacao={showVariacao} />}
+                  <RechartsTooltip
+                    content={<EvolucaoTooltip showVariacao={viewMode === 'mensal' || viewMode === 'anual'} />}
                   />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '12px' }} />
-                  <Area
-                    type="monotone"
-                    dataKey="acumulado"
-                    stroke="#059669"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorAcum)"
-                    name="Total Acumulado"
-                  />
+                  
+                  {viewMode !== 'semanal' && (
+                    <Area
+                      type="monotone"
+                      dataKey="acumulado"
+                      stroke="#059669"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorAcum)"
+                      name="Total Acumulado"
+                    />
+                  )}
                   <Bar dataKey="novos" fill="#34d399" barSize={20} name="Novos no Período" radius={[4, 4, 0, 0]} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* ── LINHA 6: EVOLUÇÃO DE ACESSOS ── */}
+          <Card className="border-none shadow-xl bg-white overflow-hidden w-full">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-bold">Evolução de Acessos</CardTitle>
+                  <CardDescription>
+                    Distribuição temporal dos acessos à plataforma — vista: <strong>{VIEW_LABELS[viewModeAcessos]}</strong>
+                  </CardDescription>
+                </div>
+                {/* Filtros de período */}
+                <div className="flex gap-1 flex-wrap">
+                  {(Object.keys(VIEW_LABELS) as ViewMode[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewModeAcessos(mode)}
+                      className={`text-xs px-3 py-1.5 rounded-full font-bold border transition-all ${
+                        viewModeAcessos === mode
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-blue-400 hover:text-blue-700'
+                      }`}
+                    >
+                      {VIEW_LABELS[mode]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="h-[500px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={evolucaoAcessosAtiva()} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                  <defs>
+                    <linearGradient id="colorAcumAcessos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.7} />
+                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 10 }}
+                    angle={-35}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <RechartsTooltip
+                    content={<EvolucaoTooltip showVariacao={viewModeAcessos === 'mensal' || viewModeAcessos === 'anual'} />}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '12px' }} />
+                  
+                  {viewModeAcessos !== 'semanal' && (
+                    <Area
+                      type="monotone"
+                      dataKey="acumulado"
+                      stroke="#2563eb"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorAcumAcessos)"
+                      name="Acessos Acumulados"
+                    />
+                  )}
+                  <Bar dataKey="novos" fill="#60a5fa" barSize={20} name="Acessos no Período" radius={[4, 4, 0, 0]} />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
