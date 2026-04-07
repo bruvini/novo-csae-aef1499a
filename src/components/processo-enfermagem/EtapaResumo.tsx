@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, CheckCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Copy, CheckCircle, Search, FileText, Target, Play, TrendingUp, BadgeCheck } from 'lucide-react';
 import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +29,6 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const [sistemas, setSistemas] = useState<any[]>([]);
 
   useEffect(() => {
-    // Carregar catálogos para o texto do exame físico
     const loadCatalogs = async () => {
       try {
         const [sv, ex, sist] = await Promise.all([
@@ -66,14 +66,12 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     linhas.push(`-`.repeat(50));
     linhas.push('');
 
-    // Avaliação Subjetiva
     if (processo.avaliacao.coletaDeDadosSubjetivos) {
       linhas.push('AVALIAÇÃO / COLETA DE DADOS:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
-    // Exame Físico
     const exameFisico = processo.avaliacao.exameFisico || {};
     if (Object.keys(exameFisico).length > 0) {
       linhas.push('EXAME FÍSICO:');
@@ -120,16 +118,6 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
-    // NHBs
-    if (processo.avaliacao.nhbsAfetadas?.length > 0) {
-      linhas.push('NECESSIDADES HUMANAS BÁSICAS AFETADAS:');
-      processo.avaliacao.nhbsAfetadas.forEach(n => {
-        linhas.push(`• ${n.parametro}: ${n.nhb}`);
-      });
-      linhas.push('');
-    }
-
-    // Diagnósticos
     if (processo.diagnostico.diagnosticosSelecionados.length > 0) {
       linhas.push('DIAGNÓSTICOS DE ENFERMAGEM:');
       processo.diagnostico.diagnosticosSelecionados.forEach(diag => {
@@ -138,35 +126,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
-    // Planejamento
-    if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
-      linhas.push('PLANEJAMENTO DE ENFERMAGEM:');
-      const diagnosticosOrdenados = [...processo.planejamento.diagnosticosPlanejados]
-        .sort((a, b) => a.ordemPrioridade - b.ordemPrioridade);
-
-      diagnosticosOrdenados.forEach((diag, index) => {
-        linhas.push(`${index + 1}º) ${diag.tituloDiagnostico}`);
-        
-        if (diag.resultadoEsperadoSelecionado) {
-          linhas.push(`   Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
-        }
-        
-        if (diag.intervencoesSelecionadas?.length > 0) {
-          linhas.push('   Intervenções Planejadas:');
-          diag.intervencoesSelecionadas.forEach(int => {
-            linhas.push(`   - ${int.acaoPrescrita}`);
-          });
-        }
-      });
-      linhas.push('');
-    }
-
-    // Implementação
     const implementacao = processo.implementacao || {};
     const possuiImplementacao = Object.values(implementacao).some(d => d.intervencoes?.some(i => i.implementadoNestaConsulta));
 
     if (possuiImplementacao) {
-      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
       Object.entries(implementacao).forEach(([tituloDiag, dados]) => {
         const implementadas = dados.intervencoes.filter(i => i.implementadoNestaConsulta);
         if (implementadas.length > 0) {
@@ -183,32 +147,21 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
-    // Evolução de Enfermagem (Checklist executado)
     const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
     const temExecutada = Object.values(intervencoesExecutadas).some(lista => lista.length > 0);
     
     if (temExecutada) {
-      linhas.push('EVOLUÇÃO DE ENFERMAGEM:');
+      linhas.push('EVOLUÇÃO DE ENFERMAGEM (Ações Técnicas Realizadas pelo Enfermeiro):');
       Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]) => {
         if (acoesMarcadas.length === 0) return;
         linhas.push(`  [${tituloDiag}]`);
         
         acoesMarcadas.forEach(acaoPresc => {
-          // Achar a acaoEnfermeiro mapeada no planejamento
-          let verboMapeado: string | undefined = undefined;
+          // Buscar texto presente no planejamento ou implementação
+          const dxImplementacao = processo.implementacao?.[tituloDiag];
+          const intv = dxImplementacao?.intervencoes.find(i => i.acaoPrescrita === acaoPresc);
           
-          if (processo.planejamento?.diagnosticosPlanejados) {
-            const d = processo.planejamento.diagnosticosPlanejados.find(dx => dx.tituloDiagnostico === tituloDiag);
-            if (d && d.intervencoesSelecionadas) {
-              const inv = d.intervencoesSelecionadas.find(i => i.acaoPrescrita === acaoPresc);
-              if (inv && inv.acaoEnfermeiro) {
-                verboMapeado = inv.acaoEnfermeiro;
-              }
-            }
-          }
-
-          // Fallback para acaoPrescrita
-          linhas.push(`  • ${verboMapeado || acaoPresc}`);
+          linhas.push(`  • ${intv?.acaoEnfermeiro || acaoPresc}`);
         });
       });
       linhas.push('');
@@ -224,55 +177,181 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const handleCopiarTexto = async () => {
     const texto = gerarTextoEvolucao();
     setTextoEvolucao(texto);
-    
     try {
       await navigator.clipboard.writeText(texto);
-      
-      onUpdateEvolucao({
-        ...processo.evolucao,
-        resumoGerado: texto
-      });
-      
-      toast({
-        title: "Sucesso",
-        description: "Evolução de enfermagem copiada para a área de transferência!",
-      });
+      onUpdateEvolucao({ ...processo.evolucao, resumoGerado: texto });
+      toast({ title: "Sucesso", description: "Prontuário copiado para a área de transferência!" });
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível copiar o texto.",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: "Falha ao copiar texto.", variant: "destructive" });
     }
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            Etapa 6: Resumo Final do Prontuário
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground pb-2 border-b">
-            Revise todo o processo e gere o resumo formatado para cópia do prontuário eletrônico.
-          </p>
+    <div className="space-y-8">
+      {/* Interface Path Traveled / Timeline */}
+      <section className="space-y-3">
+        <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+           <BadgeCheck className="w-4 h-4" /> Resumo do Caminho Trilhado
+        </h3>
+        
+        <Accordion type="single" collapsible className="space-y-2">
+           {/* Etapa 1 */}
+           <AccordionItem value="etapa1" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
+             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
+               <span className="flex items-center gap-3">
+                 <Search className="w-5 h-5 text-csae-green-600" /> 1. Avaliação de Enfermagem
+               </span>
+             </AccordionTrigger>
+             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-4">
+                <div>
+                  <h4 className="font-bold underline mb-1">Coleta Subjetiva:</h4>
+                  <p className="text-gray-600">{processo.avaliacao.coletaDeDadosSubjetivos || "Não informado"}</p>
+                </div>
+                 <div>
+                  <h4 className="font-bold underline mb-1">Exame Físico (Parâmetros):</h4>
+                  <ul className="text-gray-600 space-y-1 list-disc ml-4">
+                    {Object.entries(processo.avaliacao?.exameFisico || {}).map(([chave, valor]: any) => (
+                      <li key={chave}>
+                        <strong>{chave}</strong>: {valor}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+             </AccordionContent>
+           </AccordionItem>
 
-          <Button onClick={handleCopiarTexto} className="flex items-center gap-2 w-full md:w-auto">
-            <Copy className="w-4 h-4" />
-            Gerar e Copiar Prontuário
+           {/* Etapa 2 */}
+           <AccordionItem value="etapa2" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
+             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
+               <span className="flex items-center gap-3">
+                 <FileText className="w-5 h-5 text-csae-green-600" /> 2. Diagnóstico
+               </span>
+             </AccordionTrigger>
+             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4">
+                <ul className="space-y-1">
+                  {processo.diagnostico.diagnosticosSelecionados.map((d: any, i: number) => (
+                    <li key={i} className="flex gap-2"><span>•</span> <strong>{d.tituloDiagnostico}</strong></li>
+                  ))}
+                </ul>
+             </AccordionContent>
+           </AccordionItem>
+
+           {/* Etapa 3 */}
+           <AccordionItem value="etapa3" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
+             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
+               <span className="flex items-center gap-3">
+                 <Target className="w-5 h-5 text-csae-green-600" /> 3. Planejamento de Enfermagem
+               </span>
+             </AccordionTrigger>
+             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-4">
+                {processo.planejamento?.diagnosticosPlanejados?.map((diag: any, index: number) => (
+                  <div key={index}>
+                    <h4 className="font-bold">{diag.tituloDiagnostico}</h4>
+                    {diag.resultadoEsperadoSelecionado && (
+                      <p className="text-csae-green-700 italic border-l-2 border-csae-green-500 pl-2 mt-1">
+                        Resultado Esperado: {diag.resultadoEsperadoSelecionado}
+                      </p>
+                    )}
+                    <div className="mt-2">
+                       <span className="text-xs font-bold uppercase text-muted-foreground">Intervenções Planejadas:</span>
+                       <ul className="list-disc ml-4 mt-1">
+                         {diag.intervencoesSelecionadas?.map((int: any, j: number) => (
+                           <li key={j} className="text-gray-700">{int.acaoPrescrita}</li>
+                         ))}
+                       </ul>
+                    </div>
+                  </div>
+                ))}
+             </AccordionContent>
+           </AccordionItem>
+
+           {/* Etapa 4 */}
+           <AccordionItem value="etapa4" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
+             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
+               <span className="flex items-center gap-3">
+                 <Play className="w-5 h-5 text-csae-green-600" /> 4. Implementação de Cuidados
+               </span>
+             </AccordionTrigger>
+             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4 space-y-3">
+                {Object.entries(processo.implementacao || {}).map(([titulo, dados]: any, i: number) => {
+                  const items = dados.intervencoes.filter((iv: any) => iv.implementadoNestaConsulta);
+                  if (items.length === 0) return null;
+                  return (
+                    <div key={i}>
+                      <h4 className="font-bold">{titulo}</h4>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                         {items.map((iv: any, idx: number) => (
+                           <span key={idx} className="bg-white border rounded px-2 py-0.5 text-[10px] font-medium">
+                             {iv.acaoPrescrita} ({iv.quemExecuta})
+                           </span>
+                         ))}
+                      </div>
+                    </div>
+                  );
+                })}
+             </AccordionContent>
+           </AccordionItem>
+
+           {/* Etapa 5 */}
+           <AccordionItem value="etapa5" className="border rounded-xl px-4 bg-white shadow-sm overflow-hidden">
+             <AccordionTrigger className="hover:no-underline font-bold text-gray-700 py-3">
+               <span className="flex items-center gap-3">
+                 <TrendingUp className="w-5 h-5 text-csae-green-600" /> 5. Evolução (Ações Técnicas)
+               </span>
+             </AccordionTrigger>
+             <AccordionContent className="text-sm p-4 bg-muted/20 rounded-lg mb-4">
+                <p className="text-xs text-muted-foreground mb-3">Intervenções marcadas como executadas diretamente pelo enfermeiro nesta consulta.</p>
+                {Object.keys(processo.evolucao?.intervencoesExecutadas || {}).length > 0 ? (
+                  Object.entries(processo.evolucao?.intervencoesExecutadas || {}).map(([titulo, lista]: any, i) => (
+                    lista.length > 0 && (
+                      <div key={i} className="mb-2">
+                         <h4 className="font-bold text-xs">{titulo}:</h4>
+                         <ul className="list-disc ml-4 text-gray-600 italic">
+                            {lista.map((acao: string, j: number) => {
+                              // Buscar verbo no presente se disponível
+                              const diagnosticoOriginal = processo.planejamento?.diagnosticosPlanejados?.find(
+                                (d: any) => d.tituloDiagnostico === titulo
+                              );
+                              const intervencaoOriginal = diagnosticoOriginal?.intervencoesSelecionadas?.find(
+                                (inv: any) => inv.acaoPrescrita === acao
+                              );
+                              return (
+                                <li key={j}>{intervencaoOriginal?.acaoEnfermeiro || acao}</li>
+                              )
+                            })}
+                         </ul>
+                      </div>
+                    )
+                  ))
+                ) : (
+                  <p className="font-bold text-red-600">Não executei nenhuma intervenção nesta consulta</p>
+                )}
+             </AccordionContent>
+           </AccordionItem>
+        </Accordion>
+      </section>
+
+      {/* Gerador de Prontuário */}
+      <Card className="border-none shadow-xl bg-white overflow-hidden">
+        <CardHeader className="bg-csae-green-900 text-white min-h-[120px] flex flex-row items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-black">Prontuário Final</CardTitle>
+            <CardDescription className="text-csae-green-100 opacity-90">
+              Revise o texto gerado e cole no prontuário eletrônico institucional.
+            </CardDescription>
+          </div>
+          <Button onClick={handleCopiarTexto} variant="secondary" className="font-bold gap-2">
+            <Copy className="w-5 h-5" />
+            Gerar e Copiar Texto
           </Button>
-          
-          {(textoEvolucao || processo.evolucao?.resumoGerado) && (
-            <Textarea
-              value={textoEvolucao || processo.evolucao?.resumoGerado}
-              readOnly
-              className="min-h-[500px] font-mono text-sm leading-relaxed"
-              placeholder="O prontuário final aparecerá aqui após clicar em 'Gerar e Copiar Prontuário'"
-            />
-          )}
+        </CardHeader>
+        <CardContent className="p-0">
+          <Textarea
+            value={textoEvolucao}
+            placeholder="Clique em 'Gerar e Copiar' para estruturar o relato técnico..."
+            readOnly
+            className="min-h-[500px] border-none font-mono text-xs leading-relaxed p-8 focus-visible:ring-0 bg-gray-50/30"
+          />
         </CardContent>
       </Card>
     </div>

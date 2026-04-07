@@ -222,7 +222,14 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
 
                         {/* Lista de Intervenções */}
                         <div className="space-y-3">
-                          <h4 className="font-medium">Intervenções Prescritas:</h4>
+                          <h4 className="font-medium text-sm flex items-center justify-between">
+                            Intervenções Prescritas:
+                            {intervencoes.filter(i => i.implementadoNestaConsulta && !i.quemExecuta).length > 0 && (
+                              <span className="text-[10px] text-red-500 font-bold animate-pulse">
+                                Executores pendentes*
+                              </span>
+                            )}
+                          </h4>
                           {intervencoes.map((intervencao, intervencaoIndex) => (
                             <IntervencaoItem
                               key={intervencaoIndex}

@@ -211,7 +211,37 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   };
 
-  const handleEtapaChange = (etapa: number) => {
+  const handleEtapaChange = async (etapa: number) => {
+    // Se está tentando avançar a partir da etapa 4 para uma etapa futura (5 ou 6)
+    if (etapaAtual === 4 && etapa > 4) {
+      const implementacao = processo.implementacao || {};
+      
+      let peloMenosUmaImplementada = false;
+      const temPendencia = Object.values(implementacao).some((d: any) => {
+        const implementadas = d.intervencoes?.filter((i: any) => i.implementadoNestaConsulta) || [];
+        if (implementadas.length > 0) peloMenosUmaImplementada = true;
+        return implementadas.some((i: any) => !i.quemExecuta);
+      });
+      
+      if (!peloMenosUmaImplementada) {
+        toast({
+          title: "Implementação Incompleta",
+          description: "Marque pelo menos uma intervenção como implementada nesta consulta.",
+          variant: "destructive"
+        });
+        return; // Aborta navegação
+      }
+
+      if (temPendencia) {
+        toast({
+          title: "Membro da Equipe não Identificado",
+          description: "Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.",
+          variant: "destructive"
+        });
+        return; // Aborta navegação
+      }
+    }
+
     setEtapaAtual(etapa);
   };
 
@@ -507,27 +537,79 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               Salvar Progresso
             </Button>
             
-            {etapaAtual < 6 ? (
-              <Button 
-                type="button" 
-                onClick={() => {
-                   handleSalvarProgresso();
-                   handleEtapaChange(etapaAtual + 1);
-                }}
-                disabled={isSaving}
-              >
-                Avançar
-              </Button>
-            ) : (
-              <Button 
-                type="button" 
-                onClick={handleConcluirProcesso}
-                disabled={isSaving}
-              >
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Concluir Processo
-              </Button>
-            )}
+            <div className="flex justify-end gap-2 ml-auto">
+              {etapaAtual > 1 && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => handleEtapaChange(etapaAtual - 1)}
+                  disabled={isSaving}
+                >
+                  Voltar
+                </Button>
+              )}
+              
+              {etapaAtual < 6 ? (
+                <Button 
+                  type="button" 
+                  onClick={async () => {
+                     // As validações agora também estão no handleEtapaChange
+                     // e serão chamadas indiretamente se for da 4 pra 5,
+                     // mas para o botão Avançar manteremos sincronizado com a lógica.
+                     if (etapaAtual === 4) {
+                        const implementacao = processo.implementacao || {};
+                        
+                        let peloMenosUmaImplementada = false;
+                        const temPendencia = Object.values(implementacao).some((d: any) => {
+                          const implementadas = d.intervencoes?.filter((i: any) => i.implementadoNestaConsulta) || [];
+                          if (implementadas.length > 0) peloMenosUmaImplementada = true;
+                          return implementadas.some((i: any) => !i.quemExecuta);
+                        });
+                        
+                        if (!peloMenosUmaImplementada) {
+                          toast({
+                            title: "Implementação Incompleta",
+                            description: "Marque pelo menos uma intervenção como implementada nesta consulta.",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+
+                        if (temPendencia) {
+                          toast({
+                            title: "Membro da Equipe não Identificado",
+                            description: "Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.",
+                            variant: "destructive"
+                          });
+                          return;
+                        }
+                     }
+
+                     await handleSalvarProgresso();
+                     
+                     if (etapaAtual === 5 && !etapasCompletadas.includes(5)) {
+                        setEtapasCompletadas([...etapasCompletadas, 5]);
+                     }
+
+                     // Isso chamará o handle e atualizará o state síncrono para avançar 1
+                     await handleEtapaChange(etapaAtual + 1);
+                  }}
+                  disabled={isSaving}
+                >
+                  Avançar
+                </Button>
+              ) : (
+                <Button 
+                  type="button" 
+                  onClick={handleConcluirProcesso}
+                  disabled={isSaving}
+                  className="bg-csae-green-600 hover:bg-csae-green-700 font-bold"
+                >
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Concluir Processo de Enfermagem
+                </Button>
+              )}
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

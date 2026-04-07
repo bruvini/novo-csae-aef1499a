@@ -6,6 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import { IntervencaoImplementada } from '@/types/processoEnfermagem';
 
 interface IntervencaoItemProps {
@@ -68,14 +69,15 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
           {/* ToggleGroup para quem executa (apenas para intervenções padrão) */}
           {intervencao.tipo === 'padrao' && (
             <div className="flex items-center gap-4 mt-2">
-              <Label className="text-xs font-medium text-muted-foreground">
-                Quem executa:
+              <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
+                Quem executa (Obrigatório)*:
               </Label>
               <ToggleGroup
                 type="single"
                 value={intervencao.quemExecuta || ''}
-                onValueChange={handleExecutorChange}
+                onValueChange={(val) => handleExecutorChange(val as any)}
                 size="sm"
+                className={cn(intervencao.implementadoNestaConsulta && !intervencao.quemExecuta && "border border-red-500 rounded-md")}
               >
                 <ToggleGroupItem value="Enfermeiro" className="text-xs">
                   Enfermeiro
