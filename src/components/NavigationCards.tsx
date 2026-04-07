@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Home, Heart, Database, Users, BarChart, ArrowRight, Clock } from 'lucide-react';
+import { Heart, Database, Users, BarChart, ArrowRight, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarUsuariosAguardando } from '@/services/bancodados';
 
@@ -83,89 +82,102 @@ const NavigationCards = () => {
   });
 
   return (
-    <section className="py-12 bg-gray-50" aria-labelledby="navigation-heading">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <h2 id="navigation-heading" className="text-2xl sm:text-4xl font-extrabold text-csae-green-900 mb-3 tracking-tight">
-            Principais Funcionalidades
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
-            Explore as ferramentas desenvolvidas especialmente para otimizar seu trabalho como profissional de enfermagem
-          </p>
-        </div>
+    <section aria-labelledby="navigation-heading">
+      <div className="mb-6">
+        <h2 id="navigation-heading" className="text-xl font-bold text-csae-green-900 tracking-tight">
+          Ferramentas Disponíveis
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Acesse os módulos do sistema
+        </p>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto items-stretch">
-          {filteredItems.map((item) => {
-            const IconComponent = item.icon;
-            
-            const cardContent = (
-              <Card className={`h-full flex flex-col transition-all duration-300 border-none shadow-sm ${
-                item.disabled 
-                  ? 'opacity-60 cursor-not-allowed bg-gray-50' 
-                  : 'hover:shadow-xl hover:-translate-y-1 cursor-pointer bg-white border-t-4 border-t-csae-green-600'
-              }`}>
-                <CardHeader className="text-center pb-2">
-                  <div className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center mb-4 transition-colors ${
-                    item.disabled ? 'bg-gray-200 text-gray-400' : 'bg-csae-green-100 text-csae-green-600 group-hover:bg-csae-green-600 group-hover:text-white'
-                  }`}>
-                    <IconComponent className="w-8 h-8" />
-                  </div>
-                  <CardTitle className={`text-xl font-bold tracking-tight ${
-                    item.disabled ? 'text-gray-500' : 'text-csae-green-900'
-                  }`}>
-                    {item.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center flex-1 flex flex-col px-6 pb-6">
-                  <div className="flex flex-wrap items-center justify-center gap-2 mb-4 min-h-[24px]">
-                    <div className={`inline-block px-3 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
-                      item.disabled 
-                        ? 'bg-gray-200 text-gray-600' 
-                        : 'bg-csae-green-100 text-csae-green-800'
-                    }`}>
-                      {item.status}
-                    </div>
-                    {item.badge && (
-                      <div className="flex items-center gap-1 bg-amber-100 text-amber-800 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">
-                        <Clock className="w-3 h-3" />
-                        {item.badge.text}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <p className="text-gray-600 mb-8 leading-relaxed text-sm flex-1">
-                    {item.description}
-                  </p>
-                  
-                  <div className="mt-auto">
-                    <Button
-                      disabled={item.disabled}
-                      className={`w-full h-11 text-sm font-bold transition-all ${
-                        item.disabled 
-                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                          : 'csae-btn-primary shadow-md hover:shadow-lg'
-                      }`}
-                      aria-label={`${item.disabled ? 'Funcionalidade em construção' : 'Acessar'} ${item.title}`}
-                    >
-                      {item.disabled ? 'Em breve' : 'Acessar'}
-                      {!item.disabled && <ArrowRight className="w-4 h-4 ml-2" />}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
+      <div className="flex flex-col gap-3">
+        {filteredItems.map((item) => {
+          const IconComponent = item.icon;
 
-            return item.disabled ? (
-              <div key={item.id}>
-                {cardContent}
+          const cardContent = (
+            <div
+              className={`flex items-center gap-5 px-5 py-4 rounded-2xl border transition-all duration-300 ${
+                item.disabled
+                  ? 'opacity-60 cursor-not-allowed bg-gray-50 border-gray-200'
+                  : 'bg-white border-gray-100 shadow-sm hover:shadow-lg hover:border-csae-green-200 hover:-translate-y-0.5 cursor-pointer group'
+              }`}
+            >
+              {/* Left — Icon */}
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                  item.disabled
+                    ? 'bg-gray-200 text-gray-400'
+                    : 'bg-csae-green-100 text-csae-green-600 group-hover:bg-csae-green-600 group-hover:text-white'
+                }`}
+              >
+                <IconComponent className="w-6 h-6" />
               </div>
-            ) : (
-              <Link key={item.id} to={item.href} className="block h-full group">
-                {cardContent}
-              </Link>
-            );
-          })}
-        </div>
+
+              {/* Center — Title + Description */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3
+
+                    className={`text-sm font-bold leading-tight ${
+                      item.disabled ? 'text-gray-500' : 'text-csae-green-900'
+                    }`}
+                  >
+                    {item.title}
+                  </h3>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider leading-none ${
+                      item.disabled
+                        ? 'bg-gray-200 text-gray-600'
+                        : item.status === 'Novo'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-csae-green-100 text-csae-green-800'
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                  {item.badge && (
+                    <span className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse leading-none">
+                      <Clock className="w-3 h-3" />
+                      {item.badge.text}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-1 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+
+              {/* Right — Action Button */}
+              <div className="flex-shrink-0">
+                <Button
+                  disabled={item.disabled}
+                  size="sm"
+                  className={`h-9 px-4 text-xs font-bold transition-all ${
+                    item.disabled
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'csae-btn-primary shadow-sm hover:shadow-md'
+                  }`}
+                  aria-label={`${item.disabled ? 'Funcionalidade em construção' : 'Acessar'} ${item.title}`}
+                >
+                  {item.disabled ? 'Em breve' : 'Acessar'}
+                  {!item.disabled && <ArrowRight className="w-3.5 h-3.5 ml-1.5" />}
+                </Button>
+              </div>
+            </div>
+          );
+
+          return item.disabled ? (
+            <div key={item.id}>
+              {cardContent}
+            </div>
+          ) : (
+            <Link key={item.id} to={item.href} className="block group">
+              {cardContent}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

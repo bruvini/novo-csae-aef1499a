@@ -12,7 +12,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
   const totalProcessos = (stats?.processosAndamento || 0) + (stats?.processosConcluidos || 0);
 
   return (
-    <section className="relative w-full overflow-hidden rounded-3xl" role="banner">
+    <section className="relative w-full overflow-hidden rounded-3xl min-h-[320px]" role="banner">
       {/* Background with multiple gradients for depth */}
       <div className="absolute inset-0 bg-csae-green-800">
         <div className="absolute inset-0 bg-gradient-to-br from-csae-green-600/80 via-transparent to-transparent"></div>
@@ -23,10 +23,27 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
         }}></div>
       </div>
 
-      <div className="container relative mx-auto px-6 py-8 lg:px-12 lg:py-10 z-10 flex flex-col justify-center">
+      {/* ── Full-bleed image on the right ── */}
+      <div className="absolute inset-y-0 right-0 w-1/2 lg:w-5/12 hidden lg:block">
+        <img
+          src="/enfermeira-capa.png"
+          alt="Profissional de enfermagem CSAE"
+          className="w-full h-full object-cover grayscale-[0.15] contrast-[1.1]"
+        />
+        {/* Gradient fade from left → transparent (blends into green bg) */}
+        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-csae-green-800 to-transparent z-10" />
+        {/* Dark overlay for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/50 to-transparent" />
+        {/* AI credit label */}
+        <span className="absolute bottom-3 right-4 text-[10px] text-white/50 font-medium tracking-wide z-20 select-none">
+          Imagem gerada por IA
+        </span>
+      </div>
+
+      <div className="container relative mx-auto px-6 py-8 lg:px-12 lg:py-10 z-20 flex flex-col justify-center">
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Left Column - Content */}
-          <div className="flex-1 text-white text-center lg:text-left">
+          <div className="flex-1 text-white text-center lg:text-left max-w-2xl">
 
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.1] mb-4 tracking-tight">
@@ -63,28 +80,8 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
             </div>
           </div>
 
-          {/* Right Column - Visual */}
-          <div className="flex-shrink-0 relative group hidden lg:block">
-            {/* Glow effect */}
-            <div className="absolute -inset-2 bg-gradient-to-r from-csae-green-400/30 to-blue-400/30 rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition duration-1000"></div>
-            
-            <div className="relative w-56 h-56 lg:w-64 lg:h-64 rounded-full overflow-hidden shadow-2xl border border-white/20 transform transition-all duration-700 group-hover:scale-[1.03]">
-              <img
-                src="/enfermeira-capa.png"
-                alt="Profissional de enfermagem CSAE"
-                className="w-full h-full object-cover grayscale-[0.2] contrast-[1.1] group-hover:grayscale-0 transition-all duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/60 to-transparent"></div>
-              <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 200 200">
-                <path id="innerCurve" fill="transparent" d="M 10,100 a 90,90 0 0,0 180,0" />
-                <text className="text-[10px] fill-white/60 font-medium tracking-wide">
-                  <textPath href="#innerCurve" startOffset="55%">
-                    Imagem gerada por IA
-                  </textPath>
-                </text>
-              </svg>
-            </div>
-          </div>
+          {/* Right Column - transparent spacer so left content doesn't overlap the image */}
+          <div className="hidden lg:block lg:w-5/12 flex-shrink-0" aria-hidden="true" />
         </div>
       </div>
     </section>

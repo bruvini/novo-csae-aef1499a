@@ -1,7 +1,7 @@
 # Governança do Projeto - Portal CSAE Floripa 2.0
 
-**Versão**: 1.0.0
-**Data de Atualização**: 28/03/2026 20:30:00
+**Versão**: 1.1.0
+**Data de Atualização**: 07/04/2026 20:12:00
 
 ## 1. Visão Arquitetural
 O projeto utiliza uma stack moderna baseada em:
@@ -35,3 +35,12 @@ O projeto utiliza uma stack moderna baseada em:
 - **Desenvolvedor**: Responsável pela implementação e testes unitários.
 - **AI Agent (Antigravity)**: Responsável por revisões de conformidade, saneamento arquitetural e documentação inicial.
 - **Stakeholders**: Responsáveis pela definição de requisitos de negócio e validação funcional.
+
+## 6. Diretriz de Changelog Obrigatório
+> **OBRIGATÓRIO**: Todo novo deploy de funcionalidade, correção relevante ou alteração visível ao usuário final **deve** ser acompanhado de uma inserção na coleção `changelogs` do Firestore contendo:
+> - `titulo` (string): Resumo conciso da mudança.
+> - `descricao` (string): Descrição detalhada do impacto para o usuário.
+> - `dataHora` (Timestamp): Timestamp do momento do deploy.
+>
+> Essa diretriz garante que o mural de "Atualizações Recentes" no Dashboard mantenha os usuários informados sobre melhorias e correções do sistema. O não-cumprimento desta regra é considerado uma **violação de governança**.
+

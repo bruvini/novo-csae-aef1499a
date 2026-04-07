@@ -38,3 +38,7 @@ export {
   deleteDiagnostico
 } from './rolEnfermagemDB';
 
+// Changelog exports
+export type { Changelog } from './changelogDB';
+export { buscarChangelogsRecentes, seedChangelogInicial } from './changelogDB';
+

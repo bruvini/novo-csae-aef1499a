@@ -1,19 +1,37 @@
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bell, FileText, ClipboardCheck, Info } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Zap } from 'lucide-react';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
-import { buscarEstatisticasGlobais } from '@/services/bancodados';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  buscarEstatisticasGlobais,
+  buscarChangelogsRecentes,
+  seedChangelogInicial,
+  type Changelog,
+} from '@/services/bancodados';
 
+// ── Helpers ──────────────────────────────────────────────────
+function formatarDataHora(ts: Timestamp | undefined): string {
+  if (!ts) return '';
+  const d = ts.toDate();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ── Dashboard ────────────────────────────────────────────────
 const Dashboard = () => {
-  const [userData, setUserData] = useState<any>(null);
+  const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number } | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [changelogs, setChangelogs] = useState<Changelog[]>([]);
+  const [changelogLoading, setChangelogLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -34,6 +52,17 @@ const Dashboard = () => {
       } finally {
         setStatsLoading(false);
       }
+
+      // Changelog: seed + fetch
+      try {
+        await seedChangelogInicial();
+        const logs = await buscarChangelogsRecentes();
+        setChangelogs(logs);
+      } catch (error) {
+        console.error("Erro ao buscar changelogs:", error);
+      } finally {
+        setChangelogLoading(false);
+      }
     };
 
     fetchDashboardData();
@@ -53,8 +82,71 @@ const Dashboard = () => {
         {/* Banner de Boas-vindas Dinâmico */}
         <HeroBanner stats={stats} loading={statsLoading} />
 
-        {/* Atalhos Rápidos / Cards de Navegação */}
-        <NavigationCards />
+        {/* ── Grid: Navigation (60%) + Changelog (40%) ── */}
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Coluna esquerda — Ferramentas */}
+          <div className="lg:col-span-3">
+            <NavigationCards />
+          </div>
+
+          {/* Coluna direita — Atualizações Recentes */}
+          <div className="lg:col-span-2">
+            <Card className="border-none shadow-sm bg-white h-full flex flex-col">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2 text-lg font-bold text-csae-green-900">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  Atualizações Recentes
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="flex-1 min-h-0">
+                {changelogLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-csae-green-600"></div>
+                  </div>
+                ) : changelogs.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-12">
+                    Nenhuma atualização registrada.
+                  </p>
+                ) : (
+                  <ScrollArea className="h-[340px] pr-4">
+                    <div className="relative pl-6">
+                      {/* Timeline line */}
+                      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+
+                      <ul className="space-y-5">
+                        {changelogs.map((log, idx) => (
+                          <li key={log.id || idx} className="relative">
+                            {/* Timeline dot */}
+                            <span
+                              className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 ${
+                                idx === 0
+                                  ? 'bg-csae-green-500 border-csae-green-200 ring-4 ring-csae-green-50'
+                                  : 'bg-white border-gray-300'
+                              }`}
+                            />
+
+                            <time className="block text-[11px] font-semibold text-gray-400 mb-0.5 tracking-wide">
+                              {formatarDataHora(log.dataHora)}
+                            </time>
+                            <p className="text-sm font-bold text-gray-800 leading-tight">
+                              {log.titulo}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                              {log.descricao}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </ScrollArea>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </AuthenticatedLayout>
   );
