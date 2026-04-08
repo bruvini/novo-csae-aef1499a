@@ -24,27 +24,53 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
   const [implementacaoLocal, setImplementacaoLocal] = useState<ImplementacaoEnfermagem>({});
 
   useEffect(() => {
-    if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
-      // Inicializar implementação se não existir
-      if (Object.keys(processo.implementacao || {}).length === 0) {
-        const novaImplementacao: ImplementacaoEnfermagem = {};
-        
-        processo.planejamento.diagnosticosPlanejados.forEach(diag => {
-          novaImplementacao[diag.tituloDiagnostico] = {
-            intervencoes: diag.intervencoesSelecionadas.map(intervencao => ({
-              ...intervencao,
-              implementadoNestaConsulta: false
-            }))
-          };
-        });
-        
+    const diagnosticos = processo.planejamento?.diagnosticosPlanejados || [];
+    if (diagnosticos.length > 0) {
+      let teveAlteracao = false;
+      const implementacaoAtual = processo.implementacao || {};
+      const novaImplementacao: ImplementacaoEnfermagem = {};
+
+      const chavesAtuais = Object.keys(implementacaoAtual);
+      if (chavesAtuais.length !== diagnosticos.length) {
+        teveAlteracao = true;
+      }
+
+      diagnosticos.forEach(diag => {
+        const intervencoesPlanejadas = diag.intervencoesSelecionadas || [];
+        const intervencoesExistentes = implementacaoAtual[diag.tituloDiagnostico]?.intervencoes || [];
+
+        if (intervencoesPlanejadas.length !== intervencoesExistentes.length) {
+          teveAlteracao = true;
+        }
+
+        novaImplementacao[diag.tituloDiagnostico] = {
+          intervencoes: intervencoesPlanejadas.map(intervencao => {
+            const existente = intervencoesExistentes.find(
+              i => i.acaoPrescrita === intervencao.acaoPrescrita
+            );
+
+            if (existente) {
+              return existente;
+            } else {
+              teveAlteracao = true;
+              return {
+                ...intervencao,
+                implementadoNestaConsulta: false
+              };
+            }
+          })
+        };
+      });
+
+      if (teveAlteracao) {
         setImplementacaoLocal(novaImplementacao);
         onUpdateImplementacao(novaImplementacao);
       } else {
-        setImplementacaoLocal(processo.implementacao);
+        setImplementacaoLocal(implementacaoAtual);
       }
     }
-  }, [processo.planejamento, processo.implementacao, onUpdateImplementacao]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processo.planejamento]);
 
   const handleIntervencaoUpdate = (tituloDiagnostico: string, index: number, intervencaoAtualizada: IntervencaoImplementada) => {
     const novaImplementacao = { ...implementacaoLocal };
