@@ -82,33 +82,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
     );
   }
 
-  // Verificar se todos os requisitos do planejamento foram atendidos
-  const planejamentoCompleto = diagnosticosPlanjados.every(diag => {
-    if (diag.isPositivo) return true;
-    const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
-    const temResultado = !!(diag.resultadoEsperadoSelecionado && diag.resultadoEsperadoSelecionado.trim() !== '');
-    return temIntervencoes && temResultado;
-  });
 
-  if (!planejamentoCompleto) {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-yellow-500" />
-            Etapa 4: Implementação de Enfermagem
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <AlertDescription>
-              Para acessar a etapa de Implementação, é necessário completar o planejamento: todos os diagnósticos devem ter resultados esperados selecionados e pelo menos uma intervenção definida.
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-6">
