@@ -15,6 +15,8 @@ interface SessionData {
   gestorConteudos: boolean;
   email: string;
   paginasPermitidas?: string[];
+  numeroCoren?: string;
+  ufCoren?: string;
 }
 
 interface AuthContextType {
@@ -213,7 +215,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
-        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas
+        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas,
+        numeroCoren: userDoc.dadosProfissionais?.numeroCoren,
+        ufCoren: userDoc.dadosProfissionais?.ufCoren
       };
       
       // Salvar no localStorage e estado
@@ -395,7 +399,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
-        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas
+        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas,
+        numeroCoren: userDoc.dadosProfissionais?.numeroCoren,
+        ufCoren: userDoc.dadosProfissionais?.ufCoren
       };
 
       localStorage.setItem('csae_session', JSON.stringify(session));

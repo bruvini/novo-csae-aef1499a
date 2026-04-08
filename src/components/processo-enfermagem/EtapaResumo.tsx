@@ -16,6 +16,7 @@ import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames } from '@/services/bancodados/examesDB';
 import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -34,6 +35,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const [exames, setExames] = useState<any[]>([]);
   const [sistemas, setSistemas] = useState<any[]>([]);
   const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
+
+  const { sessionData } = useAuth();
+  const nomeEnfermeiro = sessionData?.nomeCompleto || 'Nome não identificado';
+  const numeroCoren = sessionData?.numeroCoren || 'Número não informado';
+  const ufCoren = sessionData?.ufCoren || 'UF';
 
   useEffect(() => {
     const loadCatalogs = async () => {
@@ -157,8 +163,8 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     }
 
     linhas.push('-'.repeat(50));
-    linhas.push('Enfermeiro Responsável: [Nome do Enfermeiro]');
-    linhas.push('COREN: [Número / UF]');
+    linhas.push(`Enfermeiro Responsável: ${nomeEnfermeiro}`);
+    linhas.push(`COREN: ${numeroCoren} / ${ufCoren}`);
     return linhas.join('\n');
   };
 
