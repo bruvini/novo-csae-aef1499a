@@ -37,6 +37,7 @@ export interface DiagnosticoPlanejado {
   ordemPrioridade: number;
   resultadoEsperadoSelecionado?: string; // Armazena o título do resultado escolhido
   intervencoesSelecionadas: IntervencaoSelecionada[];
+  isPositivo?: boolean; // Se não possuir resultados esperados no BD
 }
 
 export interface PlanejamentoEnfermagem {

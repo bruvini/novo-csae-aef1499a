@@ -41,6 +41,27 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   }, []);
 
   useEffect(() => {
+    if (diagnosticosDetalhados.length > 0 && diagnosticosPriorizados.length > 0) {
+      let needsUpdate = false;
+      const updated = diagnosticosPriorizados.map(diag => {
+        const dbDiag = diagnosticosDetalhados.find(d => d.id === diag.diagnosticoId);
+        if (dbDiag) {
+          const isPos = !dbDiag.resultadosEsperados || dbDiag.resultadosEsperados.length === 0;
+          if (diag.isPositivo !== isPos) {
+            needsUpdate = true;
+            return { ...diag, isPositivo: isPos };
+          }
+        }
+        return diag;
+      });
+      if (needsUpdate) {
+        setDiagnosticosPrivorizados(updated);
+        onUpdatePlanejamento({ diagnosticosPlanejados: updated });
+      }
+    }
+  }, [diagnosticosDetalhados]);
+
+  useEffect(() => {
     // Inicializar diagnosticosPriorizados com base nos diagnósticos selecionados
     if (processo.diagnostico.diagnosticosSelecionados.length > 0 && diagnosticosPriorizados.length === 0) {
       const diagnosticosIniciais = processo.diagnostico.diagnosticosSelecionados.map((diag, index) => ({
@@ -59,14 +80,15 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     }
   }, [processo.diagnostico.diagnosticosSelecionados, processo.planejamento, diagnosticosPriorizados.length]);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  const handleDragEnd = (result: unknown) => {
+    const res = result as { destination: any; source: any };
+    if (!res.destination) return;
 
     const items = Array.from(diagnosticosPriorizados);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+    const [reorderedItem] = items.splice(res.source.index, 1);
+    items.splice(res.destination.index, 0, reorderedItem);
 
-    // Atualizar ordem de prioridade
+    // Atualizar ordem
     const updatedItems = items.map((item, index) => ({
       ...item,
       ordemPrioridade: index + 1
@@ -292,7 +314,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
               <Accordion type="multiple" className="w-full">
                 {diagnosticosPriorizados.map((diagnostico) => {
                   const diagnosticoDetalhado = getDiagnosticoDetalhado(diagnostico.diagnosticoId);
-                  const isIncompleto = !diagnostico.resultadoEsperadoSelecionado;
+                  const isIncompleto = diagnostico.isPositivo ? false : !diagnostico.resultadoEsperadoSelecionado;
                   
                   return (
                     <AccordionItem 
@@ -314,7 +336,11 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
-                        {diagnosticoDetalhado ? (
+                        {diagnostico.isPositivo ? (
+                          <div className="p-4 text-center text-sm text-csae-green-700 bg-csae-green-50 rounded-lg">
+                            Diagnóstico positivo ou de bem-estar. Não possui resultados previstos no banco de dados.
+                          </div>
+                        ) : diagnosticoDetalhado ? (
                           <RadioGroup
                             value={diagnostico.resultadoEsperadoSelecionado || ""}
                             onValueChange={(value) => handleResultadoChange(diagnostico.diagnosticoId, value)}
@@ -362,7 +388,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                   
                   const semIntervencoes = !diagnostico.intervencoesSelecionadas || diagnostico.intervencoesSelecionadas.length === 0;
                   const semResultado = !diagnostico.resultadoEsperadoSelecionado;
-                  const isIncompleto = semIntervencoes || semResultado;
+                  const isIncompleto = diagnostico.isPositivo ? false : (semIntervencoes || semResultado);
 
                   return (
                     <AccordionItem 
@@ -384,83 +410,89 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
-                        <div className="space-y-4">
-                          {diagnostico.resultadoEsperadoSelecionado ? (
-                            <div className="p-3 bg-muted rounded-lg">
-                              <p className="font-medium text-sm">Resultado Esperado:</p>
-                              <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
-                            </div>
-                          ) : (
-                            <Alert variant="destructive" className="bg-red-100 border-red-200 text-red-800">
-                              <AlertDescription>
-                                Selecione primeiro um resultado esperado na Fase II para visualizar as intervenções disponíveis.
-                              </AlertDescription>
-                            </Alert>
-                          )}
+                        {diagnostico.isPositivo ? (
+                          <div className="p-4 text-center text-sm text-csae-green-700 bg-csae-green-50 rounded-lg">
+                            Diagnóstico positivo ou de bem-estar. Nenhuma intervenção é requerida ou contabilizada.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {diagnostico.resultadoEsperadoSelecionado ? (
+                              <div className="p-3 bg-muted rounded-lg">
+                                <p className="font-medium text-sm">Resultado Esperado:</p>
+                                <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
+                              </div>
+                            ) : (
+                              <Alert variant="destructive" className="bg-red-100 border-red-200 text-red-800">
+                                <AlertDescription>
+                                  Selecione primeiro um resultado esperado na Fase II para visualizar as intervenções disponíveis.
+                                </AlertDescription>
+                              </Alert>
+                            )}
 
-                          {intervencoes.length > 0 && (
-                            <div className="space-y-3">
-                              <h4 className="font-medium">Intervenções Padrão:</h4>
-                              {intervencoes.map((intervencao, index) => (
-                                <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
-                                  <Checkbox
-                                    id={`${diagnostico.diagnosticoId}-int-${index}`}
-                                    checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}
-                                    onCheckedChange={(checked) => 
-                                      handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, intervencao.acaoEnfermeiro, checked as boolean)
-                                    }
-                                  />
-                                  <Label htmlFor={`${diagnostico.diagnosticoId}-int-${index}`} className="flex-1 cursor-pointer">
-                                    {intervencao.acaoPrescrita}
-                                  </Label>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Intervenções Autorais */}
-                          <div className="space-y-3 border-t pt-4">
-                            <h4 className="font-medium">Adicionar Intervenção Autoral:</h4>
-                            <div className="space-y-2">
-                              <Textarea
-                                placeholder="Digite aqui uma intervenção autoral (inicie com um verbo no infinitivo)..."
-                                value={novaIntervencao[diagnostico.diagnosticoId] || ""}
-                                onChange={(e) => setNovaIntervencao(prev => ({
-                                  ...prev,
-                                  [diagnostico.diagnosticoId]: e.target.value
-                                }))}
-                              />
-                              <Button
-                                onClick={() => handleAdicionarIntervencaoAutoral(diagnostico.diagnosticoId)}
-                                disabled={!novaIntervencao[diagnostico.diagnosticoId]?.trim()}
-                                size="sm"
-                              >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Adicionar Intervenção
-                              </Button>
-                              <p className="text-xs text-muted-foreground">
-                                Verbos no infinitivo são verbos em sua forma original, terminados em -ar, -er, -ir (ex: Orientar, Realizar, Medir). 
-                                Suas sugestões serão enviadas à Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) 
-                                para análise e possível inclusão em futuras versões do sistema. Agradecemos sua colaboração na construção 
-                                de um cuidado cada vez melhor!
-                              </p>
-                            </div>
-
-                            {/* Lista de Intervenções Autorais */}
-                            {diagnostico.intervencoesSelecionadas?.filter(i => i.tipo === 'autoral').length > 0 && (
-                              <div className="space-y-2">
-                                <h5 className="font-medium text-sm">Intervenções Autorais Adicionadas:</h5>
-                                {diagnostico.intervencoesSelecionadas
-                                  .filter(i => i.tipo === 'autoral')
-                                  .map((intervencao, index) => (
-                                    <div key={index} className="p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                            {intervencoes.length > 0 && (
+                              <div className="space-y-3">
+                                <h4 className="font-medium">Intervenções Padrão:</h4>
+                                {intervencoes.map((intervencao, index) => (
+                                  <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
+                                    <Checkbox
+                                      id={`${diagnostico.diagnosticoId}-int-${index}`}
+                                      checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}
+                                      onCheckedChange={(checked) => 
+                                        handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, intervencao.acaoEnfermeiro, checked as boolean)
+                                      }
+                                    />
+                                    <Label htmlFor={`${diagnostico.diagnosticoId}-int-${index}`} className="flex-1 cursor-pointer">
                                       {intervencao.acaoPrescrita}
-                                    </div>
-                                  ))}
+                                    </Label>
+                                  </div>
+                                ))}
                               </div>
                             )}
+
+                            {/* Intervenções Autorais */}
+                            <div className="space-y-3 border-t pt-4">
+                              <h4 className="font-medium">Adicionar Intervenção Autoral:</h4>
+                              <div className="space-y-2">
+                                <Textarea
+                                  placeholder="Digite aqui uma intervenção autoral (inicie com um verbo no infinitivo)..."
+                                  value={novaIntervencao[diagnostico.diagnosticoId] || ""}
+                                  onChange={(e) => setNovaIntervencao(prev => ({
+                                    ...prev,
+                                    [diagnostico.diagnosticoId]: e.target.value
+                                  }))}
+                                />
+                                <Button
+                                  onClick={() => handleAdicionarIntervencaoAutoral(diagnostico.diagnosticoId)}
+                                  disabled={!novaIntervencao[diagnostico.diagnosticoId]?.trim()}
+                                  size="sm"
+                                >
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Adicionar Intervenção
+                                </Button>
+                                <p className="text-xs text-muted-foreground">
+                                  Verbos no infinitivo são verbos em sua forma original, terminados em -ar, -er, -ir (ex: Orientar, Realizar, Medir). 
+                                  Suas sugestões serão enviadas à Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) 
+                                  para análise e possível inclusão em futuras versões do sistema. Agradecemos sua colaboração na construção 
+                                  de um cuidado cada vez melhor!
+                                </p>
+                              </div>
+
+                              {/* Lista de Intervenções Autorais */}
+                              {diagnostico.intervencoesSelecionadas?.filter(i => i.tipo === 'autoral').length > 0 && (
+                                <div className="space-y-2">
+                                  <h5 className="font-medium text-sm">Intervenções Autorais Adicionadas:</h5>
+                                  {diagnostico.intervencoesSelecionadas
+                                    .filter(i => i.tipo === 'autoral')
+                                    .map((intervencao, index) => (
+                                      <div key={index} className="p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                                        {intervencao.acaoPrescrita}
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </AccordionContent>
                     </AccordionItem>
                   );

@@ -84,6 +84,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
 
   // Verificar se todos os requisitos do planejamento foram atendidos
   const planejamentoCompleto = diagnosticosPlanjados.every(diag => {
+    if (diag.isPositivo) return true;
     const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
     const temResultado = !!(diag.resultadoEsperadoSelecionado && diag.resultadoEsperadoSelecionado.trim() !== '');
     return temIntervencoes && temResultado;
@@ -212,34 +213,44 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-4">
-                        {/* Resultado Esperado */}
-                        {diagnostico.resultadoEsperadoSelecionado && (
-                          <div className="p-3 bg-muted rounded-lg">
-                            <p className="font-medium text-sm mb-1">Resultado Esperado:</p>
-                            <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
-                          </div>
-                        )}
-
-                        {/* Lista de Intervenções */}
-                        <div className="space-y-3">
-                          <h4 className="font-medium text-sm flex items-center justify-between">
-                            Intervenções Prescritas:
-                            {intervencoes.filter(i => i.implementadoNestaConsulta && !i.quemExecuta).length > 0 && (
-                              <span className="text-[10px] text-red-500 font-bold animate-pulse">
-                                Executores pendentes*
-                              </span>
+                        {diagnostico.isPositivo ? (
+                          <Alert className="bg-csae-green-50 text-csae-green-800 border-csae-green-200">
+                            <AlertDescription>
+                              Diagnóstico positivo - sem intervenções necessárias para esta consulta.
+                            </AlertDescription>
+                          </Alert>
+                        ) : (
+                          <>
+                            {/* Resultado Esperado */}
+                            {diagnostico.resultadoEsperadoSelecionado && (
+                              <div className="p-3 bg-muted rounded-lg">
+                                <p className="font-medium text-sm mb-1">Resultado Esperado:</p>
+                                <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
+                              </div>
                             )}
-                          </h4>
-                          {intervencoes.map((intervencao, intervencaoIndex) => (
-                            <IntervencaoItem
-                              key={intervencaoIndex}
-                              intervencao={intervencao}
-                              onUpdate={(intervencaoAtualizada) => 
-                                handleIntervencaoUpdate(diagnostico.tituloDiagnostico, intervencaoIndex, intervencaoAtualizada)
-                              }
-                            />
-                          ))}
-                        </div>
+
+                            {/* Lista de Intervenções */}
+                            <div className="space-y-3">
+                              <h4 className="font-medium text-sm flex items-center justify-between">
+                                Intervenções Prescritas:
+                                {intervencoes.filter(i => i.implementadoNestaConsulta && !i.quemExecuta).length > 0 && (
+                                  <span className="text-[10px] text-red-500 font-bold animate-pulse">
+                                    Executores pendentes*
+                                  </span>
+                                )}
+                              </h4>
+                              {intervencoes.map((intervencao, intervencaoIndex) => (
+                                <IntervencaoItem
+                                  key={intervencaoIndex}
+                                  intervencao={intervencao}
+                                  onUpdate={(intervencaoAtualizada) => 
+                                    handleIntervencaoUpdate(diagnostico.tituloDiagnostico, intervencaoIndex, intervencaoAtualizada)
+                                  }
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>

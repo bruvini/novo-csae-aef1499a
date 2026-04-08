@@ -58,6 +58,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
 
       // Verificar se todos têm resultado esperado e pelo menos uma intervenção
       return diagnosticosPlanjados.every(diag => {
+        if (diag.isPositivo) return true;
         const temIntervencoes = diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0;
         const temResultado = !!(diag.resultadoEsperadoSelecionado && diag.resultadoEsperadoSelecionado.trim() !== '');
         return temIntervencoes && temResultado;

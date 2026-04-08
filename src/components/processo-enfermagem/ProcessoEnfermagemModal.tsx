@@ -141,6 +141,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             // Etapa 3 completa? (Planejamento: Todos Diags com Resultado e Intervenção)
             const diagnosticosPlanejados = atualizado.planejamento?.diagnosticosPlanejados || [];
             const planejamentoOk = diagnosticosPlanejados.length > 0 && diagnosticosPlanejados.every(diag => {
+              if (diag.isPositivo) return true;
               const temIntervenções = diag.intervencoesSelecionadas?.length > 0;
               const temResultado = !!(diag.resultadoEsperadoSelecionado?.trim());
               return temIntervenções && temResultado;
