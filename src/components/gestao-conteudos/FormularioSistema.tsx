@@ -237,28 +237,35 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
                           Achado
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-col gap-2 mt-2">
                         {exame.achados.map((achado, achadoIndex) => (
-                          <div key={achadoIndex} className="flex items-center gap-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {achado.nomeAlteracao}
-                            </Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => editAchado(index, achadoIndex)}
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => deleteAchado(index, achadoIndex)}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                          <div key={achadoIndex} className="flex items-start justify-between p-3 bg-muted/40 border rounded-md hover:bg-muted/60 transition-colors">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium leading-tight">
+                                {achado.descricaoAchado}
+                              </span>
+                              <Badge variant="secondary" className="text-[10px] mt-1.5 w-fit">
+                                {achado.nomeAlteracao}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => editAchado(index, achadoIndex)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => deleteAchado(index, achadoIndex)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
