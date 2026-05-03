@@ -44,3 +44,7 @@ O projeto utiliza uma stack moderna baseada em:
 >
 > Essa diretriz garante que o mural de "Atualizações Recentes" no Dashboard mantenha os usuários informados sobre melhorias e correções do sistema. O não-cumprimento desta regra é considerado uma **violação de governança**.
 
+
+### Diretrizes de Interoperabilidade (Fase 4+)
+1. **Mapeamento de Dados**: Toda a coleta de dados de Exame Físico, Sinais Vitais e Exames Diagnósticos deve ser progressivamente mapeada para o recurso 'Observation' do padrão FHIR (HL7).
+2. **Terminologias**: Utilizar LOINC para exames laboratoriais e SNOMED CT para achados propedêuticos.

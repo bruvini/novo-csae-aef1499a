@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, Activity, FileText, Stethoscope } from 'lucide-react';
+import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle } from 'lucide-react';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
@@ -330,19 +330,33 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     );
   }
 
-  // Classes condicionais para feedback visual
+  // Classes condicionais para feedback visual aprimorado
   const getInputClassName = (parametro: string) => {
     const status = validationStates[parametro]?.status || 'neutro';
-    if (status === 'alterado') return 'border-red-500';
-    if (status === 'normal') return 'border-green-500';
-    return '';
+    const base = "transition-all duration-200 ";
+    if (status === 'alterado') return base + 'border-red-300 bg-red-50 focus-visible:ring-red-400';
+    if (status === 'normal') return base + 'border-emerald-300 bg-emerald-50 focus-visible:ring-emerald-400';
+    return base;
   };
 
   const renderValidationMessage = (parametro: string) => {
     const v = validationStates[parametro];
     if (!v || v.status !== 'alterado') return null;
-    return <p className="text-xs text-red-600 mt-1">{v.nomeAlteracao}</p>;
+    return (
+      <div className="flex items-center gap-1.5 text-red-600 mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+        <p className="text-[11px] font-bold leading-tight">{v.nomeAlteracao}</p>
+      </div>
+    );
   };
+
+  const SectionHeader: React.FC<{ title: string }> = ({ title }) => (
+    <div className="col-span-full border-b pb-1.5 mb-2 mt-4 first:mt-0">
+      <h5 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/80">
+        {title}
+      </h5>
+    </div>
+  );
 
   return (
     <div className="h-full">
@@ -596,23 +610,27 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
               </Dialog>
             </div>
 
-            <Accordion type="multiple" className="w-full">
-              {/* Sinais Vitais - Inputs numéricos com validação em tempo real */}
-              <AccordionItem value="sinais-vitais">
-                <AccordionTrigger className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  Sinais Vitais
+            <Accordion type="multiple" defaultValue={['sinais-vitais']} className="w-full space-y-4">
+              {/* Sinais Vitais - Grid de mini-cards */}
+              <AccordionItem value="sinais-vitais" className="border rounded-xl shadow-sm overflow-hidden bg-white">
+                <AccordionTrigger className="px-6 py-4 hover:bg-gray-50/80 transition-colors hover:no-underline group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 transition-colors">
+                      <Activity className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-gray-800">Sinais Vitais</span>
+                  </div>
                 </AccordionTrigger>
-                <AccordionContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AccordionContent className="bg-slate-50/40 p-6 border-t">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {sinaisVitais.map((sinal) => (
-                      <div key={sinal.id} className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {sinal.sinalVitalNome} ({sinal.unidadeMedida})
+                      <div key={sinal.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                        <label className="text-[11px] font-black uppercase tracking-wider text-gray-500">
+                          {sinal.sinalVitalNome} <span className="text-[9px] lowercase font-medium">({sinal.unidadeMedida})</span>
                         </label>
                         <Input
                           type="number"
-                          placeholder="Digite o valor"
+                          placeholder="00.0"
                           value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -628,23 +646,26 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Exames Diagnósticos - Diferenciar Laboratorial (Input) e Imagem (Combobox) */}
-              <AccordionItem value="exames-diagnosticos">
-                <AccordionTrigger className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Exames Diagnósticos
+              {/* Exames Diagnósticos - Organizados por Nome */}
+              <AccordionItem value="exames-diagnosticos" className="border rounded-xl shadow-sm overflow-hidden bg-white">
+                <AccordionTrigger className="px-6 py-4 hover:bg-gray-50/80 transition-colors hover:no-underline group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-gray-800">Exames Diagnósticos</span>
+                  </div>
                 </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
+                <AccordionContent className="bg-slate-50/40 p-6 border-t">
+                  <div className="space-y-8">
                     {exames.map((exame) => (
-                      <div key={exame.id} className="space-y-3">
-                        <h4 className="font-medium text-sm">{exame.nomeExame}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ml-4">
+                      <div key={exame.id} className="space-y-4">
+                        <SectionHeader title={exame.nomeExame} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ml-2">
                           {exame.componentes.map((componente, idx) => {
                             const parametro = componente.componenteAnalisado;
                             const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
 
-                            // Exame de Imagem -> Combobox com resultadoClassificatorio
                             if (exame.tipoExame === 'Imagem') {
                               const opcoes = Array.from(
                                 new Set(
@@ -656,7 +677,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
                               return (
                                 <div key={idx} className="space-y-2">
-                                  <label className="text-sm font-medium">
+                                  <label className="text-[11px] font-bold text-gray-600">
                                     {parametro}
                                   </label>
                                   <Combobox
@@ -667,23 +688,22 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                       updateAvaliacaoAtomic(parametro, selected, validation);
                                     }}
                                     placeholder="Selecione o resultado..."
-                                    searchPlaceholder="Buscar resultado..."
-                                    className={getInputClassName(parametro)}
+                                    searchPlaceholder="Buscar..."
+                                    className={"w-full " + getInputClassName(parametro)}
                                   />
                                   {renderValidationMessage(parametro)}
                                 </div>
                               );
                             }
 
-                            // Exame Laboratorial -> Input numérico
                             return (
                               <div key={idx} className="space-y-2">
-                                <label className="text-sm font-medium">
-                                  {parametro} ({componente.unidadeMedida})
+                                <label className="text-[11px] font-bold text-gray-600">
+                                  {parametro} <span className="text-[9px] font-medium opacity-70">({componente.unidadeMedida})</span>
                                 </label>
                                 <Input
                                   type="number"
-                                  placeholder="Digite o resultado"
+                                  placeholder="Resultado"
                                   value={valorAtual}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -703,18 +723,22 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionContent>
               </AccordionItem>
 
-              {/* Revisão de Sistemas - Combobox para achados propedêuticos */}
-              <AccordionItem value="revisao-sistemas">
-                <AccordionTrigger className="flex items-center gap-2">
-                  <Stethoscope className="w-4 h-4" />
-                  Revisão de Sistemas
+              {/* Revisão de Sistemas - Propedêutica por Sistema */}
+              <AccordionItem value="revisao-sistemas" className="border rounded-xl shadow-sm overflow-hidden bg-white">
+                <AccordionTrigger className="px-6 py-4 hover:bg-gray-50/80 transition-colors hover:no-underline group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-100 transition-colors">
+                      <Stethoscope className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold text-gray-800">Revisão de Sistemas</span>
+                  </div>
                 </AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
+                <AccordionContent className="bg-slate-50/40 p-6 border-t">
+                  <div className="space-y-8">
                     {sistemas.map((sistema) => (
-                      <div key={sistema.id} className="space-y-3">
-                        <h4 className="font-medium text-sm">{sistema.nomeSistema}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-4">
+                      <div key={sistema.id} className="space-y-4">
+                        <SectionHeader title={sistema.nomeSistema} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 ml-2">
                           {sistema.exames.map((exame, idx) => {
                             const parametro = exame.nomeExame;
                             const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
@@ -726,8 +750,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
                             return (
                               <div key={idx} className="space-y-2">
-                                <label className="text-sm font-medium">
-                                  {exame.nomeExame} - {exame.propedeutica}
+                                <label className="text-[11px] font-bold text-gray-600 leading-tight block">
+                                  {exame.nomeExame} <span className="font-normal opacity-60 italic text-[10px]">— {exame.propedeutica}</span>
                                 </label>
                                 <Combobox
                                   options={opcoesAchados}
@@ -737,8 +761,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     updateAvaliacaoAtomic(parametro, selected, validation);
                                   }}
                                   placeholder="Selecione o achado..."
-                                  searchPlaceholder="Buscar achado..."
-                                  className={getInputClassName(parametro)}
+                                  searchPlaceholder="Buscar..."
+                                  className={"w-full " + getInputClassName(parametro)}
                                 />
                                 {renderValidationMessage(parametro)}
                               </div>

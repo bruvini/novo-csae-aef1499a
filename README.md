@@ -65,3 +65,8 @@ O deploy é automatizado via Firebase Hosting.
 - [ ] Refatorar tipos `any` remanescentes em serviços de banco de dados.
 - [ ] Migração de modelagem de dados para padrão FHIR/HL7.
 - [ ] Adicionar testes automatizados (unitários e e2e).
+
+## 🩺 Padrões de Saúde e Interoperabilidade
+- **FHIR (HL7)**: A coleta de dados de Exame Físico e Sinais Vitais deve ser mapeada para o recurso `Observation`.
+- **LOINC**: Padronização para identificação de exames laboratoriais.
+- **SNOMED CT**: Terminologia para achados propedêuticos e diagnósticos.
