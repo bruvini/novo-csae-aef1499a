@@ -25,7 +25,15 @@ import {
   ArrowRight,
   ListFilter,
   MonitorSmartphone,
-  MousePointerClick
+  MousePointerClick,
+  CheckCircle2,
+  ClipboardList,
+  Stethoscope,
+  HeartPulse,
+  Timer,
+  TrendingUp,
+  Layers,
+  Pill,
 } from 'lucide-react';
 import {
   PieChart,
@@ -44,6 +52,10 @@ import {
   LabelList,
 } from 'recharts';
 import { obterEstatisticasUsuariosBI, EstatisticasBI, EvolucaoEntry } from '@/services/bancodados/biUsuariosDB';
+import {
+  obterEstatisticasProcessoEnfermagem,
+  EstatisticasProcessoEnfermagem,
+} from '@/services/bancodados/biProcessosEnfermagemDB';
 
 // ── Paleta de Cores ──────────────────────────────────────────────────────────
 const COLORS = ['#059669', '#10b981', '#34d399', '#0f766e', '#14b8a6', '#5eead4', '#0d9488'];
@@ -53,11 +65,30 @@ const STATUS_COLORS: Record<string, string> = {
   Recusado: '#e11d48',
 };
 
+// ── Paleta da Seção 2 (Produção Clínica) ─────────────────────────────────
+const COLORS_PROD = ['#6366f1', '#8b5cf6', '#a78bfa', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b'];
+const STATUS_PROCESSO_COLORS: Record<string, string> = {
+  'Concluídos': '#059669',
+  'Em Andamento': '#f59e0b',
+};
+const EXECUTOR_COLORS: Record<string, string> = {
+  'Enfermeiro': '#6366f1',
+  'Equipe/Outros': '#14b8a6',
+};
+
 // ── Custom Label para Pizza de Situação ────────────────────────────────────
 const RADIAN = Math.PI / 180;
 const renderCustomizedLabel = ({
   cx, cy, midAngle, innerRadius, outerRadius, value, name,
-}: any) => {
+}: {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  value: number;
+  name: string;
+}) => {
   const radius = outerRadius + 30;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -84,13 +115,17 @@ const EvolucaoTooltip = ({
   showVariacao,
 }: {
   active?: boolean;
-  payload?: any[];
+  payload?: Array<{
+    dataKey: string;
+    value: number;
+    payload: { variacaoPercentual?: number };
+  }>;
   label?: string;
   showVariacao: boolean;
 }) => {
   if (!active || !payload || !payload.length) return null;
-  const novos = payload.find((p: any) => p.dataKey === 'novos')?.value ?? 0;
-  const acumulado = payload.find((p: any) => p.dataKey === 'acumulado')?.value ?? 0;
+  const novos = payload.find((p) => p.dataKey === 'novos')?.value ?? 0;
+  const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value ?? 0;
   const variacao: number = payload[0]?.payload?.variacaoPercentual ?? 0;
 
   return (
@@ -131,6 +166,8 @@ const PainelEstatistico = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('mensal');
   const [viewModeAcessos, setViewModeAcessos] = useState<ViewMode>('mensal');
   const [lotacoesOpen, setLotacoesOpen] = useState(false);
+  const [dataProcessos, setDataProcessos] = useState<EstatisticasProcessoEnfermagem | null>(null);
+  const [loadingProcessos, setLoadingProcessos] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -144,6 +181,20 @@ const PainelEstatistico = () => {
       }
     };
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchProcessos = async () => {
+      try {
+        const stats = await obterEstatisticasProcessoEnfermagem();
+        setDataProcessos(stats);
+      } catch (error) {
+        console.error('Erro ao carregar dados de produção:', error);
+      } finally {
+        setLoadingProcessos(false);
+      }
+    };
+    fetchProcessos();
   }, []);
 
   const evolucaoAtiva = useCallback((): EvolucaoEntry[] => {
@@ -355,7 +406,7 @@ const PainelEstatistico = () => {
                     ))}
                   </Pie>
                   <RechartsTooltip
-                    formatter={(val: any, name: any) => [val, name]}
+                    formatter={(val: number, name: string) => [val, name]}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   />
                   <Legend />
@@ -652,30 +703,669 @@ const PainelEstatistico = () => {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
-        {/* SECTION 2: O QUE A ENFERMAGEM ESTÁ PRODUZINDO? (FASE 2)          */}
+        {/* SECTION 2: O QUE A ENFERMAGEM ESTÁ PRODUZINDO?                   */}
         {/* ══════════════════════════════════════════════════════════════════ */}
-        <div className="flex flex-col gap-8 opacity-50 grayscale pointer-events-none">
-          <div className="border-l-4 border-blue-600 pl-6 py-1">
-            <h2 className="text-2xl font-black text-gray-900 uppercase tracking-wide">
+        <div className="flex flex-col gap-8">
+          {/* ── Cabeçalho da Seção 2 ── */}
+          <div className="border-l-4 border-indigo-600 pl-6 py-1">
+            <h2 className="text-2xl font-black text-indigo-900 uppercase tracking-wide">
               O que a enfermagem de Florianópolis está produzindo?
             </h2>
             <p className="text-gray-500 text-sm">
-              Métricas clínicas e produção sistematizada da rede municipal.
+              Indicadores clínicos e operacionais do Processo de Enfermagem na rede municipal.
             </p>
           </div>
-          <Card className="border-dashed border-2 border-gray-300 shadow-none bg-gray-50">
-            <CardContent className="h-[300px] flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4 text-gray-400">
-                <Target className="w-12 h-12" />
-                <p className="font-bold uppercase tracking-widest text-xs">
-                  Módulo em Desenvolvimento — Fase 2
-                </p>
-                <p className="text-xs max-w-xs text-center">
-                  A agregação de dados clínicos (diagnósticos e intervenções) está sendo consolidada pela engenharia.
-                </p>
+
+          {loadingProcessos ? (
+            <div className="flex flex-col items-center justify-center h-64 space-y-4">
+              <HeartPulse className="w-10 h-10 text-indigo-500 animate-pulse" />
+              <p className="text-gray-400 font-medium text-sm animate-pulse">
+                Consolidando dados clínicos...
+              </p>
+            </div>
+          ) : !dataProcessos || dataProcessos.totalProcessos === 0 ? (
+            <Card className="border-dashed border-2 border-indigo-200 shadow-none bg-indigo-50/50">
+              <CardContent className="h-[260px] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4 text-indigo-300">
+                  <ClipboardList className="w-12 h-12" />
+                  <p className="font-bold uppercase tracking-widest text-xs text-indigo-400">
+                    Nenhum processo de enfermagem registrado ainda
+                  </p>
+                  <p className="text-xs max-w-xs text-center text-indigo-400">
+                    Assim que os enfermeiros registrarem processos na ferramenta, os indicadores aparecerão aqui.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* ── LINHA 1: KPIs PRINCIPAIS (5 CARDS) ── */}
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+
+                {/* Total de Processos */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <ClipboardList className="w-16 h-16 text-indigo-900" />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-indigo-600">
+                      Total de Processos
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-indigo-900">
+                      {dataProcessos.totalProcessos}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-indigo-700">
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      Realizados na plataforma
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Concluídos */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <CheckCircle2 className="w-16 h-16 text-emerald-900" />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-emerald-600">
+                      Processos Concluídos
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-emerald-900">
+                      {dataProcessos.totalProcessosConcluidos}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="w-full bg-emerald-100 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-emerald-500 h-full transition-all duration-1000"
+                        style={{ width: `${dataProcessos.taxaConclusao}%` }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Em Andamento */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Activity className="w-16 h-16 text-amber-900" />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-amber-600">
+                      Em Andamento
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-amber-900">
+                      {dataProcessos.totalProcessosEmAndamento}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-amber-700">
+                      <Activity className="w-3 h-3 mr-1" />
+                      Processos ativos agora
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pacientes Atendidos */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Users className="w-16 h-16 text-violet-900" />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-violet-600">
+                      Pacientes Atendidos
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-violet-900">
+                      {dataProcessos.totalPacientesAtendidos}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-violet-700">
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      Com pelo menos 1 processo
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Taxa de Conclusão */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Target className="w-16 h-16 text-teal-900" />
+                  </div>
+                  <CardHeader className="pb-2">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-teal-600">
+                      Taxa de Conclusão
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-teal-900">
+                      {dataProcessos.taxaConclusao}%
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="w-full bg-teal-100 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-teal-500 h-full transition-all duration-1000"
+                        style={{ width: `${dataProcessos.taxaConclusao}%` }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* ── LINHA 2: KPIs CLÍNICOS (4 CARDS) ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+                {/* Tempo Médio */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Timer className="w-14 h-14 text-blue-900" />
+                  </div>
+                  <CardHeader className="pb-1">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-blue-600">
+                      Tempo Médio / Processo
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-blue-900">
+                      {dataProcessos.tempoMedioProcessoHoras > 0
+                        ? `${dataProcessos.tempoMedioProcessoHoras}h`
+                        : '—'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-blue-700">
+                      <Clock className="w-3 h-3 mr-1" />
+                      Do início à conclusão
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Diagnósticos Únicos */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Stethoscope className="w-14 h-14 text-indigo-900" />
+                  </div>
+                  <CardHeader className="pb-1">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-indigo-600">
+                      Diagnósticos Únicos
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-indigo-900">
+                      {dataProcessos.totalDiagnosticosUnicos}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-indigo-700">
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      Diagnósticos distintos utilizados
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Intervenções Únicas */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Pill className="w-14 h-14 text-purple-900" />
+                  </div>
+                  <CardHeader className="pb-1">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-purple-600">
+                      Intervenções Únicas
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-purple-900">
+                      {dataProcessos.totalIntervencoesUnicas}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-purple-700">
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      Ações prescritas distintas
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Média Diagnósticos / Processo */}
+                <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Layers className="w-14 h-14 text-rose-900" />
+                  </div>
+                  <CardHeader className="pb-1">
+                    <CardDescription className="uppercase text-[9px] font-black tracking-widest text-rose-600">
+                      Média Diag. / Processo
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-black text-rose-900">
+                      {dataProcessos.mediaDiagnosticosPorProcesso}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-[10px] font-semibold text-rose-700">
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      Diagnósticos por consulta
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── LINHA 3: STATUS DOS PROCESSOS + NHBs (50/50) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Donut: Status dos Processos */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Status dos Processos</CardTitle>
+                    <CardDescription>Distribuição entre concluídos e em andamento</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[320px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={dataProcessos.distribuicaoStatus}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={75}
+                          outerRadius={115}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) =>
+                            percent > 0 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''
+                          }
+                        >
+                          {dataProcessos.distribuicaoStatus.map((entry) => (
+                            <Cell
+                              key={entry.name}
+                              fill={STATUS_PROCESSO_COLORS[entry.name] || COLORS_PROD[0]}
+                            />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip
+                          contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Donut: NHBs Mais Afetadas */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">NHBs Mais Afetadas</CardTitle>
+                    <CardDescription>
+                      Necessidades Humanas Básicas identificadas na Avaliação
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[320px]">
+                    {dataProcessos.nhbsTop.length === 0 ? (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Nenhum dado de NHB registrado ainda
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={dataProcessos.nhbsTop.slice(0, 6)}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={95}
+                            paddingAngle={3}
+                            dataKey="value"
+                            label={({ name, percent }) =>
+                              percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
+                            }
+                          >
+                            {dataProcessos.nhbsTop.slice(0, 6).map((_, index) => (
+                              <Cell key={index} fill={COLORS_PROD[index % COLORS_PROD.length]} />
+                            ))}
+                          </Pie>
+                          <RechartsTooltip
+                            formatter={(val, name) => [val, name]}
+                            contentStyle={{
+                              borderRadius: '12px',
+                              border: 'none',
+                              boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                            }}
+                          />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── LINHA 4: TOP 10 DIAGNÓSTICOS (largura total) ── */}
+              <Card className="border-none shadow-xl bg-white overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Stethoscope className="w-5 h-5 text-indigo-600" />
+                    Top 10 Diagnósticos de Enfermagem
+                  </CardTitle>
+                  <CardDescription>
+                    Diagnósticos mais frequentes em toda a rede municipal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                  {dataProcessos.diagnosticosTop.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                      Nenhum diagnóstico registrado ainda
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={dataProcessos.diagnosticosTop}
+                        layout="vertical"
+                        margin={{ top: 4, right: 60, left: 8, bottom: 4 }}
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          width={220}
+                          tick={{ fontSize: 11, fontWeight: 600, fill: '#374151' }}
+                        />
+                        <RechartsTooltip cursor={{ fill: '#f5f3ff' }} />
+                        <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]}>
+                          <LabelList
+                            dataKey="value"
+                            position="right"
+                            style={{ fontSize: 11, fontWeight: 700, fill: '#6366f1' }}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* ── LINHA 5: TOP INTERVENÇÕES + TOP RESULTADOS (50/50) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Top 10 Intervenções */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Pill className="w-5 h-5 text-purple-600" />
+                      Top 10 Intervenções Prescritas
+                    </CardTitle>
+                    <CardDescription>Ações de enfermagem mais frequentes</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    {dataProcessos.intervencoesTop.length === 0 ? (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Nenhuma intervenção registrada ainda
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={dataProcessos.intervencoesTop}
+                          layout="vertical"
+                          margin={{ top: 4, right: 50, left: 8, bottom: 4 }}
+                        >
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={180}
+                            tick={{ fontSize: 10, fontWeight: 600, fill: '#374151' }}
+                          />
+                          <RechartsTooltip cursor={{ fill: '#faf5ff' }} />
+                          <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
+                            <LabelList
+                              dataKey="value"
+                              position="right"
+                              style={{ fontSize: 10, fontWeight: 700, fill: '#8b5cf6' }}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Top 10 Resultados */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Target className="w-5 h-5 text-teal-600" />
+                      Top 10 Resultados Esperados
+                    </CardTitle>
+                    <CardDescription>Outcomes mais planejados no processo</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[400px]">
+                    {dataProcessos.resultadosTop.length === 0 ? (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Nenhum resultado registrado ainda
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={dataProcessos.resultadosTop}
+                          layout="vertical"
+                          margin={{ top: 4, right: 50, left: 8, bottom: 4 }}
+                        >
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={180}
+                            tick={{ fontSize: 10, fontWeight: 600, fill: '#374151' }}
+                          />
+                          <RechartsTooltip cursor={{ fill: '#f0fdfa' }} />
+                          <Bar dataKey="value" fill="#0d9488" radius={[0, 4, 4, 0]}>
+                            <LabelList
+                              dataKey="value"
+                              position="right"
+                              style={{ fontSize: 10, fontWeight: 700, fill: '#0d9488' }}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── LINHA 6: EXECUTOR DAS INTERVENÇÕES + NHBs DETALHADAS (50/50) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Quem Executa as Intervenções */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold">Executor das Intervenções</CardTitle>
+                    <CardDescription>Proporção de ações por responsável</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={dataProcessos.distribuicaoExecutores.filter((d) => d.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          dataKey="value"
+                          label={({ name, percent }) =>
+                            percent > 0.03 ? `${name}: ${(percent * 100).toFixed(0)}%` : ''
+                          }
+                        >
+                          {dataProcessos.distribuicaoExecutores.map((entry) => (
+                            <Cell
+                              key={entry.name}
+                              fill={EXECUTOR_COLORS[entry.name] || COLORS_PROD[0]}
+                            />
+                          ))}
+                        </Pie>
+                        <RechartsTooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* NHBs — Lista Detalhada */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <HeartPulse className="w-5 h-5 text-rose-600" />
+                      NHBs por Frequência
+                    </CardTitle>
+                    <CardDescription>Ranking completo de necessidades identificadas</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[280px] overflow-y-auto">
+                    {dataProcessos.nhbsTop.length === 0 ? (
+                      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                        Nenhum dado de NHB registrado ainda
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {dataProcessos.nhbsTop.map((nhb, idx) => (
+                          <div
+                            key={nhb.name}
+                            className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 hover:bg-indigo-50 transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-[11px] font-black text-gray-400 w-5 text-right">
+                                {idx + 1}
+                              </span>
+                              <span className="text-sm font-semibold text-gray-800">{nhb.name}</span>
+                            </div>
+                            <span className="text-sm font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                              {nhb.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── LINHA 7: POR DIA DA SEMANA + POR HORÁRIO (50/50) ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                {/* Por Dia da Semana */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                      Processos por Dia da Semana
+                    </CardTitle>
+                    <CardDescription>Quando os enfermeiros mais utilizam a ferramenta</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={dataProcessos.chartDiaSemana} margin={{ top: 4, right: 20, left: 0, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <RechartsTooltip cursor={{ fill: '#f5f3ff' }} />
+                        <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} name="Processos">
+                          <LabelList dataKey="value" position="top" style={{ fontSize: 10, fontWeight: 700, fill: '#6366f1' }} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Por Horário */}
+                <Card className="border-none shadow-xl bg-white overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-bold flex items-center gap-2">
+                      <Timer className="w-5 h-5 text-indigo-600" />
+                      Distribuição por Horário de Início
+                    </CardTitle>
+                    <CardDescription>Horários de maior atividade clínica</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={dataProcessos.chartHora}
+                        margin={{ top: 4, right: 10, left: 0, bottom: 4 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 9, fontWeight: 600 }}
+                          axisLine={false}
+                          tickLine={false}
+                          interval={2}
+                        />
+                        <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <RechartsTooltip cursor={{ fill: '#f5f3ff' }} />
+                        <Bar dataKey="value" fill="#8b5cf6" radius={[3, 3, 0, 0]} name="Processos" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── LINHA 8: EVOLUÇÃO MENSAL DE CONCLUSÕES (largura total) ── */}
+              <Card className="border-none shadow-xl bg-white overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                    Evolução Mensal de Processos Concluídos
+                  </CardTitle>
+                  <CardDescription>
+                    Produção sistematizada ao longo do tempo na rede municipal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="h-[360px]">
+                  {dataProcessos.chartMensal.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                      Nenhum processo concluído ainda para gerar histórico mensal
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart
+                        data={dataProcessos.chartMensal}
+                        margin={{ top: 10, right: 20, left: 0, bottom: 40 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorProd" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6} />
+                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="name"
+                          tick={{ fontSize: 10 }}
+                          angle={-35}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <RechartsTooltip
+                          contentStyle={{
+                            borderRadius: '12px',
+                            border: 'none',
+                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#6366f1"
+                          strokeWidth={3}
+                          fillOpacity={1}
+                          fill="url(#colorProd)"
+                          name="Conclusões no Mês"
+                        />
+                        <Bar
+                          dataKey="value"
+                          fill="#a78bfa"
+                          barSize={18}
+                          radius={[4, 4, 0, 0]}
+                          name="Conclusões no Mês"
+                        />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </div>
     </AuthenticatedLayout>
