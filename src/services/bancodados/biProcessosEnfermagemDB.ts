@@ -203,7 +203,9 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
   const usuariosMap: Record<string, { nome: string; lotacao: string }> = {};
   usuariosSnapshot.forEach(doc => {
     const d = doc.data();
-    usuariosMap[doc.id] = {
+    // Prioriza o campo 'uid' se existir, senão usa o doc.id (padrão)
+    const actualUid = d.uid || doc.id;
+    usuariosMap[actualUid] = {
       nome: d.dadosPessoais?.nomeCompleto || 'Usuário Desconhecido',
       lotacao: d.dadosProfissionais?.lotacao || 'Sem Lotação'
     };

@@ -869,7 +869,7 @@ const PainelEstatistico = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-indigo-700">
                   <div className="bg-indigo-100 p-2 rounded-lg font-black text-xs">01</div>
-                  <h3 className="font-black uppercase tracking-widest text-xs">Etapa: Avaliação</h3>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Avaliação de Enfermagem</h3>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card className="border-none shadow-xl h-[450px]">
@@ -905,16 +905,16 @@ const PainelEstatistico = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-rose-700">
                   <div className="bg-rose-100 p-2 rounded-lg font-black text-xs">02</div>
-                  <h3 className="font-black uppercase tracking-widest text-xs">Etapa: Diagnóstico</h3>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Diagnósticos de Enfermagem</h3>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card className="border-none shadow-xl h-[450px]">
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Diagnósticos de Enfermagem</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.diagnostico.top} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.diagnostico.top} layout="vertical" margin={{ left: 30, right: 30 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={300} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#e11d48" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -941,16 +941,16 @@ const PainelEstatistico = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-emerald-700">
                   <div className="bg-emerald-100 p-2 rounded-lg font-black text-xs">03</div>
-                  <h3 className="font-black uppercase tracking-widest text-xs">Etapa: Planejamento</h3>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Planejamento de Enfermagem</h3>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <Card className="border-none shadow-xl h-[450px]">
-                    <CardHeader><CardTitle className="text-sm font-bold">Top 10 Resultados Esperados (NOC)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm font-bold">Top 10 Resultados Esperados</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.results} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.planejamento.results} layout="vertical" margin={{ left: 30, right: 30 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={300} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#059669" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -958,12 +958,12 @@ const PainelEstatistico = () => {
                     </CardContent>
                   </Card>
                   <Card className="border-none shadow-xl h-[450px]">
-                    <CardHeader><CardTitle className="text-sm font-bold">Top 10 Intervenções Prescritas (NIC)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-sm font-bold">Top 10 Intervenções Prescritas</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.prescribed} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.planejamento.prescribed} layout="vertical" margin={{ left: 30, right: 30 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -977,16 +977,16 @@ const PainelEstatistico = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-cyan-700">
                   <div className="bg-cyan-100 p-2 rounded-lg font-black text-xs">04</div>
-                  <h3 className="font-black uppercase tracking-widest text-xs">Etapa: Implementação</h3>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Implementação de Enfermagem</h3>
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <Card className="lg:col-span-2 border-none shadow-xl h-[450px]">
                     <CardHeader><CardTitle className="text-sm font-bold">Intervenções Aplicadas na Consulta</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.implementacao.applied} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.implementacao.applied} layout="vertical" margin={{ left: 30, right: 30 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={180} tick={{ fontSize: 9, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 9, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#0891b2" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -1001,7 +1001,7 @@ const PainelEstatistico = () => {
                           <Pie 
                             data={dataProcessos.etapasPE.implementacao.executors} 
                             cx="50%" cy="50%" 
-                            innerRadius={50} outerRadius={80} 
+                            innerRadius={50} outerRadius={65} 
                             dataKey="value" 
                             label={({ name }) => name}
                           >
@@ -1020,7 +1020,7 @@ const PainelEstatistico = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-blue-700">
                   <div className="bg-blue-100 p-2 rounded-lg font-black text-xs">05</div>
-                  <h3 className="font-black uppercase tracking-widest text-xs">Etapa: Evolução</h3>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Evolução de Enfermagem</h3>
                 </div>
                 <Card className="border-none shadow-xl h-[450px]">
                   <CardHeader>
@@ -1030,9 +1030,9 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dataProcessos.etapasPE.evolucao.nurseApplied} layout="vertical">
+                      <BarChart data={dataProcessos.etapasPE.evolucao.nurseApplied} layout="vertical" margin={{ left: 30, right: 30 }}>
                         <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={200} tick={{ fontSize: 10, fontWeight: 600 }} />
+                        <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 10, fontWeight: 600 }} />
                         <Bar dataKey="value" fill="#2563eb" radius={[0, 4, 4, 0]} />
                         <RechartsTooltip />
                       </BarChart>
