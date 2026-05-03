@@ -47,6 +47,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   // Mantemos a lista de NHBs local para exibição imediata
   const [nhbsAfetadas, setNhbsAfetadas] = useState<{ parametro: string; nhb: string }[]>([]);
 
+  // Effect 1: Carrega dados estáticos do Firestore — executa APENAS uma vez (montagem)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -69,20 +70,23 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
-
-        // Inicializa NHBs a partir dos dados existentes
-        if (processo.avaliacao?.nhbsAfetadas) {
-          setNhbsAfetadas(processo.avaliacao.nhbsAfetadas);
-        }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar dados da avaliação:', error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [processo.avaliacao?.nhbsAfetadas]);
+  }, []); // Array vazio: executa apenas na montagem
+
+  // Effect 2: Sincroniza NHBs locais quando o processo é carregado (montagem)
+  useEffect(() => {
+    if (processo.avaliacao?.nhbsAfetadas) {
+      setNhbsAfetadas(processo.avaliacao.nhbsAfetadas);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Inicialização apenas — atualizações subsequentes são gerenciadas por updateNhbs
 
   const calculateAge = (dataNascimento: Timestamp): number => {
     const birth = dataNascimento.toDate();
@@ -126,7 +130,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   };
 
   // Função centralizada para recalcular todas as NHBs do processo
-  const calculateAllNhbs = (tempExameFisico: any) => {
+  const calculateAllNhbs = (tempExameFisico: Record<string, string | number>) => {
     const novaLista: { parametro: string; nhb: string }[] = [];
     
     // Sinais Vitais
@@ -231,32 +235,35 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
 
     // 1. Filtrar referências compatíveis por idade e sexo
-    const possibleRanges = referenceData.filter((ref: any) => {
-      const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
-      const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
-      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === sexo;
+    const possibleRanges = referenceData.filter((ref: ValorReferenciaVital | ResultadoExame) => {
+      const r = ref as Record<string, number | string | undefined>;
+      const idadeMinOk = r.idadeMinima == null || idade >= (r.idadeMinima as number);
+      const idadeMaxOk = r.idadeMaxima == null || idade <= (r.idadeMaxima as number);
+      const sexoOk = !r.criterioSexo || r.criterioSexo === 'Ambos' || r.criterioSexo === sexo;
       return idadeMinOk && idadeMaxOk && sexoOk;
     });
 
-    if (possibleRanges.length === 0) return { status: 'neutro' };
+    if (possibleRanges.length === 0) return { status: 'neutro' as const };
 
     // 2. Encontrar a faixa específica onde o VALOR se encaixa
-    const matchingRange = possibleRanges.find((ref: any) => {
-      const min = ref.valorMinimo;
-      const max = ref.valorMaximo;
+    const matchingRange = possibleRanges.find((ref: ValorReferenciaVital | ResultadoExame) => {
+      const r = ref as Record<string, number | undefined>;
+      const min = r.valorMinimo;
+      const max = r.valorMaximo;
       
       if (min != null && max != null) return numValue >= min && numValue <= max;
       if (min != null) return numValue >= min;
       if (max != null) return numValue <= max;
       return false;
-    }) as any;
+    }) as (ValorReferenciaVital | ResultadoExame) | undefined;
 
     if (!matchingRange) {
-      return { status: 'neutro' };
+      return { status: 'neutro' as const };
     }
 
-    const nomeAlt: string | null | undefined = matchingRange.nomeAlteracao;
-    const nhb: string | undefined = matchingRange.subconjuntoNHBVinculado;
+    const matchingAny = matchingRange as Record<string, string | undefined>;
+    const nomeAlt: string | null | undefined = matchingAny.nomeAlteracao;
+    const nhb: string | undefined = matchingAny.subconjuntoNHBVinculado;
     const isNormal = isTextoNormal(nomeAlt);
 
     return isNormal 

@@ -33,6 +33,7 @@ import {
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
+import { calcularEtapasCompletadas } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 import { Loader2, Trash2, X, History } from 'lucide-react';
@@ -43,7 +44,7 @@ import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
 import EtapaResumo from './EtapaResumo';
-import { ImplementacaoEnfermagem, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
+import { ImplementacaoEnfermagem, PlanejamentoEnfermagem, AvaliacaoEnfermagem, DiagnosticoEnfermagem, EvolucaoEnfermagem, IntervencaoImplementada } from '@/types/processoEnfermagem';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 
 interface ProcessoEnfermagemModalProps {
@@ -128,41 +129,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             setProcesso(atualizado);
             setEtapaAtual(atualizado.etapaAtual);
 
-            const etapasConcluidas: number[] = [];
-            
-            // Etapa 1 completa? (Dados Subjetivos + Exame Físico)
-            const temColeta = !!(atualizado.avaliacao?.coletaDeDadosSubjetivos?.trim());
-            const temExameFisico = Object.keys(atualizado.avaliacao?.exameFisico || {}).length > 0;
-            if (temColeta && temExameFisico) etapasConcluidas.push(1);
-            
-            // Etapa 2 completa? (Diagnósticos Selecionados)
-            if (atualizado.diagnostico?.diagnosticosSelecionados?.length > 0) etapasConcluidas.push(2);
-            
-            // Etapa 3 completa? (Planejamento: Todos Diags com Resultado e Intervenção)
-            const diagnosticosPlanejados = atualizado.planejamento?.diagnosticosPlanejados || [];
-            const planejamentoOk = diagnosticosPlanejados.length > 0 && diagnosticosPlanejados.every(diag => {
-              if (diag.isPositivo) return true;
-              const temIntervenções = diag.intervencoesSelecionadas?.length > 0;
-              const temResultado = !!(diag.resultadoEsperadoSelecionado?.trim());
-              return temIntervenções && temResultado;
-            });
-            if (planejamentoOk) etapasConcluidas.push(3);
-            
-            // Etapa 4 completa? (Implementação: Pelo menos 1 implementado)
-            let peloMenosUmaImplementada = false;
-            Object.values(atualizado.implementacao || {}).forEach((d: any) => {
-              d.intervencoes?.forEach((i: any) => {
-                if (i.implementadoNestaConsulta) peloMenosUmaImplementada = true;
-              });
-            });
-            if (peloMenosUmaImplementada) etapasConcluidas.push(4);
-            
-            // Etapa 5 (Evolução / Checklist)
-            if (atualizado.evolucao?.intervencoesExecutadas && Object.keys(atualizado.evolucao.intervencoesExecutadas).length > 0) etapasConcluidas.push(5);
-            
-            // Etapa 6 (Resumo Final)
-            if (atualizado.evolucao?.resumoGerado) etapasConcluidas.push(6);
-            
+            const etapasConcluidas = calcularEtapasCompletadas(atualizado);
             setEtapasCompletadas(etapasConcluidas);
           }
           return;
@@ -218,10 +185,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       const implementacao = processo.implementacao || {};
       
       let peloMenosUmaImplementada = false;
-      const temPendencia = Object.values(implementacao).some((d: any) => {
-        const implementadas = d.intervencoes?.filter((i: any) => i.implementadoNestaConsulta) || [];
+      const temPendencia = Object.values(implementacao).some((d) => {
+        const implementadas = (d.intervencoes as IntervencaoImplementada[])?.filter((i) => i.implementadoNestaConsulta) || [];
         if (implementadas.length > 0) peloMenosUmaImplementada = true;
-        return implementadas.some((i: any) => !i.quemExecuta);
+        return implementadas.some((i) => !i.quemExecuta);
       });
       
       if (!peloMenosUmaImplementada) {
@@ -246,14 +213,14 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     setEtapaAtual(etapa);
   };
 
-  const handleUpdateAvaliacao = (avaliacao: any) => {
+  const handleUpdateAvaliacao = (avaliacao: AvaliacaoEnfermagem) => {
     setProcesso(prev => ({
       ...prev,
       avaliacao
     }));
   };
 
-  const handleUpdateDiagnostico = (diagnostico: any) => {
+  const handleUpdateDiagnostico = (diagnostico: DiagnosticoEnfermagem) => {
     setProcesso(prev => ({
       ...prev,
       diagnostico
@@ -274,7 +241,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }));
   };
 
-  const handleUpdateEvolucao = (evolucao: any) => {
+  const handleUpdateEvolucao = (evolucao: EvolucaoEnfermagem) => {
     setProcesso(prev => ({
       ...prev,
       evolucao
@@ -561,10 +528,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                         const implementacao = processo.implementacao || {};
                         
                         let peloMenosUmaImplementada = false;
-                        const temPendencia = Object.values(implementacao).some((d: any) => {
-                          const implementadas = d.intervencoes?.filter((i: any) => i.implementadoNestaConsulta) || [];
+                        const temPendencia = Object.values(implementacao).some((d) => {
+                          const implementadas = (d.intervencoes as IntervencaoImplementada[])?.filter((i) => i.implementadoNestaConsulta) || [];
                           if (implementadas.length > 0) peloMenosUmaImplementada = true;
-                          return implementadas.some((i: any) => !i.quemExecuta);
+                          return implementadas.some((i) => !i.quemExecuta);
                         });
                         
                         if (!peloMenosUmaImplementada) {

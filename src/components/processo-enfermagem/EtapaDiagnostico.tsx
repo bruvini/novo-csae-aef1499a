@@ -70,32 +70,25 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   const nhbsAfetadas = processo.avaliacao?.nhbsAfetadas ?? [];
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        
-        const unsubscribeDiagnosticos = getDiagnosticos((diagnosticosData) => {
-          console.log('Diagnósticos carregados:', diagnosticosData);
-          setDiagnosticos(diagnosticosData);
-          processarDiagnosticosPorSubconjunto(diagnosticosData);
-        });
+    setLoading(true);
 
-        const subconjuntosData = await buscarSubconjuntos();
-        console.log('Subconjuntos carregados:', subconjuntosData);
-        setSubconjuntos(subconjuntosData);
+    // Listener síncrono — o cleanup é retornado diretamente para o React
+    const unsubscribeDiagnosticos = getDiagnosticos((diagnosticosData) => {
+      setDiagnosticos(diagnosticosData);
+      processarDiagnosticosPorSubconjunto(diagnosticosData);
+      setLoading(false);
+    });
 
-        return () => {
-          unsubscribeDiagnosticos();
-        };
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      } finally {
-        setLoading(false);
-      }
+    // Subconjuntos são dados estáticos — busca simples sem listener
+    buscarSubconjuntos()
+      .then(setSubconjuntos)
+      .catch((error) => console.error('Erro ao carregar subconjuntos:', error));
+
+    // React recebe e executa este cleanup ao desmontar o componente
+    return () => {
+      unsubscribeDiagnosticos();
     };
-
-    loadData();
-  }, []);
+  }, []); // Sem dependências — executa apenas na montagem
 
   const processarDiagnosticosPorSubconjunto = (diagnosticosData: Diagnostico[]) => {
     const porNHB: DiagnosticoPorSubconjunto = {};
@@ -117,8 +110,6 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       });
     });
 
-    console.log('Diagnósticos por NHB:', porNHB);
-    console.log('Diagnósticos por Protocolo:', porProtocolo);
     setDiagnosticosPorNHB(porNHB);
     setDiagnosticosPorProtocolo(porProtocolo);
   };

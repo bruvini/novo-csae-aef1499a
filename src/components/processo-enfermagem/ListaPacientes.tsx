@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from '@/contexts/AuthContext';
 import { Paciente, determinarStatusPaciente } from '@/types/paciente';
 import ProcessoEnfermagemModal from './ProcessoEnfermagemModal';
-import ModalEditarPaciente from './ModalEditarPaciente';
+import ModalCadastroPaciente from './ModalCadastroPaciente';
 import { excluirPaciente } from '@/services/bancodados/pacientesDB';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 import {
@@ -387,13 +387,13 @@ const ListaPacientes: React.FC = () => {
         />
       )}
 
-      {/* Edit Modal */}
+      {/* Edit Modal — usa ModalCadastroPaciente em modo de edição */}
       {pacienteParaEditar && (
-        <ModalEditarPaciente
+        <ModalCadastroPaciente
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
-          paciente={pacienteParaEditar}
-          onPacienteAtualizado={() => {}} // Os dados já são atualizados em tempo real
+          pacienteParaEditar={pacienteParaEditar}
+          onPacienteCadastrado={() => {}}
         />
       )}
       
