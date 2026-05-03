@@ -24,7 +24,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 export interface ItemRanking {
   name: string;
@@ -203,12 +203,14 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
   const usuariosMap: Record<string, { nome: string; lotacao: string }> = {};
   usuariosSnapshot.forEach(doc => {
     const d = doc.data();
-    // Prioriza o campo 'uid' se existir, senão usa o doc.id (padrão)
-    const actualUid = d.uid || doc.id;
-    usuariosMap[actualUid] = {
+    const userData = {
       nome: d.dadosPessoais?.nomeCompleto || d.nomeCompleto || d.dadosPessoais?.nome || 'Nome Indisponível',
       lotacao: d.dadosProfissionais?.lotacao || d.lotacao || 'Sem Lotação'
     };
+    usuariosMap[doc.id] = userData;
+    if (d.uid && d.uid !== doc.id) {
+      usuariosMap[d.uid] = userData;
+    }
   });
 
   const rolMap: Record<string, string> = {};
