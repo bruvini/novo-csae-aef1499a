@@ -42,6 +42,11 @@ export async function seedChangelogInicial(): Promise<void> {
         'Otimizamos a área inicial e adicionamos o mural de atualizações para manter você informado.',
       dataHora: Timestamp.now(),
     });
+    await addDoc(ref, {
+      titulo: "Novo Design do Exame Físico",
+      descricao: "A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas.",
+      dataHora: Timestamp.now(),
+    });
     console.log('[Changelog] Seed inicial inserido com sucesso.');
   }
 }
@@ -54,4 +59,20 @@ export async function salvarChangelog(titulo: string, descricao: string): Promis
     descricao,
     dataHora: serverTimestamp(),
   });
+}
+
+// ─── Inserir Changelog específico do Redesign ──────────────
+export async function inserirChangelogRedesignAvaliacao(): Promise<void> {
+  const ref = collection(db, 'changelogs');
+  const q = query(ref, limit(100)); // Busca para verificar duplicidade manual simples
+  const snapshot = await getDocs(q);
+  const jaExiste = snapshot.docs.some(doc => doc.data().titulo === "Novo Design do Exame Físico");
+
+  if (!jaExiste) {
+    await salvarChangelog(
+      "Novo Design do Exame Físico",
+      "A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas."
+    );
+    console.log("[Changelog] Registro de redesign inserido com sucesso.");
+  }
 }

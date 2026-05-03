@@ -233,7 +233,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
     // 1. Filtrar referências compatíveis por idade e sexo
     const possibleRanges = referenceData.filter((ref: ValorReferenciaVital | ResultadoExame) => {
-      const r = ref as Record<string, number | string | undefined>;
+      const r = ref as unknown as Record<string, number | string | undefined>;
       const idadeMinOk = r.idadeMinima == null || idade >= (r.idadeMinima as number);
       const idadeMaxOk = r.idadeMaxima == null || idade <= (r.idadeMaxima as number);
       const sexoOk = !r.criterioSexo || r.criterioSexo === 'Ambos' || r.criterioSexo === sexo;
@@ -244,7 +244,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
     // 2. Encontrar a faixa específica onde o VALOR se encaixa
     const matchingRange = possibleRanges.find((ref: ValorReferenciaVital | ResultadoExame) => {
-      const r = ref as Record<string, number | undefined>;
+      const r = ref as unknown as Record<string, number | undefined>;
       const min = r.valorMinimo;
       const max = r.valorMaximo;
       
@@ -258,7 +258,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       return { status: 'neutro' as const };
     }
 
-    const matchingAny = matchingRange as Record<string, string | undefined>;
+    const matchingAny = matchingRange as unknown as Record<string, string | undefined>;
     const nomeAlt: string | null | undefined = matchingAny.nomeAlteracao;
     const nhb: string | undefined = matchingAny.subconjuntoNHBVinculado;
     const isNormal = isTextoNormal(nomeAlt);
@@ -623,8 +623,15 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionTrigger>
                 <AccordionContent className="bg-slate-50/40 p-6 border-t">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {sinaisVitais.map((sinal) => (
-                      <div key={sinal.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3">
+                    {[...sinaisVitais]
+                      .sort((a, b) => {
+                        const ordem = { "Pressão Arterial Sistólica": 1, "Pressão Arterial Diastólica": 2 };
+                        const valA = ordem[a.sinalVitalNome as keyof typeof ordem] || 99;
+                        const valB = ordem[b.sinalVitalNome as keyof typeof ordem] || 99;
+                        return valA - valB;
+                      })
+                      .map((sinal) => (
+                      <div key={sinal.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3 h-full flex flex-col justify-between">
                         <label className="text-[11px] font-black uppercase tracking-wider text-gray-500">
                           {sinal.sinalVitalNome} <span className="text-[9px] lowercase font-medium">({sinal.unidadeMedida})</span>
                         </label>
