@@ -206,8 +206,8 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
     // Prioriza o campo 'uid' se existir, senão usa o doc.id (padrão)
     const actualUid = d.uid || doc.id;
     usuariosMap[actualUid] = {
-      nome: d.dadosPessoais?.nomeCompleto || 'Usuário Desconhecido',
-      lotacao: d.dadosProfissionais?.lotacao || 'Sem Lotação'
+      nome: d.dadosPessoais?.nomeCompleto || d.nomeCompleto || d.dadosPessoais?.nome || 'Nome Indisponível',
+      lotacao: d.dadosProfissionais?.lotacao || d.lotacao || 'Sem Lotação'
     };
   });
 

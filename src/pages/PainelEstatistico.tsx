@@ -59,6 +59,15 @@ import {
   ItemTemporal
 } from '@/services/bancodados/biProcessosEnfermagemDB';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Eye } from 'lucide-react';
 
 // ── Paleta de Cores ──────────────────────────────────────────────────────────
 const COLORS = ['#059669', '#10b981', '#34d399', '#0f766e', '#14b8a6', '#5eead4', '#0d9488'];
@@ -876,9 +885,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Parâmetros de Exame Físico</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.avaliacao.physical} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.avaliacao.physical} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -889,9 +898,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Necessidades (NHBs) Afetadas</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.avaliacao.nhbs} layout="vertical">
+                        <BarChart data={dataProcessos.etapasPE.avaliacao.nhbs} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#818cf8" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -912,9 +921,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Diagnósticos de Enfermagem</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.diagnostico.top} layout="vertical" margin={{ left: 30, right: 30 }}>
+                        <BarChart data={dataProcessos.etapasPE.diagnostico.top} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={300} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#e11d48" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -948,9 +957,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Resultados Esperados</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.results} layout="vertical" margin={{ left: 30, right: 30 }}>
+                        <BarChart data={dataProcessos.etapasPE.planejamento.results} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={300} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#059669" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -961,9 +970,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Intervenções Prescritas</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.prescribed} layout="vertical" margin={{ left: 30, right: 30 }}>
+                        <BarChart data={dataProcessos.etapasPE.planejamento.prescribed} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 10, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -973,7 +982,6 @@ const PainelEstatistico = () => {
                 </div>
               </div>
 
-              {/* ── Etapa 4: Implementação ── */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-cyan-700">
                   <div className="bg-cyan-100 p-2 rounded-lg font-black text-xs">04</div>
@@ -984,9 +992,9 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Intervenções Aplicadas na Consulta</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.implementacao.applied} layout="vertical" margin={{ left: 30, right: 30 }}>
+                        <BarChart data={dataProcessos.etapasPE.implementacao.applied} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 9, fontWeight: 600 }} />
+                          <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 9, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#0891b2" radius={[0, 4, 4, 0]} />
                           <RechartsTooltip />
                         </BarChart>
@@ -1001,7 +1009,7 @@ const PainelEstatistico = () => {
                           <Pie 
                             data={dataProcessos.etapasPE.implementacao.executors} 
                             cx="50%" cy="50%" 
-                            innerRadius={50} outerRadius={65} 
+                            innerRadius={30} outerRadius={55} 
                             dataKey="value" 
                             label={({ name }) => name}
                           >
@@ -1016,7 +1024,6 @@ const PainelEstatistico = () => {
                 </div>
               </div>
 
-              {/* ── Etapa 5: Evolução ── */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-blue-700">
                   <div className="bg-blue-100 p-2 rounded-lg font-black text-xs">05</div>
@@ -1030,9 +1037,9 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dataProcessos.etapasPE.evolucao.nurseApplied} layout="vertical" margin={{ left: 30, right: 30 }}>
+                      <BarChart data={dataProcessos.etapasPE.evolucao.nurseApplied} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" width={320} tick={{ fontSize: 10, fontWeight: 600 }} />
+                        <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                         <Bar dataKey="value" fill="#2563eb" radius={[0, 4, 4, 0]} />
                         <RechartsTooltip />
                       </BarChart>
@@ -1041,41 +1048,75 @@ const PainelEstatistico = () => {
                 </Card>
               </div>
 
-              {/* ── Rankings Finais ── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card className="border-none shadow-2xl bg-white overflow-hidden">
-                    <CardHeader className="bg-indigo-900 text-white">
-                      <CardTitle className="text-md font-black flex items-center gap-2">
-                        <Users className="w-5 h-5" /> Top 10 Enfermeiros (Produtividade)
-                      </CardTitle>
-                      <CardDescription className="text-indigo-200 text-xs">Clique para abrir o Raio-X</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[450px] pt-6">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart 
-                          data={dataProcessos.rankingUsuarios} 
-                          layout="vertical"
-                          onClick={(state) => {
-                            if (state && state.activePayload) {
-                              setSelectedUser(state.activePayload[0].payload);
-                              setRaioXOpen(true);
-                            }
-                          }}
-                        >
-                          <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11, fontWeight: 700, fill: '#1e1b4b' }} />
-                          <Bar dataKey="value" fill="#4338ca" radius={[0, 6, 6, 0]} cursor="pointer">
-                            <LabelList dataKey="value" position="right" style={{ fontWeight: 'bold', fontSize: 12 }} />
-                          </Bar>
-                          <RechartsTooltip cursor={{ fill: '#eef2ff' }} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                 </Card>
+                <Card className="lg:col-span-2 border-none shadow-2xl bg-white overflow-hidden">
+                  <CardHeader className="bg-indigo-900 text-white">
+                    <CardTitle className="text-md font-black flex items-center gap-2">
+                      <Users className="w-5 h-5" /> Ranking de Enfermeiros (Produtividade)
+                    </CardTitle>
+                    <CardDescription className="text-indigo-200 text-xs">Apenas profissionais com processos concluídos</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-indigo-50/50 hover:bg-indigo-50/50 border-indigo-100">
+                            <TableHead className="font-black text-indigo-900 pl-6 h-12">Nome do Profissional</TableHead>
+                            <TableHead className="text-center font-black text-indigo-900 h-12">Pacientes</TableHead>
+                            <TableHead className="text-center font-black text-indigo-900 h-12">Concluídos</TableHead>
+                            <TableHead className="text-center font-black text-indigo-900 h-12">Tempo Médio</TableHead>
+                            <TableHead className="text-right font-black text-indigo-900 pr-6 h-12">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {dataProcessos.rankingUsuarios
+                            .filter(u => u.value > 0)
+                            .sort((a, b) => b.value - a.value)
+                            .slice(0, 10)
+                            .map((user, idx) => (
+                              <TableRow key={user.id || idx} className="hover:bg-indigo-50/30 transition-colors border-indigo-50 h-16">
+                                <TableCell className="font-bold text-gray-800 pl-6">
+                                  <div className="flex flex-col">
+                                    <span>{user.name}</span>
+                                    <span className="text-[10px] text-gray-400 font-normal uppercase">{user.lotacao}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center font-bold text-indigo-600">
+                                  {user.raioX.totalPacientes}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-black">
+                                    {user.value}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-center font-medium text-gray-600">
+                                  {user.raioX.tempoMedioHoras}h
+                                </TableCell>
+                                <TableCell className="text-right pr-6">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 border-indigo-200 text-indigo-600 hover:bg-indigo-600 hover:text-white font-bold gap-2"
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setRaioXOpen(true);
+                                    }}
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    Raio-X
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                 <Card className="border-none shadow-2xl bg-white overflow-hidden">
-                    <CardHeader className="bg-slate-900 text-white">
-                      <CardTitle className="text-md font-black flex items-center gap-2">
+                <Card className="border-none shadow-2xl bg-white overflow-hidden">
+                  <CardHeader className="bg-slate-900 text-white">
+                    <CardTitle className="text-md font-black flex items-center gap-2">
                         <Layers className="w-5 h-5" /> Top 10 Lotações (Produção)
                       </CardTitle>
                     </CardHeader>
