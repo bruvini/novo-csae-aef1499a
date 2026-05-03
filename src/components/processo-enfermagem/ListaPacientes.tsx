@@ -61,7 +61,7 @@ const ListaPacientes: React.FC = () => {
       return;
     }
 
-    console.log('Configurando listener para pacientes do usuário:', user.uid);
+    
     
     const q = query(
       collection(db, 'pacientesProcessoEnfermagem'),
@@ -71,11 +71,9 @@ const ListaPacientes: React.FC = () => {
 
     const unsubscribe = onSnapshot(q, 
       (querySnapshot) => {
-        console.log('Snapshot recebido, documentos encontrados:', querySnapshot.size);
         const pacientes: Paciente[] = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          console.log('Documento encontrado:', doc.id, data);
           pacientes.push({
             id: doc.id,
             ...data
@@ -96,7 +94,6 @@ const ListaPacientes: React.FC = () => {
     );
 
     return () => {
-      console.log('Removendo listener de pacientes');
       unsubscribe();
     };
   }, [user?.uid, toast]);

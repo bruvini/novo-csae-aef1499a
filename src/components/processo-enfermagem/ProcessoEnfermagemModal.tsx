@@ -46,6 +46,7 @@ import EtapaEvolucao from './EtapaEvolucao';
 import EtapaResumo from './EtapaResumo';
 import { ImplementacaoEnfermagem, PlanejamentoEnfermagem, AvaliacaoEnfermagem, DiagnosticoEnfermagem, EvolucaoEnfermagem, IntervencaoImplementada } from '@/types/processoEnfermagem';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
+import TempoAtivoBadge from './TempoAtivoBadge';
 
 interface ProcessoEnfermagemModalProps {
   isOpen: boolean;
@@ -88,21 +89,11 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
-  const [, setTick] = useState(0);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Timer para atualizar o tempo ativo a cada segundo
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const interval = setInterval(() => {
-      setTick(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [isOpen]);
+  // Timer para atualizar o tempo ativo a cada segundo - REMOVIDO para TempoAtivoBadge
 
   // Carregar processo ativo ao abrir, ou criar um novo se não existir
   useEffect(() => {
@@ -219,11 +210,41 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }));
   };
 
-  const handleUpdateImplementacao = (implementacao: ImplementacaoEnfermagem) => {
-    setProcesso(prev => ({
-      ...prev,
-      implementacao
-    }));
+  const handleUpdateImplementacao = (novaImplementacao: ImplementacaoEnfermagem) => {
+    setProcesso(prev => {
+      // Recalcular intervencoesExecutadas: remover entradas que não são mais do executor "Enfermeiro"
+      const intervencoesExecutadasAtualizadas: { [tituloDiag: string]: string[] } = {
+        ...(prev.evolucao?.intervencoesExecutadas || {})
+      };
+
+      Object.entries(novaImplementacao).forEach(([tituloDiag, dados]) => {
+        dados.intervencoes.forEach(int => {
+          const deixouDeSerEnfermeiro =
+            !int.implementadoNestaConsulta || int.quemExecuta !== 'Enfermeiro';
+
+          if (deixouDeSerEnfermeiro && intervencoesExecutadasAtualizadas[tituloDiag]) {
+            // Remove esta ação específica da lista de executadas
+            intervencoesExecutadasAtualizadas[tituloDiag] =
+              intervencoesExecutadasAtualizadas[tituloDiag].filter(
+                (acaoPrescrita) => acaoPrescrita !== int.acaoPrescrita
+              );
+            // Se o array ficou vazio, remove a chave do objeto
+            if (intervencoesExecutadasAtualizadas[tituloDiag].length === 0) {
+              delete intervencoesExecutadasAtualizadas[tituloDiag];
+            }
+          }
+        });
+      });
+
+      return {
+        ...prev,
+        implementacao: novaImplementacao,
+        evolucao: {
+          ...(prev.evolucao || { resumoGerado: '' }),
+          intervencoesExecutadas: intervencoesExecutadasAtualizadas,
+        },
+      };
+    });
   };
 
   const handleUpdateEvolucao = (evolucao: EvolucaoEnfermagem) => {
@@ -270,6 +291,27 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       setIsSaving(false);
     }
   };
+
+  // Salva o progresso em background sem bloquear a UI (sem isSaving, sem toast de sucesso)
+  const salvarEmBackground = (etapaParaSalvar: number, processoAtual: ProcessoEnfermagem) => {
+    if (!processoAtual.id || !paciente.id) return;
+
+    salvarProgressoProcesso(
+      paciente.id,
+      processoAtual.id,
+      etapaParaSalvar,
+      {
+        avaliacao: processoAtual.avaliacao,
+        diagnostico: processoAtual.diagnostico,
+        planejamento: processoAtual.planejamento,
+        implementacao: processoAtual.implementacao,
+        evolucao: processoAtual.evolucao,
+      }
+    ).catch((err) => {
+      console.error('Erro ao salvar progresso em background:', err);
+    });
+  };
+
 
   const handleSaveAndClose = async () => {
     setIsSaving(true);
@@ -420,10 +462,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   };
 
-  // Calcular tempo ativo se há sessões de trabalho
-  const tempoAtivo = processo.sessoesDeTrabalho?.length > 0 
-    ? calcularTempoAtivo(processo.sessoesDeTrabalho)
-    : "00 dias, 00:00:00";
+  // Calcular tempo ativo se há sessões de trabalho - REMOVIDO para TempoAtivoBadge
 
   return (
     <>
@@ -440,9 +479,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             <div className="flex items-center justify-between w-full">
               <DialogTitle>Processo de Enfermagem - {paciente.nomeCompleto}</DialogTitle>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-sm">
-                  Tempo Ativo: {tempoAtivo}
-                </Badge>
+                <TempoAtivoBadge sessoes={processo.sessoesDeTrabalho || []} />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -505,20 +542,27 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               {etapaAtual < 6 ? (
                 <Button 
                   type="button" 
-                  onClick={async () => {
-                     // 1. Salva o progresso atual antes de tentar mudar de etapa
-                     await handleSalvarProgresso();
-                     
-                     // 2. Tenta mudar para a próxima etapa (a lógica de validação está dentro de handleEtapaChange)
-                     await handleEtapaChange(etapaAtual + 1);
+                  onClick={() => {
+                    const nextEtapa = etapaAtual + 1;
 
-                     // 3. Recalcula etapas completadas para garantir que o stepper atualize visualmente
-                     const atualizado = await buscarProcessoPorId(paciente.id || '', processo.id);
-                     if (atualizado) {
-                        setEtapasCompletadas(calcularEtapasCompletadas(atualizado));
-                     }
+                    // 1. Validar com estado local — sem Firestore, instantâneo
+                    if (!isEtapaAcessivel(nextEtapa, etapaAtual, etapasCompletadas, processo)) {
+                      toast({
+                        title: "Etapa Bloqueada",
+                        description: getMotivoBloqueio(nextEtapa, etapaAtual, etapasCompletadas, processo) 
+                          || "Complete as etapas anteriores para liberar.",
+                        variant: "destructive"
+                      });
+                      return;
+                    }
+
+                    // 2. Navegar e atualizar stepper imediatamente — sem await, sem Firestore
+                    setEtapaAtual(nextEtapa);
+                    setEtapasCompletadas(calcularEtapasCompletadas(processo));
+
+                    // 3. Salvar em background — não bloqueia a UI
+                    salvarEmBackground(nextEtapa, processo);
                   }}
-                  disabled={isSaving}
                 >
                   Avançar
                 </Button>

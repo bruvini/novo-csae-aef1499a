@@ -103,16 +103,13 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
   const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
-    setNhbsAfetadas((prev) => {
-      const outras = prev.filter((n) => n.parametro !== parametro);
-      const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
-      // Sincroniza no processo
-      const novaAvaliacao: AvaliacaoEnfermagem = {
-        ...processo.avaliacao,
-        nhbsAfetadas: novaLista,
-      };
-      onUpdateAvaliacao(novaAvaliacao);
-      return novaLista;
+    const outras = nhbsAfetadas.filter((n) => n.parametro !== parametro);
+    const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
+
+    setNhbsAfetadas(novaLista);
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      nhbsAfetadas: novaLista,
     });
   };
 

@@ -25,12 +25,13 @@ const db = getFirestore(app);
 async function registerChangelog() {
   try {
     const docRef = await addDoc(collection(db, 'changelogs'), {
-      titulo: 'Correções críticas de bugs e performance',
+      titulo: 'Processo de Enfermagem mais rápido e preciso',
       descricao:
-        'Corrigida a edição de pacientes que não funcionava (modal exibia mensagem de "não implementado"). ' +
-        'Eliminado vazamento de memória no carregamento de diagnósticos (listener Firestore não era removido ao fechar o processo). ' +
-        'Corrigidos re-carregamentos desnecessários de dados ao preencher a avaliação. ' +
-        'Centralizada a lógica de progresso das etapas do processo de enfermagem para evitar divergências futuras.',
+        'A navegação entre as etapas do Processo de Enfermagem está muito mais ágil — ' +
+        'trocar de etapa agora é instantâneo, sem esperar o sistema salvar antes de avançar. ' +
+        'Também corrigimos um erro em que intervenções delegadas à equipe ainda apareciam ' +
+        'como executadas pelo enfermeiro no Resumo Final após o executor ser alterado na ' +
+        'etapa de Implementação. O sistema agora reflete corretamente quem fez o quê.',
       dataHora: Timestamp.now(),
     });
     console.log('Changelog registrado com ID:', docRef.id);
