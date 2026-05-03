@@ -33,7 +33,7 @@ import {
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
-import { calcularEtapasCompletadas } from '@/utils/processoUtils';
+import { calcularEtapasCompletadas, isEtapaAcessivel, getMotivoBloqueio } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 import { Loader2, Trash2, X, History } from 'lucide-react';
@@ -180,30 +180,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleEtapaChange = async (etapa: number) => {
-    // Se está tentando avançar a partir da etapa 4 para uma etapa futura (5 ou 6)
-    if (etapaAtual === 4 && etapa > 4) {
-      const implementacao = processo.implementacao || {};
+    // Se está tentando avançar (etapa > etapaAtual)
+    if (etapa > etapaAtual) {
+      const isAcessivel = isEtapaAcessivel(etapa, etapaAtual, etapasCompletadas, processo);
       
-      let peloMenosUmaImplementada = false;
-      const temPendencia = Object.values(implementacao).some((d) => {
-        const implementadas = (d.intervencoes as IntervencaoImplementada[])?.filter((i) => i.implementadoNestaConsulta) || [];
-        if (implementadas.length > 0) peloMenosUmaImplementada = true;
-        return implementadas.some((i) => !i.quemExecuta);
-      });
-      
-      if (!peloMenosUmaImplementada) {
+      if (!isAcessivel) {
+        const motivo = getMotivoBloqueio(etapa, etapaAtual, etapasCompletadas, processo);
         toast({
-          title: "Implementação Incompleta",
-          description: "Marque pelo menos uma intervenção como implementada nesta consulta.",
-          variant: "destructive"
-        });
-        return; // Aborta navegação
-      }
-
-      if (temPendencia) {
-        toast({
-          title: "Membro da Equipe não Identificado",
-          description: "Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.",
+          title: "Etapa Bloqueada",
+          description: motivo || "Complete as etapas anteriores para liberar.",
           variant: "destructive"
         });
         return; // Aborta navegação
@@ -521,46 +506,17 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 <Button 
                   type="button" 
                   onClick={async () => {
-                     // As validações agora também estão no handleEtapaChange
-                     // e serão chamadas indiretamente se for da 4 pra 5,
-                     // mas para o botão Avançar manteremos sincronizado com a lógica.
-                     if (etapaAtual === 4) {
-                        const implementacao = processo.implementacao || {};
-                        
-                        let peloMenosUmaImplementada = false;
-                        const temPendencia = Object.values(implementacao).some((d) => {
-                          const implementadas = (d.intervencoes as IntervencaoImplementada[])?.filter((i) => i.implementadoNestaConsulta) || [];
-                          if (implementadas.length > 0) peloMenosUmaImplementada = true;
-                          return implementadas.some((i) => !i.quemExecuta);
-                        });
-                        
-                        if (!peloMenosUmaImplementada) {
-                          toast({
-                            title: "Implementação Incompleta",
-                            description: "Marque pelo menos uma intervenção como implementada nesta consulta.",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
-
-                        if (temPendencia) {
-                          toast({
-                            title: "Membro da Equipe não Identificado",
-                            description: "Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.",
-                            variant: "destructive"
-                          });
-                          return;
-                        }
-                     }
-
+                     // 1. Salva o progresso atual antes de tentar mudar de etapa
                      await handleSalvarProgresso();
                      
-                     if (etapaAtual === 5 && !etapasCompletadas.includes(5)) {
-                        setEtapasCompletadas([...etapasCompletadas, 5]);
-                     }
-
-                     // Isso chamará o handle e atualizará o state síncrono para avançar 1
+                     // 2. Tenta mudar para a próxima etapa (a lógica de validação está dentro de handleEtapaChange)
                      await handleEtapaChange(etapaAtual + 1);
+
+                     // 3. Recalcula etapas completadas para garantir que o stepper atualize visualmente
+                     const atualizado = await buscarProcessoPorId(paciente.id || '', processo.id);
+                     if (atualizado) {
+                        setEtapasCompletadas(calcularEtapasCompletadas(atualizado));
+                     }
                   }}
                   disabled={isSaving}
                 >

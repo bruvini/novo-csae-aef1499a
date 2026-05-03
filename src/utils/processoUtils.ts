@@ -27,11 +27,22 @@ export function calcularEtapasCompletadas(processo: ProcessoEnfermagem): number[
     });
   if (planejamentoOk) concluidas.push(3);
 
-  // Etapa 4 — Implementação: pelo menos 1 intervenção implementada nesta consulta
-  const peloMenosUmaImplementada = Object.values(processo.implementacao || {}).some((d) =>
-    d.intervencoes?.some((i) => i.implementadoNestaConsulta)
-  );
-  if (peloMenosUmaImplementada) concluidas.push(4);
+  // Etapa 4 — Implementação: pelo menos 1 intervenção implementada nesta consulta e todas têm executor
+  const implementacao = processo.implementacao || {};
+  let peloMenosUmaImplementada = false;
+  let temPendenciaExecutor = false;
+
+  Object.values(implementacao).forEach((d) => {
+    const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
+    if (implementadas.length > 0) {
+      peloMenosUmaImplementada = true;
+      if (implementadas.some((i) => !i.quemExecuta)) {
+        temPendenciaExecutor = true;
+      }
+    }
+  });
+
+  if (peloMenosUmaImplementada && !temPendenciaExecutor) concluidas.push(4);
 
   // Etapa 5 — Evolução: pelo menos 1 grupo de intervenções executadas registrado
   const temEvolucao =
@@ -78,10 +89,22 @@ export function isEtapaAcessivel(
       });
     }
     case 5:
-    case 6:
-      return Object.values(processo.implementacao || {}).some((d) =>
-        d.intervencoes?.some((i) => i.implementadoNestaConsulta)
-      );
+    case 6: {
+      const implementacao = processo.implementacao || {};
+      let peloMenosUmaImplementada = false;
+      let temPendenciaExecutor = false;
+
+      Object.values(implementacao).forEach((d) => {
+        const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
+        if (implementadas.length > 0) {
+          peloMenosUmaImplementada = true;
+          if (implementadas.some((i) => !i.quemExecuta)) {
+            temPendenciaExecutor = true;
+          }
+        }
+      });
+      return peloMenosUmaImplementada && !temPendenciaExecutor;
+    }
     default:
       return false;
   }
@@ -107,8 +130,21 @@ export function getMotivoBloqueio(
     case 4:
       return 'Para liberar esta etapa, todos os diagnósticos precisam ter um resultado esperado e pelo menos uma intervenção definida no planejamento.';
     case 5:
-    case 6:
-      return 'Para liberar esta etapa, marque pelo menos uma intervenção como implementada na Etapa 4.';
+    case 6: {
+      const implementacao = processo.implementacao || {};
+      let peloMenosUmaImplementada = false;
+      
+      Object.values(implementacao).forEach((d) => {
+        if (d.intervencoes?.some((i) => i.implementadoNestaConsulta)) {
+          peloMenosUmaImplementada = true;
+        }
+      });
+
+      if (!peloMenosUmaImplementada) {
+        return 'Para liberar esta etapa, marque pelo menos uma intervenção como implementada na Etapa 4.';
+      }
+      return 'Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.';
+    }
     default:
       return 'Complete as etapas anteriores para liberar.';
   }
