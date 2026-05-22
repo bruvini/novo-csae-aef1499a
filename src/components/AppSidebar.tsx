@@ -14,26 +14,21 @@ import {
 } from '@/components/ui/sidebar';
 
 const navigationItems = [
-  { title: 'Página Inicial', url: '/dashboard', icon: Home, roles: ['any'] },
-  { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart, roles: ['any'] },
-  { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, roles: ['gestor', 'admin'] },
-  { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, roles: ['admin'] },
-  { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChart, roles: ['admin', 'PainelEstatistico'] },
+  { title: 'Página Inicial', url: '/dashboard', icon: Home },
+  { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart },
+  { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
+  { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
+  { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChart, allowedPageId: 'PainelEstatistico' },
 ];
 
 export function AppSidebar() {
   const { sessionData } = useAuth();
   
   const filteredItems = navigationItems.filter(item => {
-    if (item.roles.includes('any')) return true;
-    if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
-    if (item.roles.includes('gestor') && (sessionData?.gestorConteudos || sessionData?.ehAdmin)) return true;
-  
-    // Suporte para permissões granulares por ID de página
+    if (!item.allowedPageId) return true;
+    const ehAdmin = sessionData?.ehAdmin === true;
     const paginasPermitidas = sessionData?.paginasPermitidas || [];
-    if (item.roles.some(role => paginasPermitidas.includes(role))) return true;
-
-    return false;
+    return ehAdmin || paginasPermitidas.includes(item.allowedPageId);
   });
 
   return (

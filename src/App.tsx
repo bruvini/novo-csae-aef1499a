@@ -46,7 +46,7 @@ function App() {
               <Route 
                 path="/gestao-usuarios" 
                 element={
-                  <ProtectedRoute requireAdmin>
+                  <ProtectedRoute allowedPageId="GestaoUsuarios">
                     <GestaoUsuarios />
                   </ProtectedRoute>
                 } 
@@ -54,7 +54,7 @@ function App() {
               <Route 
                 path="/gestao-conteudos" 
                 element={
-                  <ProtectedRoute requireAdmin>
+                  <ProtectedRoute allowedPageId="GestaoConteudos">
                     <GestaoConteudos />
                   </ProtectedRoute>
                 } 
@@ -70,7 +70,7 @@ function App() {
               <Route 
                 path="/painel-estatistico" 
                 element={
-                  <ProtectedRoute requireAdmin={false} allowedPageId="PainelEstatistico">
+                  <ProtectedRoute allowedPageId="PainelEstatistico">
                     <PainelEstatistico />
                   </ProtectedRoute>
                 } 

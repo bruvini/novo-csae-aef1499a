@@ -32,7 +32,6 @@ const NavigationCards = () => {
       href: '/processo-enfermagem',
       status: 'Disponível',
       disabled: false,
-      roles: ['any'],
     },
     {
       id: 'gestao-conteudos',
@@ -42,7 +41,7 @@ const NavigationCards = () => {
       href: '/gestao-conteudos',
       status: 'Disponível',
       disabled: false,
-      roles: ['admin'],
+      allowedPageId: 'GestaoConteudos',
     },
     {
       id: 'gestao-usuarios',
@@ -52,7 +51,7 @@ const NavigationCards = () => {
       href: '/gestao-usuarios',
       status: 'Disponível',
       disabled: false,
-      roles: ['admin'],
+      allowedPageId: 'GestaoUsuarios',
       badge: usuariosAguardandoCount !== null && usuariosAguardandoCount > 0 ? {
         text: `${usuariosAguardandoCount} aguardando`,
         variant: 'warning'
@@ -66,19 +65,15 @@ const NavigationCards = () => {
       href: '/painel-estatistico',
       status: 'Novo',
       disabled: false,
-      roles: ['admin', 'PainelEstatistico'],
+      allowedPageId: 'PainelEstatistico',
     },
   ];
 
   const filteredItems = navigationItems.filter(item => {
-    if (item.roles.includes('any')) return true;
-    if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
-    
-    // Suporte para permissões granulares por ID de página
+    if (!item.allowedPageId) return true;
+    const ehAdmin = sessionData?.ehAdmin === true;
     const paginasPermitidas = sessionData?.paginasPermitidas || [];
-    if (item.roles.some(role => paginasPermitidas.includes(role))) return true;
-
-    return false;
+    return ehAdmin || paginasPermitidas.includes(item.allowedPageId);
   });
 
   return (

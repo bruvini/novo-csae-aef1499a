@@ -90,12 +90,13 @@ export async function aprovarUsuario(
 ): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       statusAcesso: 'Liberado',
       dataAprovacao: serverTimestamp(),
       ehAdmin: isAdmin,
       tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
-      paginasPermitidas: isAdmin ? [] : paginasPermitidas
+      paginasPermitidas: isAdmin ? [] : paginasPermitidas,
+      gestorConteudos: !isAdmin && paginasPermitidas.includes('GestaoConteudos')
     };
     
     await updateDoc(userRef, updateData);
@@ -112,10 +113,11 @@ export async function editarPrivilegiosUsuario(
 ): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ehAdmin: isAdmin,
       tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
       paginasPermitidas: isAdmin ? [] : paginasPermitidas,
+      gestorConteudos: !isAdmin && paginasPermitidas.includes('GestaoConteudos'),
       dataAtualizacaoPrivilegios: serverTimestamp()
     };
     

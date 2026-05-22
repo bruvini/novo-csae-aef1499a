@@ -9,18 +9,18 @@ const Header = () => {
   const { sessionData, logout } = useAuth();
 
   const navigationItems = [
-    { title: 'Dashboard', url: '/dashboard', icon: Home, roles: ['any'] },
-    { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart, roles: ['any'] },
-    { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, roles: ['gestor', 'admin'] },
-    { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, roles: ['admin'] },
-    { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChartIcon, roles: ['admin', 'PainelEstatistico'] },
+    { title: 'Dashboard', url: '/dashboard', icon: Home },
+    { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart },
+    { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
+    { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
+    { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChartIcon, allowedPageId: 'PainelEstatistico' },
   ];
 
   const filteredItems = navigationItems.filter(item => {
-    if (item.roles.includes('any')) return true;
-    if (item.roles.includes('admin') && sessionData?.ehAdmin) return true;
-    if (item.roles.includes('gestor') && (sessionData?.gestorConteudos || sessionData?.ehAdmin)) return true;
-    return false;
+    if (!item.allowedPageId) return true;
+    const ehAdmin = sessionData?.ehAdmin === true;
+    const paginasPermitidas = sessionData?.paginasPermitidas || [];
+    return ehAdmin || paginasPermitidas.includes(item.allowedPageId);
   });
 
   return (
