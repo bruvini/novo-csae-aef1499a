@@ -31,4 +31,9 @@ export const availablePages: PageInfo[] = [
     label: "Painel Estatístico",
     description: "Módulo Business Intelligence com visão global de métricas e indicadores de produção da rede"
   },
+  {
+    id: "GestaoSuporte",
+    label: "Gestão de Suporte",
+    description: "Painel administrativo para gerenciar tickets de suporte, sugestões e avaliações NPS"
+  },
 ];

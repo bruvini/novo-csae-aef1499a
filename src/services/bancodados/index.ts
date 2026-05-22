@@ -42,3 +42,19 @@ export {
 export type { Changelog } from './changelogDB';
 export { buscarChangelogsRecentes, seedChangelogInicial, salvarChangelog } from './changelogDB';
 
+// Suporte exports
+export type { TicketProblema, SugestaoMelhoria, PesquisaNPS } from './suporteDB';
+export {
+  buscarMeusTickets,
+  buscarTodosTickets,
+  salvarTicket,
+  responderTicket,
+  resolverTicket,
+  buscarMinhasSugestoes,
+  buscarTodasSugestoes,
+  salvarSugestao,
+  responderSugestao,
+  verificarElegibilidadeNPS,
+  salvarPesquisaNPS,
+  buscarAvaliacoesNPS,
+} from './suporteDB';

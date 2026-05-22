@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Home, Heart, Database, Users, BarChart as BarChartIcon } from 'lucide-react';
+import { LogOut, User, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,8 @@ const Header = () => {
     { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
     { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
     { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChartIcon, allowedPageId: 'PainelEstatistico' },
+    { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy },
+    { title: 'Gestão de Suporte', url: '/gestao-suporte', icon: Headphones, allowedPageId: 'GestaoSuporte' },
   ];
 
   const filteredItems = navigationItems.filter(item => {

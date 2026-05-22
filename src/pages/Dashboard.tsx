@@ -80,6 +80,17 @@ const Dashboard = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!localStorage.getItem('changelog_central_ajuda_v1')) {
+      salvarChangelog(
+        "Ouvindo Nossos Usuários: Central de Ajuda e Avaliações",
+        "Lançamos a nova Central de Ajuda! Agora você pode relatar problemas técnicos para nossa equipe, sugerir melhorias brilhantes e avaliar o Portal CSAE de forma estruturada. Nossa equipe terá um painel exclusivo para responder e resolver suas solicitações rapidamente."
+      ).then(() => {
+        localStorage.setItem('changelog_central_ajuda_v1', 'true');
+      }).catch(console.error);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

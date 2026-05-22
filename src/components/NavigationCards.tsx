@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Heart, Database, Users, BarChart, ArrowRight, Clock } from 'lucide-react';
+import { Heart, Database, Users, BarChart, ArrowRight, Clock, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarUsuariosAguardando } from '@/services/bancodados';
 
@@ -66,6 +66,25 @@ const NavigationCards = () => {
       status: 'Novo',
       disabled: false,
       allowedPageId: 'PainelEstatistico',
+    },
+    {
+      id: 'central-ajuda',
+      title: 'Central de Ajuda',
+      description: 'Relate problemas técnicos, envie sugestões de melhoria e avalie o Portal CSAE.',
+      icon: LifeBuoy,
+      href: '/ajuda',
+      status: 'Novo',
+      disabled: false,
+    },
+    {
+      id: 'gestao-suporte',
+      title: 'Gestão de Suporte',
+      description: 'Painel administrativo para responder tickets, gerenciar sugestões e visualizar avaliações NPS.',
+      icon: Headphones,
+      href: '/gestao-suporte',
+      status: 'Disponível',
+      disabled: false,
+      allowedPageId: 'GestaoSuporte',
     },
   ];
 

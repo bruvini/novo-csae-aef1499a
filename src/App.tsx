@@ -13,6 +13,8 @@ import GestaoConteudos from "./pages/GestaoConteudos";
 import ProcessoEnfermagem from "./pages/ProcessoEnfermagem";
 import PainelEstatistico from "./pages/PainelEstatistico";
 import DebugUsers from "./pages/DebugUsers";
+import CentralAjuda from "./pages/CentralAjuda";
+import GestaoSuporte from "./pages/GestaoSuporte";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -80,6 +82,22 @@ function App() {
                 element={
                   <ProtectedRoute requireAdmin>
                     <DebugUsers />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/ajuda" 
+                element={
+                  <ProtectedRoute>
+                    <CentralAjuda />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/gestao-suporte" 
+                element={
+                  <ProtectedRoute allowedPageId="GestaoSuporte">
+                    <GestaoSuporte />
                   </ProtectedRoute>
                 } 
               />

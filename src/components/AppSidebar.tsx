@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, Database, Users, BarChart } from 'lucide-react';
+import { Home, Heart, Database, Users, BarChart, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
@@ -19,6 +19,8 @@ const navigationItems = [
   { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
   { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
   { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChart, allowedPageId: 'PainelEstatistico' },
+  { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy },
+  { title: 'Gestão de Suporte', url: '/gestao-suporte', icon: Headphones, allowedPageId: 'GestaoSuporte' },
 ];
 
 export function AppSidebar() {
