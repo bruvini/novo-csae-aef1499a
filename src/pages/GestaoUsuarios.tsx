@@ -25,9 +25,12 @@ import {
   excluirUsuario
 } from '@/services/bancodados';
 import { Usuario } from '@/types/usuario';
+import { useAuth } from '@/contexts/AuthContext';
 
 const GestaoUsuarios = () => {
   const { toast } = useToast();
+  const { sessionData } = useAuth();
+  const isAdmin = sessionData?.ehAdmin === true;
   const [usuariosAguardando, setUsuariosAguardando] = useState<Usuario[]>([]);
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [usuariosRecusados, setUsuariosRecusados] = useState<Usuario[]>([]);
@@ -256,8 +259,8 @@ const GestaoUsuarios = () => {
                   usuarios={aprovadosFiltrados} 
                   tipo="aprovados" 
                   onDetalhes={handleDetalhes} 
-                  onExcluir={handleExcluir} 
-                  onEditarPrivilegios={handleEditarPrivilegios} 
+                  onExcluir={isAdmin ? handleExcluir : undefined} 
+                  onEditarPrivilegios={isAdmin ? handleEditarPrivilegios : undefined} 
                 />
               </TabsContent>
               <TabsContent value="recusados" className="anim-fade-in">

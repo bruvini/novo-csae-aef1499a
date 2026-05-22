@@ -21,7 +21,7 @@ interface TabelaUsuariosProps {
   onDetalhes: (usuario: Usuario) => void;
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
-  onExcluir: (usuario: Usuario) => void;
+  onExcluir?: (usuario: Usuario) => void;
   onEditarPrivilegios?: (usuario: Usuario) => void;
   onRestaurar?: (usuario: Usuario) => void;
 }
@@ -176,16 +176,18 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     </Button>
                   )}
                   
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="h-8 px-2"
-                    onClick={() => onExcluir(usuario)}
-                    title="Excluir permanentemente"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Excluir</span>
-                  </Button>
+                  {onExcluir && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => onExcluir(usuario)}
+                      title="Excluir permanentemente"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Excluir</span>
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>

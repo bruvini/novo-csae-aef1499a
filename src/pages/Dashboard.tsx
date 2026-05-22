@@ -15,6 +15,7 @@ import {
   seedChangelogInicial,
   type Changelog,
 } from '@/services/bancodados';
+import { salvarChangelog } from '@/services/bancodados/changelogDB';
 
 // ── Helpers ──────────────────────────────────────────────────
 function formatarDataHora(ts: Timestamp | undefined): string {
@@ -66,6 +67,17 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem('changelog_rbac_v2')) {
+      salvarChangelog(
+        "Mais Segurança na Gestão de Usuários",
+        "Ajustamos os níveis de acesso para garantir mais segurança na plataforma. Agora, membros da equipe que ajudam na triagem podem aprovar novos cadastros, mas apenas Administradores possuem a permissão de alterar privilégios avançados ou excluir contas que já estão ativas no sistema."
+      ).then(() => {
+        localStorage.setItem('changelog_rbac_v2', 'true');
+      }).catch(console.error);
+    }
   }, []);
 
   if (loading) {
