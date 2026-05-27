@@ -47,7 +47,7 @@ export interface PlanejamentoEnfermagem {
 // NOVOS TIPOS para a Etapa de Implementação
 export interface IntervencaoImplementada extends IntervencaoSelecionada {
   implementadoNestaConsulta: boolean;
-  quemExecuta?: 'Enfermeiro' | 'Equipe/Outros'; // Apenas para intervenções 'padrao'
+  quemExecuta?: string;
   prazo?: number;
   prazoUnidade?: 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos';
 }

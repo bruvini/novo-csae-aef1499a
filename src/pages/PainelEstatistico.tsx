@@ -85,7 +85,11 @@ const STATUS_PROCESSO_COLORS: Record<string, string> = {
 };
 const EXECUTOR_COLORS: Record<string, string> = {
   'Enfermeiro': '#6366f1',
-  'Equipe/Outros': '#14b8a6',
+  'Técnico/Auxiliar de Enfermagem': '#14b8a6',
+  'Equipe Multiprofissional': '#f59e0b',
+  'Cuidador/Familiar': '#ec4899',
+  'Paciente': '#8b5cf6',
+  'Equipe/Outros': '#94a3b8' // Mantido para legado
 };
 
 // ── Custom Label para Pizza de Situação ────────────────────────────────────

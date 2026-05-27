@@ -52,6 +52,21 @@ export async function seedChangelogInicial(): Promise<void> {
       descricao: "Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico.",
       dataHora: Timestamp.now(),
     });
+    await addDoc(ref, {
+      titulo: "Salvamento Automático Inteligente",
+      descricao: "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura.",
+      dataHora: Timestamp.now(),
+    });
+    await addDoc(ref, {
+      titulo: "Executores em Intervenções Autorais",
+      descricao: "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas.",
+      dataHora: Timestamp.now(),
+    });
+    await addDoc(ref, {
+      titulo: "Adequação à Resolução COFEN Nº 736/2024",
+      descricao: "Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado).",
+      dataHora: Timestamp.now(),
+    });
     console.log('[Changelog] Seed inicial inserido com sucesso.');
   }
 }

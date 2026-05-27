@@ -522,10 +522,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             <Button type="button" variant="secondary" onClick={handleSaveAndClose} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button type="button" onClick={handleSalvarProgresso} disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Progresso
-            </Button>
             
             <div className="flex justify-end gap-2 ml-auto">
               {etapaAtual > 1 && (
@@ -542,7 +538,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               {etapaAtual < 6 ? (
                 <Button 
                   type="button" 
-                  onClick={() => {
+                  onClick={async () => {
                     const nextEtapa = etapaAtual + 1;
 
                     // 1. Validar com estado local — sem Firestore, instantâneo
@@ -556,14 +552,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                       return;
                     }
 
-                    // 2. Navegar e atualizar stepper imediatamente — sem await, sem Firestore
+                    await handleSalvarProgresso();
+
+                    // 2. Navegar e atualizar stepper
                     setEtapaAtual(nextEtapa);
                     setEtapasCompletadas(calcularEtapasCompletadas(processo));
-
-                    // 3. Salvar em background — não bloqueia a UI
-                    salvarEmBackground(nextEtapa, processo);
                   }}
+                  disabled={isSaving}
                 >
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Avançar
                 </Button>
               ) : (

@@ -24,7 +24,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
     });
   };
 
-  const handleExecutorChange = (executor: 'Enfermeiro' | 'Equipe/Outros') => {
+  const handleExecutorChange = (executor: string) => {
     onUpdate({
       ...intervencao,
       quemExecuta: executor
@@ -68,28 +68,35 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
             </Badge>
           </div>
 
-          {/* ToggleGroup para quem executa (apenas para intervenções padrão) */}
-          {intervencao.tipo === 'padrao' && (
-            <div className="flex items-center gap-4 mt-2">
-              <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
-                Quem executa (Obrigatório)*:
-              </Label>
-              <ToggleGroup
-                type="single"
-                value={intervencao.quemExecuta || ''}
-                onValueChange={(val) => handleExecutorChange(val as any)}
-                size="sm"
-                className={cn(intervencao.implementadoNestaConsulta && !intervencao.quemExecuta && "border border-red-500 rounded-md")}
-              >
-                <ToggleGroupItem value="Enfermeiro" className="text-xs">
-                  Enfermeiro
-                </ToggleGroupItem>
-                <ToggleGroupItem value="Equipe/Outros" className="text-xs">
-                  Equipe/Outros
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-          )}
+          {/* ToggleGroup para quem executa */}
+          <div className="flex items-center gap-4 mt-2">
+            <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
+              Quem executa (Obrigatório)*:
+            </Label>
+            <ToggleGroup
+              type="single"
+              value={intervencao.quemExecuta || ''}
+              onValueChange={(val) => handleExecutorChange(val)}
+              size="sm"
+              className={cn("flex flex-wrap gap-2 justify-start", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta && "border border-red-500 rounded-md")}
+            >
+              <ToggleGroupItem value="Enfermeiro" className="text-xs">
+                Enfermeiro
+              </ToggleGroupItem>
+              <ToggleGroupItem value="Técnico/Auxiliar de Enfermagem" className="text-xs">
+                Téc/Aux Enfermagem
+              </ToggleGroupItem>
+              <ToggleGroupItem value="Equipe Multiprofissional" className="text-xs">
+                Equipe Multi
+              </ToggleGroupItem>
+              <ToggleGroupItem value="Cuidador/Familiar" className="text-xs">
+                Cuidador/Familiar
+              </ToggleGroupItem>
+              <ToggleGroupItem value="Paciente" className="text-xs">
+                Paciente
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
 
           {/* Campos de prazo */}
           <div className="flex gap-2 items-end">
