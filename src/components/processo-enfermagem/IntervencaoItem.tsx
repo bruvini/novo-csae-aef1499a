@@ -79,6 +79,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
               onValueChange={(val) => handleExecutorChange(val)}
               size="sm"
               className={cn("flex flex-wrap gap-2 justify-start", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta && "border border-red-500 rounded-md")}
+              disabled={!intervencao.implementadoNestaConsulta}
             >
               <ToggleGroupItem value="Enfermeiro" className="text-xs">
                 Enfermeiro

@@ -70,9 +70,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const gerarTextoEvolucao = () => {
     const linhas: string[] = [];
 
-    linhas.push('EVOLUÇÃO DE ENFERMAGEM');
-    linhas.push(`Paciente: ${paciente.nomeCompleto}`);
-    linhas.push('Unidade: Unidade de Saúde Floripa');
+    linhas.push('EVOLUÇÃO DE ENFERMAGEM - PORTAL CSAE FLORIPA');
     linhas.push(`Data: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
     linhas.push('-'.repeat(50));
     linhas.push('');
@@ -118,30 +116,37 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
-    if (processo.diagnostico?.diagnosticosSelecionados?.length > 0) {
-      linhas.push('DIAGNÓSTICOS DE ENFERMAGEM:');
-      processo.diagnostico.diagnosticosSelecionados.forEach((diag: any) => {
-        linhas.push(`• ${diag.tituloDiagnostico}`);
+    const diagnosticos = processo.planejamento?.diagnosticosPlanejados || [];
+    if (diagnosticos.length > 0) {
+      linhas.push('PLANEJAMENTO DE ENFERMAGEM (Prescrições da Consulta):');
+      diagnosticos.forEach((diag: any) => {
+        linhas.push(diag.tituloDiagnostico);
+        linhas.push(` Resultado Esperado: ${diag.resultadoEsperadoSelecionado || ''}`);
+        if (diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0) {
+          diag.intervencoesSelecionadas.forEach((int: any) => {
+            linhas.push(`  ${int.acaoPrescrita};`);
+          });
+        }
       });
       linhas.push('');
     }
 
     const implementacao = processo.implementacao || {};
-    const possuiImplementacao = Object.values(implementacao).some((d: any) => d.intervencoes?.some((i: any) => i.implementadoNestaConsulta));
-    if (possuiImplementacao) {
-      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
-      Object.entries(implementacao).forEach(([tituloDiag, dados]: any) => {
-        const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find((p: any) => p.tituloDiagnostico === tituloDiag);
-        const implementadas = dados.intervencoes.filter((i: any) => i.implementadoNestaConsulta);
-        if (implementadas.length > 0) {
-          linhas.push(`  [${tituloDiag}]`);
-          if (planejadoDiag?.resultadoEsperadoSelecionado) {
-            linhas.push(`  Resultado Esperado: ${planejadoDiag.resultadoEsperadoSelecionado}`);
+    const implementadas: any[] = [];
+    Object.values(implementacao).forEach((dados: any) => {
+      if (dados.intervencoes) {
+        dados.intervencoes.forEach((i: any) => {
+          if (i.implementadoNestaConsulta) {
+            implementadas.push(i);
           }
-          implementadas.forEach((int: any) => {
-            linhas.push(`  • ${int.acaoPrescrita}. (Executor: ${int.quemExecuta || '?'})`);
-          });
-        }
+        });
+      }
+    });
+
+    if (implementadas.length > 0) {
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      implementadas.forEach((int: any) => {
+        linhas.push(`${int.acaoPrescrita} - (Executor: ${int.quemExecuta || ''})`);
       });
       linhas.push('');
     }

@@ -104,30 +104,37 @@ const Dashboard = () => {
 
   useEffect(() => {
     const registrarChangelogsNovos = async () => {
+      const promises = [];
+
       if (!localStorage.getItem('changelog_autosave_v1')) {
-        await salvarChangelog(
-          "Salvamento Automático Inteligente",
-          "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura."
+        promises.push(
+          salvarChangelog(
+            "Salvamento Automático Inteligente",
+            "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura."
+          ).then(() => localStorage.setItem('changelog_autosave_v1', 'true'))
         );
-        localStorage.setItem('changelog_autosave_v1', 'true');
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       if (!localStorage.getItem('changelog_executores_autorais_v1')) {
-        await salvarChangelog(
-          "Executores em Intervenções Autorais",
-          "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas."
+        promises.push(
+          salvarChangelog(
+            "Executores em Intervenções Autorais",
+            "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas."
+          ).then(() => localStorage.setItem('changelog_executores_autorais_v1', 'true'))
         );
-        localStorage.setItem('changelog_executores_autorais_v1', 'true');
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       if (!localStorage.getItem('changelog_cofen_736_2024_v1')) {
-        await salvarChangelog(
-          "Adequação à Resolução COFEN Nº 736/2024",
-          "Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado)."
+        promises.push(
+          salvarChangelog(
+            "Adequação à Resolução COFEN Nº 736/2024",
+            "Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado)."
+          ).then(() => localStorage.setItem('changelog_cofen_736_2024_v1', 'true'))
         );
-        localStorage.setItem('changelog_cofen_736_2024_v1', 'true');
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises);
       }
     };
 
