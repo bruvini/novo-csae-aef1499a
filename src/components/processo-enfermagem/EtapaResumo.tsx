@@ -16,7 +16,6 @@ import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames } from '@/services/bancodados/examesDB';
 import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -36,10 +35,6 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const [sistemas, setSistemas] = useState<any[]>([]);
   const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
 
-  const { sessionData } = useAuth();
-  const nomeEnfermeiro = sessionData?.nomeCompleto || 'Nome não identificado';
-  const numeroCoren = sessionData?.numeroCoren || 'Número não informado';
-  const ufCoren = sessionData?.ufCoren || 'UF';
 
   useEffect(() => {
     const loadCatalogs = async () => {
@@ -67,35 +62,102 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     return () => unsubDiag();
   }, []);
 
+  // ─── Mapa de conjugações de verbos (infinitivo → 1ª pessoa do presente) ─────
+  const conjugacoes: Record<string, string> = {
+    'Estabelecer': 'Estabeleço',
+    'Orientar': 'Oriento',
+    'Aconselhar': 'Aconselho',
+    'Realizar': 'Realizo',
+    'Monitorar': 'Monitoro',
+    'Avaliar': 'Avalio',
+    'Verificar': 'Verifico',
+    'Administrar': 'Administro',
+    'Encaminhar': 'Encaminho',
+    'Registrar': 'Registro',
+    'Aplicar': 'Aplico',
+    'Educar': 'Educo',
+    'Identificar': 'Identifico',
+    'Promover': 'Promovo',
+    'Prevenir': 'Previno',
+    'Incentivar': 'Incentivo',
+    'Comunicar': 'Comunico',
+    'Executar': 'Executo',
+    'Observar': 'Observo',
+    'Controlar': 'Controlo',
+    'Aferir': 'Afiro',
+    'Mensurar': 'Mensuro',
+    'Coletar': 'Coleto',
+    'Garantir': 'Garanto',
+    'Assegurar': 'Asseguro',
+    'Solicitar': 'Solicito',
+    'Prescrever': 'Prescrevo',
+    'Puncionar': 'Punciono',
+    'Instalar': 'Instalo',
+    'Retirar': 'Retiro',
+    'Trocar': 'Troco',
+    'Manter': 'Mantenho',
+    'Oferecer': 'Ofereço',
+    'Estimular': 'Estimulo',
+    'Posicionar': 'Posiciono',
+    'Mobilizar': 'Mobilizo',
+    'Hidratar': 'Hidrato',
+    'Mediar': 'Medeio',
+    'Auxiliar': 'Auxilio',
+    'Apoiar': 'Apoio',
+  };
+
+  const conjugarVerbo = (texto: string): string => {
+    // Extrai o primeiro token (verbo no infinitivo) e tenta conjugar
+    const primeiraLetraMaiuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+    for (const [infinitivo, conjugado] of Object.entries(conjugacoes)) {
+      const regex = new RegExp(`^${infinitivo}\\b`, 'i');
+      if (regex.test(texto)) {
+        return primeiraLetraMaiuscula(texto.replace(regex, conjugado));
+      }
+    }
+    return texto;
+  };
+
   const gerarTextoEvolucao = () => {
     const linhas: string[] = [];
+    const sep = '-'.repeat(50);
 
+    // ── Cabeçalho ───────────────────────────────────────────────────────────────
     linhas.push('EVOLUÇÃO DE ENFERMAGEM - PORTAL CSAE FLORIPA');
-    linhas.push(`Data: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
-    linhas.push('-'.repeat(50));
+    linhas.push(
+      `Data: ${new Date().toLocaleDateString('pt-BR')} ${new Date().toLocaleTimeString('pt-BR', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })}`
+    );
+    linhas.push(sep);
     linhas.push('');
 
+    // ── Avaliação / Coleta de Dados ──────────────────────────────────────────
     if (processo.avaliacao?.coletaDeDadosSubjetivos) {
       linhas.push('AVALIAÇÃO / COLETA DE DADOS:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
-    const exameFisico = processo.avaliacao?.exameFisico || {};
-    if (Object.keys(exameFisico).length > 0) {
+    // ── Exame Físico ──────────────────────────────────────────────────────────
+    const exameFisicoData = processo.avaliacao?.exameFisico || {};
+    if (Object.keys(exameFisicoData).length > 0) {
       linhas.push('EXAME FÍSICO:');
-      const svAtivos = sinaisVitais.filter(s => exameFisico[s.sinalVitalNome]);
+
+      const svAtivos = sinaisVitais.filter(s => exameFisicoData[s.sinalVitalNome]);
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisico[s.sinalVitalNome]}`));
+        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`));
       }
+
       const exMap = new Map<string, string[]>();
       exames.forEach(ex => {
         ex.componentes.forEach((c: any) => {
-          if (exameFisico[c.componenteAnalisado]) {
+          if (exameFisicoData[c.componenteAnalisado]) {
             const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
             if (!exMap.has(grp)) exMap.set(grp, []);
-            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisico[c.componenteAnalisado]}`);
+            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
           }
         });
       });
@@ -103,73 +165,90 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         linhas.push('  [EXAMES DIAGNÓSTICOS]');
         exMap.forEach((vals, titulo) => linhas.push(`  • ${titulo}: ${vals.join(', ')}`));
       }
+
       const rsEncontrados: string[] = [];
       sistemas.forEach(s => {
         s.exames.forEach((e: any) => {
-          if (exameFisico[e.nomeExame]) rsEncontrados.push(`${e.nomeExame}: ${exameFisico[e.nomeExame]}`);
+          if (exameFisicoData[e.nomeExame]) rsEncontrados.push(`${e.nomeExame}: ${exameFisicoData[e.nomeExame]}`);
         });
       });
       if (rsEncontrados.length > 0) {
         linhas.push('  [REVISÃO DE SISTEMAS]');
         rsEncontrados.forEach(item => linhas.push(`  • ${item}`));
       }
+
       linhas.push('');
     }
 
-    const diagnosticos = processo.planejamento?.diagnosticosPlanejados || [];
-    if (diagnosticos.length > 0) {
+    // ── Planejamento ─────────────────────────────────────────────────────────
+    // Lista TODAS as intervenções planejadas (não apenas implementadas) por diagnóstico.
+    // Não exibe executor — é uma prescrição, não uma execução.
+    const diagnosticosPlanejados = processo.planejamento?.diagnosticosPlanejados || [];
+    if (diagnosticosPlanejados.length > 0) {
       linhas.push('PLANEJAMENTO DE ENFERMAGEM (Prescrições da Consulta):');
-      diagnosticos.forEach((diag: any) => {
-        linhas.push(diag.tituloDiagnostico);
-        linhas.push(` Resultado Esperado: ${diag.resultadoEsperadoSelecionado || ''}`);
+      linhas.push('');
+      diagnosticosPlanejados.forEach((diag: any) => {
+        linhas.push(`[${diag.tituloDiagnostico}]`);
+        if (diag.resultadoEsperadoSelecionado) {
+          linhas.push(`Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
+        }
+        linhas.push('');
         if (diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0) {
           diag.intervencoesSelecionadas.forEach((int: any) => {
-            linhas.push(`  ${int.acaoPrescrita};`);
+            linhas.push(`• ${int.acaoPrescrita};`);
           });
         }
+        linhas.push('');
       });
-      linhas.push('');
     }
 
+    // ── Implementação ────────────────────────────────────────────────────────
+    // Lista apenas intervenções marcadas como implementadas, com executor.
+    // Sem agrupamento por diagnóstico.
     const implementacao = processo.implementacao || {};
     const implementadas: any[] = [];
     Object.values(implementacao).forEach((dados: any) => {
       if (dados.intervencoes) {
         dados.intervencoes.forEach((i: any) => {
-          if (i.implementadoNestaConsulta) {
-            implementadas.push(i);
-          }
+          if (i.implementadoNestaConsulta) implementadas.push(i);
         });
       }
     });
 
     if (implementadas.length > 0) {
-      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM:');
+      linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
+      linhas.push('');
       implementadas.forEach((int: any) => {
-        linhas.push(`${int.acaoPrescrita} - (Executor: ${int.quemExecuta || ''})`);
+        const executor = int.quemExecuta ? ` (Executor: ${int.quemExecuta})` : '';
+        linhas.push(`• ${int.acaoPrescrita}${executor}`);
       });
       linhas.push('');
     }
 
+    // ── Evolução ─────────────────────────────────────────────────────────────
+    // Lista ações efetivamente realizadas pelo enfermeiro, com verbos conjugados
+    // na 1ª pessoa do presente do indicativo. Sem agrupamento por diagnóstico.
     const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
-    const temExecutada = Object.values(intervencoesExecutadas).some((lista: any) => lista.length > 0);
-    if (temExecutada) {
-      linhas.push('EVOLUÇÃO DE ENFERMAGEM (Ações Técnicas Realizadas pelo Enfermeiro):');
-      Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]: any) => {
-        if (acoesMarcadas.length === 0) return;
-        linhas.push(`  [${tituloDiag}]`);
-        acoesMarcadas.forEach((acaoPresc: string) => {
-          const dxImpl = processo.implementacao?.[tituloDiag];
-          const intv = dxImpl?.intervencoes.find((i: any) => i.acaoPrescrita === acaoPresc);
-          linhas.push(`  • ${intv?.acaoEnfermeiro || acaoPresc}`);
-        });
+    const acoesEnfermeiro: string[] = [];
+
+    Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]: any) => {
+      if (!acoesMarcadas || acoesMarcadas.length === 0) return;
+      acoesMarcadas.forEach((acaoPresc: string) => {
+        const dxImpl = processo.implementacao?.[tituloDiag];
+        const intv = dxImpl?.intervencoes.find((i: any) => i.acaoPrescrita === acaoPresc);
+        const textoBase = intv?.acaoEnfermeiro || acaoPresc;
+        acoesEnfermeiro.push(conjugarVerbo(textoBase));
       });
+    });
+
+    if (acoesEnfermeiro.length > 0) {
+      linhas.push('EVOLUÇÃO DE ENFERMAGEM (Ações Técnicas Realizadas pelo Enfermeiro):');
+      linhas.push('');
+      acoesEnfermeiro.forEach(acao => linhas.push(`• ${acao}`));
       linhas.push('');
     }
 
-    linhas.push('-'.repeat(50));
-    linhas.push(`Enfermeiro Responsável: ${nomeEnfermeiro}`);
-    linhas.push(`COREN: ${numeroCoren} / ${ufCoren}`);
+    linhas.push(sep);
     return linhas.join('\n');
   };
 

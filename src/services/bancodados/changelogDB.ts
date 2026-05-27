@@ -5,6 +5,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -30,45 +31,16 @@ export async function buscarChangelogsRecentes(): Promise<Changelog[]> {
   })) as Changelog[];
 }
 
-// ─── Seed inicial (executado uma vez se a coleção estiver vazia)
-export async function seedChangelogInicial(): Promise<void> {
+// ─── Buscar TODOS os changelogs (para modal de histórico) ──────────────────
+export async function buscarTodosChangelogs(): Promise<Changelog[]> {
   const ref = collection(db, 'changelogs');
-  const snapshot = await getDocs(query(ref, limit(1)));
+  const q = query(ref, orderBy('dataHora', 'desc'));
+  const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
-    await addDoc(ref, {
-      titulo: 'Nova Interface do Dashboard',
-      descricao:
-        'Otimizamos a área inicial e adicionamos o mural de atualizações para manter você informado.',
-      dataHora: Timestamp.now(),
-    });
-    await addDoc(ref, {
-      titulo: "Novo Design do Exame Físico",
-      descricao: "A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas.",
-      dataHora: Timestamp.now(),
-    });
-    await addDoc(ref, {
-      titulo: "Mais Controle no Planejamento: Exclusão de Intervenções Autorais",
-      descricao: "Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico.",
-      dataHora: Timestamp.now(),
-    });
-    await addDoc(ref, {
-      titulo: "Salvamento Automático Inteligente",
-      descricao: "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura.",
-      dataHora: Timestamp.now(),
-    });
-    await addDoc(ref, {
-      titulo: "Executores em Intervenções Autorais",
-      descricao: "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas.",
-      dataHora: Timestamp.now(),
-    });
-    await addDoc(ref, {
-      titulo: "Adequação à Resolução COFEN Nº 736/2024",
-      descricao: "Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado).",
-      dataHora: Timestamp.now(),
-    });
-    console.log('[Changelog] Seed inicial inserido com sucesso.');
-  }
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Changelog[];
 }
 
 // ─── Salvar novo changelog ───────────────────────────────────
@@ -81,18 +53,122 @@ export async function salvarChangelog(titulo: string, descricao: string): Promis
   });
 }
 
-// ─── Inserir Changelog específico do Redesign ──────────────
-export async function inserirChangelogRedesignAvaliacao(): Promise<void> {
+// ─── Inserção idempotente por título ────────────────────────
+// Só insere se ainda não existir um documento com esse título.
+export async function inserirChangelogIdempotente(
+  titulo: string,
+  descricao: string,
+  dataHora?: Timestamp
+): Promise<boolean> {
   const ref = collection(db, 'changelogs');
-  const q = query(ref, limit(100)); // Busca para verificar duplicidade manual simples
+  const q = query(ref, where('titulo', '==', titulo), limit(1));
   const snapshot = await getDocs(q);
-  const jaExiste = snapshot.docs.some(doc => doc.data().titulo === "Novo Design do Exame Físico");
 
-  if (!jaExiste) {
-    await salvarChangelog(
-      "Novo Design do Exame Físico",
-      "A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas."
-    );
-    console.log("[Changelog] Registro de redesign inserido com sucesso.");
+  if (snapshot.empty) {
+    await addDoc(ref, {
+      titulo,
+      descricao,
+      dataHora: dataHora ?? Timestamp.now(),
+    });
+    return true; // inserido
   }
+  return false; // já existia
+}
+
+// ─── Lista completa de changelogs do sistema ────────────────
+// Cada entrada tem uma data fixa para garantir ordem cronológica estável.
+const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora: Timestamp }[] = [
+  {
+    titulo: 'Nova Interface do Dashboard',
+    descricao:
+      'Otimizamos a área inicial e adicionamos o mural de atualizações para manter você informado.',
+    dataHora: Timestamp.fromDate(new Date('2025-01-01T08:00:00')),
+  },
+  {
+    titulo: 'Novo Design do Exame Físico',
+    descricao:
+      'A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas.',
+    dataHora: Timestamp.fromDate(new Date('2025-02-01T08:00:00')),
+  },
+  {
+    titulo: 'Salvamento Automático Inteligente',
+    descricao:
+      "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura.",
+    dataHora: Timestamp.fromDate(new Date('2025-03-01T08:00:00')),
+  },
+  {
+    titulo: 'Adequação à Resolução COFEN Nº 736/2024',
+    descricao:
+      'Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado).',
+    dataHora: Timestamp.fromDate(new Date('2025-04-01T08:00:00')),
+  },
+  {
+    titulo: 'Executores em Intervenções Autorais',
+    descricao:
+      "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas.",
+    dataHora: Timestamp.fromDate(new Date('2025-05-01T08:00:00')),
+  },
+  {
+    titulo: 'Mais Controle no Planejamento: Exclusão de Intervenções Autorais',
+    descricao:
+      'Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico.',
+    dataHora: Timestamp.fromDate(new Date('2025-06-01T08:00:00')),
+  },
+  {
+    titulo: 'Mais Segurança na Gestão de Usuários',
+    descricao:
+      'Ajustamos os níveis de acesso para garantir mais segurança na plataforma. Agora, membros da equipe que ajudam na triagem podem aprovar novos cadastros, mas apenas Administradores possuem a permissão de alterar privilégios avançados ou excluir contas que já estão ativas no sistema.',
+    dataHora: Timestamp.fromDate(new Date('2025-07-01T08:00:00')),
+  },
+  {
+    titulo: 'Ouvindo Nossos Usuários: Central de Ajuda e Avaliações',
+    descricao:
+      'Lançamos a nova Central de Ajuda! Agora você pode relatar problemas técnicos para nossa equipe, sugerir melhorias brilhantes e avaliar o Portal CSAE de forma estruturada. Nossa equipe terá um painel exclusivo para responder e resolver suas solicitações rapidamente.',
+    dataHora: Timestamp.fromDate(new Date('2025-08-01T08:00:00')),
+  },
+  {
+    titulo: 'Correções Finais de UX e Semântica Clínica',
+    descricao:
+      'Corrigimos a exibição do mural de atualizações, bloqueamos o seletor de executor para intervenções não selecionadas e refatoramos completamente o texto gerado da Evolução de Enfermagem — agora com Planejamento, Implementação e Evolução separados em estrutura clínica correta.',
+    dataHora: Timestamp.fromDate(new Date('2025-09-01T08:00:00')),
+  },
+  {
+    titulo: 'Filtros Inteligentes de Produção e Histórico Completo',
+    descricao:
+      'O Painel Estatístico agora permite filtrar toda a produção de enfermagem por unidade/lotação, trazendo uma visão estratégica individualizada da rede assistencial. Também adicionamos o histórico completo de atualizações do sistema e melhorias de estabilidade no Processo de Enfermagem para garantir reinicialização correta das etapas após exclusões.',
+    dataHora: Timestamp.fromDate(new Date('2025-10-01T08:00:00')),
+  },
+];
+
+// ─── Seed completo e idempotente ─────────────────────────────
+// Insere cada changelog apenas se ainda não existir no Firestore.
+// Não depende de localStorage nem de coleção vazia.
+export async function seedChangelogCompleto(): Promise<void> {
+  const inseridos: string[] = [];
+
+  for (const entry of CHANGELOGS_SISTEMA) {
+    const foi = await inserirChangelogIdempotente(entry.titulo, entry.descricao, entry.dataHora);
+    if (foi) inseridos.push(entry.titulo);
+  }
+
+  if (inseridos.length > 0) {
+    console.log(`[Changelog] ${inseridos.length} registro(s) inserido(s):`, inseridos);
+  } else {
+    console.log('[Changelog] Todos os registros já existem no Firestore.');
+  }
+}
+
+// ─── Compatibilidade retroativa ──────────────────────────────
+// Mantida para não quebrar imports existentes que ainda usem seedChangelogInicial.
+export async function seedChangelogInicial(): Promise<void> {
+  return seedChangelogCompleto();
+}
+
+// ─── Inserir Changelog específico do Redesign ──────────────
+// Mantida para compatibilidade retroativa.
+export async function inserirChangelogRedesignAvaliacao(): Promise<void> {
+  await inserirChangelogIdempotente(
+    'Novo Design do Exame Físico',
+    'A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas.'
+  );
 }

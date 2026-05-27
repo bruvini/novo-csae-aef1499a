@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,8 @@ import {
   TrendingUp,
   Layers,
   Pill,
+  Building2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   PieChart,
@@ -185,6 +187,7 @@ const PainelEstatistico = () => {
   const [selectedUser, setSelectedUser] = useState<UsuarioRanking | null>(null);
   const [raioXOpen, setRaioXOpen] = useState(false);
   const [temporalView, setTemporalView] = useState<'hora' | 'diario' | 'diaSemana' | 'mensal' | 'anual'>('mensal');
+  const [filtroLotacao, setFiltroLotacao] = useState<string>('__todas__');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -237,6 +240,83 @@ const PainelEstatistico = () => {
   }, [data, viewModeAcessos]);
 
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
+
+  // ── Filtro de Lotação (client-side) ────────────────────────────────────────
+  // Recomputa KPIs e rankings da Seção 2 com base nos usuários da lotação selecionada.
+  // A série temporal permanece global (não há breakdown por usuário no cache).
+  const dadosFiltrados = useMemo(() => {
+    if (!dataProcessos) return null;
+    if (filtroLotacao === '__todas__') return dataProcessos;
+
+    const usuariosFiltrados = dataProcessos.rankingUsuarios.filter(
+      u => u.lotacao === filtroLotacao
+    );
+
+    // KPIs recalculados
+    const totalConcluidos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosConcluidos, 0);
+    const totalAtivos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosAtivos, 0);
+    const totalProcessos = totalConcluidos + totalAtivos;
+    const totalPacientes = usuariosFiltrados.reduce((s, u) => s + u.raioX.totalPacientes, 0);
+    const tempos = usuariosFiltrados.map(u => u.raioX.tempoMedioHoras).filter(t => t > 0);
+    const tempoMedio = tempos.length > 0 ? parseFloat((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0;
+    const taxaConclusao = totalProcessos > 0 ? Math.round((totalConcluidos / totalProcessos) * 100) : 0;
+
+    // Rankings aproximados: acumular top-5 de cada usuário filtrado
+    const diagsAcc: Record<string, number> = {};
+    const nhbsAcc: Record<string, number> = {};
+    const intervsAcc: Record<string, number> = {};
+    const execsAcc: Record<string, number> = {};
+
+    usuariosFiltrados.forEach(u => {
+      u.raioX.topDiagnosticos.forEach((d, i) => {
+        diagsAcc[d] = (diagsAcc[d] || 0) + (5 - i); // Peso decrescente
+      });
+      u.raioX.topNHBs.forEach((n, i) => {
+        nhbsAcc[n] = (nhbsAcc[n] || 0) + (5 - i);
+      });
+      u.raioX.topIntervencoes.forEach((iv, i) => {
+        intervsAcc[iv] = (intervsAcc[iv] || 0) + (5 - i);
+      });
+      if (u.raioX.executorMaisFrequente && u.raioX.executorMaisFrequente !== 'N/A') {
+        execsAcc[u.raioX.executorMaisFrequente] = (execsAcc[u.raioX.executorMaisFrequente] || 0) + 1;
+      }
+    });
+
+    const toRanking = (map: Record<string, number>, limit = 10) =>
+      Object.entries(map)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit);
+
+    return {
+      ...dataProcessos,
+      totalProcessos,
+      totalProcessosConcluidos: totalConcluidos,
+      totalProcessosEmAndamento: totalAtivos,
+      totalPacientesAtendidos: totalPacientes,
+      taxaConclusao,
+      tempoMedioProcessoHoras: tempoMedio,
+      rankingUsuarios: usuariosFiltrados,
+      rankingLotacoes: [{ name: filtroLotacao, value: totalConcluidos }],
+      etapasPE: {
+        ...dataProcessos.etapasPE,
+        diagnostico: { ...dataProcessos.etapasPE.diagnostico, top: toRanking(diagsAcc) },
+        avaliacao: { ...dataProcessos.etapasPE.avaliacao, nhbs: toRanking(nhbsAcc) },
+        planejamento: { ...dataProcessos.etapasPE.planejamento, prescribed: toRanking(intervsAcc) },
+        implementacao: { ...dataProcessos.etapasPE.implementacao, executors: toRanking(execsAcc) },
+        evolucao: { nurseApplied: toRanking(intervsAcc) },
+      },
+      distribuicaoStatus: [
+        { name: 'Concluídos', value: totalConcluidos },
+        { name: 'Em Andamento', value: totalAtivos },
+      ],
+      perfilPacientes: dataProcessos.perfilPacientes,
+    };
+  }, [dataProcessos, filtroLotacao]);
+
+  const lotacoesDisponiveis = useMemo(() => {
+    return dataProcessos?.lotacoesUnicas || [];
+  }, [dataProcessos]);
 
   if (loading) {
     return (
@@ -746,6 +826,34 @@ const PainelEstatistico = () => {
             </div>
           ) : (
             <div className="space-y-12">
+              {/* ── Seletor de Lotação ── */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
+                <div className="flex items-center gap-2 text-indigo-700 shrink-0">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span className="text-xs font-black uppercase tracking-widest">Filtrar por unidade:</span>
+                </div>
+                <select
+                  id="filtro-lotacao"
+                  value={filtroLotacao}
+                  onChange={(e) => setFiltroLotacao(e.target.value)}
+                  className="flex-1 text-sm font-semibold border border-indigo-200 rounded-xl px-3 py-2 bg-white text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm"
+                  aria-label="Filtrar produção por unidade de lotação"
+                >
+                  <option value="__todas__">Todas as unidades</option>
+                  {lotacoesDisponiveis.map(lot => (
+                    <option key={lot} value={lot}>{lot}</option>
+                  ))}
+                </select>
+                <span className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                  filtroLotacao === '__todas__'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'bg-indigo-600 text-white shadow-md'
+                }`}>
+                  <Building2 className="w-3 h-3" />
+                  {filtroLotacao === '__todas__' ? 'Todas as unidades' : filtroLotacao}
+                </span>
+              </div>
+
               {/* ── Bloco 0: KPIs e Gráfico Temporal Unificado ── */}
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -760,7 +868,7 @@ const PainelEstatistico = () => {
                           </div>
                         )}
                       </div>
-                      <CardTitle className="text-3xl font-black">{dataProcessos.totalProcessos}</CardTitle>
+                      <CardTitle className="text-3xl font-black">{dadosFiltrados?.totalProcessos ?? 0}</CardTitle>
                     </CardHeader>
                     <CardContent className="text-[10px] opacity-80">Registros totais na base</CardContent>
                   </Card>
@@ -770,28 +878,28 @@ const PainelEstatistico = () => {
                         <CardDescription className="text-emerald-600 text-[10px] font-bold uppercase tracking-wider">Concluídos</CardDescription>
                         <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[9px] font-black">ESTÁVEL</div>
                       </div>
-                      <CardTitle className="text-3xl font-black text-gray-900">{dataProcessos.totalProcessosConcluidos}</CardTitle>
+                      <CardTitle className="text-3xl font-black text-gray-900">{dadosFiltrados?.totalProcessosConcluidos ?? 0}</CardTitle>
                     </CardHeader>
                     <CardContent>
                        <div className="flex items-center gap-2">
                           <div className="flex-1 bg-emerald-100 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-emerald-500 h-full" style={{ width: `${dataProcessos.taxaConclusao}%` }} />
+                            <div className="bg-emerald-500 h-full" style={{ width: `${dadosFiltrados?.taxaConclusao ?? 0}%` }} />
                           </div>
-                          <span className="text-[10px] font-bold text-emerald-600">{dataProcessos.taxaConclusao}%</span>
+                          <span className="text-[10px] font-bold text-emerald-600">{dadosFiltrados?.taxaConclusao ?? 0}%</span>
                        </div>
                     </CardContent>
                   </Card>
                   <Card className="bg-white border-none shadow-lg">
                     <CardHeader className="pb-2">
                       <CardDescription className="text-amber-600 text-[10px] font-bold uppercase tracking-wider">Tempo Médio</CardDescription>
-                      <CardTitle className="text-3xl font-black text-gray-900">{dataProcessos.tempoMedioProcessoHoras}h</CardTitle>
+                      <CardTitle className="text-3xl font-black text-gray-900">{dadosFiltrados?.tempoMedioProcessoHoras ?? 0}h</CardTitle>
                     </CardHeader>
                     <CardContent className="text-[10px] text-gray-500">Média de duração (Conclusão - Início)</CardContent>
                   </Card>
                   <Card className="bg-white border-none shadow-lg">
                     <CardHeader className="pb-2">
                       <CardDescription className="text-indigo-600 text-[10px] font-bold uppercase tracking-wider">Pacientes Atendidos</CardDescription>
-                      <CardTitle className="text-3xl font-black text-gray-900">{dataProcessos.totalPacientesAtendidos}</CardTitle>
+                      <CardTitle className="text-3xl font-black text-gray-900">{dadosFiltrados?.totalPacientesAtendidos ?? 0}</CardTitle>
                     </CardHeader>
                     <CardContent className="text-[10px] text-gray-500">Indivíduos únicos com processo</CardContent>
                   </Card>
@@ -805,7 +913,7 @@ const PainelEstatistico = () => {
                       </CardTitle>
                       <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">Processos concluídos por período</CardDescription>
                     </div>
-                    <Tabs value={temporalView} onValueChange={(v: any) => setTemporalView(v)} className="w-full md:w-auto">
+                    <Tabs value={temporalView} onValueChange={(v) => setTemporalView(v as typeof temporalView)} className="w-full md:w-auto">
                       <TabsList className="bg-indigo-100/50 p-1 w-full md:w-auto">
                         <TabsTrigger value="hora" className="text-[10px] px-3 py-1 font-bold">Hora</TabsTrigger>
                         <TabsTrigger value="diario" className="text-[10px] px-3 py-1 font-bold">Dia</TabsTrigger>
@@ -889,7 +997,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Parâmetros de Exame Físico</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.avaliacao.physical} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.avaliacao.physical ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} />
@@ -902,7 +1010,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Necessidades (NHBs) Afetadas</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.avaliacao.nhbs} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.avaliacao.nhbs ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#818cf8" radius={[0, 4, 4, 0]} />
@@ -925,7 +1033,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Diagnósticos de Enfermagem</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.diagnostico.top} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.diagnostico.top ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#e11d48" radius={[0, 4, 4, 0]} />
@@ -938,7 +1046,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Distribuição por Subconjunto</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.diagnostico.subset} layout="vertical">
+                        <BarChart data={dadosFiltrados?.etapasPE.diagnostico.subset ?? []} layout="vertical">
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#fb7185" radius={[0, 4, 4, 0]} />
@@ -961,7 +1069,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Resultados Esperados</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.results} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.planejamento.results ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#059669" radius={[0, 4, 4, 0]} />
@@ -974,7 +1082,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Top 10 Intervenções Prescritas</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.planejamento.prescribed} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.planejamento.prescribed ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#10b981" radius={[0, 4, 4, 0]} />
@@ -996,7 +1104,7 @@ const PainelEstatistico = () => {
                     <CardHeader><CardTitle className="text-sm font-bold">Intervenções Aplicadas na Consulta</CardTitle></CardHeader>
                     <CardContent className="h-[350px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.etapasPE.implementacao.applied} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                        <BarChart data={dadosFiltrados?.etapasPE.implementacao.applied ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 9, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#0891b2" radius={[0, 4, 4, 0]} />
@@ -1011,7 +1119,7 @@ const PainelEstatistico = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
-                            data={dataProcessos.etapasPE.implementacao.executors} 
+                            data={dadosFiltrados?.etapasPE.implementacao.executors ?? []} 
                             cx="50%" cy="50%" 
                             innerRadius={30} outerRadius={55} 
                             dataKey="value" 
@@ -1041,7 +1149,7 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="h-[350px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dataProcessos.etapasPE.evolucao.nurseApplied} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
+                      <BarChart data={dadosFiltrados?.etapasPE.evolucao.nurseApplied ?? []} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" width={260} tick={{ fontSize: 10, fontWeight: 600 }} />
                         <Bar dataKey="value" fill="#2563eb" radius={[0, 4, 4, 0]} />
@@ -1073,7 +1181,7 @@ const PainelEstatistico = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {dataProcessos.rankingUsuarios
+                          {(dadosFiltrados?.rankingUsuarios ?? [])
                             .filter(u => u.value > 0)
                             .sort((a, b) => b.value - a.value)
                             .slice(0, 10)
@@ -1126,7 +1234,7 @@ const PainelEstatistico = () => {
                     </CardHeader>
                     <CardContent className="h-[450px] pt-6">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.rankingLotacoes} layout="vertical">
+                        <BarChart data={dadosFiltrados?.rankingLotacoes ?? []} layout="vertical">
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
                           <Bar dataKey="value" fill="#334155" radius={[0, 6, 6, 0]}>

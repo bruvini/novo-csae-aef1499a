@@ -69,7 +69,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
           </div>
 
           {/* ToggleGroup para quem executa */}
-          <div className="flex items-center gap-4 mt-2">
+          <div className={cn("flex items-center gap-4 mt-2", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>
             <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
               Quem executa (Obrigatório)*:
             </Label>
@@ -100,7 +100,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
           </div>
 
           {/* Campos de prazo */}
-          <div className="flex gap-2 items-end">
+          <div className={cn("flex gap-2 items-end", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>
             <div className="flex-1 space-y-1">
               <label className="text-xs font-medium text-muted-foreground">
                 Prazo:

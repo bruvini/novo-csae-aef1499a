@@ -143,6 +143,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   const criarNovoProcesso = async () => {
     if (!paciente.id) return;
+
+    // Reset visual imediato do Stepper antes de qualquer I/O
+    setEtapaAtual(1);
+    setEtapasCompletadas([]);
     
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
@@ -151,7 +155,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       const docCarregado = await buscarProcessoPorId(paciente.id, novoId);
       if (docCarregado) {
         setProcesso(docCarregado);
-        setEtapaAtual(docCarregado.etapaAtual);
+        setEtapaAtual(docCarregado.etapaAtual || 1);
+        setEtapasCompletadas([]);
       } else {
         setProcesso(prev => ({ ...prev, id: novoId }));
       }
@@ -392,6 +397,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         description: "Processo excluído com sucesso!",
       });
 
+      // Reset visual do Stepper antes de fechar
+      setEtapaAtual(1);
+      setEtapasCompletadas([]);
       setShowDeleteAlert(false);
       onClose();
       onProcessoDeleted?.();

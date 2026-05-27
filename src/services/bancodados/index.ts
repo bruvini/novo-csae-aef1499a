@@ -40,7 +40,7 @@ export {
 
 // Changelog exports
 export type { Changelog } from './changelogDB';
-export { buscarChangelogsRecentes, seedChangelogInicial, salvarChangelog } from './changelogDB';
+export { buscarChangelogsRecentes, buscarTodosChangelogs, seedChangelogInicial, seedChangelogCompleto, salvarChangelog, inserirChangelogIdempotente } from './changelogDB';
 
 // Suporte exports
 export type { TicketProblema, SugestaoMelhoria, PesquisaNPS } from './suporteDB';

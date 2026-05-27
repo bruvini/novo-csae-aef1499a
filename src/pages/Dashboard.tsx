@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap } from 'lucide-react';
+import { Zap, Plus } from 'lucide-react';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
@@ -9,13 +9,13 @@ import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ModalHistoricoChangelog from '@/components/ModalHistoricoChangelog';
 import {
   buscarEstatisticasGlobais,
   buscarChangelogsRecentes,
-  seedChangelogInicial,
+  seedChangelogCompleto,
   type Changelog,
 } from '@/services/bancodados';
-import { salvarChangelog } from '@/services/bancodados/changelogDB';
 
 // ── Helpers ──────────────────────────────────────────────────
 function formatarDataHora(ts: Timestamp | undefined): string {
@@ -33,112 +33,45 @@ const Dashboard = () => {
   const [statsLoading, setStatsLoading] = useState(true);
   const [changelogs, setChangelogs] = useState<Changelog[]>([]);
   const [changelogLoading, setChangelogLoading] = useState(true);
+  const [changelogModalOpen, setChangelogModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      // ── Dados do usuário ────────────────────────────────────
       const user = auth.currentUser;
       if (user) {
-        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        const userDoc = await getDoc(doc(db, 'usuarios', user.uid));
         if (userDoc.exists()) {
           setUserData(userDoc.data());
         }
       }
       setLoading(false);
 
+      // ── Estatísticas ────────────────────────────────────────
       try {
         const globalStats = await buscarEstatisticasGlobais();
         setStats(globalStats);
       } catch (error) {
-        console.error("Erro ao buscar estatísticas:", error);
+        console.error('Erro ao buscar estatísticas:', error);
       } finally {
         setStatsLoading(false);
       }
 
-      // Changelog: seed + fetch
+      // ── Changelogs ──────────────────────────────────────────
+      // Fluxo sequencial: seed idempotente → buscar → exibir.
+      // Não depende de localStorage; deduplicação feita por título no Firestore.
       try {
-        await seedChangelogInicial();
+        await seedChangelogCompleto();
         const logs = await buscarChangelogsRecentes();
         setChangelogs(logs);
       } catch (error) {
-        console.error("Erro ao buscar changelogs:", error);
+        console.error('Erro ao carregar changelogs:', error);
       } finally {
         setChangelogLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
-
-  useEffect(() => {
-    if (!localStorage.getItem('changelog_rbac_v2')) {
-      salvarChangelog(
-        "Mais Segurança na Gestão de Usuários",
-        "Ajustamos os níveis de acesso para garantir mais segurança na plataforma. Agora, membros da equipe que ajudam na triagem podem aprovar novos cadastros, mas apenas Administradores possuem a permissão de alterar privilégios avançados ou excluir contas que já estão ativas no sistema."
-      ).then(() => {
-        localStorage.setItem('changelog_rbac_v2', 'true');
-      }).catch(console.error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!localStorage.getItem('changelog_central_ajuda_v1')) {
-      salvarChangelog(
-        "Ouvindo Nossos Usuários: Central de Ajuda e Avaliações",
-        "Lançamos a nova Central de Ajuda! Agora você pode relatar problemas técnicos para nossa equipe, sugerir melhorias brilhantes e avaliar o Portal CSAE de forma estruturada. Nossa equipe terá um painel exclusivo para responder e resolver suas solicitações rapidamente."
-      ).then(() => {
-        localStorage.setItem('changelog_central_ajuda_v1', 'true');
-      }).catch(console.error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!localStorage.getItem('changelog_exclusao_autoral_v1')) {
-      salvarChangelog(
-        "Mais Controle no Planejamento: Exclusão de Intervenções Autorais",
-        "Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico."
-      ).then(() => {
-        localStorage.setItem('changelog_exclusao_autoral_v1', 'true');
-      }).catch(console.error);
-    }
-  }, []);
-
-  useEffect(() => {
-    const registrarChangelogsNovos = async () => {
-      const promises = [];
-
-      if (!localStorage.getItem('changelog_autosave_v1')) {
-        promises.push(
-          salvarChangelog(
-            "Salvamento Automático Inteligente",
-            "Simplificamos o Processo de Enfermagem! O botão 'Salvar Progresso' foi removido para evitar confusões. Agora, basta clicar em 'Avançar' e o sistema salvará automaticamente todas as suas alterações de forma segura."
-          ).then(() => localStorage.setItem('changelog_autosave_v1', 'true'))
-        );
-      }
-
-      if (!localStorage.getItem('changelog_executores_autorais_v1')) {
-        promises.push(
-          salvarChangelog(
-            "Executores em Intervenções Autorais",
-            "Corrigimos um bloqueio na Etapa de Implementação. Agora, quando você criar uma Intervenção Autoral, o campo obrigatório de 'Quem Executa' aparecerá normalmente, permitindo que você avance de etapa sem problemas."
-          ).then(() => localStorage.setItem('changelog_executores_autorais_v1', 'true'))
-        );
-      }
-
-      if (!localStorage.getItem('changelog_cofen_736_2024_v1')) {
-        promises.push(
-          salvarChangelog(
-            "Adequação à Resolução COFEN Nº 736/2024",
-            "Atualizamos os responsáveis pela execução das intervenções. Agora você pode delegar o cuidado de forma mais precisa, escolhendo entre: Técnico/Auxiliar de Enfermagem, Equipe Multiprofissional, Cuidador/Familiar ou o próprio Paciente (Autocuidado)."
-          ).then(() => localStorage.setItem('changelog_cofen_736_2024_v1', 'true'))
-        );
-      }
-
-      if (promises.length > 0) {
-        await Promise.all(promises);
-      }
-    };
-
-    registrarChangelogsNovos().catch(console.error);
   }, []);
 
   if (loading) {
@@ -171,6 +104,15 @@ const Dashboard = () => {
                     <Zap className="w-4 h-4" />
                   </div>
                   Atualizações Recentes
+                  <button
+                    id="btn-historico-changelog"
+                    aria-label="Ver histórico completo de atualizações"
+                    onClick={() => setChangelogModalOpen(true)}
+                    className="ml-auto w-7 h-7 rounded-full bg-gray-100 hover:bg-csae-green-100 text-gray-400 hover:text-csae-green-700 flex items-center justify-center transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-csae-green-400"
+                    title="Ver histórico completo"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </CardTitle>
               </CardHeader>
 
@@ -221,6 +163,10 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <ModalHistoricoChangelog
+        isOpen={changelogModalOpen}
+        onClose={() => setChangelogModalOpen(false)}
+      />
     </AuthenticatedLayout>
   );
 };

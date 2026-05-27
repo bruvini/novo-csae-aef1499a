@@ -24,7 +24,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 6;
 
 export interface ItemRanking {
   name: string;
@@ -108,7 +108,11 @@ export interface EstatisticasProcessoEnfermagem {
     anual: ItemTemporal[];
   };
 
+  // Lotações únicas (para filtro client-side)
+  lotacoesUnicas: string[];
+
   schemaVersion?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ultimaAtualizacao?: any;
 }
 
@@ -139,6 +143,7 @@ interface ProcessoEnfermagemDoc {
   dataConclusao?: FirestoreTimestamp;
   enfermeiroId: string;
   avaliacao?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exameFisico?: Record<string, any>;
     nhbsAfetadas: Array<{ parametro: string; nhb: string }>;
   };
@@ -445,6 +450,11 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
     chartDiario.push({ name: format(parseISO(d), 'dd/MM'), value: porDia[d], acumulado: acumD });
   });
 
+  // 6. Extrair lotações únicas dos rankings de usuários
+  const lotacoesUnicas = [...new Set(
+    rankingUsuarios.map(u => u.lotacao).filter(Boolean)
+  )].sort();
+
   const stats: EstatisticasProcessoEnfermagem = {
     schemaVersion: SCHEMA_VERSION,
     ultimaAtualizacao: serverTimestamp(),
@@ -478,6 +488,7 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
 
     rankingUsuarios,
     rankingLotacoes: formatMapToRanking(rankingLotacaoMap),
+    lotacoesUnicas,
 
     etapasPE: {
       avaliacao: {
