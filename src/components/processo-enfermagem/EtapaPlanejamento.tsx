@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Info, HelpCircle, GripVertical, Plus } from 'lucide-react';
+import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
@@ -147,6 +147,20 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
 
     setDiagnosticosPrivorizados(updated);
     setNovaIntervencao(prev => ({ ...prev, [diagnosticoId]: '' }));
+    salvarPlanejamento(updated);
+  };
+
+  const handleRemoverIntervencaoAutoral = (diagnosticoId: string, acaoPrescrita: string) => {
+    const updated = diagnosticosPriorizados.map(diag => {
+      if (diag.diagnosticoId === diagnosticoId) {
+        const intervencoes = diag.intervencoesSelecionadas || [];
+        const filtered = intervencoes.filter(i => !(i.acaoPrescrita === acaoPrescrita && i.tipo === 'autoral'));
+        return { ...diag, intervencoesSelecionadas: filtered };
+      }
+      return diag;
+    });
+
+    setDiagnosticosPrivorizados(updated);
     salvarPlanejamento(updated);
   };
 
@@ -484,8 +498,16 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                   {diagnostico.intervencoesSelecionadas
                                     .filter(i => i.tipo === 'autoral')
                                     .map((intervencao, index) => (
-                                      <div key={index} className="p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                                        {intervencao.acaoPrescrita}
+                                      <div key={index} className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                                        <span>{intervencao.acaoPrescrita}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                          onClick={() => handleRemoverIntervencaoAutoral(diagnostico.diagnosticoId, intervencao.acaoPrescrita)}
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
                                       </div>
                                     ))}
                                 </div>

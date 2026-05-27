@@ -91,6 +91,17 @@ const Dashboard = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!localStorage.getItem('changelog_exclusao_autoral_v1')) {
+      salvarChangelog(
+        "Mais Controle no Planejamento: Exclusão de Intervenções Autorais",
+        "Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico."
+      ).then(() => {
+        localStorage.setItem('changelog_exclusao_autoral_v1', 'true');
+      }).catch(console.error);
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

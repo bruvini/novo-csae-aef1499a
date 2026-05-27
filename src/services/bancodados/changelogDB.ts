@@ -47,6 +47,11 @@ export async function seedChangelogInicial(): Promise<void> {
       descricao: "A aba de Exame Físico foi completamente redesenhada. Agora os sinais vitais, exames e revisão de sistemas estão organizados em painéis interativos mais claros, com feedback inteligente de cores para alterações clínicas.",
       dataHora: Timestamp.now(),
     });
+    await addDoc(ref, {
+      titulo: "Mais Controle no Planejamento: Exclusão de Intervenções Autorais",
+      descricao: "Agora, ao escrever uma intervenção autoral na etapa de Planejamento de Enfermagem, é possível excluí-la facilmente clicando no ícone de lixeira caso mude de ideia ou note algum erro de digitação. Mais liberdade e precisão para o seu raciocínio clínico.",
+      dataHora: Timestamp.now(),
+    });
     console.log('[Changelog] Seed inicial inserido com sucesso.');
   }
 }
