@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine } from 'lucide-react';
+import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine, Search } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
@@ -39,6 +40,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 }) => {
   const [guiaColetaOpen, setGuiaColetaOpen] = useState(false);
   const [guiaExameOpen, setGuiaExameOpen] = useState(false);
+  const [buscaExameFisico, setBuscaExameFisico] = useState('');
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
   const [exames, setExames] = useState<Exame[]>([]);
   const [sistemas, setSistemas] = useState<SistemaCorporal[]>([]);
@@ -401,6 +403,61 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     );
   }
 
+  // ─── Helpers de identificação e filtro ────────────────────
+  const isPAS = (nome: string) => {
+    const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return n.includes('sistolica') || n.includes(' pas)') || n.includes('(pas)');
+  };
+  const isPAD = (nome: string) => {
+    const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return n.includes('diastoilica') || n.includes('diastolica') || n.includes(' pad)') || n.includes('(pad)');
+  };
+  const isIMC = (nome: string) => {
+    const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return n.includes('imc') || n.includes('indice de massa') || n.includes('massa corporal');
+  };
+
+  /** Busca sem acento, case-insensitive */
+  const matchesBusca = (text: string, busca: string): boolean => {
+    if (!busca.trim()) return true;
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return norm(text).includes(norm(busca));
+  };
+
+  /** Sinal vital aplicável ao paciente (age/sex filter) */
+  const sinalMatchesPaciente = (sinal: SinalVital): boolean => {
+    if (!sinal.valoresDeReferencia || sinal.valoresDeReferencia.length === 0) return true;
+    const idade = calculateAge(paciente.dataNascimento);
+    const sexo = paciente.sexo;
+    return sinal.valoresDeReferencia.some((ref: ValorReferenciaVital) => {
+      const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
+      const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
+      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === (sexo as string);
+      return idadeMinOk && idadeMaxOk && sexoOk;
+    });
+  };
+
+  /** Atualiza Peso, Altura e IMC calculado em uma única operação */
+  const handleIMCChange = (pesoStr: string, alturaStr: string, imcVital: SinalVital) => {
+    const pesoNum = parseFloat(pesoStr);
+    const alturaNum = parseFloat(alturaStr);
+    let imcCalc = '';
+    if (!isNaN(pesoNum) && !isNaN(alturaNum) && alturaNum > 0) {
+      imcCalc = (pesoNum / Math.pow(alturaNum / 100, 2)).toFixed(2);
+    }
+    const novoExameFisico = {
+      ...(processo.avaliacao?.exameFisico || {}),
+      'Peso (kg)': pesoStr,
+      'Altura (cm)': alturaStr,
+      [imcVital.sinalVitalNome]: imcCalc,
+    };
+    const validation = getNumericValidation(imcVital.sinalVitalNome, imcCalc, 'sinal');
+    setParametroValidation(imcVital.sinalVitalNome, validation.status, validation.nomeAlteracao, validation.nhb);
+    const novaListaNhbs = calculateAllNhbs(novoExameFisico, processo.avaliacao?.exameFisicoMulti || {});
+    setNhbsAfetadas(novaListaNhbs);
+    onUpdateAvaliacao({ ...processo.avaliacao, exameFisico: novoExameFisico, nhbsAfetadas: novaListaNhbs });
+  };
+
   // Classes condicionais para feedback visual aprimorado
   const getInputClassName = (parametro: string) => {
     const status = validationStates[parametro]?.status || 'neutro';
@@ -631,7 +688,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         </TabsContent>
 
         <TabsContent value="exame-fisico" className="flex-1 mt-4">
-          <div className="h-full space-y-4">
+          <div className="flex gap-4 items-start">
+
+            {/* ── Coluna principal ───────────────────────────────── */}
+            <div className="flex-1 min-w-0 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Exame Físico</h2>
               <Dialog open={guiaExameOpen} onOpenChange={setGuiaExameOpen}>
@@ -681,6 +741,18 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
               </Dialog>
             </div>
 
+            {/* Barra de busca */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar sinais vitais, exames ou sistemas de revisão…"
+                value={buscaExameFisico}
+                onChange={(e) => setBuscaExameFisico(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <TooltipProvider>
             <Accordion type="multiple" defaultValue={['sinais-vitais']} className="w-full space-y-4">
               {/* Sinais Vitais - Grid de mini-cards */}
               <AccordionItem value="sinais-vitais" className="border rounded-xl shadow-sm overflow-hidden bg-white">
@@ -693,34 +765,95 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="bg-slate-50/40 p-6 border-t">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[...sinaisVitais]
-                      .sort((a, b) => {
-                        const ordem = { "Pressão Arterial Sistólica": 1, "Pressão Arterial Diastólica": 2 };
-                        const valA = ordem[a.sinalVitalNome as keyof typeof ordem] || 99;
-                        const valB = ordem[b.sinalVitalNome as keyof typeof ordem] || 99;
-                        return valA - valB;
-                      })
-                      .map((sinal) => (
-                      <div key={sinal.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3 h-full flex flex-col justify-between">
-                        <label className="text-[11px] font-black uppercase tracking-wider text-gray-500">
-                          {sinal.sinalVitalNome} <span className="text-[9px] lowercase font-medium">({sinal.unidadeMedida})</span>
-                        </label>
-                        <Input
-                          type="number"
-                          placeholder="00.0"
-                          value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const validation = getNumericValidation(sinal.sinalVitalNome, val, 'sinal');
-                            updateAvaliacaoAtomic(sinal.sinalVitalNome, val, validation);
-                          }}
-                          className={getInputClassName(sinal.sinalVitalNome)}
-                        />
-                        {renderValidationMessage(sinal.sinalVitalNome)}
+                  {(() => {
+                    const vitais = [...sinaisVitais]
+                      .filter(s => sinalMatchesPaciente(s))
+                      .filter(s => matchesBusca(s.sinalVitalNome, buscaExameFisico) || matchesBusca(s.sinalVitalDescricao || '', buscaExameFisico));
+                    const pasV = vitais.find(s => isPAS(s.sinalVitalNome));
+                    const padV = vitais.find(s => isPAD(s.sinalVitalNome));
+                    const imcV = vitais.find(s => isIMC(s.sinalVitalNome));
+                    const outros = vitais.filter(s => !isPAS(s.sinalVitalNome) && !isPAD(s.sinalVitalNome) && !isIMC(s.sinalVitalNome));
+                    if (!pasV && !padV && !imcV && outros.length === 0) {
+                      return <p className="text-sm text-muted-foreground text-center py-4">Nenhum resultado para "{buscaExameFisico}".</p>;
+                    }
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {/* ── Bloco PA ── */}
+                        {(pasV || padV) && (
+                          <div className="sm:col-span-2 bg-white p-4 rounded-xl border-2 border-rose-100 shadow-sm">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-rose-500 mb-3">Pressão Arterial</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              {pasV && (
+                                <div className="space-y-2">
+                                  <label className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
+                                    PAS <span className="text-[9px] font-normal opacity-60">({pasV.unidadeMedida})</span>
+                                    {pasV.sinalVitalDescricao && (
+                                      <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{pasV.sinalVitalDescricao}</TooltipContent></Tooltip>
+                                    )}
+                                  </label>
+                                  <Input type="number" placeholder="00" value={processo.avaliacao?.exameFisico?.[pasV.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(pasV.sinalVitalNome, v, getNumericValidation(pasV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(pasV.sinalVitalNome)} />
+                                  {renderValidationMessage(pasV.sinalVitalNome)}
+                                </div>
+                              )}
+                              {padV && (
+                                <div className="space-y-2">
+                                  <label className="text-[11px] font-bold text-gray-600 flex items-center gap-1">
+                                    PAD <span className="text-[9px] font-normal opacity-60">({padV.unidadeMedida})</span>
+                                    {padV.sinalVitalDescricao && (
+                                      <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{padV.sinalVitalDescricao}</TooltipContent></Tooltip>
+                                    )}
+                                  </label>
+                                  <Input type="number" placeholder="00" value={processo.avaliacao?.exameFisico?.[padV.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(padV.sinalVitalNome, v, getNumericValidation(padV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(padV.sinalVitalNome)} />
+                                  {renderValidationMessage(padV.sinalVitalNome)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── Bloco IMC ── */}
+                        {imcV && (
+                          <div className="sm:col-span-2 bg-white p-4 rounded-xl border-2 border-csae-green-100 shadow-sm">
+                            <p className="text-[10px] font-black uppercase tracking-wider text-csae-green-600 mb-3 flex items-center gap-1">
+                              {imcV.sinalVitalNome}
+                              {imcV.sinalVitalDescricao && (
+                                <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[220px] text-xs">{imcV.sinalVitalDescricao}</TooltipContent></Tooltip>
+                              )}
+                            </p>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-gray-500">Peso (kg)</label>
+                                <Input type="number" placeholder="Ex: 70" value={String(processo.avaliacao?.exameFisico?.['Peso (kg)'] || '')} onChange={(e) => handleIMCChange(e.target.value, String(processo.avaliacao?.exameFisico?.['Altura (cm)'] || ''), imcV)} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-gray-500">Altura (cm)</label>
+                                <Input type="number" placeholder="Ex: 170" value={String(processo.avaliacao?.exameFisico?.['Altura (cm)'] || '')} onChange={(e) => handleIMCChange(String(processo.avaliacao?.exameFisico?.['Peso (kg)'] || ''), e.target.value, imcV)} />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-gray-500">IMC (kg/m²)</label>
+                                <div className={`h-9 rounded-md border flex items-center px-3 text-sm font-bold ${getInputClassName(imcV.sinalVitalNome)}`}>{processo.avaliacao?.exameFisico?.[imcV.sinalVitalNome] || '—'}</div>
+                                {renderValidationMessage(imcV.sinalVitalNome)}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ── Demais sinais vitais ── */}
+                        {outros.map((sinal) => (
+                          <div key={sinal.id} className="bg-white p-4 rounded-xl border shadow-sm space-y-3 flex flex-col justify-between">
+                            <label className="text-[11px] font-black uppercase tracking-wider text-gray-500 flex items-center gap-1 flex-wrap">
+                              {sinal.sinalVitalNome} <span className="text-[9px] lowercase font-medium">({sinal.unidadeMedida})</span>
+                              {sinal.sinalVitalDescricao && (
+                                <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{sinal.sinalVitalDescricao}</TooltipContent></Tooltip>
+                              )}
+                            </label>
+                            <Input type="number" placeholder="00.0" value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(sinal.sinalVitalNome, v, getNumericValidation(sinal.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(sinal.sinalVitalNome)} />
+                            {renderValidationMessage(sinal.sinalVitalNome)}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
                 </AccordionContent>
               </AccordionItem>
 
@@ -736,9 +869,20 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionTrigger>
                 <AccordionContent className="bg-slate-50/40 p-6 border-t">
                   <div className="space-y-8">
-                    {exames.map((exame) => (
+                    {exames
+                      .filter(ex =>
+                        matchesBusca(ex.nomeExame, buscaExameFisico) ||
+                        matchesBusca(ex.descricaoExame || '', buscaExameFisico) ||
+                        ex.componentes.some(c => matchesBusca(c.componenteAnalisado, buscaExameFisico))
+                      )
+                      .map((exame) => (
                       <div key={exame.id} className="space-y-4">
-                        <SectionHeader title={exame.nomeExame} />
+                        <div className="col-span-full border-b pb-1.5 mb-2 mt-4 first:mt-0 flex items-center gap-1">
+                          <h5 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/80">{exame.nomeExame}</h5>
+                          {exame.descricaoExame && (
+                            <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px] text-xs">{exame.descricaoExame}</TooltipContent></Tooltip>
+                          )}
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ml-2">
                           {exame.componentes.map((componente, idx) => {
                             const parametro = componente.componenteAnalisado;
@@ -811,12 +955,26 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                     <span className="font-bold text-gray-800">Revisão de Sistemas</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="bg-slate-50/40 p-6 border-t">
-                  <div className="space-y-8">
-                    {sistemas.map((sistema) => (
-                      <div key={sistema.id} className="space-y-4">
-                        <SectionHeader title={sistema.nomeSistema} />
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-2">
+                <AccordionContent className="bg-slate-50/40 p-4 border-t">
+                  <Accordion type="multiple" className="space-y-2">
+                    {sistemas
+                      .filter(s =>
+                        matchesBusca(s.nomeSistema, buscaExameFisico) ||
+                        matchesBusca(s.descricaoSistema || '', buscaExameFisico) ||
+                        s.exames.some(e => matchesBusca(e.nomeExame, buscaExameFisico) || e.achados.some(a => matchesBusca(a.descricaoAchado, buscaExameFisico)))
+                      )
+                      .map((sistema) => (
+                      <AccordionItem key={sistema.id} value={`sistema-${sistema.id}`} className="border rounded-xl overflow-hidden bg-white shadow-sm">
+                        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50/80 hover:no-underline">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-800">{sistema.nomeSistema}</span>
+                            {sistema.descricaoSistema && (
+                              <Tooltip><TooltipTrigger asChild><Info className="w-3.5 h-3.5 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent className="max-w-[260px] text-xs">{sistema.descricaoSistema}</TooltipContent></Tooltip>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4 bg-slate-50/40">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
                           {sistema.exames.map((exame, idx) => {
                             const nomeExame = exame.nomeExame;
                             const selectedValues = processo.avaliacao?.exameFisicoMulti?.[nomeExame]
@@ -988,31 +1146,41 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                             );
                           })}
                         </div>
-                      </div>
+                        </AccordionContent>
+                      </AccordionItem>
                     ))}
-                  </div>
+                  </Accordion>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+            </TooltipProvider>
+            </div>{/* fim coluna principal */}
 
+            {/* ── Sidebar NHBs ───────────────────────────────────── */}
             {nhbsAfetadas.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">Necessidades Humanas Básicas Afetadas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {nhbsAfetadas.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded">
-                        <span className="font-medium">{item.parametro}:</span>
-                        <span className="text-primary">{item.nhb}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="w-60 shrink-0 sticky top-0 self-start">
+                <Card className="border-rose-100 shadow-sm">
+                  <CardHeader className="pb-2 pt-4 px-4">
+                    <CardTitle className="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      NHBs Afetadas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 pb-4 pt-0">
+                    <div className="space-y-1.5">
+                      {nhbsAfetadas.map((item, idx) => (
+                        <div key={idx} className="rounded-lg bg-rose-50 border border-rose-100 px-2.5 py-2">
+                          <p className="text-[11px] font-semibold text-rose-700 leading-tight">{item.nhb}</p>
+                          <p className="text-[10px] text-rose-400 mt-0.5 leading-tight truncate" title={item.parametro}>{item.parametro}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
-          </div>
+
+          </div>{/* fim flex gap-4 */}
         </TabsContent>
       </Tabs>
     </div>

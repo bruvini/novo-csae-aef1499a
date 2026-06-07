@@ -143,6 +143,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
   // garantindo que apareçam no topo do painel (data real de deploy).
   // Os títulos são propositalmente distintos dos anteriores para forçar nova inserção.
   {
+    titulo: 'Exame Físico: Busca, IMC, PA Agrupada e NHBs na Sidebar',
+    descricao:
+      'A aba de Exame Físico ganhou melhorias significativas: barra de pesquisa para localizar rapidamente qualquer sinal vital, exame ou sistema; bloco especial de PA com Sistólica e Diastólica sempre juntas; calculadora de IMC integrada que computa o índice automaticamente a partir do Peso e Altura; cada sistema da Revisão de Sistemas agora tem seu próprio acordeão; as NHBs afetadas ficam numa coluna lateral fixa visível enquanto o exame é preenchido; sinais vitais agora exibem apenas os critérios compatíveis com idade e sexo do paciente; e o campo "Condição" foi removido do cadastro de sinais vitais.',
+  },
+  {
     titulo: 'Achados Reformulados: Edição Inline e Classificação Clínica',
     descricao:
       'Reformulamos completamente o cadastro de achados na Revisão de Sistemas. Agora você edita os achados diretamente dentro do card do exame, sem precisar abrir janelas adicionais. Um novo campo permite informar se o achado é uma alteração clínica ou não — quando sim, basta nomear a alteração e vincular a NHB afetada; quando não, é só classificar (Normal, Padrão Normal, etc.). Os achados normais aparecem sempre primeiro, garantindo clareza no Processo de Enfermagem.',
