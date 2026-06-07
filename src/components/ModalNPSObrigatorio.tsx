@@ -72,14 +72,16 @@ const ModalNPSObrigatorio: React.FC<ModalNPSObrigatorioProps> = ({
 
     setEnviando(true);
     try {
-      await salvarPesquisaNPS({
+      // Não incluir comentario se vazio — evita enviar undefined para o Firestore
+      const dadosNPS = {
         usuarioId,
         nomeUsuario,
         notaGeral: notaGeral!,
         notaUsabilidade: notaUsabilidade!,
         notaPerformance: notaPerformance!,
-        comentario: comentario.trim() || undefined,
-      });
+        ...(comentario.trim() ? { comentario: comentario.trim() } : {}),
+      };
+      await salvarPesquisaNPS(dadosNPS);
       setConcluido(true);
       // Fecha automaticamente após 2,5s
       setTimeout(() => onConcluido(), 2500);
