@@ -238,29 +238,34 @@ const TabelaSinaisVitais = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Dados do Sinal Vital</h3>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nome do Sinal Vital *</label>
+                  <label className="block text-sm font-medium mb-1.5">Nome do Sinal Vital *</label>
                   <Input
                     value={sinalVitalNome}
                     onChange={(e) => setSinalVitalNome(e.target.value)}
-                    placeholder="Ex: Pressão Arterial"
+                    placeholder="Ex: Pressão Arterial Sistólica"
+                    spellCheck
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">Nome completo e específico. Crie um sinal vital separado para cada parâmetro medido (ex: PA sistólica e PA diastólica separadas).</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Descrição</label>
+                  <label className="block text-sm font-medium mb-1.5">Descrição</label>
                   <Textarea
                     value={sinalVitalDescricao}
                     onChange={(e) => setSinalVitalDescricao(e.target.value)}
-                    placeholder="Descrição do sinal vital..."
-                    rows={3}
+                    placeholder="Descrição clínica resumida do sinal vital…"
+                    rows={2}
+                    spellCheck
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">Opcional. Use para orientar o enfermeiro sobre como medir ou interpretar este sinal.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Unidade de Medida *</label>
+                  <label className="block text-sm font-medium mb-1.5">Unidade de Medida *</label>
                   <Input
                     value={unidadeMedida}
                     onChange={(e) => setUnidadeMedida(e.target.value)}
-                    placeholder="Ex: mmHg"
+                    placeholder="Ex: mmHg, bpm, °C, %, kg/m²"
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">Use a unidade padrão e abreviada. Ex: "mmHg" para pressão, "bpm" para frequência cardíaca.</p>
                 </div>
               </div>
 
@@ -372,16 +377,18 @@ const TabelaSinaisVitais = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Nome da Alteração</label>
+                      <label className="block text-sm font-medium mb-1.5">Nome da Alteração</label>
                       <Input
                         value={valor.nomeAlteracao}
                         onChange={(e) => atualizarValorReferencia(index, 'nomeAlteracao', e.target.value)}
-                        placeholder="Ex: Normal"
+                        placeholder="Ex: Normal, Hipertensão Grau 1, Bradicardia"
+                        spellCheck
                       />
+                      <p className="text-[11px] text-muted-foreground mt-1">Nome clínico que aparecerá como alerta no processo de enfermagem. Valores normais: escreva "Normal".</p>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Subconjunto NHB Vinculado</label>
+                      <label className="block text-sm font-medium mb-1.5">Subconjunto NHB Vinculado</label>
                       <Select
                         value={valor.subconjuntoNHBVinculado || 'none'}
                         onValueChange={(value) => atualizarValorReferencia(index, 'subconjuntoNHBVinculado', value === 'none' ? '' : value)}

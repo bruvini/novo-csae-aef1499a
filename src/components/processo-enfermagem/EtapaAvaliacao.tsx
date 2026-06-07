@@ -4,15 +4,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle } from 'lucide-react';
+import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine } from 'lucide-react';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame, ComponenteExame, ResultadoExame } from '@/services/bancodados/examesDB';
-import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado } from '@/services/bancodados/revisaoSistemasDB';
+import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
 import { Combobox } from '@/components/ui/combobox';
 
@@ -126,10 +129,39 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }));
   };
 
+  // Valida um valor específico dentro de um exame (simples ou opção dentro de opcoes)
+  const getSistemaValidationForValue = (
+    exame: ExamePropedeutico,
+    selectedValue: string
+  ): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
+    for (const achado of exame.achados) {
+      if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === selectedValue) {
+        const isAlt = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
+        if (isAlt && !isTextoNormal(achado.nomeAlteracao)) {
+          return { status: 'alterado', nomeAlteracao: achado.nomeAlteracao, nhb: achado.subconjuntoNHBVinculado };
+        }
+        return { status: 'normal' };
+      }
+      if (achado.tipoAchado === 'opcoes' && achado.opcoes) {
+        const opcao = achado.opcoes.find((o) => o.textoOpcao === selectedValue);
+        if (opcao) {
+          if (opcao.ehAlteracao && opcao.subconjuntoNHBVinculado) {
+            return { status: 'alterado', nomeAlteracao: opcao.nomeAlteracao, nhb: opcao.subconjuntoNHBVinculado };
+          }
+          return { status: 'normal' };
+        }
+      }
+    }
+    return { status: 'neutro' };
+  };
+
   // Função centralizada para recalcular todas as NHBs do processo
-  const calculateAllNhbs = (tempExameFisico: Record<string, string | number>) => {
+  const calculateAllNhbs = (
+    tempExameFisico: Record<string, string | number>,
+    tempExameFisicoMulti: Record<string, string[]> = {}
+  ) => {
     const novaLista: { parametro: string; nhb: string }[] = [];
-    
+
     // Sinais Vitais
     sinaisVitais.forEach(sv => {
       const val = tempExameFisico[sv.sinalVitalNome];
@@ -144,7 +176,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ex.componentes.forEach(comp => {
         const val = tempExameFisico[comp.componenteAnalisado];
         if (val !== undefined && val !== '') {
-          const v = ex.tipoExame === 'Laboratorial' 
+          const v = ex.tipoExame === 'Laboratorial'
             ? getNumericValidation(comp.componenteAnalisado, val, 'exameLab')
             : getImagemValidation(comp.componenteAnalisado, String(val));
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
@@ -152,43 +184,82 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       });
     });
 
-    // Revisão de Sistemas
+    // Revisão de Sistemas — lê multi-select, com fallback para valor único legado
     sistemas.forEach(sist => {
       sist.exames.forEach(ex => {
-        const val = tempExameFisico[ex.nomeExame];
-        if (val !== undefined && val !== '') {
-          const v = getSistemaValidation(ex.nomeExame, String(val));
+        const multiVals = tempExameFisicoMulti[ex.nomeExame] || [];
+        const legacyVal = tempExameFisico[ex.nomeExame];
+        const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
+        values.forEach(val => {
+          const v = getSistemaValidationForValue(ex, val);
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: v.nhb });
-        }
+        });
       });
     });
 
     return novaLista;
   };
 
-  // ATUALIZAÇÃO ATÔMICA: Calcula Exame Físico e NHBs sincronizadamente
+  // ATUALIZAÇÃO ATÔMICA: Calcula Exame Físico e NHBs sincronizadamente (sinais vitais + exames diag.)
   const updateAvaliacaoAtomic = (
     parametro: string,
     value: string | number,
     validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string }
   ) => {
-    // 1. Monta o novo estado do Exame Físico
-    const novoExameFisico = {
-      ...(processo.avaliacao?.exameFisico || {}),
-      [parametro]: value,
-    };
+    const novoExameFisico = { ...(processo.avaliacao?.exameFisico || {}), [parametro]: value };
+    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
+    const novaListaNhbs = calculateAllNhbs(novoExameFisico, multiAtual);
 
-    // 2. Recalcula TODAS as NHBs com base no novo mapa total
-    const novaListaNhbs = calculateAllNhbs(novoExameFisico);
-
-    // 3. Atualiza estados locais para feedback visual
     setNhbsAfetadas(novaListaNhbs);
     setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb);
 
-    // 4. Envia atualização completa para o pai
     onUpdateAvaliacao({
       ...processo.avaliacao,
       exameFisico: novoExameFisico,
+      nhbsAfetadas: novaListaNhbs,
+    });
+  };
+
+  // ATUALIZAÇÃO MULTI-SELECT: Para revisão de sistemas (checkboxes)
+  const updateSistemaMulti = (
+    nomeExame: string,
+    newSelectedValues: string[],
+    newDescricoes?: Record<string, string>
+  ) => {
+    const novoMulti = { ...(processo.avaliacao?.exameFisicoMulti || {}), [nomeExame]: newSelectedValues };
+    const exameAtual = processo.avaliacao?.exameFisico || {};
+    const novaListaNhbs = calculateAllNhbs(exameAtual, novoMulti);
+
+    setNhbsAfetadas(novaListaNhbs);
+
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      exameFisicoMulti: novoMulti,
+      ...(newDescricoes !== undefined ? { exameFisicoDescricoes: newDescricoes } : {}),
+      nhbsAfetadas: novaListaNhbs,
+    });
+  };
+
+  const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
+    const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
+    const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
+
+    let descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
+    if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
+
+    updateSistemaMulti(nomeExame, updated, descricoes);
+  };
+
+  const updateDescricaoRS = (nomeExame: string, descricaoAchado: string, texto: string) => {
+    const key = `${nomeExame}|||${descricaoAchado}`;
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}), [key]: texto };
+    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
+    const exameAtual = processo.avaliacao?.exameFisico || {};
+    const novaListaNhbs = calculateAllNhbs(exameAtual, multiAtual);
+
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      exameFisicoDescricoes: descricoes,
       nhbsAfetadas: novaListaNhbs,
     });
   };
@@ -745,33 +816,174 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                     {sistemas.map((sistema) => (
                       <div key={sistema.id} className="space-y-4">
                         <SectionHeader title={sistema.nomeSistema} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 ml-2">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-2">
                           {sistema.exames.map((exame, idx) => {
-                            const parametro = exame.nomeExame;
-                            const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
+                            const nomeExame = exame.nomeExame;
+                            const selectedValues = processo.avaliacao?.exameFisicoMulti?.[nomeExame]
+                              || (processo.avaliacao?.exameFisico?.[nomeExame]
+                                ? [String(processo.avaliacao.exameFisico[nomeExame])]
+                                : []);
+                            const descricoes = processo.avaliacao?.exameFisicoDescricoes || {};
 
-                            const opcoesAchados = (exame.achados || []).map((a) => ({
-                              value: a.descricaoAchado,
-                              label: a.descricaoAchado,
-                            }));
+                            const simpleAchados = (exame.achados || []).filter(
+                              (a) => !a.tipoAchado || a.tipoAchado === 'simples'
+                            );
+                            const opcoesAchados = (exame.achados || []).filter(
+                              (a) => a.tipoAchado === 'opcoes'
+                            );
 
                             return (
-                              <div key={idx} className="space-y-2">
-                                <label className="text-[11px] font-bold text-gray-600 leading-tight block">
-                                  {exame.nomeExame} <span className="font-normal opacity-60 italic text-[10px]">— {exame.propedeutica}</span>
-                                </label>
-                                <Combobox
-                                  options={opcoesAchados}
-                                  value={String(valorAtual)}
-                                  onValueChange={(selected) => {
-                                    const validation = getSistemaValidation(parametro, selected);
-                                    updateAvaliacaoAtomic(parametro, selected, validation);
-                                  }}
-                                  placeholder="Selecione o achado..."
-                                  searchPlaceholder="Buscar..."
-                                  className={"w-full " + getInputClassName(parametro)}
-                                />
-                                {renderValidationMessage(parametro)}
+                              <div key={idx} className="rounded-lg border bg-white p-3 space-y-2 shadow-sm">
+                                <p className="text-[11px] font-bold text-gray-600 leading-tight">
+                                  {exame.nomeExame}
+                                  <span className="font-normal opacity-60 italic ml-1">— {exame.propedeutica}</span>
+                                </p>
+
+                                {/* Achados simples como checkboxes */}
+                                {simpleAchados.map((achado, ai) => {
+                                  const isChecked = selectedValues.includes(achado.descricaoAchado);
+                                  const isAlteracao = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
+                                  const descKey = `${nomeExame}|||${achado.descricaoAchado}`;
+                                  const descAtual = descricoes[descKey] || '';
+
+                                  return (
+                                    <div key={ai}>
+                                      <div className="flex items-start gap-2">
+                                        <Checkbox
+                                          id={`${nomeExame}-${ai}`}
+                                          checked={isChecked}
+                                          onCheckedChange={(checked) => toggleAchadoRS(nomeExame, achado.descricaoAchado, !!checked)}
+                                          className="mt-0.5 shrink-0"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <label
+                                            htmlFor={`${nomeExame}-${ai}`}
+                                            className={`text-xs leading-snug cursor-pointer ${isAlteracao && isChecked ? 'text-red-700 font-medium' : 'text-gray-700'}`}
+                                          >
+                                            {achado.descricaoAchado}
+                                          </label>
+                                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                            {isAlteracao ? (
+                                              <Badge className="text-[9px] px-1 py-0 bg-red-50 text-red-600 border-red-200 hover:bg-red-50">
+                                                {achado.nomeAlteracao || 'Alterado'}
+                                              </Badge>
+                                            ) : (
+                                              <Badge className="text-[9px] px-1 py-0 bg-green-50 text-green-600 border-green-200 hover:bg-green-50">
+                                                {achado.nomeAlteracao || 'Normal'}
+                                              </Badge>
+                                            )}
+                                            {achado.dicaAchado && (
+                                              <Popover>
+                                                <PopoverTrigger asChild>
+                                                  <button className="inline-flex items-center gap-0.5 text-[9px] text-csae-green-600 hover:text-csae-green-800 bg-csae-green-50 hover:bg-csae-green-100 rounded px-1 py-0.5 transition-colors">
+                                                    <Info className="w-2.5 h-2.5" />Ver orientação
+                                                  </button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-72 text-xs text-gray-700 leading-relaxed" side="top">
+                                                  <p className="font-semibold text-csae-green-700 mb-1">Orientação Clínica</p>
+                                                  {achado.dicaAchado}
+                                                </PopoverContent>
+                                              </Popover>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Campo de descrição obrigatório quando exigeDescricao */}
+                                      {achado.exigeDescricao && isChecked && (
+                                        <div className="ml-6 mt-1.5">
+                                          <Textarea
+                                            value={descAtual}
+                                            onChange={(e) => updateDescricaoRS(nomeExame, achado.descricaoAchado, e.target.value)}
+                                            placeholder={achado.dicaAchado || 'Descreva o achado encontrado…'}
+                                            className="text-xs resize-none min-h-[56px]"
+                                            rows={2}
+                                          />
+                                          {!descAtual.trim() && (
+                                            <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
+                                              <PenLine className="w-3 h-3" />Descrição obrigatória para este achado
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+
+                                {/* Achados com opções como grupos de checkboxes */}
+                                {opcoesAchados.map((achado, ai) => (
+                                  <div key={`opc-${ai}`} className="border rounded-md p-2 bg-slate-50/60 space-y-1.5">
+                                    <div className="flex items-center gap-1">
+                                      <p className="text-[10px] font-bold text-gray-600 uppercase tracking-wide">
+                                        {achado.descricaoAchado}
+                                      </p>
+                                      {achado.dicaAchado && (
+                                        <Popover>
+                                          <PopoverTrigger asChild>
+                                            <button className="inline-flex items-center gap-0.5 text-[9px] text-csae-green-600 hover:text-csae-green-800 bg-csae-green-50 rounded px-1 py-0.5">
+                                              <Info className="w-2.5 h-2.5" />Orientação
+                                            </button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-72 text-xs text-gray-700 leading-relaxed" side="top">
+                                            <p className="font-semibold text-csae-green-700 mb-1">Orientação Clínica</p>
+                                            {achado.dicaAchado}
+                                          </PopoverContent>
+                                        </Popover>
+                                      )}
+                                    </div>
+                                    {(achado.opcoes || []).map((opcao, oi) => {
+                                      const isChecked = selectedValues.includes(opcao.textoOpcao);
+                                      const isAlt = opcao.ehAlteracao;
+                                      const descKey = `${nomeExame}|||${opcao.textoOpcao}`;
+                                      const descAtual = descricoes[descKey] || '';
+
+                                      return (
+                                        <div key={oi}>
+                                          <div className="flex items-start gap-2">
+                                            <Checkbox
+                                              id={`${nomeExame}-opc-${ai}-${oi}`}
+                                              checked={isChecked}
+                                              onCheckedChange={(checked) => toggleAchadoRS(nomeExame, opcao.textoOpcao, !!checked)}
+                                              className="mt-0.5 shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                              <label
+                                                htmlFor={`${nomeExame}-opc-${ai}-${oi}`}
+                                                className={`text-xs leading-snug cursor-pointer ${isAlt && isChecked ? 'text-red-700 font-medium' : 'text-gray-700'}`}
+                                              >
+                                                {opcao.textoOpcao}
+                                              </label>
+                                              {(isAlt ? (
+                                                <Badge className="ml-1 text-[9px] px-1 py-0 bg-red-50 text-red-600 border-red-200 hover:bg-red-50">
+                                                  {opcao.nomeAlteracao || 'Alterado'}
+                                                </Badge>
+                                              ) : opcao.nomeAlteracao ? (
+                                                <Badge className="ml-1 text-[9px] px-1 py-0 bg-green-50 text-green-600 border-green-200 hover:bg-green-50">
+                                                  {opcao.nomeAlteracao}
+                                                </Badge>
+                                              ) : null)}
+                                            </div>
+                                          </div>
+                                          {opcao.exigeDescricao && isChecked && (
+                                            <div className="ml-6 mt-1">
+                                              <Textarea
+                                                value={descAtual}
+                                                onChange={(e) => updateDescricaoRS(nomeExame, opcao.textoOpcao, e.target.value)}
+                                                placeholder="Descreva este achado…"
+                                                className="text-xs resize-none min-h-[48px]"
+                                                rows={2}
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+
+                                {exame.achados.length === 0 && (
+                                  <p className="text-[10px] text-muted-foreground italic">Nenhum achado cadastrado.</p>
+                                )}
                               </div>
                             );
                           })}

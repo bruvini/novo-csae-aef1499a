@@ -144,6 +144,12 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora: Timesta
       'Reformulamos completamente o cadastro de achados na Revisão de Sistemas. Agora você edita os achados diretamente dentro do card do exame, sem precisar abrir janelas adicionais. Um novo campo permite informar se o achado é uma alteração clínica ou não — quando sim, basta nomear a alteração e vincular a NHB afetada; quando não, é só classificar (Normal, Padrão Normal, etc.). Os achados normais aparecem sempre primeiro, e as alterações em destaque logo abaixo, garantindo clareza na hora de usar no Processo de Enfermagem.',
     dataHora: Timestamp.fromDate(new Date('2025-11-01T08:00:00')),
   },
+  {
+    titulo: 'Revisão de Sistemas Totalmente Renovada',
+    descricao:
+      'O cadastro de sistemas ganhou três novos recursos: (1) Achados com Opções — agrupe variantes de um mesmo exame (ex: formato, coloração) e o enfermeiro escolhe uma ou mais no momento da avaliação; (2) Dica para o Enfermeiro — adicione orientações clínicas que aparecem como botão "Ver orientação" na avaliação, sem poluir o resumo final; (3) Exige Descrição — marque achados que precisam de texto complementar do enfermeiro (ex: temperatura alterada, nódulos) e o campo será obrigatório no processo. Também adicionamos textos de ajuda em todos os campos de cadastro para guiar a equipe no preenchimento correto.',
+    dataHora: Timestamp.fromDate(new Date('2025-12-01T08:00:00')),
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

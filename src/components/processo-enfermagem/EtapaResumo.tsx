@@ -167,9 +167,20 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       }
 
       const rsEncontrados: string[] = [];
+      const exameFisicoMultiData = processo.avaliacao?.exameFisicoMulti || {};
+      const exameFisicoDescricoesData = processo.avaliacao?.exameFisicoDescricoes || {};
       sistemas.forEach(s => {
         s.exames.forEach((e: any) => {
-          if (exameFisicoData[e.nomeExame]) rsEncontrados.push(`${e.nomeExame}: ${exameFisicoData[e.nomeExame]}`);
+          const multiVals: string[] = exameFisicoMultiData[e.nomeExame] || [];
+          const legacyVal = exameFisicoData[e.nomeExame];
+          const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
+          if (values.length > 0) {
+            const withDesc = values.map((v: string) => {
+              const desc = exameFisicoDescricoesData[`${e.nomeExame}|||${v}`];
+              return desc ? `${v}: ${desc}` : v;
+            });
+            rsEncontrados.push(`${e.nomeExame}: ${withDesc.join(', ')}`);
+          }
         });
       });
       if (rsEncontrados.length > 0) {
