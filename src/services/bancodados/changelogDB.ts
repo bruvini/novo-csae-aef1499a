@@ -145,6 +145,12 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora: Timesta
     dataHora: Timestamp.fromDate(new Date('2025-11-01T08:00:00')),
   },
   {
+    titulo: 'Avaliação Periódica: Sua Opinião Agora é Solicitada Automaticamente',
+    descricao:
+      'Para melhorarmos continuamente o portal, a cada 10 acessos o sistema exibirá automaticamente um breve formulário de avaliação antes de você continuar. As perguntas são as mesmas da Central de Ajuda e levam menos de 1 minuto. O formulário só aparecerá se você ainda não avaliou nas últimas 48 horas.',
+    dataHora: Timestamp.fromDate(new Date('2026-02-01T08:00:00')),
+  },
+  {
     titulo: 'Correção: Erro ao Concluir o Processo de Enfermagem',
     descricao:
       'Corrigimos uma falha que impedia alguns enfermeiros de concluir ou salvar o processo de enfermagem. O problema ocorria quando uma intervenção era desmarcada na etapa de Implementação, deixando um dado inválido que o banco de dados rejeitava silenciosamente. Agora o sistema garante que todos os dados são validados antes de serem enviados. As mensagens de erro também ficaram mais claras, indicando exatamente o que precisa ser revisado.',

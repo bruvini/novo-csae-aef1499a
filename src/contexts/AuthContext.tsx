@@ -5,6 +5,9 @@ import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Usuario } from '@/types/usuario';
+import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
+
+const NPS_PENDENTE_KEY = 'csae_nps_pendente';
 
 interface SessionData {
   nomeCompleto: string;
@@ -26,6 +29,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
+  npsModalPendente: boolean;
+  concluirNPSObrigatorio: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,6 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [npsModalPendente, setNpsModalPendente] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -89,6 +95,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const parsedSession = JSON.parse(savedSession);
         setSessionData(parsedSession);
+        // Verificar se há avaliação NPS pendente para este usuário
+        const npsPendente = localStorage.getItem(NPS_PENDENTE_KEY);
+        if (npsPendente === parsedSession.uid) {
+          setNpsModalPendente(true);
+        }
       } catch (error) {
         console.error('Erro ao carregar sessão do localStorage:', error);
         localStorage.removeItem('csae_session');
@@ -375,6 +386,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Não impedimos o fluxo de login se apenas as estatísticas falharem
       }
 
+      // ── Verificar gatilho de NPS obrigatório (a cada 10 acessos) ──
+      try {
+        const novoTotal = (userDoc.totalAcessos || 0) + 1;
+        if (novoTotal % 10 === 0) {
+          const elegivel = await verificarElegibilidadeNPS(user.uid);
+          if (elegivel) {
+            localStorage.setItem(NPS_PENDENTE_KEY, user.uid);
+            setNpsModalPendente(true);
+            console.log(`[Auth] NPS obrigatório ativado (acesso #${novoTotal})`);
+          }
+        }
+      } catch (npsError) {
+        // Nunca bloquear o login por erro no NPS
+        console.error('[Auth] Erro ao verificar elegibilidade NPS:', npsError);
+      }
+
       // Garantir que usuários existentes tenham paginasPermitidas definidas
       let paginasPermitidas = userDoc.paginasPermitidas;
       if (!userDoc.ehAdmin && (!paginasPermitidas || paginasPermitidas.length === 0)) {
@@ -451,12 +478,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const concluirNPSObrigatorio = () => {
+    localStorage.removeItem(NPS_PENDENTE_KEY);
+    setNpsModalPendente(false);
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
       setUser(null);
       setSessionData(null);
+      setNpsModalPendente(false);
       localStorage.removeItem('csae_session');
+      localStorage.removeItem(NPS_PENDENTE_KEY);
       
       toast({
         title: "Logout realizado",
@@ -482,6 +516,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated: !!(user && sessionData && (sessionData.statusAcesso.toLowerCase() === 'aprovado' || sessionData.statusAcesso.toLowerCase() === 'liberado')),
+    npsModalPendente,
+    concluirNPSObrigatorio,
   };
 
   return (
