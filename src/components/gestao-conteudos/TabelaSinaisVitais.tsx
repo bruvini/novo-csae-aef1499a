@@ -348,14 +348,7 @@ const TabelaSinaisVitais = () => {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Condição</label>
-                      <Input
-                        value={valor.criterioCondicao}
-                        onChange={(e) => atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
-                        placeholder="Ex: Jejum"
-                      />
-                    </div>
+                    {/* Campo "Condição" removido — use o campo Descrição do Sinal Vital para orientações de coleta */}
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>

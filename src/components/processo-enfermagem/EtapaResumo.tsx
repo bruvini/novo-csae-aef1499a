@@ -166,6 +166,17 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         exMap.forEach((vals, titulo) => linhas.push(`  • ${titulo}: ${vals.join(', ')}`));
       }
 
+      // Peso e Altura (campos auxiliares do cálculo de IMC)
+      const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
+      const temIMCAux = camposIMCAux.some(k => exameFisicoData[k]);
+      if (temIMCAux) {
+        if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
+        camposIMCAux.forEach((chave) => {
+          const val = exameFisicoData[chave];
+          if (val !== undefined && val !== '') linhas.push(`  • ${chave}: ${val}`);
+        });
+      }
+
       const rsEncontrados: string[] = [];
       const exameFisicoMultiData = processo.avaliacao?.exameFisicoMulti || {};
       const exameFisicoDescricoesData = processo.avaliacao?.exameFisicoDescricoes || {};
