@@ -11,6 +11,29 @@ import { db } from '../firebase';
 import { ProcessoEnfermagem, SessaoDeTrabalho } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 
+/**
+ * Remove recursivamente todos os campos com valor `undefined` de um objeto antes
+ * de enviá-lo ao Firestore, que rejeita qualquer campo undefined com erro silencioso.
+ * Campos ausentes (chave não existe) são diferentes de `undefined` e são tratados corretamente.
+ */
+function sanitizarParaFirestore<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizarParaFirestore) as unknown as T;
+  }
+  if (obj instanceof Timestamp) return obj;
+  if (typeof obj === 'object') {
+    const limpo: Record<string, unknown> = {};
+    for (const [chave, valor] of Object.entries(obj as Record<string, unknown>)) {
+      if (valor !== undefined) {
+        limpo[chave] = sanitizarParaFirestore(valor);
+      }
+    }
+    return limpo as T;
+  }
+  return obj;
+}
+
 export async function criarProcessoEnfermagem(
   pacienteId: string,
   enfermeiroId: string
@@ -256,11 +279,11 @@ export async function salvarProgressoProcesso(
     const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
     if (processoIndex === -1) return;
 
-    processos[processoIndex] = {
+    processos[processoIndex] = sanitizarParaFirestore({
       ...processos[processoIndex],
       etapaAtual,
       ...dadosEtapas,
-    };
+    });
 
     await updateDoc(pacienteRef, {
       processosEnfermagem: processos,
@@ -298,13 +321,13 @@ export async function concluirProcesso(
     const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
     if (processoIndex === -1) return;
 
-    processos[processoIndex] = {
+    processos[processoIndex] = sanitizarParaFirestore({
       ...processos[processoIndex],
       status: 'concluido' as const,
       dataConclusao: Timestamp.now(),
       etapaAtual: 5,
       ...dadosEtapas,
-    };
+    });
 
     await updateDoc(pacienteRef, {
       processosEnfermagem: processos,

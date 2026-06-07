@@ -16,12 +16,21 @@ interface IntervencaoItemProps {
 
 const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate }) => {
   const handleImplementadoChange = (checked: boolean) => {
-    onUpdate({
-      ...intervencao,
-      implementadoNestaConsulta: checked,
-      // Limpar executor ao desmarcar para evitar dados fantasmas no banco
-      quemExecuta: checked ? intervencao.quemExecuta : undefined
-    });
+    if (checked) {
+      onUpdate({
+        ...intervencao,
+        implementadoNestaConsulta: true,
+      });
+    } else {
+      // Remove quemExecuta, prazo e prazoUnidade da chave do objeto ao desmarcar —
+      // nunca atribuir undefined explicitamente pois o Firestore rejeita escrita com undefined.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { quemExecuta: _q, prazo: _p, prazoUnidade: _u, ...resto } = intervencao;
+      onUpdate({
+        ...resto,
+        implementadoNestaConsulta: false,
+      });
+    }
   };
 
   const handleExecutorChange = (executor: string) => {
