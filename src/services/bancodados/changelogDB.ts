@@ -138,6 +138,12 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora: Timesta
       'O Painel Estatístico agora permite filtrar toda a produção de enfermagem por unidade/lotação, trazendo uma visão estratégica individualizada da rede assistencial. Também adicionamos o histórico completo de atualizações do sistema e melhorias de estabilidade no Processo de Enfermagem para garantir reinicialização correta das etapas após exclusões.',
     dataHora: Timestamp.fromDate(new Date('2025-10-01T08:00:00')),
   },
+  {
+    titulo: 'Cadastro de Achados Reformulado: Mais Rápido e Preciso',
+    descricao:
+      'Reformulamos completamente o cadastro de achados na Revisão de Sistemas. Agora você edita os achados diretamente dentro do card do exame, sem precisar abrir janelas adicionais. Um novo campo permite informar se o achado é uma alteração clínica ou não — quando sim, basta nomear a alteração e vincular a NHB afetada; quando não, é só classificar (Normal, Padrão Normal, etc.). Os achados normais aparecem sempre primeiro, e as alterações em destaque logo abaixo, garantindo clareza na hora de usar no Processo de Enfermagem.',
+    dataHora: Timestamp.fromDate(new Date('2025-11-01T08:00:00')),
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────
