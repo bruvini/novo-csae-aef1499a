@@ -145,6 +145,12 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora: Timesta
     dataHora: Timestamp.fromDate(new Date('2025-11-01T08:00:00')),
   },
   {
+    titulo: 'Correção: Erro ao Concluir o Processo de Enfermagem',
+    descricao:
+      'Corrigimos uma falha que impedia alguns enfermeiros de concluir ou salvar o processo de enfermagem. O problema ocorria quando uma intervenção era desmarcada na etapa de Implementação, deixando um dado inválido que o banco de dados rejeitava silenciosamente. Agora o sistema garante que todos os dados são validados antes de serem enviados. As mensagens de erro também ficaram mais claras, indicando exatamente o que precisa ser revisado.',
+    dataHora: Timestamp.fromDate(new Date('2026-01-01T08:00:00')),
+  },
+  {
     titulo: 'Revisão de Sistemas Totalmente Renovada',
     descricao:
       'O cadastro de sistemas ganhou três novos recursos: (1) Achados com Opções — agrupe variantes de um mesmo exame (ex: formato, coloração) e o enfermeiro escolhe uma ou mais no momento da avaliação; (2) Dica para o Enfermeiro — adicione orientações clínicas que aparecem como botão "Ver orientação" na avaliação, sem poluir o resumo final; (3) Exige Descrição — marque achados que precisam de texto complementar do enfermeiro (ex: temperatura alterada, nódulos) e o campo será obrigatório no processo. Também adicionamos textos de ajuda em todos os campos de cadastro para guiar a equipe no preenchimento correto.',

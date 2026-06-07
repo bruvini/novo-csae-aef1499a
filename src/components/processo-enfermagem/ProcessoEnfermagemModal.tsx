@@ -287,11 +287,22 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       })
     } catch (error) {
       console.error('Erro ao salvar progresso:', error);
+
+      let descricaoErro = 'Não foi possível salvar o progresso. Verifique sua conexão e tente novamente.';
+      if (error instanceof Error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('permission') || msg.includes('missing or insufficient')) {
+          descricaoErro = 'Sem permissão para salvar. Verifique se sua sessão ainda está ativa.';
+        } else if (msg.includes('unavailable') || msg.includes('offline') || msg.includes('network')) {
+          descricaoErro = 'Sem conexão com o servidor. Verifique sua internet e tente novamente.';
+        }
+      }
+
       toast({
-        title: "Erro",
-        description: "Erro ao salvar o progresso.",
+        title: "Erro ao salvar progresso",
+        description: descricaoErro,
         variant: "destructive",
-      })
+      });
     } finally {
       setIsSaving(false);
     }
@@ -375,11 +386,24 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Erro ao concluir processo:', error);
+
+      let descricaoErro = 'Não foi possível concluir. Tente novamente ou abra um chamado informando o horário e o nome do paciente.';
+      if (error instanceof Error) {
+        const msg = error.message.toLowerCase();
+        if (msg.includes('permission') || msg.includes('missing or insufficient')) {
+          descricaoErro = 'Sem permissão para salvar. Verifique se sua sessão ainda está ativa e tente novamente.';
+        } else if (msg.includes('unavailable') || msg.includes('offline') || msg.includes('network')) {
+          descricaoErro = 'Sem conexão com o servidor. Verifique sua internet e tente novamente.';
+        } else if (msg.includes('undefined') || msg.includes('invalid') || msg.includes('unsupported')) {
+          descricaoErro = 'Dado inválido no processo. Revise a etapa de Implementação — certifique-se de que todas as intervenções marcadas têm "Quem executa" preenchido.';
+        }
+      }
+
       toast({
-        title: "Erro",
-        description: "Erro ao concluir o processo.",
+        title: "Erro ao concluir processo",
+        description: descricaoErro,
         variant: "destructive",
-      })
+      });
     } finally {
       setIsSaving(false);
     }
