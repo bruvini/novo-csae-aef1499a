@@ -238,14 +238,16 @@ const CentralAjuda = () => {
     }
     setEnviandoNPS(true);
     try {
-      await salvarPesquisaNPS({
+      // Não incluir comentario se vazio — evita enviar undefined para o Firestore
+      const dadosNPS = {
         usuarioId,
         nomeUsuario,
         notaGeral,
         notaUsabilidade,
         notaPerformance,
-        comentario: comentarioNPS.trim() || undefined,
-      });
+        ...(comentarioNPS.trim() ? { comentario: comentarioNPS.trim() } : {}),
+      };
+      await salvarPesquisaNPS(dadosNPS);
       toast({ title: 'Avaliação enviada!', description: 'Obrigado pelo seu feedback!' });
       setNotaGeral(null);
       setNotaUsabilidade(null);
