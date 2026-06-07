@@ -20,6 +20,7 @@ export interface Achado {
   idadeUnidade: 'dias' | 'meses' | 'anos' | '';
   criterioSexo: 'Masculino' | 'Feminino' | 'Ambos';
   descricaoAchado: string;
+  ehAlteracao?: boolean;
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;
 }
