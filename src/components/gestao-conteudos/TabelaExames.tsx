@@ -293,14 +293,9 @@ const TabelaExames = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Nome do Exame *</label>
+                  <label className="block text-sm font-medium mb-1.5">Nome do Exame *</label>
                   {loadingExames ? (
-                    <Input
-                      value={nomeExame}
-                      onChange={(e) => setNomeExame(e.target.value)}
-                      placeholder="Carregando..."
-                      disabled
-                    />
+                    <Input value={nomeExame} onChange={(e) => setNomeExame(e.target.value)} placeholder="Carregando..." disabled />
                   ) : (
                     <Combobox
                       options={nomesExamesExistentes.map(nome => ({ value: nome, label: nome }))}
@@ -311,30 +306,29 @@ const TabelaExames = () => {
                       emptyText="Nenhum exame encontrado"
                     />
                   )}
+                  <p className="text-[11px] text-muted-foreground mt-1">Ex: "Hemograma Completo", "Glicemia de Jejum". Selecione um exame existente para adicionar um novo componente a ele.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Descrição</label>
+                  <label className="block text-sm font-medium mb-1.5">Descrição</label>
                   <Textarea
                     value={descricaoExame}
                     onChange={(e) => setDescricaoExame(e.target.value)}
-                    placeholder="Descrição do exame..."
-                    rows={3}
+                    placeholder="Descrição clínica do exame e sua finalidade…"
+                    rows={2}
+                    spellCheck
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">Opcional. Descreva quando este exame é indicado ou como interpretar seus resultados.</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Tipo de Exame *</label>
-                  <Select
-                    value={tipoExame}
-                    onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <label className="block text-sm font-medium mb-1.5">Tipo de Exame *</label>
+                  <Select value={tipoExame} onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Laboratorial">Laboratorial</SelectItem>
-                      <SelectItem value="Imagem">Imagem</SelectItem>
+                      <SelectItem value="Laboratorial">Laboratorial — valores numéricos com faixas de referência</SelectItem>
+                      <SelectItem value="Imagem">Imagem — resultado classificatório (Normal, Alterado etc.)</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">Laboratorial = inserção de valores numéricos pelo enfermeiro. Imagem = seleção de resultado classificatório.</p>
                 </div>
               </div>
 
@@ -364,20 +358,23 @@ const TabelaExames = () => {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">Componente Analisado *</label>
+                        <label className="block text-sm font-medium mb-1.5">Componente Analisado *</label>
                         <Input
                           value={componente.componenteAnalisado}
                           onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
-                          placeholder="Ex: Glicose"
+                          placeholder="Ex: Glicose, Hemoglobina"
+                          spellCheck
                         />
+                        <p className="text-[11px] text-muted-foreground mt-1">Nome exato do parâmetro. Será usado como chave no processo de enfermagem — não abrevie.</p>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Unidade de Medida *</label>
+                        <label className="block text-sm font-medium mb-1.5">Unidade de Medida *</label>
                         <Input
                           value={componente.unidadeMedida}
                           onChange={(e) => atualizarComponente(componenteIndex, 'unidadeMedida', e.target.value)}
-                          placeholder="Ex: mg/dL"
+                          placeholder="Ex: mg/dL, g/dL, %"
                         />
+                        <p className="text-[11px] text-muted-foreground mt-1">Use a unidade padrão abreviada.</p>
                       </div>
                     </div>
 

@@ -14,6 +14,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
+export interface OpcaoAchado {
+  textoOpcao: string;
+  ehAlteracao?: boolean;
+  nomeAlteracao?: string;
+  subconjuntoNHBVinculado?: string;
+  exigeDescricao?: boolean;
+}
+
 export interface Achado {
   idadeMinima: number | null;
   idadeMaxima: number | null;
@@ -23,6 +31,10 @@ export interface Achado {
   ehAlteracao?: boolean;
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;
+  dicaAchado?: string;
+  exigeDescricao?: boolean;
+  tipoAchado?: 'simples' | 'opcoes';
+  opcoes?: OpcaoAchado[];
 }
 
 export interface ExamePropedeutico {

@@ -10,7 +10,13 @@ export interface SessaoDeTrabalho {
 export interface AvaliacaoEnfermagem {
   coletaDeDadosSubjetivos: string;
   exameFisico: {
-    [parametro: string]: string | number; // Ex: { "Frequência Cardíaca": 110, "Pressão Arterial Sistólica": 130 }
+    [parametro: string]: string | number;
+  };
+  exameFisicoMulti?: {
+    [nomeExame: string]: string[];
+  };
+  exameFisicoDescricoes?: {
+    [achadoKey: string]: string;
   };
   nhbsAfetadas: { parametro: string; nhb: string }[];
 }
