@@ -12,12 +12,12 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Paciente, StatusPaciente, IndicadoresPacientes } from '@/types/paciente';
+import { Paciente, StatusPaciente, IndicadoresPacientes, IdentidadeGenero } from '@/types/paciente';
 
 export async function cadastrarPaciente(
   nomeCompleto: string,
   dataNascimento: Date,
-  sexo: 'Feminino' | 'Masculino',
+  sexo: IdentidadeGenero,
   uidUsuario: string,
   idUsuario?: string
 ): Promise<void> {
@@ -61,7 +61,7 @@ export async function atualizarPaciente(
   dadosAtualizados: {
     nomeCompleto: string;
     dataNascimento: Date;
-    sexo: 'Feminino' | 'Masculino';
+    sexo: IdentidadeGenero;
   },
   uidUsuario: string
 ): Promise<void> {

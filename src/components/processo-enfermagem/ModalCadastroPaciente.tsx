@@ -11,7 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -21,13 +21,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
 import { format, parse, isValid } from 'date-fns';
 import InputMask from 'react-input-mask';
-import { Paciente } from '@/types/paciente';
+import { Paciente, IdentidadeGenero } from '@/types/paciente';
 import { cadastrarPaciente, atualizarPaciente } from '@/services/bancodados/pacientesDB';
 
 interface FormValues {
   nomeCompleto: string;
   dataNascimento: Date;
-  sexo: 'Feminino' | 'Masculino' | undefined;
+  sexo: IdentidadeGenero | undefined;
 }
 
 interface ModalCadastroPacienteProps {
@@ -245,27 +245,53 @@ const ModalCadastroPaciente: React.FC<ModalCadastroPacienteProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="sexo" className="text-right">
-              Sexo
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="sexo" className="text-right pt-2">
+              Identidade de Gênero
             </Label>
-            <Controller
-              name="sexo"
-              control={control}
-              defaultValue={undefined}
-              rules={{ required: 'Sexo é obrigatório' }}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecione o sexo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Feminino">Feminino</SelectItem>
-                    <SelectItem value="Masculino">Masculino</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
+            <div className="col-span-3">
+              <Controller
+                name="sexo"
+                control={control}
+                defaultValue={undefined}
+                rules={{ required: 'Identidade de gênero é obrigatória' }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a identidade de gênero" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] uppercase tracking-wide text-gray-400">Cisgênero</SelectLabel>
+                        <SelectItem value="Homem Cisgênero">Homem Cisgênero</SelectItem>
+                        <SelectItem value="Mulher Cisgênero">Mulher Cisgênero</SelectItem>
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] uppercase tracking-wide text-gray-400">Homem Trans</SelectLabel>
+                        <SelectItem value="Homem Trans (sem cirurgia)">Homem Trans (sem cirurgia genital)</SelectItem>
+                        <SelectItem value="Homem Trans (com cirurgia)">Homem Trans (com cirurgia genital)</SelectItem>
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] uppercase tracking-wide text-gray-400">Mulher Trans</SelectLabel>
+                        <SelectItem value="Mulher Trans (sem cirurgia)">Mulher Trans (sem cirurgia genital)</SelectItem>
+                        <SelectItem value="Mulher Trans (com cirurgia)">Mulher Trans (com cirurgia genital)</SelectItem>
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel className="text-[11px] uppercase tracking-wide text-gray-400">Outras</SelectLabel>
+                        <SelectItem value="Não-binário">Não-binário</SelectItem>
+                        <SelectItem value="Prefiro não informar">Prefiro não informar</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-[10px] text-gray-400 mt-1 leading-snug">
+                A seleção determina quais exames físicos serão exibidos no processo de enfermagem.
+              </p>
+            </div>
             {errors.sexo && (
               <p className="col-span-4 text-sm text-red-500 mt-1">
                 {errors.sexo.message}

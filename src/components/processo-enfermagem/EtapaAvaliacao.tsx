@@ -13,7 +13,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine, Search } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
-import { Paciente } from '@/types/paciente';
+import { Paciente, getSexoBiologico } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame, ComponenteExame, ResultadoExame } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
@@ -246,7 +246,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
     const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
 
-    let descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
     if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
 
     updateSistemaMulti(nomeExame, updated, descricoes);
@@ -285,7 +285,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
 
     const idade = calculateAge(paciente.dataNascimento);
-    const sexo = paciente.sexo;
+    const sexoBio = getSexoBiologico(paciente.sexo);
 
     let referenceData: (ValorReferenciaVital | ResultadoExame)[] = [];
 
@@ -309,7 +309,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       const r = ref as unknown as Record<string, number | string | undefined>;
       const idadeMinOk = r.idadeMinima == null || idade >= (r.idadeMinima as number);
       const idadeMaxOk = r.idadeMaxima == null || idade <= (r.idadeMaxima as number);
-      const sexoOk = !r.criterioSexo || r.criterioSexo === 'Ambos' || r.criterioSexo === sexo;
+      const sexoOk = !r.criterioSexo || r.criterioSexo === 'Ambos' || sexoBio === 'Ambos' || r.criterioSexo === sexoBio;
       return idadeMinOk && idadeMaxOk && sexoOk;
     });
 
@@ -428,11 +428,11 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const sinalMatchesPaciente = (sinal: SinalVital): boolean => {
     if (!sinal.valoresDeReferencia || sinal.valoresDeReferencia.length === 0) return true;
     const idade = calculateAge(paciente.dataNascimento);
-    const sexo = paciente.sexo;
+    const sexoBio = getSexoBiologico(paciente.sexo);
     return sinal.valoresDeReferencia.some((ref: ValorReferenciaVital) => {
       const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
       const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
-      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === (sexo as string);
+      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || sexoBio === 'Ambos' || ref.criterioSexo === sexoBio;
       return idadeMinOk && idadeMaxOk && sexoOk;
     });
   };
@@ -957,25 +957,39 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionTrigger>
                 <AccordionContent className="bg-slate-50/40 p-4 border-t">
                   <Accordion type="multiple" className="space-y-2">
-                    {sistemas
-                      .filter(s =>
-                        matchesBusca(s.nomeSistema, buscaExameFisico) ||
-                        matchesBusca(s.descricaoSistema || '', buscaExameFisico) ||
-                        s.exames.some(e => matchesBusca(e.nomeExame, buscaExameFisico) || e.achados.some(a => matchesBusca(a.descricaoAchado, buscaExameFisico)))
-                      )
-                      .map((sistema) => (
-                      <AccordionItem key={sistema.id} value={`sistema-${sistema.id}`} className="border rounded-xl overflow-hidden bg-white shadow-sm">
-                        <AccordionTrigger className="px-4 py-3 hover:bg-gray-50/80 hover:no-underline">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-gray-800">{sistema.nomeSistema}</span>
-                            {sistema.descricaoSistema && (
-                              <Tooltip><TooltipTrigger asChild><Info className="w-3.5 h-3.5 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent className="max-w-[260px] text-xs">{sistema.descricaoSistema}</TooltipContent></Tooltip>
-                            )}
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-4 bg-slate-50/40">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-                          {sistema.exames.map((exame, idx) => {
+                    {(() => {
+                      const sexoBio = getSexoBiologico(paciente.sexo);
+                      const achadoMatchesSexo = (a: Achado) =>
+                        sexoBio === 'Ambos' || !a.criterioSexo || a.criterioSexo === 'Ambos' || a.criterioSexo === sexoBio;
+
+                      return sistemas
+                        .filter(s => {
+                          const matchSearch =
+                            matchesBusca(s.nomeSistema, buscaExameFisico) ||
+                            matchesBusca(s.descricaoSistema || '', buscaExameFisico) ||
+                            s.exames.some(e =>
+                              matchesBusca(e.nomeExame, buscaExameFisico) ||
+                              e.achados.some(a => matchesBusca(a.descricaoAchado, buscaExameFisico))
+                            );
+                          if (!matchSearch) return false;
+                          // Ocultar sistema se todos os seus achados forem do sexo oposto
+                          return s.exames.some(e => e.achados.some(achadoMatchesSexo));
+                        })
+                        .map((sistema) => (
+                        <AccordionItem key={sistema.id} value={`sistema-${sistema.id}`} className="border rounded-xl overflow-hidden bg-white shadow-sm">
+                          <AccordionTrigger className="px-4 py-3 hover:bg-gray-50/80 hover:no-underline">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-gray-800">{sistema.nomeSistema}</span>
+                              {sistema.descricaoSistema && (
+                                <Tooltip><TooltipTrigger asChild><Info className="w-3.5 h-3.5 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent className="max-w-[260px] text-xs">{sistema.descricaoSistema}</TooltipContent></Tooltip>
+                              )}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4 bg-slate-50/40">
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+                          {sistema.exames
+                            .filter(exame => exame.achados.some(achadoMatchesSexo))
+                            .map((exame, idx) => {
                             const nomeExame = exame.nomeExame;
                             const selectedValues = processo.avaliacao?.exameFisicoMulti?.[nomeExame]
                               || (processo.avaliacao?.exameFisico?.[nomeExame]
@@ -984,10 +998,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                             const descricoes = processo.avaliacao?.exameFisicoDescricoes || {};
 
                             const simpleAchados = (exame.achados || []).filter(
-                              (a) => !a.tipoAchado || a.tipoAchado === 'simples'
+                              (a) => (!a.tipoAchado || a.tipoAchado === 'simples') && achadoMatchesSexo(a)
                             );
                             const opcoesAchados = (exame.achados || []).filter(
-                              (a) => a.tipoAchado === 'opcoes'
+                              (a) => a.tipoAchado === 'opcoes' && achadoMatchesSexo(a)
                             );
 
                             return (
@@ -1148,7 +1162,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                         </div>
                         </AccordionContent>
                       </AccordionItem>
-                    ))}
+                    ));
+                  })()}
                   </Accordion>
                 </AccordionContent>
               </AccordionItem>

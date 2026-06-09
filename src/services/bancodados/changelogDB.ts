@@ -167,6 +167,21 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Para melhorarmos continuamente o portal, a cada 10 acessos o sistema exibirá automaticamente um breve formulário de avaliação (as mesmas 3 perguntas da Central de Ajuda). O formulário só aparecerá se você ainda não avaliou nas últimas 48 horas, e leva menos de 1 minuto. Sua opinião é fundamental!',
   },
+  {
+    titulo: 'Cadastro Inclusivo: Identidade de Gênero',
+    descricao:
+      'O campo "Sexo" no cadastro de pacientes foi expandido para "Identidade de Gênero", com 8 opções organizadas em grupos: Homem/Mulher Cisgênero, Homem Trans (com e sem cirurgia genital), Mulher Trans (com e sem cirurgia genital), Não-binário e Prefiro não informar. A seleção segue as diretrizes WPATH e determina automaticamente o perfil clínico usado nos filtros do exame físico — garantindo que os sistemas corretos sejam exibidos para cada paciente, inclusive para pacientes trans.',
+  },
+  {
+    titulo: 'Exame Físico: Filtros Clínicos por Identidade de Gênero',
+    descricao:
+      'A Revisão de Sistemas agora filtra automaticamente os sistemas e achados exibidos de acordo com a identidade de gênero do paciente. Homens trans sem cirurgia veem exames ginecológicos; mulheres trans sem cirurgia veem exames masculinos; identidades não-binárias e "Prefiro não informar" exibem todos os sistemas. O filtro também se aplica aos valores de referência de sinais vitais e exames laboratoriais. Pacientes já cadastrados com "Masculino" ou "Feminino" seguem o perfil clínico correspondente normalmente.',
+  },
+  {
+    titulo: 'Histórico de Atualizações: Scroll e Visual Redesenhados',
+    descricao:
+      'O modal "Histórico de Atualizações" foi corrigido e melhorado: o scroll vertical interno agora funciona corretamente em qualquer tamanho de tela; o badge de contagem de registros mostra o número exato e atualizado a cada abertura, sem valores desatualizados entre sessões; o visual foi refinado com gradiente diagonal, separador de loading animado no header e linha do tempo com destaque especial para a atualização mais recente.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────
