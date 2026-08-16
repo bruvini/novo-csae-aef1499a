@@ -39,6 +39,8 @@ export interface ComponenteExame {
   componenteAnalisado: string;
   unidadeMedida: string;
   resultados: ResultadoExame[];
+  // quando 'classificatorio', usa dropdown mesmo em exame Laboratorial
+  tipoResultado?: 'numerico' | 'classificatorio';
 }
 
 export interface Exame {

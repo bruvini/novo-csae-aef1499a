@@ -379,6 +379,21 @@ const TabelaExames = () => {
                       </div>
                     </div>
 
+                    {tipoExame === 'Laboratorial' && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <Switch
+                          id={`tipoResultado-${componenteIndex}`}
+                          checked={componente.tipoResultado === 'classificatorio'}
+                          onCheckedChange={(v) =>
+                            atualizarComponente(componenteIndex, 'tipoResultado', v ? 'classificatorio' : 'numerico')
+                          }
+                        />
+                        <label htmlFor={`tipoResultado-${componenteIndex}`} className="text-xs cursor-pointer select-none">
+                          Resultado qualitativo (dropdown — ex: Reagente / Não Reagente)
+                        </label>
+                      </div>
+                    )}
+
                     {/* Resultados */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -407,84 +422,8 @@ const TabelaExames = () => {
                             </Button>
                           </div>
 
-                          {tipoExame === 'Laboratorial' ? (
-                            <>
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Idade Mínima</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.idadeMinima || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Idade Máxima</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.idadeMaxima || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Unidade Idade</label>
-                                  <Select
-                                    value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="not-specified">Não especificado</SelectItem>
-                                      <SelectItem value="dias">Dias</SelectItem>
-                                      <SelectItem value="meses">Meses</SelectItem>
-                                      <SelectItem value="anos">Anos</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Critério Sexo</label>
-                                  <Select
-                                    value={resultado.criterioSexo}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Ambos">Ambos</SelectItem>
-                                      <SelectItem value="Masculino">Masculino</SelectItem>
-                                      <SelectItem value="Feminino">Feminino</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.valorMinimo || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Valor Máximo</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.valorMaximo || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          ) : (
+                          {(tipoExame === 'Imagem' || componente.tipoResultado === 'classificatorio') ? (
+                            // ── Resultado classificatório (dropdown) ──────────────────
                             <div className="space-y-3">
                               <div>
                                 <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
@@ -516,9 +455,7 @@ const TabelaExames = () => {
                                         value={resultado.tipoValorTexto ?? 'livre'}
                                         onValueChange={(v) => atualizarResultado(componenteIndex, resultadoIndex, 'tipoValorTexto', v as 'lista' | 'livre')}
                                       >
-                                        <SelectTrigger className="h-8">
-                                          <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                           <SelectItem value="lista">Lista de opções</SelectItem>
                                           <SelectItem value="livre">Texto livre</SelectItem>
@@ -564,12 +501,86 @@ const TabelaExames = () => {
                                         }
                                         placeholder={"1:2\n1:4\n1:8\n1:16\n1:32\n1:64\n1:128\n1:256"}
                                       />
-                                      <p className="text-[11px] text-muted-foreground mt-1">Uma opção por linha. Salve o exame para persistir.</p>
+                                      <p className="text-[11px] text-muted-foreground mt-1">Uma opção por linha.</p>
                                     </div>
                                   )}
                                 </div>
                               )}
                             </div>
+                          ) : (
+                            // ── Resultado numérico (laboratorial) ─────────────────────
+                            <>
+                              <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Idade Mínima</label>
+                                  <Input
+                                    type="number"
+                                    className="h-8"
+                                    value={resultado.idadeMinima || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Idade Máxima</label>
+                                  <Input
+                                    type="number"
+                                    className="h-8"
+                                    value={resultado.idadeMaxima || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Unidade Idade</label>
+                                  <Select
+                                    value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
+                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                                  >
+                                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="not-specified">Não especificado</SelectItem>
+                                      <SelectItem value="dias">Dias</SelectItem>
+                                      <SelectItem value="meses">Meses</SelectItem>
+                                      <SelectItem value="anos">Anos</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Critério Sexo</label>
+                                  <Select
+                                    value={resultado.criterioSexo}
+                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
+                                  >
+                                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Ambos">Ambos</SelectItem>
+                                      <SelectItem value="Masculino">Masculino</SelectItem>
+                                      <SelectItem value="Feminino">Feminino</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
+                                  <Input
+                                    type="number"
+                                    className="h-8"
+                                    value={resultado.valorMinimo || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Valor Máximo</label>
+                                  <Input
+                                    type="number"
+                                    className="h-8"
+                                    value={resultado.valorMaximo || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
+                                  />
+                                </div>
+                              </div>
+                            </>
                           )}
 
                           <div className="grid grid-cols-2 gap-3">

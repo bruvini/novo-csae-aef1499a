@@ -190,7 +190,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ex.componentes.forEach(comp => {
         const val = tempExameFisico[comp.componenteAnalisado];
         if (val !== undefined && val !== '') {
-          const v = ex.tipoExame === 'Laboratorial'
+          const v = (ex.tipoExame === 'Laboratorial' && comp.tipoResultado !== 'classificatorio')
             ? getNumericValidation(comp.componenteAnalisado, val, 'exameLab')
             : getImagemValidation(comp.componenteAnalisado, String(val));
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
@@ -911,7 +911,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                             const parametro = componente.componenteAnalisado;
                             const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
 
-                            if (exame.tipoExame === 'Imagem') {
+                            if (exame.tipoExame === 'Imagem' || componente.tipoResultado === 'classificatorio') {
                               const valorTextoKey = `${parametro}|||${String(valorAtual)}`;
                               const valorTextoAtual = processo.avaliacao?.exameFisicoDescricoes?.[valorTextoKey] || '';
 
