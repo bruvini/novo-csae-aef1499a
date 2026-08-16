@@ -133,8 +133,9 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
             if (int.prazo && int.prazoUnidade) {
                itemStr += ` - Prazo: ${int.prazo} ${int.prazoUnidade}`;
             }
-            if (int.quemExecuta) {
-               itemStr += ` (Executor: ${int.quemExecuta})`;
+            const execArr = Array.isArray(int.quemExecuta) ? int.quemExecuta : (int.quemExecuta ? [int.quemExecuta] : []);
+            if (execArr.length > 0) {
+              itemStr += ` (Executor: ${execArr.join(', ')})`;
             }
             linhas.push(itemStr);
           });

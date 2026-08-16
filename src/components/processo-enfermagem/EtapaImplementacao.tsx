@@ -233,7 +233,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
                             <div className="space-y-3">
                               <h4 className="font-medium text-sm flex items-center justify-between">
                                 Intervenções Prescritas:
-                                {intervencoes.filter(i => i.implementadoNestaConsulta && !i.quemExecuta).length > 0 && (
+                                {intervencoes.filter(i => i.implementadoNestaConsulta && (!i.quemExecuta || (Array.isArray(i.quemExecuta) && i.quemExecuta.length === 0))).length > 0 && (
                                   <span className="text-[10px] text-red-500 font-bold animate-pulse">
                                     Executores pendentes*
                                   </span>

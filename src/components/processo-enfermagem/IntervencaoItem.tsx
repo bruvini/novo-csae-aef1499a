@@ -3,55 +3,53 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { IntervencaoImplementada } from '@/types/processoEnfermagem';
+import { Combobox } from '@/components/ui/combobox';
+import {
+  IntervencaoImplementada,
+  normalizarExecutores,
+} from '@/types/processoEnfermagem';
 
 interface IntervencaoItemProps {
   intervencao: IntervencaoImplementada;
   onUpdate: (intervencao: IntervencaoImplementada) => void;
 }
 
+const OPCOES_APRAZAMENTO = [
+  { value: 'A cada consulta', label: 'A cada consulta' },
+  { value: 'A critério clínico', label: 'A critério clínico' },
+  { value: 'Visita Domiciliar', label: 'Visita Domiciliar' },
+  { value: 'Diário', label: 'Diário' },
+  { value: 'Semanal', label: 'Semanal' },
+  { value: 'Quinzenal', label: 'Quinzenal' },
+  { value: 'Mensal', label: 'Mensal' },
+  { value: 'Trimestral', label: 'Trimestral' },
+  { value: 'Semestral', label: 'Semestral' },
+  { value: 'Anual', label: 'Anual' },
+];
+
 const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate }) => {
+  const executoresAtuais = normalizarExecutores(intervencao.quemExecuta);
+  const semExecutor = intervencao.implementadoNestaConsulta && executoresAtuais.length === 0;
+
   const handleImplementadoChange = (checked: boolean) => {
     if (checked) {
-      onUpdate({
-        ...intervencao,
-        implementadoNestaConsulta: true,
-      });
+      onUpdate({ ...intervencao, implementadoNestaConsulta: true });
     } else {
-      // Remove quemExecuta, prazo e prazoUnidade da chave do objeto ao desmarcar —
-      // nunca atribuir undefined explicitamente pois o Firestore rejeita escrita com undefined.
+      // Remove campos de execução ao desmarcar — undefined não pode ir ao Firestore
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { quemExecuta: _q, prazo: _p, prazoUnidade: _u, ...resto } = intervencao;
-      onUpdate({
-        ...resto,
-        implementadoNestaConsulta: false,
-      });
+      const { quemExecuta: _q, aprazamento: _a, prazo: _p, prazoUnidade: _u, ...resto } = intervencao;
+      onUpdate({ ...resto, implementadoNestaConsulta: false });
     }
   };
 
-  const handleExecutorChange = (executor: string) => {
-    onUpdate({
-      ...intervencao,
-      quemExecuta: executor
-    });
+  const handleExecutorChange = (vals: string[]) => {
+    onUpdate({ ...intervencao, quemExecuta: vals });
   };
 
-  const handlePrazoChange = (prazo: number) => {
-    onUpdate({
-      ...intervencao,
-      prazo: prazo
-    });
-  };
-
-  const handlePrazoUnidadeChange = (unidade: string) => {
-    onUpdate({
-      ...intervencao,
-      prazoUnidade: unidade as 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos'
-    });
+  const handleAprazamentoChange = (valor: string) => {
+    onUpdate({ ...intervencao, aprazamento: valor });
   };
 
   return (
@@ -64,7 +62,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
           onCheckedChange={handleImplementadoChange}
           className="mt-1"
         />
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 space-y-3">
           <div className="flex items-start gap-2">
             <label
               htmlFor={`intervencao-${intervencao.acaoPrescrita}`}
@@ -77,17 +75,17 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
             </Badge>
           </div>
 
-          {/* ToggleGroup para quem executa */}
-          <div className={cn("flex items-center gap-4 mt-2", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>
-            <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
+          {/* Multi-select executores */}
+          <div className={cn('space-y-1', !intervencao.implementadoNestaConsulta && 'opacity-40 pointer-events-none select-none')}>
+            <Label className={cn('text-xs font-medium', semExecutor ? 'text-red-500 font-bold' : 'text-muted-foreground')}>
               Quem executa (Obrigatório)*:
             </Label>
             <ToggleGroup
-              type="single"
-              value={intervencao.quemExecuta || ''}
-              onValueChange={(val) => handleExecutorChange(val)}
+              type="multiple"
+              value={executoresAtuais}
+              onValueChange={handleExecutorChange}
               size="sm"
-              className={cn("flex flex-wrap gap-2 justify-start", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta && "border border-red-500 rounded-md")}
+              className={cn('flex flex-wrap gap-1.5 justify-start', semExecutor && 'border border-red-500 rounded-md p-1')}
               disabled={!intervencao.implementadoNestaConsulta}
             >
               <ToggleGroupItem value="Enfermeiro" className="text-xs">
@@ -96,52 +94,35 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
               <ToggleGroupItem value="Técnico/Auxiliar de Enfermagem" className="text-xs">
                 Téc/Aux Enfermagem
               </ToggleGroupItem>
+              <ToggleGroupItem value="Equipe de Saúde da Família (eSF)" className="text-xs">
+                eSF
+              </ToggleGroupItem>
               <ToggleGroupItem value="Equipe Multiprofissional" className="text-xs">
                 Equipe Multi
               </ToggleGroupItem>
               <ToggleGroupItem value="Cuidador/Familiar" className="text-xs">
                 Cuidador/Familiar
               </ToggleGroupItem>
-              <ToggleGroupItem value="Paciente" className="text-xs">
+              <ToggleGroupItem value="Paciente (Autocuidado)" className="text-xs">
                 Paciente
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          {/* Campos de prazo */}
-          <div className={cn("flex gap-2 items-end", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
-                Prazo:
-              </label>
-              <Input
-                type="number"
-                placeholder="Ex: 3"
-                value={intervencao.prazo || ''}
-                onChange={(e) => handlePrazoChange(Number(e.target.value))}
-                className="text-sm"
-                min="1"
-              />
-            </div>
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">
-                Unidade:
-              </label>
-              <Select value={intervencao.prazoUnidade || ''} onValueChange={handlePrazoUnidadeChange}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="segundos">Segundos</SelectItem>
-                  <SelectItem value="minutos">Minutos</SelectItem>
-                  <SelectItem value="horas">Horas</SelectItem>
-                  <SelectItem value="dias">Dias</SelectItem>
-                  <SelectItem value="semanas">Semanas</SelectItem>
-                  <SelectItem value="meses">Meses</SelectItem>
-                  <SelectItem value="anos">Anos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Aprazamento híbrido */}
+          <div className={cn('space-y-1', !intervencao.implementadoNestaConsulta && 'opacity-40 pointer-events-none select-none')}>
+            <Label className="text-xs font-medium text-muted-foreground">
+              Aprazamento:
+            </Label>
+            <Combobox
+              options={OPCOES_APRAZAMENTO}
+              value={intervencao.aprazamento || ''}
+              onValueChange={handleAprazamentoChange}
+              placeholder="Selecione ou digite..."
+              searchPlaceholder="Buscar ou digitar..."
+              emptyText="Nenhuma opção — pressione Enter para usar o texto digitado"
+              className="text-sm h-9"
+            />
           </div>
         </div>
       </div>

@@ -36,7 +36,7 @@ export function calcularEtapasCompletadas(processo: ProcessoEnfermagem): number[
     const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
     if (implementadas.length > 0) {
       peloMenosUmaImplementada = true;
-      if (implementadas.some((i) => !i.quemExecuta)) {
+      if (implementadas.some((i) => !i.quemExecuta || (Array.isArray(i.quemExecuta) && i.quemExecuta.length === 0))) {
         temPendenciaExecutor = true;
       }
     }
@@ -98,7 +98,7 @@ export function isEtapaAcessivel(
         const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
         if (implementadas.length > 0) {
           peloMenosUmaImplementada = true;
-          if (implementadas.some((i) => !i.quemExecuta)) {
+          if (implementadas.some((i) => !i.quemExecuta || (Array.isArray(i.quemExecuta) && i.quemExecuta.length === 0))) {
             temPendenciaExecutor = true;
           }
         }

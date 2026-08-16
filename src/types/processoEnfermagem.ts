@@ -53,9 +53,31 @@ export interface PlanejamentoEnfermagem {
 // NOVOS TIPOS para a Etapa de Implementação
 export interface IntervencaoImplementada extends IntervencaoSelecionada {
   implementadoNestaConsulta: boolean;
-  quemExecuta?: string;
+  // Multi-select: array de executores (COFEN 736/2024)
+  quemExecuta?: string[];
+  // Aprazamento híbrido (substituiu prazo + prazoUnidade; campos antigos mantidos para compat)
+  aprazamento?: string;
   prazo?: number;
   prazoUnidade?: 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos';
+}
+
+/** Normaliza quemExecuta: aceita string legada (doc antigo) ou string[] (novo). */
+export function normalizarExecutores(quemExecuta: string | string[] | undefined): string[] {
+  if (!quemExecuta) return [];
+  return Array.isArray(quemExecuta) ? quemExecuta : [quemExecuta];
+}
+
+/** Formata executores para exibição em texto. */
+export function formatarExecutores(quemExecuta: string | string[] | undefined): string {
+  return normalizarExecutores(quemExecuta).join(', ');
+}
+
+/** Formata aprazamento para exibição, com fallback para campos legados. */
+export function getAprazamentoTexto(intervencao: IntervencaoImplementada): string {
+  if (intervencao.aprazamento) return intervencao.aprazamento;
+  if (intervencao.prazo && intervencao.prazoUnidade)
+    return `${intervencao.prazo} ${intervencao.prazoUnidade}`;
+  return '';
 }
 
 export interface ImplementacaoEnfermagem {

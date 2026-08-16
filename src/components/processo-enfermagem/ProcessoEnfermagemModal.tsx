@@ -224,8 +224,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
       Object.entries(novaImplementacao).forEach(([tituloDiag, dados]) => {
         dados.intervencoes.forEach(int => {
+          const executores = Array.isArray(int.quemExecuta) ? int.quemExecuta : (int.quemExecuta ? [int.quemExecuta] : []);
           const deixouDeSerEnfermeiro =
-            !int.implementadoNestaConsulta || int.quemExecuta !== 'Enfermeiro';
+            !int.implementadoNestaConsulta || !executores.includes('Enfermeiro');
 
           if (deixouDeSerEnfermeiro && intervencoesExecutadasAtualizadas[tituloDiag]) {
             // Remove esta ação específica da lista de executadas

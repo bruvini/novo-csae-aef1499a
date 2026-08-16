@@ -22,11 +22,13 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
     processo.evolucao?.intervencoesExecutadas || {}
   );
 
-  // Filtrar diagnósticos e intervenções onde quemExecuta é 'Enfermeiro'
+  // Filtrar intervenções onde Enfermeiro é um dos executores
   const implementacaoEnfermeiro = Object.entries(processo.implementacao || {}).reduce((acc, [tituloDiag, dados]) => {
-    const intervencoesEnfermeiro = dados.intervencoes.filter(
-      int => int.implementadoNestaConsulta && int.quemExecuta === 'Enfermeiro'
-    );
+    const intervencoesEnfermeiro = dados.intervencoes.filter(int => {
+      if (!int.implementadoNestaConsulta) return false;
+      const executores = Array.isArray(int.quemExecuta) ? int.quemExecuta : (int.quemExecuta ? [int.quemExecuta] : []);
+      return executores.includes('Enfermeiro');
+    });
     if (intervencoesEnfermeiro.length > 0) {
       acc[tituloDiag] = {
         ...dados,

@@ -241,7 +241,8 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
       implementadas.forEach((int: any) => {
-        const executor = int.quemExecuta ? ` (Executor: ${int.quemExecuta})` : '';
+        const execArr = Array.isArray(int.quemExecuta) ? int.quemExecuta : (int.quemExecuta ? [int.quemExecuta] : []);
+        const executor = execArr.length > 0 ? ` (Executor: ${execArr.join(', ')})` : '';
         linhas.push(`• ${int.acaoPrescrita}${executor}`);
       });
       linhas.push('');
@@ -491,11 +492,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                           {iv.acaoPrescrita}
                         </span>
-                        {iv.quemExecuta && (
-                          <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
-                            Executor: {iv.quemExecuta}
-                          </Badge>
-                        )}
+                        {(() => {
+                          const execs = Array.isArray(iv.quemExecuta) ? iv.quemExecuta : (iv.quemExecuta ? [iv.quemExecuta] : []);
+                          return execs.length > 0 ? (
+                            <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
+                              Executor: {execs.join(', ')}
+                            </Badge>
+                          ) : null;
+                        })()}
                       </li>
                     )}
                   />
