@@ -15,10 +15,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames, Exame, ComponenteExame, ResultadoExame } from '@/services/bancodados/examesDB';
+import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
-import { Combobox } from '@/components/ui/combobox';
+import { ExameResultadoInput } from './ExameResultadoInput';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
@@ -178,9 +178,9 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ex.componentes.forEach(comp => {
         const val = tempExameFisico[comp.componenteAnalisado];
         if (val !== undefined && val !== '') {
-          const v = ex.tipoExame === 'Laboratorial'
-            ? getNumericValidation(comp.componenteAnalisado, val, 'exameLab')
-            : getImagemValidation(comp.componenteAnalisado, String(val));
+          const v = componenteEhClassificatorio(ex.tipoExame, comp)
+            ? getImagemValidation(comp.componenteAnalisado, String(val))
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
         }
       });
@@ -206,7 +206,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const updateAvaliacaoAtomic = (
     parametro: string,
     value: string | number,
-    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string }
+    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string },
+    extra: Partial<AvaliacaoEnfermagem> = {}
   ) => {
     const novoExameFisico = { ...(processo.avaliacao?.exameFisico || {}), [parametro]: value };
     const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
@@ -219,6 +220,31 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ...processo.avaliacao,
       exameFisico: novoExameFisico,
       nhbsAfetadas: novaListaNhbs,
+      ...extra,
+    });
+  };
+
+  const updateResultadoClassificatorio = (parametro: string, selected: string) => {
+    const textos = { ...(processo.avaliacao?.examesValoresTexto || {}) };
+    if (textos[parametro]?.resultadoClassificatorio !== selected) delete textos[parametro];
+    updateAvaliacaoAtomic(
+      parametro,
+      selected,
+      getImagemValidation(parametro, selected),
+      { examesValoresTexto: textos }
+    );
+  };
+
+  const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      examesValoresTexto: {
+        ...(processo.avaliacao?.examesValoresTexto || {}),
+        [parametro]: {
+          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
+          valorTexto,
+        },
+      },
     });
   };
 
@@ -246,7 +272,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
     const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
 
-    let descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
     if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
 
     updateSistemaMulti(nomeExame, updated, descricoes);
@@ -280,7 +306,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
 
     const numValue = Number(value);
-    if (isNaN(numValue)) {
+    if (isNaN(numValue) || numValue < 0) {
       return { status: 'neutro' };
     }
 
@@ -345,9 +371,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const getImagemValidation = (parametro: string, selected: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     if (!selected) return { status: 'neutro' };
 
-    const exame = exames.find(
-      (e) => e.tipoExame === 'Imagem' && e.componentes.some((c) => c.componenteAnalisado === parametro)
-    );
+    const exame = exames.find((e) => e.componentes.some(
+      (componente) => componente.componenteAnalisado === parametro
+        && componenteEhClassificatorio(e.tipoExame, componente)
+    ));
     const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
     const resultado = componente?.resultados.find((r) => r.resultadoClassificatorio === selected);
 
@@ -441,6 +468,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const handleIMCChange = (pesoStr: string, alturaStr: string, imcVital: SinalVital) => {
     const pesoNum = parseFloat(pesoStr);
     const alturaNum = parseFloat(alturaStr);
+    if ((!isNaN(pesoNum) && pesoNum < 0) || (!isNaN(alturaNum) && alturaNum < 0)) return;
     let imcCalc = '';
     if (!isNaN(pesoNum) && !isNaN(alturaNum) && alturaNum > 0) {
       imcCalc = (pesoNum / Math.pow(alturaNum / 100, 2)).toFixed(2);
@@ -791,7 +819,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                       <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{pasV.sinalVitalDescricao}</TooltipContent></Tooltip>
                                     )}
                                   </label>
-                                  <Input type="number" placeholder="00" value={processo.avaliacao?.exameFisico?.[pasV.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(pasV.sinalVitalNome, v, getNumericValidation(pasV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(pasV.sinalVitalNome)} />
+                                  <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[pasV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(pasV.sinalVitalNome, v, getNumericValidation(pasV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(pasV.sinalVitalNome)} />
                                   {renderValidationMessage(pasV.sinalVitalNome)}
                                 </div>
                               )}
@@ -803,7 +831,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                       <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{padV.sinalVitalDescricao}</TooltipContent></Tooltip>
                                     )}
                                   </label>
-                                  <Input type="number" placeholder="00" value={processo.avaliacao?.exameFisico?.[padV.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(padV.sinalVitalNome, v, getNumericValidation(padV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(padV.sinalVitalNome)} />
+                                  <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[padV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(padV.sinalVitalNome, v, getNumericValidation(padV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(padV.sinalVitalNome)} />
                                   {renderValidationMessage(padV.sinalVitalNome)}
                                 </div>
                               )}
@@ -823,11 +851,11 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                             <div className="grid grid-cols-3 gap-3">
                               <div className="space-y-2">
                                 <label className="text-[11px] font-bold text-gray-500">Peso (kg)</label>
-                                <Input type="number" placeholder="Ex: 70" value={String(processo.avaliacao?.exameFisico?.['Peso (kg)'] || '')} onChange={(e) => handleIMCChange(e.target.value, String(processo.avaliacao?.exameFisico?.['Altura (cm)'] || ''), imcV)} />
+                                <Input type="number" min="0" placeholder="Ex: 70" value={String(processo.avaliacao?.exameFisico?.['Peso (kg)'] ?? '')} onChange={(e) => handleIMCChange(e.target.value, String(processo.avaliacao?.exameFisico?.['Altura (cm)'] ?? ''), imcV)} />
                               </div>
                               <div className="space-y-2">
                                 <label className="text-[11px] font-bold text-gray-500">Altura (cm)</label>
-                                <Input type="number" placeholder="Ex: 170" value={String(processo.avaliacao?.exameFisico?.['Altura (cm)'] || '')} onChange={(e) => handleIMCChange(String(processo.avaliacao?.exameFisico?.['Peso (kg)'] || ''), e.target.value, imcV)} />
+                                <Input type="number" min="0" placeholder="Ex: 170" value={String(processo.avaliacao?.exameFisico?.['Altura (cm)'] ?? '')} onChange={(e) => handleIMCChange(String(processo.avaliacao?.exameFisico?.['Peso (kg)'] ?? ''), e.target.value, imcV)} />
                               </div>
                               <div className="space-y-2">
                                 <label className="text-[11px] font-bold text-gray-500">IMC (kg/m²)</label>
@@ -847,7 +875,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                 <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help shrink-0" /></TooltipTrigger><TooltipContent side="top" className="max-w-[220px] text-xs">{sinal.sinalVitalDescricao}</TooltipContent></Tooltip>
                               )}
                             </label>
-                            <Input type="number" placeholder="00.0" value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] || ''} onChange={(e) => { const v = e.target.value; updateAvaliacaoAtomic(sinal.sinalVitalNome, v, getNumericValidation(sinal.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(sinal.sinalVitalNome)} />
+                            <Input type="number" min="0" placeholder="00.0" value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(sinal.sinalVitalNome, v, getNumericValidation(sinal.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(sinal.sinalVitalNome)} />
                             {renderValidationMessage(sinal.sinalVitalNome)}
                           </div>
                         ))}
@@ -886,53 +914,31 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ml-2">
                           {exame.componentes.map((componente, idx) => {
                             const parametro = componente.componenteAnalisado;
-                            const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
-
-                            if (exame.tipoExame === 'Imagem') {
-                              const opcoes = Array.from(
-                                new Set(
-                                  (componente.resultados || [])
-                                    .map((r) => r.resultadoClassificatorio)
-                                    .filter((r): r is string => !!r)
-                                )
-                              ).map((r) => ({ value: r, label: r }));
-
-                              return (
-                                <div key={idx} className="space-y-2">
-                                  <label className="text-[11px] font-bold text-gray-600">
-                                    {parametro}
-                                  </label>
-                                  <Combobox
-                                    options={opcoes}
-                                    value={String(valorAtual)}
-                                    onValueChange={(selected) => {
-                                      const validation = getImagemValidation(parametro, selected);
-                                      updateAvaliacaoAtomic(parametro, selected, validation);
-                                    }}
-                                    placeholder="Selecione o resultado..."
-                                    searchPlaceholder="Buscar..."
-                                    className={"w-full " + getInputClassName(parametro)}
-                                  />
-                                  {renderValidationMessage(parametro)}
-                                </div>
-                              );
-                            }
+                            const valorAtual = processo.avaliacao?.exameFisico?.[parametro] ?? '';
+                            const valorTexto = processo.avaliacao?.examesValoresTexto?.[parametro]?.valorTexto || '';
 
                             return (
                               <div key={idx} className="space-y-2">
                                 <label className="text-[11px] font-bold text-gray-600">
-                                  {parametro} <span className="text-[9px] font-medium opacity-70">({componente.unidadeMedida})</span>
+                                  {parametro}
+                                  {!componenteEhClassificatorio(exame.tipoExame, componente) && (
+                                    <span className="text-[9px] font-medium opacity-70"> ({componente.unidadeMedida})</span>
+                                  )}
                                 </label>
-                                <Input
-                                  type="number"
-                                  placeholder="Resultado"
-                                  value={valorAtual}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    const validation = getNumericValidation(parametro, val, 'exameLab');
-                                    updateAvaliacaoAtomic(parametro, val, validation);
+                                <ExameResultadoInput
+                                  tipoExame={exame.tipoExame}
+                                  componente={componente}
+                                  valor={valorAtual}
+                                  valorTexto={valorTexto}
+                                  onResultadoChange={(valor) => {
+                                    if (componenteEhClassificatorio(exame.tipoExame, componente)) {
+                                      updateResultadoClassificatorio(parametro, valor);
+                                    } else {
+                                      updateAvaliacaoAtomic(parametro, valor, getNumericValidation(parametro, valor, 'exameLab'));
+                                    }
                                   }}
-                                  className={getInputClassName(parametro)}
+                                  onValorTextoChange={(resultado, valor) => updateValorTextoExame(parametro, resultado, valor)}
+                                  className={"w-full " + getInputClassName(parametro)}
                                 />
                                 {renderValidationMessage(parametro)}
                               </div>

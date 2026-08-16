@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Heart, Database, Users, BarChart, ArrowRight, Clock, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarUsuariosAguardando } from '@/services/bancodados';
+import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 
 const NavigationCards = () => {
   const { sessionData } = useAuth();
+  const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
   const [usuariosAguardandoCount, setUsuariosAguardandoCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -75,6 +77,7 @@ const NavigationCards = () => {
       href: '/ajuda',
       status: 'Novo',
       disabled: false,
+      notificationCount: respostasNaoVisualizadas,
     },
     {
       id: 'gestao-suporte',
@@ -85,6 +88,7 @@ const NavigationCards = () => {
       status: 'Disponível',
       disabled: false,
       allowedPageId: 'GestaoSuporte',
+      notificationCount: itensNovosSuporte,
     },
   ];
 
@@ -155,6 +159,11 @@ const NavigationCards = () => {
                     <span className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse leading-none">
                       <Clock className="w-3 h-3" />
                       {item.badge.text}
+                    </span>
+                  )}
+                  {Boolean(item.notificationCount) && (
+                    <span className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm">
+                      {item.notificationCount > 99 ? '99+' : item.notificationCount}
                     </span>
                   )}
                 </div>

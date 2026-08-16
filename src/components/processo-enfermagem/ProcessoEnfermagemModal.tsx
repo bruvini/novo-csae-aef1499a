@@ -500,7 +500,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     <>
       <Dialog open={isOpen} onOpenChange={() => handleSaveAndClose()}>
         <DialogContent 
-          className="max-w-6xl h-[90vh] flex flex-col"
+          className="w-11/12 max-w-7xl h-[90vh] flex flex-col"
           onInteractOutside={(e) => {
             e.preventDefault();
             handleSaveAndClose();

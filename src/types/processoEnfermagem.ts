@@ -18,6 +18,12 @@ export interface AvaliacaoEnfermagem {
   exameFisicoDescricoes?: {
     [achadoKey: string]: string;
   };
+  examesValoresTexto?: {
+    [componente: string]: {
+      resultadoClassificatorio: string;
+      valorTexto: string;
+    };
+  };
   nhbsAfetadas: { parametro: string; nhb: string }[];
 }
 

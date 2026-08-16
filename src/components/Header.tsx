@@ -1,12 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, User, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones } from 'lucide-react';
+import { LogOut, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import { cn } from '@/lib/utils';
 
 const Header = () => {
   const { sessionData, logout } = useAuth();
+  const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
 
   const navigationItems = [
     { title: 'Dashboard', url: '/dashboard', icon: Home },
@@ -14,8 +16,8 @@ const Header = () => {
     { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
     { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
     { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChartIcon, allowedPageId: 'PainelEstatistico' },
-    { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy },
-    { title: 'Gestão de Suporte', url: '/gestao-suporte', icon: Headphones, allowedPageId: 'GestaoSuporte' },
+    { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy, notificationCount: respostasNaoVisualizadas },
+    { title: 'Gestão de Suporte', url: '/gestao-suporte', icon: Headphones, allowedPageId: 'GestaoSuporte', notificationCount: itensNovosSuporte },
   ];
 
   const filteredItems = navigationItems.filter(item => {
@@ -94,6 +96,14 @@ const Header = () => {
               >
                 <Icon className="w-4 h-4" />
                 <span>{item.title}</span>
+                {Boolean(item.notificationCount) && (
+                  <span
+                    className="inline-flex min-w-5 h-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm"
+                    aria-label={`${item.notificationCount} notificação(ões) não visualizada(s)`}
+                  >
+                    {item.notificationCount > 99 ? '99+' : item.notificationCount}
+                  </span>
+                )}
               </NavLink>
             );
           })}

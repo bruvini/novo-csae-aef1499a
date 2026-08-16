@@ -1,0 +1,897 @@
+{
+  "components.json": {
+    "mtime": 1743602126.5355208,
+    "ast_hash": "bfe8fda7814d7c5a44aff2aef2dd86ec",
+    "semantic_hash": "bfe8fda7814d7c5a44aff2aef2dd86ec"
+  },
+  "eslint.config.js": {
+    "mtime": 1743602126.53652,
+    "ast_hash": "2e240281bad56fce6a86cb0e49590ae9",
+    "semantic_hash": "2e240281bad56fce6a86cb0e49590ae9"
+  },
+  "firebase.json": {
+    "mtime": 1775515621.9727154,
+    "ast_hash": "168e0b6199ca531564bd028e73730a3f",
+    "semantic_hash": "168e0b6199ca531564bd028e73730a3f"
+  },
+  "package.json": {
+    "mtime": 1786895517.8581476,
+    "ast_hash": "9f19a4b7b4ac752df0afa8f8c9850fe5",
+    "semantic_hash": ""
+  },
+  "postcss.config.js": {
+    "mtime": 1743602126.5395207,
+    "ast_hash": "5b84f4567208c7c747079c0477373231",
+    "semantic_hash": "5b84f4567208c7c747079c0477373231"
+  },
+  "scripts/approve-user.ts": {
+    "mtime": 1774742780.3217838,
+    "ast_hash": "9213f0c8b53db3d77ee406c2a982aa6f",
+    "semantic_hash": "9213f0c8b53db3d77ee406c2a982aa6f"
+  },
+  "scripts/cors.json": {
+    "mtime": 1751009862.3579834,
+    "ast_hash": "c35242dc7a364d55e6e4cfaac99fe336",
+    "semantic_hash": "c35242dc7a364d55e6e4cfaac99fe336"
+  },
+  "scripts/set-storage-cors.sh": {
+    "mtime": 1751025440.017102,
+    "ast_hash": "0139d5e57e02feffdb1d422a7cba567f",
+    "semantic_hash": "0139d5e57e02feffdb1d422a7cba567f"
+  },
+  "src/App.tsx": {
+    "mtime": 1786891720.9447813,
+    "ast_hash": "444a8d6e6838fc72ca560bb0f216d2d1",
+    "semantic_hash": ""
+  },
+  "src/components/AppSidebar.tsx": {
+    "mtime": 1786891745.4764516,
+    "ast_hash": "1a2aa3bcfc729f518b73e9f1ae69f2ec",
+    "semantic_hash": ""
+  },
+  "src/components/AuthenticatedLayout.tsx": {
+    "mtime": 1780864941.8131301,
+    "ast_hash": "39f98eda2828e383eeffc1953ae18ffa",
+    "semantic_hash": "39f98eda2828e383eeffc1953ae18ffa"
+  },
+  "src/components/Footer.tsx": {
+    "mtime": 1774749677.99388,
+    "ast_hash": "d622c954deb569df7589191cc7cd1757",
+    "semantic_hash": "d622c954deb569df7589191cc7cd1757"
+  },
+  "src/components/Header.tsx": {
+    "mtime": 1786891871.393391,
+    "ast_hash": "b6030098771ed46f53d9242c7d334a24",
+    "semantic_hash": ""
+  },
+  "src/components/HeroBanner.tsx": {
+    "mtime": 1775603659.3189683,
+    "ast_hash": "5524c197851686acdc955e53abeacb76",
+    "semantic_hash": "5524c197851686acdc955e53abeacb76"
+  },
+  "src/components/LoadingOverlay.tsx": {
+    "mtime": 1746805289.527232,
+    "ast_hash": "5a0febc5af76100befc48a14f0ef82e4",
+    "semantic_hash": "5a0febc5af76100befc48a14f0ef82e4"
+  },
+  "src/components/ModalHistoricoChangelog.tsx": {
+    "mtime": 1779851226.6655316,
+    "ast_hash": "2345f20e26e623198b42d6d3d650a972",
+    "semantic_hash": "2345f20e26e623198b42d6d3d650a972"
+  },
+  "src/components/ModalNPSObrigatorio.tsx": {
+    "mtime": 1780865849.6752462,
+    "ast_hash": "2bdd756378050e0af9805aa71e8d562d",
+    "semantic_hash": "2bdd756378050e0af9805aa71e8d562d"
+  },
+  "src/components/NavigationCards.tsx": {
+    "mtime": 1786891768.9891224,
+    "ast_hash": "e035fd0cd9d59e40106338f03b240177",
+    "semantic_hash": ""
+  },
+  "src/components/ProcessoEnfermagemExplicacao.tsx": {
+    "mtime": 1774742855.1698754,
+    "ast_hash": "a11f529f3954abb1e5edd948fada27ca",
+    "semantic_hash": "a11f529f3954abb1e5edd948fada27ca"
+  },
+  "src/components/ProtectedRoute.tsx": {
+    "mtime": 1779417671.5485582,
+    "ast_hash": "c1ac981d377e2384b418e7420ee20104",
+    "semantic_hash": "c1ac981d377e2384b418e7420ee20104"
+  },
+  "src/components/TermoResponsabilidadeModal.tsx": {
+    "mtime": 1774760889.5333393,
+    "ast_hash": "6b052a0b50db22c7e9cfbe71d25cf5f5",
+    "semantic_hash": "6b052a0b50db22c7e9cfbe71d25cf5f5"
+  },
+  "src/components/gestao-conteudos/FormularioSistema.tsx": {
+    "mtime": 1780852922.5504591,
+    "ast_hash": "c29cc81b8d6a825e8b15bf5adeef8387",
+    "semantic_hash": "c29cc81b8d6a825e8b15bf5adeef8387"
+  },
+  "src/components/gestao-conteudos/IndicadoresConteudo.tsx": {
+    "mtime": 1754512737.2545688,
+    "ast_hash": "c2dbdc7fbc3b99eb8d5910bd6a5c3019",
+    "semantic_hash": "c2dbdc7fbc3b99eb8d5910bd6a5c3019"
+  },
+  "src/components/gestao-conteudos/ModalCadastroDiagnostico.tsx": {
+    "mtime": 1751025440.017102,
+    "ast_hash": "2cab65a8142068af2c64fb40b91df37d",
+    "semantic_hash": "2cab65a8142068af2c64fb40b91df37d"
+  },
+  "src/components/gestao-conteudos/ModalCadastroSubconjunto.tsx": {
+    "mtime": 1751025440.0180998,
+    "ast_hash": "9ac26d13859c35a520cee8bb9d6df1cd",
+    "semantic_hash": "9ac26d13859c35a520cee8bb9d6df1cd"
+  },
+  "src/components/gestao-conteudos/ModalConfirmacaoExclusao.tsx": {
+    "mtime": 1751025440.0191014,
+    "ast_hash": "0cc9a89e351474833eb311f31bf1d19d",
+    "semantic_hash": "0cc9a89e351474833eb311f31bf1d19d"
+  },
+  "src/components/gestao-conteudos/ModalDetalhesSubconjunto.tsx": {
+    "mtime": 1751025440.0191014,
+    "ast_hash": "73ba52b50f58ff64c4d0a3694cbf48a0",
+    "semantic_hash": "73ba52b50f58ff64c4d0a3694cbf48a0"
+  },
+  "src/components/gestao-conteudos/ModalVisualizarDiagnostico.tsx": {
+    "mtime": 1754512737.2545688,
+    "ast_hash": "014d6c7b3cebffe90c81ce9082543cc4",
+    "semantic_hash": "014d6c7b3cebffe90c81ce9082543cc4"
+  },
+  "src/components/gestao-conteudos/ModalVisualizarSistema.tsx": {
+    "mtime": 1780852922.5514588,
+    "ast_hash": "d628d93d11dfe3456323e1e04b95c1d4",
+    "semantic_hash": "d628d93d11dfe3456323e1e04b95c1d4"
+  },
+  "src/components/gestao-conteudos/TabelaDiagnosticos.tsx": {
+    "mtime": 1754512737.2555723,
+    "ast_hash": "1e68460d0b886b50a36b644a69b2fa11",
+    "semantic_hash": "1e68460d0b886b50a36b644a69b2fa11"
+  },
+  "src/components/gestao-conteudos/TabelaExames.tsx": {
+    "mtime": 1786895675.405209,
+    "ast_hash": "658985b4a7eefad62af878c85c32773e",
+    "semantic_hash": ""
+  },
+  "src/components/gestao-conteudos/TabelaRevisaoSistemas.tsx": {
+    "mtime": 1774742855.1726756,
+    "ast_hash": "90f715e7cda95411353535474ed7f607",
+    "semantic_hash": "90f715e7cda95411353535474ed7f607"
+  },
+  "src/components/gestao-conteudos/TabelaSinaisVitais.tsx": {
+    "mtime": 1780868803.7693703,
+    "ast_hash": "b0365a264961ebf6969349962ecb5211",
+    "semantic_hash": "b0365a264961ebf6969349962ecb5211"
+  },
+  "src/components/gestao-conteudos/TabelaSubconjuntos.tsx": {
+    "mtime": 1751025440.020101,
+    "ast_hash": "af973ca0f9f012662352db2240d55257",
+    "semantic_hash": "af973ca0f9f012662352db2240d55257"
+  },
+  "src/components/gestao-usuarios/ModalConfirmacaoAprovacao.tsx": {
+    "mtime": 1774742855.1737804,
+    "ast_hash": "efe0a6137324a97c26e4aa539dff3f1a",
+    "semantic_hash": "efe0a6137324a97c26e4aa539dff3f1a"
+  },
+  "src/components/gestao-usuarios/ModalConfirmacaoExclusao.tsx": {
+    "mtime": 1750959249.5335746,
+    "ast_hash": "0590e44628003dc351bd4dea66bc04e7",
+    "semantic_hash": "0590e44628003dc351bd4dea66bc04e7"
+  },
+  "src/components/gestao-usuarios/ModalDetalhesUsuario.tsx": {
+    "mtime": 1775087189.2065346,
+    "ast_hash": "4a0c78133ca53741f6665379f8774ed6",
+    "semantic_hash": "4a0c78133ca53741f6665379f8774ed6"
+  },
+  "src/components/gestao-usuarios/ModalEdicaoPrivilegios.tsx": {
+    "mtime": 1774742855.1747859,
+    "ast_hash": "b22f031b9ebc385c1eb4510f14396323",
+    "semantic_hash": "b22f031b9ebc385c1eb4510f14396323"
+  },
+  "src/components/gestao-usuarios/ModalMotivoRecusa.tsx": {
+    "mtime": 1774758649.598676,
+    "ast_hash": "ab0615e0ccd10c268cdf522c9fd9736b",
+    "semantic_hash": "ab0615e0ccd10c268cdf522c9fd9736b"
+  },
+  "src/components/gestao-usuarios/TabelaUsuarios.tsx": {
+    "mtime": 1779418583.258731,
+    "ast_hash": "1cf6b9af24f334bdb202aa93b915a804",
+    "semantic_hash": "1cf6b9af24f334bdb202aa93b915a804"
+  },
+  "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
+    "mtime": 1786899905.4126203,
+    "ast_hash": "4b1c7acb7ced0d5ffaada41cb4928cc7",
+    "semantic_hash": ""
+  },
+  "src/components/processo-enfermagem/EtapaDiagnostico.tsx": {
+    "mtime": 1777779040.2951126,
+    "ast_hash": "0f89d15e7c5781be4bce672f3b9733c8",
+    "semantic_hash": "0f89d15e7c5781be4bce672f3b9733c8"
+  },
+  "src/components/processo-enfermagem/EtapaEvolucao.tsx": {
+    "mtime": 1775529940.3281476,
+    "ast_hash": "e0ebfa0fd3ebd21569a5f8ef2c0205b3",
+    "semantic_hash": "e0ebfa0fd3ebd21569a5f8ef2c0205b3"
+  },
+  "src/components/processo-enfermagem/EtapaImplementacao.tsx": {
+    "mtime": 1775607490.313341,
+    "ast_hash": "a8bd2937b7a4e2af930748a29ada8c0c",
+    "semantic_hash": "a8bd2937b7a4e2af930748a29ada8c0c"
+  },
+  "src/components/processo-enfermagem/EtapaPlanejamento.tsx": {
+    "mtime": 1779845332.8147225,
+    "ast_hash": "0ccd1601f721bbcd92356add50f926a1",
+    "semantic_hash": "0ccd1601f721bbcd92356add50f926a1"
+  },
+  "src/components/processo-enfermagem/EtapaResumo.tsx": {
+    "mtime": 1780868803.7713747,
+    "ast_hash": "b9cda3081ea8d7fdef1c3467f9bdaaf2",
+    "semantic_hash": "b9cda3081ea8d7fdef1c3467f9bdaaf2"
+  },
+  "src/components/processo-enfermagem/HistoricoProcessosModal.tsx": {
+    "mtime": 1774757019.976436,
+    "ast_hash": "b3fd22d519a65717200d622c03fbb779",
+    "semantic_hash": "b3fd22d519a65717200d622c03fbb779"
+  },
+  "src/components/processo-enfermagem/IndicadoresProducaoModal.tsx": {
+    "mtime": 1774757053.4123602,
+    "ast_hash": "e957fef23f8706bee0b53ed6ca69c142",
+    "semantic_hash": "e957fef23f8706bee0b53ed6ca69c142"
+  },
+  "src/components/processo-enfermagem/IntervencaoItem.tsx": {
+    "mtime": 1780863816.8568826,
+    "ast_hash": "1c49daf7e0f008a05e2c2e7396e57d81",
+    "semantic_hash": "1c49daf7e0f008a05e2c2e7396e57d81"
+  },
+  "src/components/processo-enfermagem/ListaPacientes.tsx": {
+    "mtime": 1777783488.808331,
+    "ast_hash": "13842de1ea8ecd3c166d29d45eed5ec2",
+    "semantic_hash": "13842de1ea8ecd3c166d29d45eed5ec2"
+  },
+  "src/components/processo-enfermagem/ModalCadastroPaciente.tsx": {
+    "mtime": 1774742855.1856875,
+    "ast_hash": "fc7d4fdfbe47462f1dfe3320717eac17",
+    "semantic_hash": "fc7d4fdfbe47462f1dfe3320717eac17"
+  },
+  "src/components/processo-enfermagem/ModalEditarPaciente.tsx": {
+    "mtime": 1774742855.1869311,
+    "ast_hash": "c33d6182a0862b4fe24c574f2a7341a7",
+    "semantic_hash": "c33d6182a0862b4fe24c574f2a7341a7"
+  },
+  "src/components/processo-enfermagem/ProcessoEnfermagemModal.tsx": {
+    "mtime": 1786899847.7218573,
+    "ast_hash": "4b1e1415345e78d7a323b6be172c7072",
+    "semantic_hash": ""
+  },
+  "src/components/processo-enfermagem/StepperProcesso.tsx": {
+    "mtime": 1777778966.256958,
+    "ast_hash": "54a47d303aab17d623dcaffd74d99172",
+    "semantic_hash": "54a47d303aab17d623dcaffd74d99172"
+  },
+  "src/components/processo-enfermagem/TempoAtivoBadge.tsx": {
+    "mtime": 1777783431.052211,
+    "ast_hash": "b53d8d506b6f33935cfd9a6d4a86a403",
+    "semantic_hash": "b53d8d506b6f33935cfd9a6d4a86a403"
+  },
+  "src/components/register/AccessInfoForm.tsx": {
+    "mtime": 1774760863.3208792,
+    "ast_hash": "31446628d8a602d69ef48d2c77e96685",
+    "semantic_hash": "31446628d8a602d69ef48d2c77e96685"
+  },
+  "src/components/register/PersonalInfoForm.tsx": {
+    "mtime": 1774760827.5391817,
+    "ast_hash": "5c4ce2eef222eda236d5530216ea0a58",
+    "semantic_hash": "5c4ce2eef222eda236d5530216ea0a58"
+  },
+  "src/components/register/ProfessionalInfoForm.tsx": {
+    "mtime": 1774760848.6785588,
+    "ast_hash": "de4f98e9328ddf21fb94f3d0794abbe4",
+    "semantic_hash": "de4f98e9328ddf21fb94f3d0794abbe4"
+  },
+  "src/components/ui/accordion.tsx": {
+    "mtime": 1743602126.5500407,
+    "ast_hash": "1a18877296af9e613340447038cb8cb1",
+    "semantic_hash": "1a18877296af9e613340447038cb8cb1"
+  },
+  "src/components/ui/alert-dialog.tsx": {
+    "mtime": 1743602126.551041,
+    "ast_hash": "18a643a884fd4f2832ef3abe20b35eb6",
+    "semantic_hash": "18a643a884fd4f2832ef3abe20b35eb6"
+  },
+  "src/components/ui/alert.tsx": {
+    "mtime": 1743602126.551041,
+    "ast_hash": "59e3895ea793fed08d8d9f0f83ad13df",
+    "semantic_hash": "59e3895ea793fed08d8d9f0f83ad13df"
+  },
+  "src/components/ui/aspect-ratio.tsx": {
+    "mtime": 1743602126.5520413,
+    "ast_hash": "114d53f29a18d0e8b5e48f5ff3811e15",
+    "semantic_hash": "114d53f29a18d0e8b5e48f5ff3811e15"
+  },
+  "src/components/ui/avatar.tsx": {
+    "mtime": 1743602126.5520413,
+    "ast_hash": "8f44230e5058b7ace8269c971da7189e",
+    "semantic_hash": "8f44230e5058b7ace8269c971da7189e"
+  },
+  "src/components/ui/badge.tsx": {
+    "mtime": 1743602126.552544,
+    "ast_hash": "2ba8b44541085f725b216267f9feb892",
+    "semantic_hash": "2ba8b44541085f725b216267f9feb892"
+  },
+  "src/components/ui/breadcrumb.tsx": {
+    "mtime": 1743602126.552544,
+    "ast_hash": "9fca9864de9b9b15e088c2a237c8594b",
+    "semantic_hash": "9fca9864de9b9b15e088c2a237c8594b"
+  },
+  "src/components/ui/button.tsx": {
+    "mtime": 1743602126.5535455,
+    "ast_hash": "55bae00127c054032e205b63a62802db",
+    "semantic_hash": "55bae00127c054032e205b63a62802db"
+  },
+  "src/components/ui/calendar.tsx": {
+    "mtime": 1743602126.5535455,
+    "ast_hash": "476dc9f9aa1ea81ac3dd0138011ac442",
+    "semantic_hash": "476dc9f9aa1ea81ac3dd0138011ac442"
+  },
+  "src/components/ui/card.tsx": {
+    "mtime": 1743602126.5535455,
+    "ast_hash": "aed5be3990f288c539122080ef55490c",
+    "semantic_hash": "aed5be3990f288c539122080ef55490c"
+  },
+  "src/components/ui/carousel.tsx": {
+    "mtime": 1743602126.5545473,
+    "ast_hash": "14a5dcc894d9bc2b7730372507ed1b43",
+    "semantic_hash": "14a5dcc894d9bc2b7730372507ed1b43"
+  },
+  "src/components/ui/chart.tsx": {
+    "mtime": 1743602126.5545473,
+    "ast_hash": "145e8ee7e39401d9b5d59f0e9f05318f",
+    "semantic_hash": "145e8ee7e39401d9b5d59f0e9f05318f"
+  },
+  "src/components/ui/checkbox.tsx": {
+    "mtime": 1743602126.5545473,
+    "ast_hash": "e8850db2b4357ce03822d84c54b72633",
+    "semantic_hash": "e8850db2b4357ce03822d84c54b72633"
+  },
+  "src/components/ui/collapsible.tsx": {
+    "mtime": 1743602126.5555477,
+    "ast_hash": "1048c23a2aadd5fdbbde0b04ec61e5cf",
+    "semantic_hash": "1048c23a2aadd5fdbbde0b04ec61e5cf"
+  },
+  "src/components/ui/combobox.tsx": {
+    "mtime": 1754512737.2565725,
+    "ast_hash": "60f6cc11897df847b00b57f0bf421191",
+    "semantic_hash": "60f6cc11897df847b00b57f0bf421191"
+  },
+  "src/components/ui/command.tsx": {
+    "mtime": 1743602126.5555477,
+    "ast_hash": "ddaf5f8eb7775107668d1a8175ea32f8",
+    "semantic_hash": "ddaf5f8eb7775107668d1a8175ea32f8"
+  },
+  "src/components/ui/context-menu.tsx": {
+    "mtime": 1743602126.5565479,
+    "ast_hash": "45f2a0aa025bab9b8f9965b24a73b970",
+    "semantic_hash": "45f2a0aa025bab9b8f9965b24a73b970"
+  },
+  "src/components/ui/dialog.tsx": {
+    "mtime": 1743602126.5565479,
+    "ast_hash": "3d8d7b8910a4fc37afd0cf021e16edde",
+    "semantic_hash": "3d8d7b8910a4fc37afd0cf021e16edde"
+  },
+  "src/components/ui/drawer.tsx": {
+    "mtime": 1743602126.5565479,
+    "ast_hash": "2a1e7b21cfd5c0043e6abc45a9117d4e",
+    "semantic_hash": "2a1e7b21cfd5c0043e6abc45a9117d4e"
+  },
+  "src/components/ui/dropdown-menu.tsx": {
+    "mtime": 1743602126.557548,
+    "ast_hash": "feacc91c0a5b8640b6f5cc8a98699c50",
+    "semantic_hash": "feacc91c0a5b8640b6f5cc8a98699c50"
+  },
+  "src/components/ui/form.tsx": {
+    "mtime": 1743602126.557548,
+    "ast_hash": "d6d30c3aae6f6d8d6299d67745504b48",
+    "semantic_hash": "d6d30c3aae6f6d8d6299d67745504b48"
+  },
+  "src/components/ui/hover-card.tsx": {
+    "mtime": 1743602126.5585482,
+    "ast_hash": "d7a103b77cc23f719887c6c90abef8a4",
+    "semantic_hash": "d7a103b77cc23f719887c6c90abef8a4"
+  },
+  "src/components/ui/image.tsx": {
+    "mtime": 1744026148.453169,
+    "ast_hash": "2a6e1e69accc947cd7b4ad78a553ca3c",
+    "semantic_hash": "2a6e1e69accc947cd7b4ad78a553ca3c"
+  },
+  "src/components/ui/input-otp.tsx": {
+    "mtime": 1743602126.5585482,
+    "ast_hash": "feb9e193d5c6666a5682df9fbba1536b",
+    "semantic_hash": "feb9e193d5c6666a5682df9fbba1536b"
+  },
+  "src/components/ui/input.tsx": {
+    "mtime": 1743602126.5585482,
+    "ast_hash": "f5c3f6115f14eb06180e98b0e302bc00",
+    "semantic_hash": "f5c3f6115f14eb06180e98b0e302bc00"
+  },
+  "src/components/ui/label.tsx": {
+    "mtime": 1743602126.5595484,
+    "ast_hash": "99b8b7244860ecba9ce05f5a644e0360",
+    "semantic_hash": "99b8b7244860ecba9ce05f5a644e0360"
+  },
+  "src/components/ui/menubar.tsx": {
+    "mtime": 1743602126.5595484,
+    "ast_hash": "791b0aa130a5be6588b3710a5ab704dd",
+    "semantic_hash": "791b0aa130a5be6588b3710a5ab704dd"
+  },
+  "src/components/ui/navigation-menu.tsx": {
+    "mtime": 1743602126.5605488,
+    "ast_hash": "595bbede1d5900b44f8f101f40b51ae2",
+    "semantic_hash": "595bbede1d5900b44f8f101f40b51ae2"
+  },
+  "src/components/ui/pagination.tsx": {
+    "mtime": 1743602126.5605488,
+    "ast_hash": "fbe4e3289596434c7135c536a71887d1",
+    "semantic_hash": "fbe4e3289596434c7135c536a71887d1"
+  },
+  "src/components/ui/popover.tsx": {
+    "mtime": 1743602126.5605488,
+    "ast_hash": "686fa6dc4c8e3f0e5c0e542b2a62ec4f",
+    "semantic_hash": "686fa6dc4c8e3f0e5c0e542b2a62ec4f"
+  },
+  "src/components/ui/progress.tsx": {
+    "mtime": 1743602126.5620513,
+    "ast_hash": "7a84c9ee8e9cd63771d4b472704d8d80",
+    "semantic_hash": "7a84c9ee8e9cd63771d4b472704d8d80"
+  },
+  "src/components/ui/radio-group.tsx": {
+    "mtime": 1743602126.5620513,
+    "ast_hash": "e59c6e8ca6130d694a2cae82a83cb8dc",
+    "semantic_hash": "e59c6e8ca6130d694a2cae82a83cb8dc"
+  },
+  "src/components/ui/resizable.tsx": {
+    "mtime": 1743602126.5620513,
+    "ast_hash": "a2f25b7becb25ae05252b81ca564bc5e",
+    "semantic_hash": "a2f25b7becb25ae05252b81ca564bc5e"
+  },
+  "src/components/ui/scroll-area.tsx": {
+    "mtime": 1743602126.563063,
+    "ast_hash": "6399ea030114b4a772f03f7dae127708",
+    "semantic_hash": "6399ea030114b4a772f03f7dae127708"
+  },
+  "src/components/ui/select.tsx": {
+    "mtime": 1743602126.563063,
+    "ast_hash": "d5bc9af6e00c50edda84c80201516bd0",
+    "semantic_hash": "d5bc9af6e00c50edda84c80201516bd0"
+  },
+  "src/components/ui/separator.tsx": {
+    "mtime": 1743602126.5640635,
+    "ast_hash": "14b352d106f7c90830cea0ce57cdbde5",
+    "semantic_hash": "14b352d106f7c90830cea0ce57cdbde5"
+  },
+  "src/components/ui/sheet.tsx": {
+    "mtime": 1743602126.5640635,
+    "ast_hash": "2e1504ca5868ca649a2e79fc0891057e",
+    "semantic_hash": "2e1504ca5868ca649a2e79fc0891057e"
+  },
+  "src/components/ui/sidebar.tsx": {
+    "mtime": 1743602126.565065,
+    "ast_hash": "1a26aa46e0801e649150dc50e3851bfe",
+    "semantic_hash": "1a26aa46e0801e649150dc50e3851bfe"
+  },
+  "src/components/ui/skeleton.tsx": {
+    "mtime": 1743602126.565065,
+    "ast_hash": "0166abaa35206d438bd5ac705fb5dfb7",
+    "semantic_hash": "0166abaa35206d438bd5ac705fb5dfb7"
+  },
+  "src/components/ui/slider.tsx": {
+    "mtime": 1743602126.565065,
+    "ast_hash": "e8f00aaf3fa17aeaab4f63145045be78",
+    "semantic_hash": "e8f00aaf3fa17aeaab4f63145045be78"
+  },
+  "src/components/ui/sonner.tsx": {
+    "mtime": 1743602126.566065,
+    "ast_hash": "5e2fc7f78e209651c462e6a009362f66",
+    "semantic_hash": "5e2fc7f78e209651c462e6a009362f66"
+  },
+  "src/components/ui/switch.tsx": {
+    "mtime": 1743602126.566065,
+    "ast_hash": "c86b3514e573211535c13444639bcc30",
+    "semantic_hash": "c86b3514e573211535c13444639bcc30"
+  },
+  "src/components/ui/table.tsx": {
+    "mtime": 1743602126.5670655,
+    "ast_hash": "554e91a3c4302c898342d712f80c3718",
+    "semantic_hash": "554e91a3c4302c898342d712f80c3718"
+  },
+  "src/components/ui/tabs.tsx": {
+    "mtime": 1743602126.5670655,
+    "ast_hash": "3e664ca1ea5a9fbedaba0c2a4c0ca2d2",
+    "semantic_hash": "3e664ca1ea5a9fbedaba0c2a4c0ca2d2"
+  },
+  "src/components/ui/textarea.tsx": {
+    "mtime": 1751008674.5465927,
+    "ast_hash": "e8d3075283a87920f7464c254a52c154",
+    "semantic_hash": "e8d3075283a87920f7464c254a52c154"
+  },
+  "src/components/ui/toast.tsx": {
+    "mtime": 1744125391.4004486,
+    "ast_hash": "8ff52581c0fdd6e62ebf96db3bceec75",
+    "semantic_hash": "8ff52581c0fdd6e62ebf96db3bceec75"
+  },
+  "src/components/ui/toaster.tsx": {
+    "mtime": 1743602126.5690703,
+    "ast_hash": "daf7b04904d77303dd96a17236e24fbb",
+    "semantic_hash": "daf7b04904d77303dd96a17236e24fbb"
+  },
+  "src/components/ui/toggle-group.tsx": {
+    "mtime": 1743602126.5690703,
+    "ast_hash": "9cdf37fe38d53d66fd4c7131599fd6f1",
+    "semantic_hash": "9cdf37fe38d53d66fd4c7131599fd6f1"
+  },
+  "src/components/ui/toggle.tsx": {
+    "mtime": 1743602126.5690703,
+    "ast_hash": "3914f58aeec727c94dfb13b6a25487c1",
+    "semantic_hash": "3914f58aeec727c94dfb13b6a25487c1"
+  },
+  "src/components/ui/tooltip.tsx": {
+    "mtime": 1743602126.5700662,
+    "ast_hash": "57dbf3a262604092e7b52ffe1b715c5c",
+    "semantic_hash": "57dbf3a262604092e7b52ffe1b715c5c"
+  },
+  "src/components/ui/use-toast.ts": {
+    "mtime": 1744044999.4741974,
+    "ast_hash": "226311834bdbec4a05c6b17ed6f58de7",
+    "semantic_hash": "226311834bdbec4a05c6b17ed6f58de7"
+  },
+  "src/contexts/AuthContext.tsx": {
+    "mtime": 1780864941.81513,
+    "ast_hash": "bc4ddc3437f1bc69041900c9c10d2f78",
+    "semantic_hash": "bc4ddc3437f1bc69041900c9c10d2f78"
+  },
+  "src/contexts/QueryContext.tsx": {
+    "mtime": 1774742855.1907804,
+    "ast_hash": "75301428a5a2008b33a06067edada374",
+    "semantic_hash": "75301428a5a2008b33a06067edada374"
+  },
+  "src/hooks/use-mobile.tsx": {
+    "mtime": 1743602126.5710664,
+    "ast_hash": "654e2ca2e9fddc27eb7e3954900dc48e",
+    "semantic_hash": "654e2ca2e9fddc27eb7e3954900dc48e"
+  },
+  "src/hooks/use-toast.ts": {
+    "mtime": 1743602126.5710664,
+    "ast_hash": "e69924e5c597f9350d681937b80afc51",
+    "semantic_hash": "e69924e5c597f9350d681937b80afc51"
+  },
+  "src/hooks/use-toast.tsx": {
+    "mtime": 1744125391.4014482,
+    "ast_hash": "ec8da89f0f70e72bf1a0c1f84ec86466",
+    "semantic_hash": "ec8da89f0f70e72bf1a0c1f84ec86466"
+  },
+  "src/hooks/useIndicadoresTempoReal.ts": {
+    "mtime": 1774756957.9023027,
+    "ast_hash": "b53c7869d95c24f08198fd7c0d050ce7",
+    "semantic_hash": "b53c7869d95c24f08198fd7c0d050ce7"
+  },
+  "src/layouts/AuthLayout.tsx": {
+    "mtime": 1774742855.193408,
+    "ast_hash": "d503c8ef28abbf6b912bf44f9240dfca",
+    "semantic_hash": "d503c8ef28abbf6b912bf44f9240dfca"
+  },
+  "src/layouts/DashboardLayout.tsx": {
+    "mtime": 1774742855.193408,
+    "ast_hash": "f60c85673b403bfa8a356ee958056c07",
+    "semantic_hash": "f60c85673b403bfa8a356ee958056c07"
+  },
+  "src/lib/constants.ts": {
+    "mtime": 1751004197.672251,
+    "ast_hash": "7b7565f1a4d2258ee2a749f3cff0e60f",
+    "semantic_hash": "7b7565f1a4d2258ee2a749f3cff0e60f"
+  },
+  "src/lib/pages.ts": {
+    "mtime": 1779420411.2152898,
+    "ast_hash": "aed9dbc327abcb057d2c9fc93a587d6a",
+    "semantic_hash": "aed9dbc327abcb057d2c9fc93a587d6a"
+  },
+  "src/lib/utils.ts": {
+    "mtime": 1743602126.5720665,
+    "ast_hash": "1d8011eb18769078bf77502b220daa5e",
+    "semantic_hash": "1d8011eb18769078bf77502b220daa5e"
+  },
+  "src/lib/validators/registrationSchema.ts": {
+    "mtime": 1774760908.8108697,
+    "ast_hash": "90e1e24d3b7c4b3ac17fa632b1364696",
+    "semantic_hash": "90e1e24d3b7c4b3ac17fa632b1364696"
+  },
+  "src/main.tsx": {
+    "mtime": 1774742855.1954136,
+    "ast_hash": "4d6ab61246ca2f4706a8056be254c0ce",
+    "semantic_hash": "4d6ab61246ca2f4706a8056be254c0ce"
+  },
+  "src/pages/CentralAjuda.tsx": {
+    "mtime": 1786891820.133463,
+    "ast_hash": "c4fdaf069d3b8d3277fde4264851fd2e",
+    "semantic_hash": ""
+  },
+  "src/pages/Dashboard.tsx": {
+    "mtime": 1779851390.2503538,
+    "ast_hash": "59ee7f4facddec5d58b9962c0cd9bf19",
+    "semantic_hash": "59ee7f4facddec5d58b9962c0cd9bf19"
+  },
+  "src/pages/DebugUsers.tsx": {
+    "mtime": 1774758429.6167526,
+    "ast_hash": "bc6d9df36bc8f09dae3a9e6876382b05",
+    "semantic_hash": "bc6d9df36bc8f09dae3a9e6876382b05"
+  },
+  "src/pages/GestaoConteudos.tsx": {
+    "mtime": 1774754334.624962,
+    "ast_hash": "82581f29278ce8d62424a1ff7858f414",
+    "semantic_hash": "82581f29278ce8d62424a1ff7858f414"
+  },
+  "src/pages/GestaoSuporte.tsx": {
+    "mtime": 1786891871.3944027,
+    "ast_hash": "fb997480c247158d1a4e9a4b22634dff",
+    "semantic_hash": ""
+  },
+  "src/pages/GestaoUsuarios.tsx": {
+    "mtime": 1779418591.6381433,
+    "ast_hash": "80a70a5d20f898333e82d49b60b9056a",
+    "semantic_hash": "80a70a5d20f898333e82d49b60b9056a"
+  },
+  "src/pages/Index.tsx": {
+    "mtime": 1775605601.505545,
+    "ast_hash": "8d04ff1f458970bd8864b7539c09466a",
+    "semantic_hash": "8d04ff1f458970bd8864b7539c09466a"
+  },
+  "src/pages/NotFound.tsx": {
+    "mtime": 1743602126.5745723,
+    "ast_hash": "ae75445e38e704549f03c920e728d506",
+    "semantic_hash": "ae75445e38e704549f03c920e728d506"
+  },
+  "src/pages/PainelEstatistico.tsx": {
+    "mtime": 1779851405.7069595,
+    "ast_hash": "d8046856afdf5f6c2de1ece95de39f1d",
+    "semantic_hash": "d8046856afdf5f6c2de1ece95de39f1d"
+  },
+  "src/pages/ProcessoEnfermagem.tsx": {
+    "mtime": 1774757089.6010509,
+    "ast_hash": "82efef85cdf531505a50ed495e19b9a3",
+    "semantic_hash": "82efef85cdf531505a50ed495e19b9a3"
+  },
+  "src/pages/Register.tsx": {
+    "mtime": 1775084354.987768,
+    "ast_hash": "bd1b9e785c04fd6e45823b5f5829517e",
+    "semantic_hash": "bd1b9e785c04fd6e45823b5f5829517e"
+  },
+  "src/pages/WaitingApproval.tsx": {
+    "mtime": 1774742780.3291643,
+    "ast_hash": "2190f30a97bf1672b6e44bf02dd901d7",
+    "semantic_hash": "2190f30a97bf1672b6e44bf02dd901d7"
+  },
+  "src/services/bancodados/biProcessosEnfermagemDB.ts": {
+    "mtime": 1779851419.4261284,
+    "ast_hash": "fb1326350812469e2d75de1e3cdca254",
+    "semantic_hash": "fb1326350812469e2d75de1e3cdca254"
+  },
+  "src/services/bancodados/biUsuariosDB.ts": {
+    "mtime": 1775526353.5315516,
+    "ast_hash": "68f963e0b19723252b41e354f3c23a25",
+    "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
+  },
+  "src/services/bancodados/changelogDB.ts": {
+    "mtime": 1786899962.4727304,
+    "ast_hash": "895e7ca2eb745625b700dd91fa58c20e",
+    "semantic_hash": ""
+  },
+  "src/services/bancodados/diagnosticosDB.ts": {
+    "mtime": 1751025440.022101,
+    "ast_hash": "893875a5103f6ce69eb2694a2821087f",
+    "semantic_hash": "893875a5103f6ce69eb2694a2821087f"
+  },
+  "src/services/bancodados/examesDB.ts": {
+    "mtime": 1786899847.7187378,
+    "ast_hash": "33d2dce85f5c70fd766330e35b75152e",
+    "semantic_hash": ""
+  },
+  "src/services/bancodados/gestaoUsuariosDB.ts": {
+    "mtime": 1779417879.0893967,
+    "ast_hash": "d68dbabe8f7c78c380bf00cca0883611",
+    "semantic_hash": "d68dbabe8f7c78c380bf00cca0883611"
+  },
+  "src/services/bancodados/index.ts": {
+    "mtime": 1786891689.5452163,
+    "ast_hash": "8599a7f2e636bcc4feb7b05a9b1711a1",
+    "semantic_hash": ""
+  },
+  "src/services/bancodados/intervencoesAutoraisDB.ts": {
+    "mtime": 1774742855.205366,
+    "ast_hash": "7474c74cae76595394b7c08752b382f4",
+    "semantic_hash": "7474c74cae76595394b7c08752b382f4"
+  },
+  "src/services/bancodados/pacientesDB.ts": {
+    "mtime": 1774742855.2068727,
+    "ast_hash": "a51dea3eeaffbe4c6c1984dde2995c09",
+    "semantic_hash": "a51dea3eeaffbe4c6c1984dde2995c09"
+  },
+  "src/services/bancodados/processosEnfermagemDB.ts": {
+    "mtime": 1780863816.8598845,
+    "ast_hash": "620b57d93d8d7da8a17bdaef36f448db",
+    "semantic_hash": "620b57d93d8d7da8a17bdaef36f448db"
+  },
+  "src/services/bancodados/revisaoSistemasDB.ts": {
+    "mtime": 1780852922.5584588,
+    "ast_hash": "4a9450b67e1692dea20f801e41563bbe",
+    "semantic_hash": "4a9450b67e1692dea20f801e41563bbe"
+  },
+  "src/services/bancodados/rolEnfermagemDB.ts": {
+    "mtime": 1754512737.2595725,
+    "ast_hash": "1299eeb903ac04a1561a1113b57c6dad",
+    "semantic_hash": "1299eeb903ac04a1561a1113b57c6dad"
+  },
+  "src/services/bancodados/sinaisVitaisDB.ts": {
+    "mtime": 1754512737.260576,
+    "ast_hash": "a0512d7f42b330284ad85c4c4fc2a913",
+    "semantic_hash": "a0512d7f42b330284ad85c4c4fc2a913"
+  },
+  "src/services/bancodados/subconjuntosDB.ts": {
+    "mtime": 1754512737.260576,
+    "ast_hash": "77d73df49667d3b3e74981634d1a8d54",
+    "semantic_hash": "77d73df49667d3b3e74981634d1a8d54"
+  },
+  "src/services/bancodados/suporteDB.ts": {
+    "mtime": 1786891689.543696,
+    "ast_hash": "d2152c102457236691ff4692b8d8de93",
+    "semantic_hash": ""
+  },
+  "src/services/bancodados/usuariosDB.ts": {
+    "mtime": 1774742836.9658222,
+    "ast_hash": "b618379faa10c343b09e9acc5be65008",
+    "semantic_hash": "b618379faa10c343b09e9acc5be65008"
+  },
+  "src/services/firebase.ts": {
+    "mtime": 1774742666.1554577,
+    "ast_hash": "c35b650ca8b958a749570f588122f71f",
+    "semantic_hash": "c35b650ca8b958a749570f588122f71f"
+  },
+  "src/types/paciente.ts": {
+    "mtime": 1774742855.2089858,
+    "ast_hash": "f8b661d81cea6afde27937b7a5f3a2c8",
+    "semantic_hash": "f8b661d81cea6afde27937b7a5f3a2c8"
+  },
+  "src/types/processoEnfermagem.ts": {
+    "mtime": 1786899847.7197654,
+    "ast_hash": "d3625ba7b2f39e7b33eac13b4b34b8b6",
+    "semantic_hash": ""
+  },
+  "src/types/usuario.ts": {
+    "mtime": 1775515593.3071468,
+    "ast_hash": "ca102569e617fc9752ee68a84dad9f43",
+    "semantic_hash": "ca102569e617fc9752ee68a84dad9f43"
+  },
+  "src/utils/processoUtils.ts": {
+    "mtime": 1777779952.229524,
+    "ast_hash": "acb22bdbb86d97331284bdf8612b870b",
+    "semantic_hash": "acb22bdbb86d97331284bdf8612b870b"
+  },
+  "src/utils/timeUtils.ts": {
+    "mtime": 1774742855.2132173,
+    "ast_hash": "936a89c6667940901453c5b709232173",
+    "semantic_hash": "936a89c6667940901453c5b709232173"
+  },
+  "src/vite-env.d.ts": {
+    "mtime": 1743602126.577573,
+    "ast_hash": "8f68c27c3fc38817b2726b20e2d4f1ee",
+    "semantic_hash": "8f68c27c3fc38817b2726b20e2d4f1ee"
+  },
+  "tailwind.config.ts": {
+    "mtime": 1743602126.577573,
+    "ast_hash": "18725883dd60606944c0b0ec76729950",
+    "semantic_hash": "18725883dd60606944c0b0ec76729950"
+  },
+  "tsconfig.app.json": {
+    "mtime": 1743602126.5785732,
+    "ast_hash": "79e98449596e490883e82f8a725d8efa",
+    "semantic_hash": "79e98449596e490883e82f8a725d8efa"
+  },
+  "tsconfig.json": {
+    "mtime": 1743602126.5785732,
+    "ast_hash": "9d63d9b4e08d6b8a8e612909cd1bbb36",
+    "semantic_hash": "9d63d9b4e08d6b8a8e612909cd1bbb36"
+  },
+  "tsconfig.node.json": {
+    "mtime": 1743602126.5785732,
+    "ast_hash": "ea3b5c2d9c1cc5d2b3fb3af706f2ca1a",
+    "semantic_hash": "ea3b5c2d9c1cc5d2b3fb3af706f2ca1a"
+  },
+  "vite.config.ts": {
+    "mtime": 1774742666.1574762,
+    "ast_hash": "3518ee2b5bb8e065edd87157d709d460",
+    "semantic_hash": "3518ee2b5bb8e065edd87157d709d460"
+  },
+  "GOVERNANCE.md": {
+    "mtime": 1777818215.5285983,
+    "ast_hash": "1f515201bf28dadcfe472aa08b3c610c",
+    "semantic_hash": "1f515201bf28dadcfe472aa08b3c610c"
+  },
+  "README.md": {
+    "mtime": 1777818206.258015,
+    "ast_hash": "939851a1072b78162bd8ebfe6d8990cf",
+    "semantic_hash": "939851a1072b78162bd8ebfe6d8990cf"
+  },
+  "SECURITY.md": {
+    "mtime": 1775515638.407551,
+    "ast_hash": "dc60055f22f2e4f526566fe6ab356ca3",
+    "semantic_hash": "dc60055f22f2e4f526566fe6ab356ca3"
+  },
+  "index.html": {
+    "mtime": 1749612386.627308,
+    "ast_hash": "64cb86d4372a03dd2bd7bd170e18beac",
+    "semantic_hash": "64cb86d4372a03dd2bd7bd170e18beac"
+  },
+  "public/robots.txt": {
+    "mtime": 1743602126.5460403,
+    "ast_hash": "a9b03494151fe90e5decd2405400e106",
+    "semantic_hash": "a9b03494151fe90e5decd2405400e106"
+  },
+  "public/enfermeira-capa.png": {
+    "mtime": 1775519816.7648265,
+    "ast_hash": "55abaca06cb54a8e0847acc910b32a79",
+    "semantic_hash": "55abaca06cb54a8e0847acc910b32a79"
+  },
+  "public/logo_csae.png": {
+    "mtime": 1743565434.902222,
+    "ast_hash": "f7f8950471d0d2a74a471505ef7f3f56",
+    "semantic_hash": "f7f8950471d0d2a74a471505ef7f3f56"
+  },
+  "public/logo_enfermagem_floripa.jpg": {
+    "mtime": 1775516129.925544,
+    "ast_hash": "de435d054e56f62eaf0cb24080f8ff2a",
+    "semantic_hash": "de435d054e56f62eaf0cb24080f8ff2a"
+  },
+  "public/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png": {
+    "mtime": 1774742855.159089,
+    "ast_hash": "37c8d48a417f7366a428ffd7f87e72d3",
+    "semantic_hash": "37c8d48a417f7366a428ffd7f87e72d3"
+  },
+  "public/placeholder.svg": {
+    "mtime": 1743602126.5450406,
+    "ast_hash": "35707bd9960ba5281c72af927b79291f",
+    "semantic_hash": "35707bd9960ba5281c72af927b79291f"
+  },
+  "src/contexts/SupportNotificationsContext.tsx": {
+    "mtime": 1786891960.6770997,
+    "ast_hash": "7d056b4a42fb7c4a73e290cb3372e7e6",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260816_141621_gostaria_que_instalasse_o_graphify_nesse_projeto_e.md": {
+    "mtime": 1786889781.1820178,
+    "ast_hash": "cf869c05642947e1ef0a75bab33e5309",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260816_145334_implementar_badges_de_respostas_n\u00e3o_visualizadas_n.md": {
+    "mtime": 1786892014.9755983,
+    "ast_hash": "49e6036aa4398264634564270766b327",
+    "semantic_hash": ""
+  },
+  "scripts/import-clinical-parameters.ts": {
+    "mtime": 1786899962.4737387,
+    "ast_hash": "1979347d74b6e50d8d9dbd74966778cf",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260816_155840_como_importar_com_seguran\u00e7a_par\u00e2metros_cl\u00ednicos_em.md": {
+    "mtime": 1786895920.9453762,
+    "ast_hash": "43eb49662594e8d2c878878dceb2f9bd",
+    "semantic_hash": ""
+  },
+  "src/components/processo-enfermagem/ExameResultadoInput.tsx": {
+    "mtime": 1786900104.992856,
+    "ast_hash": "bd8b6fe481848265ab8611c07cde0c96",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260816_170813_atualizar_a_interface_do_processo_de_enfermagem_pa.md": {
+    "mtime": 1786900093.3390589,
+    "ast_hash": "2ce5093e1cd25224f53e76871d12e20f",
+    "semantic_hash": ""
+  }
+}

@@ -35,6 +35,7 @@ import { ptBR } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import {
   salvarTicket,
   buscarMeusTickets,
@@ -42,6 +43,8 @@ import {
   buscarMinhasSugestoes,
   salvarPesquisaNPS,
   verificarElegibilidadeNPS,
+  marcarTicketsComoVisualizadosPeloUsuario,
+  marcarSugestoesComoVisualizadasPeloUsuario,
   type TicketProblema,
   type SugestaoMelhoria,
 } from '@/services/bancodados';
@@ -115,8 +118,14 @@ function ScoreButton({
 const CentralAjuda = () => {
   const { toast } = useToast();
   const { sessionData } = useAuth();
+  const {
+    respostasTicketsNaoVisualizadas,
+    respostasSugestoesNaoVisualizadas,
+  } = useSupportNotifications();
   const usuarioId = sessionData?.uid || '';
   const nomeUsuario = sessionData?.nomeCompleto || 'Usuário não identificado';
+  const [abaAtiva, setAbaAtiva] = useState('ticket');
+  const [gruposTicketsAbertos, setGruposTicketsAbertos] = useState<string[]>([]);
 
   // ── Tickets state
   const [moduloSelecionado, setModuloSelecionado] = useState('');
@@ -187,6 +196,36 @@ const CentralAjuda = () => {
     };
     checarElegibilidade();
   }, [usuarioId, carregarTickets, carregarSugestoes]);
+
+  useEffect(() => {
+    if (respostasTicketsNaoVisualizadas > 0) carregarTickets();
+  }, [respostasTicketsNaoVisualizadas, carregarTickets]);
+
+  useEffect(() => {
+    if (respostasSugestoesNaoVisualizadas > 0) carregarSugestoes();
+  }, [respostasSugestoesNaoVisualizadas, carregarSugestoes]);
+
+  useEffect(() => {
+    if (abaAtiva !== 'sugestao' || carregandoSugestoes) return;
+
+    const idsNaoVisualizados = minhasSugestoes
+      .filter((sugestao) => Boolean(sugestao.respostaAdmin?.trim()) && sugestao.respostaVisualizadaPeloUsuario !== true)
+      .map((sugestao) => sugestao.id)
+      .filter((id): id is string => Boolean(id));
+
+    if (idsNaoVisualizados.length === 0) return;
+
+    marcarSugestoesComoVisualizadasPeloUsuario(idsNaoVisualizados)
+      .then(() => {
+        const ids = new Set(idsNaoVisualizados);
+        setMinhasSugestoes((atuais) => atuais.map((sugestao) =>
+          sugestao.id && ids.has(sugestao.id)
+            ? { ...sugestao, respostaVisualizadaPeloUsuario: true }
+            : sugestao
+        ));
+      })
+      .catch((error) => console.error('[Central de Ajuda] Falha ao registrar leitura das sugestões:', error));
+  }, [abaAtiva, carregandoSugestoes, minhasSugestoes]);
 
   // ── Handlers ──────────────────────────────────────────────────
 
@@ -265,6 +304,38 @@ const CentralAjuda = () => {
   // ── Tickets abertos / resolvidos
   const ticketsAbertos = meusTickets.filter((t) => t.status === 'Aberto');
   const ticketsResolvidos = meusTickets.filter((t) => t.status === 'Resolvido');
+  const ticketNaoVisualizado = (ticket: TicketProblema) => (
+    Boolean(ticket.respostaAdmin?.trim()) && ticket.respostaVisualizadaPeloUsuario !== true
+  );
+  const ticketsAbertosNaoVisualizados = ticketsAbertos.filter(ticketNaoVisualizado).length;
+  const ticketsResolvidosNaoVisualizados = ticketsResolvidos.filter(ticketNaoVisualizado).length;
+
+  const handleAlterarGruposTickets = async (grupos: string[]) => {
+    setGruposTicketsAbertos(grupos);
+
+    const ticketsVisiveis = [
+      ...(grupos.includes('abertos') ? ticketsAbertos : []),
+      ...(grupos.includes('resolvidos') ? ticketsResolvidos : []),
+    ];
+    const idsNaoVisualizados = ticketsVisiveis
+      .filter(ticketNaoVisualizado)
+      .map((ticket) => ticket.id)
+      .filter((id): id is string => Boolean(id));
+
+    if (idsNaoVisualizados.length === 0) return;
+
+    try {
+      await marcarTicketsComoVisualizadosPeloUsuario(idsNaoVisualizados);
+      const ids = new Set(idsNaoVisualizados);
+      setMeusTickets((atuais) => atuais.map((ticket) =>
+        ticket.id && ids.has(ticket.id)
+          ? { ...ticket, respostaVisualizadaPeloUsuario: true }
+          : ticket
+      ));
+    } catch (error) {
+      console.error('[Central de Ajuda] Falha ao registrar leitura dos chamados:', error);
+    }
+  };
 
   return (
     <AuthenticatedLayout>
@@ -277,15 +348,25 @@ const CentralAjuda = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="ticket" className="space-y-6">
+        <Tabs value={abaAtiva} onValueChange={setAbaAtiva} className="space-y-6">
           <TabsList className="bg-slate-100 p-1 rounded-lg w-full grid grid-cols-3 h-12">
             <TabsTrigger value="ticket" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <Bug className="w-4 h-4" />
               Relatar Problema
+              {respostasTicketsNaoVisualizadas > 0 && (
+                <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                  {respostasTicketsNaoVisualizadas > 99 ? '99+' : respostasTicketsNaoVisualizadas}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="sugestao" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <Lightbulb className="w-4 h-4" />
               Sugerir Melhoria
+              {respostasSugestoesNaoVisualizadas > 0 && (
+                <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                  {respostasSugestoesNaoVisualizadas > 99 ? '99+' : respostasSugestoesNaoVisualizadas}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="nps" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <Star className="w-4 h-4" />
@@ -365,20 +446,33 @@ const CentralAjuda = () => {
                 ) : meusTickets.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-6">Nenhum chamado aberto até o momento.</p>
                 ) : (
-                  <Accordion type="multiple" className="space-y-2">
+                  <Accordion
+                    type="multiple"
+                    value={gruposTicketsAbertos}
+                    onValueChange={handleAlterarGruposTickets}
+                    className="space-y-2"
+                  >
                     {ticketsAbertos.length > 0 && (
                       <AccordionItem value="abertos" className="border rounded-lg px-4">
                         <AccordionTrigger className="font-semibold text-sm text-amber-700 hover:no-underline">
                           <span className="flex items-center gap-2">
                             <Clock className="h-4 w-4" />
                             Abertos ({ticketsAbertos.length})
+                            {ticketsAbertosNaoVisualizados > 0 && (
+                              <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                                {ticketsAbertosNaoVisualizados}
+                              </Badge>
+                            )}
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           {ticketsAbertos.map((t) => (
                             <div key={t.id} className="bg-amber-50 border border-amber-100 rounded-lg p-4 space-y-2">
                               <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">{t.moduloAferido}</Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-amber-700 border-amber-300 text-xs">{t.moduloAferido}</Badge>
+                                  {ticketNaoVisualizado(t) && <Badge className="bg-red-600 hover:bg-red-600 text-white text-[10px]">Nova resposta</Badge>}
+                                </div>
                                 <span className="text-xs text-gray-400">{formatarData(t.dataCriacao)}</span>
                               </div>
                               <p className="text-sm text-gray-700">{t.descricao}</p>
@@ -401,13 +495,21 @@ const CentralAjuda = () => {
                           <span className="flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4" />
                             Resolvidos ({ticketsResolvidos.length})
+                            {ticketsResolvidosNaoVisualizados > 0 && (
+                              <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                                {ticketsResolvidosNaoVisualizados}
+                              </Badge>
+                            )}
                           </span>
                         </AccordionTrigger>
                         <AccordionContent className="space-y-3 pt-2">
                           {ticketsResolvidos.map((t) => (
                             <div key={t.id} className="bg-green-50 border border-green-100 rounded-lg p-4 space-y-2">
                               <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="text-green-700 border-green-300 text-xs">{t.moduloAferido}</Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-green-700 border-green-300 text-xs">{t.moduloAferido}</Badge>
+                                  {ticketNaoVisualizado(t) && <Badge className="bg-red-600 hover:bg-red-600 text-white text-[10px]">Nova resposta</Badge>}
+                                </div>
                                 <span className="text-xs text-gray-400">{formatarData(t.dataCriacao)}</span>
                               </div>
                               <p className="text-sm text-gray-700">{t.descricao}</p>
@@ -505,7 +607,12 @@ const CentralAjuda = () => {
                     {minhasSugestoes.map((s) => (
                       <div key={s.id} className="bg-slate-50 border border-slate-100 rounded-lg p-4 space-y-2">
                         <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-xs">{s.categoria}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">{s.categoria}</Badge>
+                            {Boolean(s.respostaAdmin?.trim()) && s.respostaVisualizadaPeloUsuario !== true && (
+                              <Badge className="bg-red-600 hover:bg-red-600 text-white text-[10px]">Nova resposta</Badge>
+                            )}
+                          </div>
                           <span className="text-xs text-gray-400">{formatarData(s.dataCriacao)}</span>
                         </div>
                         <p className="text-sm text-gray-700">{s.descricao}</p>

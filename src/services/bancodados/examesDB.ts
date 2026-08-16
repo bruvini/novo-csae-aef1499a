@@ -24,6 +24,9 @@ export interface ResultadoExame {
   valorMaximo?: number | null;
   // Campo para exames de imagem
   resultadoClassificatorio?: string;
+  permiteValorTexto?: boolean;
+  rotuloValorTexto?: string;
+  valorTextoObrigatorio?: boolean;
   // Campos comuns
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;
@@ -44,7 +47,16 @@ export interface Exame {
   dataCadastro?: Timestamp;
 }
 
-export interface ExameInput extends Omit<Exame, 'id' | 'dataCadastro'> {}
+export type ExameInput = Omit<Exame, 'id' | 'dataCadastro'>;
+
+export const componenteEhClassificatorio = (
+  tipoExame: Exame['tipoExame'],
+  componente: ComponenteExame
+): boolean => (
+  tipoExame === 'Imagem'
+  || componente.unidadeMedida.trim().toLocaleLowerCase('pt-BR').includes('qualitativo')
+  || componente.resultados.some((resultado) => Boolean(resultado.resultadoClassificatorio))
+);
 
 const COLLECTION_NAME = 'ExamesLabImagem';
 

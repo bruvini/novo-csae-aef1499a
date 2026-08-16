@@ -167,6 +167,26 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Para melhorarmos continuamente o portal, a cada 10 acessos o sistema exibirá automaticamente um breve formulário de avaliação (as mesmas 3 perguntas da Central de Ajuda). O formulário só aparecerá se você ainda não avaliou nas últimas 48 horas, e leva menos de 1 minuto. Sua opinião é fundamental!',
   },
+  {
+    titulo: 'Notificações de Novidades na Central de Ajuda',
+    descricao:
+      'Agora você verá um aviso vermelho no menu sempre que receber uma nova resposta para um chamado ou sugestão. A equipe de suporte também passa a visualizar quantos novos pedidos ainda precisam ser consultados, deixando o acompanhamento mais rápido e transparente.',
+  },
+  {
+    titulo: 'Novos Parâmetros Clínicos no Processo de Enfermagem',
+    descricao:
+      'Foram adicionados 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos organizados em 16 sistemas. O Processo de Enfermagem agora conta com uma base clínica mais ampla para apoiar avaliações e identificar necessidades de cuidado.',
+  },
+  {
+    titulo: 'Exames Qualitativos e Formulários Mais Acessíveis',
+    descricao:
+      'Atualizamos a base com 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos. Resultados como Anti-HIV, BAAR, VDRL e HBsAg agora aparecem como opções de seleção, o VDRL permite informar a titulação quando necessário e os formulários ficaram mais amplos e seguros contra valores negativos.',
+  },
+  {
+    titulo: 'Footer Institucional Atualizado',
+    descricao:
+      'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Heart, Database, Users, BarChart, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +11,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuBadge,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 
@@ -25,6 +27,7 @@ const navigationItems = [
 
 export function AppSidebar() {
   const { sessionData } = useAuth();
+  const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
   
   const filteredItems = navigationItems.filter(item => {
     if (!item.allowedPageId) return true;
@@ -47,6 +50,11 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-1.5 px-2">
               {filteredItems.map((item) => {
                 const IconComponent = item.icon;
+                const notificationCount = item.url === '/ajuda'
+                  ? respostasNaoVisualizadas
+                  : item.url === '/gestao-suporte'
+                    ? itensNovosSuporte
+                    : 0;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className="p-0 h-auto">
@@ -64,6 +72,11 @@ export function AppSidebar() {
                         <span className="text-sm truncate">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
+                    {notificationCount > 0 && (
+                      <SidebarMenuBadge className="bg-red-600 text-white hover:bg-red-600">
+                        {notificationCount > 99 ? '99+' : notificationCount}
+                      </SidebarMenuBadge>
+                    )}
                   </SidebarMenuItem>
                 );
               })}
