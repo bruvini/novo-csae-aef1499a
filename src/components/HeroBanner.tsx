@@ -23,24 +23,21 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
         }}></div>
       </div>
 
-      {/* ── Full-bleed image on the right ── */}
-      <div className="absolute inset-y-0 right-0 w-1/2 lg:w-5/12 hidden lg:block">
+      {/* ── Full-bleed image on the right with seamless mask transition ── */}
+      <div 
+        className="absolute inset-y-0 right-0 w-1/2 lg:w-[48%] xl:w-[46%] hidden lg:block pointer-events-none select-none"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent 0%, transparent 8%, rgba(0, 0, 0, 0.08) 12%, rgba(0, 0, 0, 0.35) 17%, rgba(0, 0, 0, 0.75) 23%, rgba(0, 0, 0, 0.96) 28%, #000 32%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, transparent 8%, rgba(0, 0, 0, 0.08) 12%, rgba(0, 0, 0, 0.35) 17%, rgba(0, 0, 0, 0.75) 23%, rgba(0, 0, 0, 0.96) 28%, #000 32%)',
+        }}
+      >
         <img
           src="/enfermeira-capa.png"
-          alt="Profissional de enfermagem CSAE"
-          className="w-full h-full object-cover grayscale-[0.15] contrast-[1.1]"
+          alt="Profissionais de enfermagem CSAE"
+          className="w-full h-full object-cover object-center"
         />
-        {/* Degradê de fusão — replica a referência: verde sólido → verde leve → transparente */}
-        <div
-          className="absolute inset-y-0 left-0 w-full z-10 pointer-events-none"
-          style={{
-            background: 'linear-gradient(to right, #1a5c38 0%, #1a5c38 15%, rgba(26,92,56,0.85) 35%, rgba(26,92,56,0.55) 55%, rgba(26,92,56,0.15) 72%, transparent 88%)',
-          }}
-        />
-        {/* Dark overlay for legibility */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/50 to-transparent" />
         {/* AI credit label */}
-        <span className="absolute bottom-3 right-4 text-[10px] text-white/50 font-medium tracking-wide z-20 select-none">
+        <span className="absolute bottom-3 right-4 text-[10px] text-white/60 font-medium tracking-wide z-20 select-none drop-shadow-sm">
           Imagem gerada por IA
         </span>
       </div>
