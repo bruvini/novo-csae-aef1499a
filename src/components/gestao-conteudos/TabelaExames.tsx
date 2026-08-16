@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Switch } from '@/components/ui/switch';
 import {
   Plus,
   Pencil,
@@ -484,14 +485,90 @@ const TabelaExames = () => {
                               </div>
                             </>
                           ) : (
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
-                              <Input
-                                className="h-8"
-                                value={resultado.resultadoClassificatorio || ''}
-                                onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
-                                placeholder="Ex: Normal"
-                              />
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
+                                <Input
+                                  className="h-8"
+                                  value={resultado.resultadoClassificatorio || ''}
+                                  onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
+                                  placeholder="Ex: Normal, Reagente, Não Reagente"
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  id={`permiteTexto-${componenteIndex}-${resultadoIndex}`}
+                                  checked={resultado.permiteValorTexto ?? false}
+                                  onCheckedChange={(v) => atualizarResultado(componenteIndex, resultadoIndex, 'permiteValorTexto', v)}
+                                />
+                                <label htmlFor={`permiteTexto-${componenteIndex}-${resultadoIndex}`} className="text-xs cursor-pointer">
+                                  Permite valor de texto associado (ex: titulação)
+                                </label>
+                              </div>
+
+                              {resultado.permiteValorTexto && (
+                                <div className="space-y-3 pl-4 border-l-2 border-blue-200 ml-1">
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs font-medium mb-1">Tipo de entrada</label>
+                                      <Select
+                                        value={resultado.tipoValorTexto ?? 'livre'}
+                                        onValueChange={(v) => atualizarResultado(componenteIndex, resultadoIndex, 'tipoValorTexto', v as 'lista' | 'livre')}
+                                      >
+                                        <SelectTrigger className="h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="lista">Lista de opções</SelectItem>
+                                          <SelectItem value="livre">Texto livre</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs font-medium mb-1">Rótulo do campo</label>
+                                      <Input
+                                        className="h-8"
+                                        value={resultado.rotuloValorTexto ?? ''}
+                                        onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'rotuloValorTexto', e.target.value)}
+                                        placeholder="Ex: Titulação"
+                                      />
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Switch
+                                      id={`obrigatorio-${componenteIndex}-${resultadoIndex}`}
+                                      checked={resultado.valorTextoObrigatorio ?? false}
+                                      onCheckedChange={(v) => atualizarResultado(componenteIndex, resultadoIndex, 'valorTextoObrigatorio', v)}
+                                    />
+                                    <label htmlFor={`obrigatorio-${componenteIndex}-${resultadoIndex}`} className="text-xs cursor-pointer">
+                                      Campo obrigatório
+                                    </label>
+                                  </div>
+
+                                  {(resultado.tipoValorTexto ?? 'livre') === 'lista' && (
+                                    <div>
+                                      <label className="block text-xs font-medium mb-1">Opções (uma por linha)</label>
+                                      <Textarea
+                                        rows={5}
+                                        className="text-xs font-mono"
+                                        value={(resultado.opcoesValorTexto ?? []).join('\n')}
+                                        onChange={(e) =>
+                                          atualizarResultado(
+                                            componenteIndex,
+                                            resultadoIndex,
+                                            'opcoesValorTexto',
+                                            e.target.value.split('\n').filter((v) => v.trim() !== '')
+                                          )
+                                        }
+                                        placeholder={"1:2\n1:4\n1:8\n1:16\n1:32\n1:64\n1:128\n1:256"}
+                                      />
+                                      <p className="text-[11px] text-muted-foreground mt-1">Uma opção por linha. Salve o exame para persistir.</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
 
