@@ -187,6 +187,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
   },
+  {
+    titulo: 'Dashboard mais limpo e organizado',
+    descricao:
+      'Aprimoramos a organização visual do Dashboard, deixando as ferramentas mais limpas e o bloco de atualizações mais compacto e agradável de consultar.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

@@ -8,7 +8,6 @@ import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import ModalHistoricoChangelog from '@/components/ModalHistoricoChangelog';
 import {
   buscarEstatisticasGlobais,
@@ -96,8 +95,8 @@ const Dashboard = () => {
           </div>
 
           {/* Coluna direita — Atualizações Recentes */}
-          <div className="lg:col-span-2">
-            <Card className="border-none shadow-sm bg-white h-full flex flex-col">
+          <div className="lg:col-span-2 self-start">
+            <Card className="border-none shadow-sm bg-white">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg font-bold text-csae-green-900">
                   <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
@@ -116,7 +115,7 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="flex-1 min-h-0">
+              <CardContent>
                 {changelogLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-csae-green-600"></div>
@@ -126,7 +125,7 @@ const Dashboard = () => {
                     Nenhuma atualização registrada.
                   </p>
                 ) : (
-                  <ScrollArea className="h-[340px] pr-4">
+                  <div className="max-h-[420px] overflow-y-auto pr-4">
                     <div className="relative pl-6">
                       {/* Timeline line */}
                       <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
@@ -156,7 +155,7 @@ const Dashboard = () => {
                         ))}
                       </ul>
                     </div>
-                  </ScrollArea>
+                  </div>
                 )}
               </CardContent>
             </Card>

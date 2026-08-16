@@ -32,7 +32,6 @@ const NavigationCards = () => {
       description: 'Ferramenta completa para realizar e acompanhar o Processo de Enfermagem com base nas melhores práticas científicas.',
       icon: Heart,
       href: '/processo-enfermagem',
-      status: 'Disponível',
       disabled: false,
     },
     {
@@ -41,7 +40,6 @@ const NavigationCards = () => {
       description: 'Área administrativa para gerenciar e atualizar os conteúdos do banco de dados do sistema.',
       icon: Database,
       href: '/gestao-conteudos',
-      status: 'Disponível',
       disabled: false,
       allowedPageId: 'GestaoConteudos',
     },
@@ -51,7 +49,6 @@ const NavigationCards = () => {
       description: 'Painel de controle para administrar profissionais cadastrados e suas permissões no sistema.',
       icon: Users,
       href: '/gestao-usuarios',
-      status: 'Disponível',
       disabled: false,
       allowedPageId: 'GestaoUsuarios',
       badge: usuariosAguardandoCount !== null && usuariosAguardandoCount > 0 ? {
@@ -65,7 +62,6 @@ const NavigationCards = () => {
       description: 'Módulo de Business Intelligence com visão global de métricas e indicadores de produção da rede.',
       icon: BarChart,
       href: '/painel-estatistico',
-      status: 'Novo',
       disabled: false,
       allowedPageId: 'PainelEstatistico',
     },
@@ -75,7 +71,6 @@ const NavigationCards = () => {
       description: 'Relate problemas técnicos, envie sugestões de melhoria e avalie o Portal CSAE.',
       icon: LifeBuoy,
       href: '/ajuda',
-      status: 'Novo',
       disabled: false,
       notificationCount: respostasNaoVisualizadas,
     },
@@ -85,7 +80,6 @@ const NavigationCards = () => {
       description: 'Painel administrativo para responder tickets, gerenciar sugestões e visualizar avaliações NPS.',
       icon: Headphones,
       href: '/gestao-suporte',
-      status: 'Disponível',
       disabled: false,
       allowedPageId: 'GestaoSuporte',
       notificationCount: itensNovosSuporte,
@@ -144,17 +138,6 @@ const NavigationCards = () => {
                   >
                     {item.title}
                   </h3>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] uppercase font-bold tracking-wider leading-none ${
-                      item.disabled
-                        ? 'bg-gray-200 text-gray-600'
-                        : item.status === 'Novo'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-csae-green-100 text-csae-green-800'
-                    }`}
-                  >
-                    {item.status}
-                  </span>
                   {item.badge && (
                     <span className="flex items-center gap-1 bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider animate-pulse leading-none">
                       <Clock className="w-3 h-3" />
