@@ -177,6 +177,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Foram adicionados 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos organizados em 16 sistemas. O Processo de Enfermagem agora conta com uma base clínica mais ampla para apoiar avaliações e identificar necessidades de cuidado.',
   },
+  {
+    titulo: 'Exames Qualitativos e Formulários Mais Acessíveis',
+    descricao:
+      'Atualizamos a base com 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos. Resultados como Anti-HIV, BAAR, VDRL e HBsAg agora aparecem como opções de seleção, o VDRL permite informar a titulação quando necessário e os formulários ficaram mais amplos e seguros contra valores negativos.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

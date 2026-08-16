@@ -38,6 +38,9 @@ const resultadoExameSchema = z.object({
   valorMinimo: numeroOpcionalSchema.optional(),
   valorMaximo: numeroOpcionalSchema.optional(),
   resultadoClassificatorio: z.string().trim().min(1).optional(),
+  permiteValorTexto: z.boolean().optional(),
+  rotuloValorTexto: z.string().trim().min(1).optional(),
+  valorTextoObrigatorio: z.boolean().optional(),
   nomeAlteracao: z.string().trim().min(1),
   subconjuntoNHBVinculado: z.string(),
 });
@@ -504,9 +507,9 @@ async function main(): Promise<void> {
     ...data.RevisaoSistemas.map((item) => firestoreWrite(
       options.project, 'RevisaoSistemas', documentId(item.nomeSistema), item, 'dataCadastro'
     )),
-    firestoreWrite(options.project, 'changelogs', 'parametros-clinicos-protocolos-1-2-3', {
-      titulo: 'Novos Parâmetros Clínicos no Processo de Enfermagem',
-      descricao: `Foram adicionados ${counts.sinaisVitais} sinais vitais, ${counts.totalExamesLaboratoriaisImagem} exames laboratoriais e de imagem e ${counts.examesFisicos} exames físicos organizados em ${counts.sistemasRevisao} sistemas. O Processo de Enfermagem agora conta com uma base clínica mais ampla para apoiar avaliações e identificar necessidades de cuidado.`,
+    firestoreWrite(options.project, 'changelogs', 'exames-qualitativos-e-formularios-acessiveis', {
+      titulo: 'Exames Qualitativos e Formulários Mais Acessíveis',
+      descricao: `Atualizamos a base com ${counts.sinaisVitais} sinais vitais, ${counts.totalExamesLaboratoriaisImagem} exames laboratoriais e de imagem e ${counts.examesFisicos} exames físicos. Resultados qualitativos agora aparecem como opções de seleção, exames híbridos permitem informações complementares e os formulários ficaram mais amplos e seguros contra valores negativos.`,
     }, 'dataHora'),
   ];
 
