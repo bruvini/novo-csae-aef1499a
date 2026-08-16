@@ -30,8 +30,18 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
           alt="Profissional de enfermagem CSAE"
           className="w-full h-full object-cover grayscale-[0.15] contrast-[1.1]"
         />
-        {/* Gradient fade from left → transparent (blends into green bg) */}
-        <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-csae-green-800 to-transparent z-10" />
+        {/* Camada 1 — Gradiente principal largo: elimina a linha vertical rígida */}
+        <div className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-csae-green-800 via-csae-green-800/70 to-transparent z-10" />
+        {/* Camada 2 — Blur localizado na borda de entrada da foto */}
+        <div
+          className="absolute inset-y-0 left-0 w-1/4 z-20 pointer-events-none"
+          style={{ backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', maskImage: 'linear-gradient(to right, black 0%, black 30%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, black 30%, transparent 100%)' }}
+        />
+        {/* Camada 3 — Textura do fundo sobre a borda (continuidade visual) */}
+        <div
+          className="absolute inset-y-0 left-0 w-1/3 z-10 opacity-[0.06] pointer-events-none"
+          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`, maskImage: 'linear-gradient(to right, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 100%)' }}
+        />
         {/* Dark overlay for legibility */}
         <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/50 to-transparent" />
         {/* AI credit label */}
@@ -63,7 +73,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
                 </p>
               </div>
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Processos de Enfermagem Realizados</p>
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Processos Realizados</p>
                 <div className="flex items-baseline gap-2 mt-auto">
                   <p className="text-2xl font-black text-white">
                     {loading ? '---' : totalProcessos}
