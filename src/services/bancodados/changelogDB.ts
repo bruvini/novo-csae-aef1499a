@@ -182,6 +182,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Atualizamos a base com 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos. Resultados como Anti-HIV, BAAR, VDRL e HBsAg agora aparecem como opções de seleção, o VDRL permite informar a titulação quando necessário e os formulários ficaram mais amplos e seguros contra valores negativos.',
   },
+  {
+    titulo: 'Footer Institucional Atualizado',
+    descricao:
+      'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────
