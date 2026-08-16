@@ -30,17 +30,12 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
           alt="Profissional de enfermagem CSAE"
           className="w-full h-full object-cover grayscale-[0.15] contrast-[1.1]"
         />
-        {/* Camada 1 — Gradiente principal largo: elimina a linha vertical rígida */}
-        <div className="absolute inset-y-0 left-0 w-2/5 bg-gradient-to-r from-csae-green-800 via-csae-green-800/70 to-transparent z-10" />
-        {/* Camada 2 — Blur localizado na borda de entrada da foto */}
+        {/* Degradê de fusão — replica a referência: verde sólido → verde leve → transparente */}
         <div
-          className="absolute inset-y-0 left-0 w-1/4 z-20 pointer-events-none"
-          style={{ backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', maskImage: 'linear-gradient(to right, black 0%, black 30%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, black 30%, transparent 100%)' }}
-        />
-        {/* Camada 3 — Textura do fundo sobre a borda (continuidade visual) */}
-        <div
-          className="absolute inset-y-0 left-0 w-1/3 z-10 opacity-[0.06] pointer-events-none"
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`, maskImage: 'linear-gradient(to right, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to right, black 0%, transparent 100%)' }}
+          className="absolute inset-y-0 left-0 w-full z-10 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to right, #1a5c38 0%, #1a5c38 15%, rgba(26,92,56,0.85) 35%, rgba(26,92,56,0.55) 55%, rgba(26,92,56,0.15) 72%, transparent 88%)',
+          }}
         />
         {/* Dark overlay for legibility */}
         <div className="absolute inset-0 bg-gradient-to-tr from-csae-green-900/50 to-transparent" />
