@@ -24,6 +24,12 @@ export interface ResultadoExame {
   valorMaximo?: number | null;
   // Campo para exames de imagem
   resultadoClassificatorio?: string;
+  // Campos opcionais para entrada de texto associada ao resultado classificatório
+  permiteValorTexto?: boolean;
+  tipoValorTexto?: 'lista' | 'livre';
+  rotuloValorTexto?: string;
+  valorTextoObrigatorio?: boolean;
+  opcoesValorTexto?: string[];
   // Campos comuns
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;
