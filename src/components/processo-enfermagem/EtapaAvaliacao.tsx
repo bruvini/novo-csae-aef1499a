@@ -15,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames, Exame, ComponenteExame, ResultadoExame } from '@/services/bancodados/examesDB';
+import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
 import { Combobox } from '@/components/ui/combobox';
@@ -178,9 +178,9 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       ex.componentes.forEach(comp => {
         const val = tempExameFisico[comp.componenteAnalisado];
         if (val !== undefined && val !== '') {
-          const v = ex.tipoExame === 'Laboratorial'
-            ? getNumericValidation(comp.componenteAnalisado, val, 'exameLab')
-            : getImagemValidation(comp.componenteAnalisado, String(val));
+          const v = componenteEhClassificatorio(ex.tipoExame, comp)
+            ? getImagemValidation(comp.componenteAnalisado, String(val))
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
         }
       });
@@ -246,7 +246,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
     const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
 
-    let descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
     if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
 
     updateSistemaMulti(nomeExame, updated, descricoes);
@@ -345,9 +345,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const getImagemValidation = (parametro: string, selected: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     if (!selected) return { status: 'neutro' };
 
-    const exame = exames.find(
-      (e) => e.tipoExame === 'Imagem' && e.componentes.some((c) => c.componenteAnalisado === parametro)
-    );
+    const exame = exames.find((e) => e.componentes.some(
+      (componente) => componente.componenteAnalisado === parametro
+        && componenteEhClassificatorio(e.tipoExame, componente)
+    ));
     const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
     const resultado = componente?.resultados.find((r) => r.resultadoClassificatorio === selected);
 
@@ -888,7 +889,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                             const parametro = componente.componenteAnalisado;
                             const valorAtual = processo.avaliacao?.exameFisico?.[parametro] || '';
 
-                            if (exame.tipoExame === 'Imagem') {
+                            if (componenteEhClassificatorio(exame.tipoExame, componente)) {
                               const opcoes = Array.from(
                                 new Set(
                                   (componente.resultados || [])

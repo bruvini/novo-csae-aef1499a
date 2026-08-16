@@ -6,6 +6,7 @@ import {
   updateExame, 
   deleteExame,
   getNomesDeExamesUnicos,
+  componenteEhClassificatorio,
   type Exame,
   type ComponenteExame,
   type ResultadoExame
@@ -152,7 +153,11 @@ const TabelaExames = () => {
     setComponentes(componentes.filter((_, i) => i !== index));
   };
 
-  const atualizarComponente = (index: number, campo: keyof ComponenteExame, valor: any) => {
+  const atualizarComponente = <K extends keyof ComponenteExame,>(
+    index: number,
+    campo: K,
+    valor: ComponenteExame[K]
+  ) => {
     const novosComponentes = [...componentes];
     novosComponentes[index] = { ...novosComponentes[index], [campo]: valor };
     setComponentes(novosComponentes);
@@ -160,7 +165,8 @@ const TabelaExames = () => {
 
   const adicionarResultado = (componenteIndex: number) => {
     const novosComponentes = [...componentes];
-    const novoResultado: ResultadoExame = tipoExame === 'Laboratorial' ? {
+    const classificatorio = componenteEhClassificatorio(tipoExame, novosComponentes[componenteIndex]);
+    const novoResultado: ResultadoExame = !classificatorio ? {
       idadeMinima: null,
       idadeMaxima: null,
       idadeUnidade: '',
@@ -185,7 +191,12 @@ const TabelaExames = () => {
     setComponentes(novosComponentes);
   };
 
-  const atualizarResultado = (componenteIndex: number, resultadoIndex: number, campo: keyof ResultadoExame, valor: any) => {
+  const atualizarResultado = <K extends keyof ResultadoExame,>(
+    componenteIndex: number,
+    resultadoIndex: number,
+    campo: K,
+    valor: ResultadoExame[K]
+  ) => {
     const novosComponentes = [...componentes];
     novosComponentes[componenteIndex].resultados[resultadoIndex] = {
       ...novosComponentes[componenteIndex].resultados[resultadoIndex],
@@ -406,7 +417,7 @@ const TabelaExames = () => {
                             </Button>
                           </div>
 
-                          {tipoExame === 'Laboratorial' ? (
+                          {!componenteEhClassificatorio(tipoExame, componente) ? (
                             <>
                               <div className="grid grid-cols-3 gap-3">
                                 <div>

@@ -15,9 +15,9 @@
     "semantic_hash": "168e0b6199ca531564bd028e73730a3f"
   },
   "package.json": {
-    "mtime": 1775523830.167352,
-    "ast_hash": "fe7b36a9c4da2f8e8d286d86b1dd266e",
-    "semantic_hash": "fe7b36a9c4da2f8e8d286d86b1dd266e"
+    "mtime": 1786895517.8581476,
+    "ast_hash": "9f19a4b7b4ac752df0afa8f8c9850fe5",
+    "semantic_hash": ""
   },
   "postcss.config.js": {
     "mtime": 1743602126.5395207,
@@ -150,9 +150,9 @@
     "semantic_hash": "1e68460d0b886b50a36b644a69b2fa11"
   },
   "src/components/gestao-conteudos/TabelaExames.tsx": {
-    "mtime": 1780852922.552459,
-    "ast_hash": "3b139822f6b388dde15c22d77414ad14",
-    "semantic_hash": "3b139822f6b388dde15c22d77414ad14"
+    "mtime": 1786895675.405209,
+    "ast_hash": "658985b4a7eefad62af878c85c32773e",
+    "semantic_hash": ""
   },
   "src/components/gestao-conteudos/TabelaRevisaoSistemas.tsx": {
     "mtime": 1774742855.1726756,
@@ -200,9 +200,9 @@
     "semantic_hash": "1cf6b9af24f334bdb202aa93b915a804"
   },
   "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
-    "mtime": 1780868803.7703743,
-    "ast_hash": "a8f45430d11614db8eaea00750994ab4",
-    "semantic_hash": "a8f45430d11614db8eaea00750994ab4"
+    "mtime": 1786895675.4062316,
+    "ast_hash": "03eefccc5fd198915918fc4974ecb615",
+    "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaDiagnostico.tsx": {
     "mtime": 1777779040.2951126,
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1786891880.6222508,
-    "ast_hash": "bd524a5f8f825ae8a3017cdf4632b903",
+    "mtime": 1786895555.1447055,
+    "ast_hash": "b737941f2251a0bf15d226d22aa0b7d5",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -690,9 +690,9 @@
     "semantic_hash": "893875a5103f6ce69eb2694a2821087f"
   },
   "src/services/bancodados/examesDB.ts": {
-    "mtime": 1754512737.2575727,
-    "ast_hash": "282f7119781c5f937c45b1b5c0e52265",
-    "semantic_hash": "282f7119781c5f937c45b1b5c0e52265"
+    "mtime": 1786895675.4041684,
+    "ast_hash": "e44f25cc780607e2c40da2c6d7a30345",
+    "semantic_hash": ""
   },
   "src/services/bancodados/gestaoUsuariosDB.ts": {
     "mtime": 1779417879.0893967,
@@ -872,6 +872,11 @@
   "graphify-out/memory/query_20260816_145334_implementar_badges_de_respostas_n\u00e3o_visualizadas_n.md": {
     "mtime": 1786892014.9755983,
     "ast_hash": "49e6036aa4398264634564270766b327",
+    "semantic_hash": ""
+  },
+  "scripts/import-clinical-parameters.ts": {
+    "mtime": 1786895845.0604808,
+    "ast_hash": "a071adc0fca0ebc471673f6f2195f066",
     "semantic_hash": ""
   }
 }

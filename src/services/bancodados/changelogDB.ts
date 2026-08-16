@@ -172,6 +172,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Agora você verá um aviso vermelho no menu sempre que receber uma nova resposta para um chamado ou sugestão. A equipe de suporte também passa a visualizar quantos novos pedidos ainda precisam ser consultados, deixando o acompanhamento mais rápido e transparente.',
   },
+  {
+    titulo: 'Novos Parâmetros Clínicos no Processo de Enfermagem',
+    descricao:
+      'Foram adicionados 20 sinais vitais, 34 exames laboratoriais e de imagem e 37 exames físicos organizados em 16 sistemas. O Processo de Enfermagem agora conta com uma base clínica mais ampla para apoiar avaliações e identificar necessidades de cuidado.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

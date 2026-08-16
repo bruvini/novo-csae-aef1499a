@@ -44,7 +44,16 @@ export interface Exame {
   dataCadastro?: Timestamp;
 }
 
-export interface ExameInput extends Omit<Exame, 'id' | 'dataCadastro'> {}
+export type ExameInput = Omit<Exame, 'id' | 'dataCadastro'>;
+
+export const componenteEhClassificatorio = (
+  tipoExame: Exame['tipoExame'],
+  componente: ComponenteExame
+): boolean => (
+  tipoExame === 'Imagem'
+  || componente.unidadeMedida.trim().toLocaleLowerCase('pt-BR').includes('qualitativo')
+  || componente.resultados.some((resultado) => Boolean(resultado.resultadoClassificatorio))
+);
 
 const COLLECTION_NAME = 'ExamesLabImagem';
 
