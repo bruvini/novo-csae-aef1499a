@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Graphify: persist the graph, but keep local/runtime artifacts out of Git
+graphify-out/cache/
+graphify-out/memory/
+graphify-out/reflections/
+graphify-out/20??-??-??/
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_learning.json
+graphify-out/.graphify_health.json
+graphify-out/.graphify_old.json
+graphify-out/.graphify_incremental.json
+graphify-out/.graphify_detect.json
+graphify-out/.graphify_extract.json
+graphify-out/.graphify_ast.json
+graphify-out/.graphify_analysis.json
+graphify-out/.graphify_semantic*.json
+graphify-out/.graphify_chunk_*.json
+graphify-out/.needs_update
+graphify-out/.vocab.txt

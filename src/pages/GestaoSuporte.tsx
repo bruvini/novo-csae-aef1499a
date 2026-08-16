@@ -25,12 +25,15 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import {
   buscarTodosTickets,
   resolverTicket,
   buscarTodasSugestoes,
   responderSugestao,
   buscarAvaliacoesNPS,
+  marcarTicketComoVisualizadoPeloSuporte,
+  marcarSugestaoComoVisualizadaPeloSuporte,
   type TicketProblema,
   type SugestaoMelhoria,
   type PesquisaNPS,
@@ -57,6 +60,7 @@ function media(values: number[]): string {
 
 const GestaoSuporte = () => {
   const { toast } = useToast();
+  const { ticketsNovosSuporte, sugestoesNovasSuporte } = useSupportNotifications();
 
   // ── Tickets
   const [tickets, setTickets] = useState<TicketProblema[]>([]);
@@ -122,12 +126,41 @@ const GestaoSuporte = () => {
     carregarNPS();
   }, [carregarTickets, carregarSugestoes, carregarNPS]);
 
+  useEffect(() => {
+    if (ticketsNovosSuporte > 0) carregarTickets();
+  }, [ticketsNovosSuporte, carregarTickets]);
+
+  useEffect(() => {
+    if (sugestoesNovasSuporte > 0) carregarSugestoes();
+  }, [sugestoesNovasSuporte, carregarSugestoes]);
+
   // ── Handlers ──────────────────────────────────────────────────
 
-  const handleAbrirTicket = (ticket: TicketProblema) => {
-    setTicketSelecionado(ticket);
+  const handleAbrirTicket = async (ticket: TicketProblema) => {
+    const ticketVisualizado = { ...ticket, visualizadoPeloSuporte: true };
+    setTicketSelecionado(ticketVisualizado);
     setRespostaTicket(ticket.respostaAdmin || '');
     setModalTicketAberto(true);
+
+    if (!ticket.id || ticket.visualizadoPeloSuporte !== false) return;
+
+    setTickets((atuais) => atuais.map((item) =>
+      item.id === ticket.id ? ticketVisualizado : item
+    ));
+
+    try {
+      await marcarTicketComoVisualizadoPeloSuporte(ticket.id);
+    } catch (error) {
+      console.error('[Gestão de Suporte] Falha ao registrar leitura do ticket:', error);
+      setTickets((atuais) => atuais.map((item) =>
+        item.id === ticket.id ? { ...item, visualizadoPeloSuporte: false } : item
+      ));
+      toast({
+        title: 'Aviso',
+        description: 'O ticket foi aberto, mas não foi possível atualizar a notificação.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleResolverTicket = async () => {
@@ -147,10 +180,31 @@ const GestaoSuporte = () => {
     }
   };
 
-  const handleAbrirSugestao = (sugestao: SugestaoMelhoria) => {
-    setSugestaoSelecionada(sugestao);
+  const handleAbrirSugestao = async (sugestao: SugestaoMelhoria) => {
+    const sugestaoVisualizada = { ...sugestao, visualizadoPeloSuporte: true };
+    setSugestaoSelecionada(sugestaoVisualizada);
     setRespostaSugestao(sugestao.respostaAdmin || '');
     setModalSugestaoAberto(true);
+
+    if (!sugestao.id || sugestao.visualizadoPeloSuporte !== false) return;
+
+    setSugestoes((atuais) => atuais.map((item) =>
+      item.id === sugestao.id ? sugestaoVisualizada : item
+    ));
+
+    try {
+      await marcarSugestaoComoVisualizadaPeloSuporte(sugestao.id);
+    } catch (error) {
+      console.error('[Gestão de Suporte] Falha ao registrar leitura da sugestão:', error);
+      setSugestoes((atuais) => atuais.map((item) =>
+        item.id === sugestao.id ? { ...item, visualizadoPeloSuporte: false } : item
+      ));
+      toast({
+        title: 'Aviso',
+        description: 'A sugestão foi aberta, mas não foi possível atualizar a notificação.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleResponderSugestao = async () => {
@@ -171,7 +225,6 @@ const GestaoSuporte = () => {
   };
 
   // ── NPS metrics
-  const ticketsAbertos = tickets.filter((t) => t.status === 'Aberto');
   const mediaGeral = media(avaliacoes.map((a) => a.notaGeral));
   const mediaUsabilidade = media(avaliacoes.map((a) => a.notaUsabilidade));
   const mediaPerformance = media(avaliacoes.map((a) => a.notaPerformance));
@@ -192,15 +245,20 @@ const GestaoSuporte = () => {
             <TabsTrigger value="tickets" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <Headphones className="w-4 h-4" />
               Tickets
-              {ticketsAbertos.length > 0 && (
-                <span className="bg-red-100 text-red-700 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                  {ticketsAbertos.length}
-                </span>
+              {ticketsNovosSuporte > 0 && (
+                <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                  {ticketsNovosSuporte > 99 ? '99+' : ticketsNovosSuporte}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="sugestoes" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <Lightbulb className="w-4 h-4" />
               Sugestões
+              {sugestoesNovasSuporte > 0 && (
+                <Badge className="bg-red-600 hover:bg-red-600 text-white px-1.5 py-0 text-[10px]">
+                  {sugestoesNovasSuporte > 99 ? '99+' : sugestoesNovasSuporte}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="nps" className="rounded-md flex items-center gap-2 font-semibold text-sm">
               <BarChart2 className="w-4 h-4" />
@@ -239,7 +297,14 @@ const GestaoSuporte = () => {
                     <TableBody>
                       {tickets.map((t) => (
                         <TableRow key={t.id} className="hover:bg-slate-50/50">
-                          <TableCell className="font-medium">{t.nomeUsuario}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {t.nomeUsuario}
+                              {t.visualizadoPeloSuporte === false && (
+                                <Badge className="bg-red-600 hover:bg-red-600 text-white text-[10px]">Novo</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs">{t.moduloAferido}</Badge>
                           </TableCell>
@@ -308,7 +373,14 @@ const GestaoSuporte = () => {
                     <TableBody>
                       {sugestoes.map((s) => (
                         <TableRow key={s.id} className="hover:bg-slate-50/50">
-                          <TableCell className="font-medium">{s.nomeUsuario}</TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              {s.nomeUsuario}
+                              {s.visualizadoPeloSuporte === false && (
+                                <Badge className="bg-red-600 hover:bg-red-600 text-white text-[10px]">Novo</Badge>
+                              )}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className="text-xs">{s.categoria}</Badge>
                           </TableCell>

@@ -167,6 +167,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Para melhorarmos continuamente o portal, a cada 10 acessos o sistema exibirá automaticamente um breve formulário de avaliação (as mesmas 3 perguntas da Central de Ajuda). O formulário só aparecerá se você ainda não avaliou nas últimas 48 horas, e leva menos de 1 minuto. Sua opinião é fundamental!',
   },
+  {
+    titulo: 'Notificações de Novidades na Central de Ajuda',
+    descricao:
+      'Agora você verá um aviso vermelho no menu sempre que receber uma nova resposta para um chamado ou sugestão. A equipe de suporte também passa a visualizar quantos novos pedidos ainda precisam ser consultados, deixando o acompanhamento mais rápido e transparente.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

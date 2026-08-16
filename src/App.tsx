@@ -18,6 +18,7 @@ import GestaoSuporte from "./pages/GestaoSuporte";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
+import { SupportNotificationsProvider } from "./contexts/SupportNotificationsContext";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +28,10 @@ function App() {
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
+            <SupportNotificationsProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Index />} />
               <Route path="/register" element={<Register />} />
@@ -102,7 +104,8 @@ function App() {
                 } 
               />
               <Route path="*" element={<Index />} />
-            </Routes>
+              </Routes>
+            </SupportNotificationsProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

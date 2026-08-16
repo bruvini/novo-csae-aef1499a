@@ -43,7 +43,7 @@ export type { Changelog } from './changelogDB';
 export { buscarChangelogsRecentes, buscarTodosChangelogs, seedChangelogInicial, seedChangelogCompleto, salvarChangelog, inserirChangelogIdempotente } from './changelogDB';
 
 // Suporte exports
-export type { TicketProblema, SugestaoMelhoria, PesquisaNPS } from './suporteDB';
+export type { TicketProblema, SugestaoMelhoria, PesquisaNPS, ContagemNotificacoesSuporte } from './suporteDB';
 export {
   buscarMeusTickets,
   buscarTodosTickets,
@@ -57,4 +57,10 @@ export {
   verificarElegibilidadeNPS,
   salvarPesquisaNPS,
   buscarAvaliacoesNPS,
+  observarRespostasNaoVisualizadas,
+  observarItensNovosSuporte,
+  marcarTicketsComoVisualizadosPeloUsuario,
+  marcarSugestoesComoVisualizadasPeloUsuario,
+  marcarTicketComoVisualizadoPeloSuporte,
+  marcarSugestaoComoVisualizadaPeloSuporte,
 } from './suporteDB';

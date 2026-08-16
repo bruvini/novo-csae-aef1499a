@@ -10,6 +10,9 @@ import {
   limit,
   Timestamp,
   serverTimestamp,
+  onSnapshot,
+  writeBatch,
+  type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { differenceInHours } from 'date-fns';
@@ -24,6 +27,11 @@ export interface TicketProblema {
   descricao: string;
   status: 'Aberto' | 'Resolvido';
   respostaAdmin?: string;
+  visualizadoPeloSuporte?: boolean;
+  dataVisualizacaoSuporte?: Timestamp;
+  respostaVisualizadaPeloUsuario?: boolean;
+  dataRespostaAdmin?: Timestamp;
+  dataVisualizacaoResposta?: Timestamp;
   dataCriacao: Timestamp;
   dataResolucao?: Timestamp;
 }
@@ -35,7 +43,18 @@ export interface SugestaoMelhoria {
   categoria: string;
   descricao: string;
   respostaAdmin?: string;
+  visualizadoPeloSuporte?: boolean;
+  dataVisualizacaoSuporte?: Timestamp;
+  respostaVisualizadaPeloUsuario?: boolean;
+  dataRespostaAdmin?: Timestamp;
+  dataVisualizacaoResposta?: Timestamp;
   dataCriacao: Timestamp;
+}
+
+export interface ContagemNotificacoesSuporte {
+  tickets: number;
+  sugestoes: number;
+  total: number;
 }
 
 export interface PesquisaNPS {
@@ -72,13 +91,19 @@ export async function salvarTicket(
   await addDoc(ref, {
     ...data,
     status: 'Aberto',
+    visualizadoPeloSuporte: false,
     dataCriacao: serverTimestamp(),
   });
 }
 
 export async function responderTicket(ticketId: string, resposta: string): Promise<void> {
   const ref = doc(db, 'tickets_suporte', ticketId);
-  await updateDoc(ref, { respostaAdmin: resposta });
+  await updateDoc(ref, {
+    respostaAdmin: resposta,
+    visualizadoPeloSuporte: true,
+    respostaVisualizadaPeloUsuario: false,
+    dataRespostaAdmin: serverTimestamp(),
+  });
 }
 
 export async function resolverTicket(ticketId: string, resposta: string): Promise<void> {
@@ -86,6 +111,9 @@ export async function resolverTicket(ticketId: string, resposta: string): Promis
   await updateDoc(ref, {
     status: 'Resolvido',
     respostaAdmin: resposta,
+    visualizadoPeloSuporte: true,
+    respostaVisualizadaPeloUsuario: false,
+    dataRespostaAdmin: serverTimestamp(),
     dataResolucao: serverTimestamp(), // Obrigatório para cálculo futuro de SLA
   });
 }
@@ -110,12 +138,149 @@ export async function salvarSugestao(
   data: Omit<SugestaoMelhoria, 'id' | 'dataCriacao'>
 ): Promise<void> {
   const ref = collection(db, 'sugestoes_melhoria');
-  await addDoc(ref, { ...data, dataCriacao: serverTimestamp() });
+  await addDoc(ref, {
+    ...data,
+    visualizadoPeloSuporte: false,
+    dataCriacao: serverTimestamp(),
+  });
 }
 
 export async function responderSugestao(sugestaoId: string, resposta: string): Promise<void> {
   const ref = doc(db, 'sugestoes_melhoria', sugestaoId);
-  await updateDoc(ref, { respostaAdmin: resposta });
+  await updateDoc(ref, {
+    respostaAdmin: resposta,
+    visualizadoPeloSuporte: true,
+    respostaVisualizadaPeloUsuario: false,
+    dataRespostaAdmin: serverTimestamp(),
+  });
+}
+
+// ─── Notificações de suporte ────────────────────────────────
+
+const criarContagem = (tickets: number, sugestoes: number): ContagemNotificacoesSuporte => ({
+  tickets,
+  sugestoes,
+  total: tickets + sugestoes,
+});
+
+export function observarRespostasNaoVisualizadas(
+  usuarioId: string,
+  callback: (contagem: ContagemNotificacoesSuporte) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  let tickets = 0;
+  let sugestoes = 0;
+
+  const notificar = () => callback(criarContagem(tickets, sugestoes));
+  const tratarErro = (error: Error) => onError?.(error);
+
+  const ticketsQuery = query(
+    collection(db, 'tickets_suporte'),
+    where('usuarioId', '==', usuarioId)
+  );
+  const sugestoesQuery = query(
+    collection(db, 'sugestoes_melhoria'),
+    where('usuarioId', '==', usuarioId)
+  );
+
+  const cancelarTickets = onSnapshot(ticketsQuery, (snapshot) => {
+    tickets = snapshot.docs.filter((documento) => {
+      const ticket = documento.data() as TicketProblema;
+      return Boolean(ticket.respostaAdmin?.trim()) && ticket.respostaVisualizadaPeloUsuario !== true;
+    }).length;
+    notificar();
+  }, tratarErro);
+
+  const cancelarSugestoes = onSnapshot(sugestoesQuery, (snapshot) => {
+    sugestoes = snapshot.docs.filter((documento) => {
+      const sugestao = documento.data() as SugestaoMelhoria;
+      return Boolean(sugestao.respostaAdmin?.trim()) && sugestao.respostaVisualizadaPeloUsuario !== true;
+    }).length;
+    notificar();
+  }, tratarErro);
+
+  return () => {
+    cancelarTickets();
+    cancelarSugestoes();
+  };
+}
+
+export function observarItensNovosSuporte(
+  callback: (contagem: ContagemNotificacoesSuporte) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  let tickets = 0;
+  let sugestoes = 0;
+
+  const notificar = () => callback(criarContagem(tickets, sugestoes));
+  const tratarErro = (error: Error) => onError?.(error);
+
+  const cancelarTickets = onSnapshot(
+    query(collection(db, 'tickets_suporte'), where('visualizadoPeloSuporte', '==', false)),
+    (snapshot) => {
+      tickets = snapshot.size;
+      notificar();
+    },
+    tratarErro
+  );
+
+  const cancelarSugestoes = onSnapshot(
+    query(collection(db, 'sugestoes_melhoria'), where('visualizadoPeloSuporte', '==', false)),
+    (snapshot) => {
+      sugestoes = snapshot.size;
+      notificar();
+    },
+    tratarErro
+  );
+
+  return () => {
+    cancelarTickets();
+    cancelarSugestoes();
+  };
+}
+
+async function marcarDocumentosComoVisualizados(
+  colecao: 'tickets_suporte' | 'sugestoes_melhoria',
+  ids: string[],
+  dados: Record<string, unknown>
+): Promise<void> {
+  const idsUnicos = [...new Set(ids.filter(Boolean))];
+
+  for (let inicio = 0; inicio < idsUnicos.length; inicio += 450) {
+    const batch = writeBatch(db);
+    idsUnicos.slice(inicio, inicio + 450).forEach((id) => {
+      batch.update(doc(db, colecao, id), dados);
+    });
+    await batch.commit();
+  }
+}
+
+export async function marcarTicketsComoVisualizadosPeloUsuario(ids: string[]): Promise<void> {
+  await marcarDocumentosComoVisualizados('tickets_suporte', ids, {
+    respostaVisualizadaPeloUsuario: true,
+    dataVisualizacaoResposta: serverTimestamp(),
+  });
+}
+
+export async function marcarSugestoesComoVisualizadasPeloUsuario(ids: string[]): Promise<void> {
+  await marcarDocumentosComoVisualizados('sugestoes_melhoria', ids, {
+    respostaVisualizadaPeloUsuario: true,
+    dataVisualizacaoResposta: serverTimestamp(),
+  });
+}
+
+export async function marcarTicketComoVisualizadoPeloSuporte(ticketId: string): Promise<void> {
+  await updateDoc(doc(db, 'tickets_suporte', ticketId), {
+    visualizadoPeloSuporte: true,
+    dataVisualizacaoSuporte: serverTimestamp(),
+  });
+}
+
+export async function marcarSugestaoComoVisualizadaPeloSuporte(sugestaoId: string): Promise<void> {
+  await updateDoc(doc(db, 'sugestoes_melhoria', sugestaoId), {
+    visualizadoPeloSuporte: true,
+    dataVisualizacaoSuporte: serverTimestamp(),
+  });
 }
 
 // ─── NPS ─────────────────────────────────────────────────────
