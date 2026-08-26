@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Usuario } from '@/types/usuario';
 import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
+import { cadastroEmAndamento } from '@/utils/registrationFlow';
 
 const NPS_PENDENTE_KEY = 'csae_nps_pendente';
 
@@ -264,6 +265,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Monitorar mudanças no estado de autenticação
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
           console.log('Auth state changed. User:', user?.uid);
+
+          // A criação de conta autentica o usuário antes de o documento ser gravado.
+          // Durante esse curto intervalo, o próprio fluxo de cadastro controla a sessão.
+          if (user && cadastroEmAndamento()) {
+            console.log('Cadastro em andamento: aguardando a gravação do perfil no Firestore.');
+            setUser(null);
+            setSessionData(null);
+            setLoading(false);
+            return;
+          }
           
           if (user) {
             // Usuário autenticado - buscar dados

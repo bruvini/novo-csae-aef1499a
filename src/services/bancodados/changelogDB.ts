@@ -214,6 +214,11 @@ const CHANGELOGS_SISTEMA: {
     descricao:
       "Agora, ao voltar à etapa de Diagnóstico e incluir um item que havia sido esquecido, ele também aparece no Planejamento e na Implementação. As informações que já foram preenchidas continuam preservadas.",
   },
+  {
+    titulo: "Cadastro de Novos Usuários Mais Confiável",
+    descricao:
+      "Corrigimos uma falha que podia deixar alguns pedidos de cadastro fora da fila de aprovação. O sistema agora conclui a solicitação com segurança e também recupera tentativas anteriores que ficaram incompletas.",
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

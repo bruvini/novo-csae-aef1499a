@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
-import { serverTimestamp } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
-import { auth } from "@/services/firebase";
+import { doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, deleteUser, User } from "firebase/auth";
+import { auth, db } from "@/services/firebase";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
+import Footer from "@/components/Footer";
 import {
   registrationSchema,
   RegistrationSchema,
@@ -19,6 +20,7 @@ import { Form } from "@/components/ui/form";
 import PersonalInfoForm from "@/components/register/PersonalInfoForm";
 import ProfessionalInfoForm from "@/components/register/ProfessionalInfoForm";
 import AccessInfoForm from "@/components/register/AccessInfoForm";
+import { finalizarFluxoCadastro, iniciarFluxoCadastro } from "@/utils/registrationFlow";
 
 interface TermoData {
   nomeCompleto: string;
@@ -181,10 +183,36 @@ const Register = () => {
     setCarregando(true);
     setModalTermoAberto(false);
     const data = form.getValues();
+    const emailNormalizado = data.email.trim().toLowerCase();
+    let usuarioAuth: User | null = null;
 
+    iniciarFluxoCadastro();
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.senha);
-      const usuarioAuth = userCredential.user;
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, emailNormalizado, data.senha);
+        usuarioAuth = userCredential.user;
+      } catch (authError) {
+        const codigo = authError instanceof Error && 'code' in authError
+          ? (authError as { code: string }).code
+          : '';
+
+        if (codigo !== 'auth/email-already-in-use') throw authError;
+
+        // Recupera cadastros órfãos: conta criada no Auth, mas sem perfil no Firestore.
+        const userCredential = await signInWithEmailAndPassword(auth, emailNormalizado, data.senha);
+        usuarioAuth = userCredential.user;
+        const perfilExistente = await getDoc(doc(db, 'usuarios', usuarioAuth.uid));
+
+        if (perfilExistente.exists()) {
+          await signOut(auth);
+          toast({
+            title: "Cadastro já enviado",
+            description: "Este e-mail já possui um cadastro. Entre pela página de login para consultar a situação do acesso.",
+          });
+          navigate("/login");
+          return;
+        }
+      }
 
       if (!usuarioAuth?.uid) {
         throw new Error("Falha na autenticação: UID inválido.");
@@ -195,7 +223,7 @@ const Register = () => {
       try {
         await cadastrarUsuario({
           uid: usuarioAuth.uid,
-          email: data.email.trim().toLowerCase(),
+          email: emailNormalizado,
           ...sanitizedData,
           termoResponsabilidadeAceito: true,
           termoResponsabilidadeData: serverTimestamp(),
@@ -231,11 +259,20 @@ const Register = () => {
       navigate("/login");
     } catch (error) {
       console.error("Erro ao cadastrar:", error);
+      if (auth.currentUser) {
+        try {
+          await signOut(auth);
+        } catch (signOutError) {
+          console.error("Erro ao encerrar sessão após falha no cadastro:", signOutError);
+        }
+      }
       let description = "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
         const firebaseError = error as { code: string };
         if (firebaseError.code === 'auth/email-already-in-use') {
             description = "Este e-mail já está em uso por outra conta.";
+        } else if (firebaseError.code === 'auth/invalid-credential' || firebaseError.code === 'auth/wrong-password') {
+            description = "Este e-mail já possui uma conta, mas a senha informada não corresponde. Use a recuperação de senha na página de login ou contate o suporte.";
         } else if (firebaseError.code === 'auth/weak-password') {
             description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
         }
@@ -248,6 +285,7 @@ const Register = () => {
         variant: "destructive",
       });
     } finally {
+      finalizarFluxoCadastro();
       setCarregando(false);
     }
   };
@@ -320,13 +358,14 @@ const Register = () => {
             </form>
           </Form>
 
-          <footer className="mt-20 py-8 border-t border-gray-100 text-center">
+          <div className="mt-16 mb-8 text-center">
             <p className="text-sm text-gray-400 font-medium tracking-wide italic">
               "Enfermagem: Ciência, Arte e Tecnologia para Florianópolis."
             </p>
-          </footer>
+          </div>
         </div>
       </main>
+      <Footer />
 
       <TermoResponsabilidadeModal
         isOpen={modalTermoAberto}
