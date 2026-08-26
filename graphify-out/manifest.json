@@ -545,9 +545,9 @@
     "semantic_hash": "226311834bdbec4a05c6b17ed6f58de7"
   },
   "src/contexts/AuthContext.tsx": {
-    "mtime": 1780864941.81513,
-    "ast_hash": "bc4ddc3437f1bc69041900c9c10d2f78",
-    "semantic_hash": "bc4ddc3437f1bc69041900c9c10d2f78"
+    "mtime": 1787784039.8007379,
+    "ast_hash": "3c2af68071a8f1c5c8356eeced23b229",
+    "semantic_hash": ""
   },
   "src/contexts/QueryContext.tsx": {
     "mtime": 1774742855.1907804,
@@ -660,8 +660,8 @@
     "semantic_hash": "82efef85cdf531505a50ed495e19b9a3"
   },
   "src/pages/Register.tsx": {
-    "mtime": 1786913636.0030682,
-    "ast_hash": "2282ed64347aa3289afa8bfc6dcd131f",
+    "mtime": 1787784039.8017573,
+    "ast_hash": "027285314c6376ecf7652cde8050deec",
     "semantic_hash": ""
   },
   "src/pages/WaitingApproval.tsx": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1787783416.229714,
-    "ast_hash": "4af5f45605a154c6fa215eff3e80f638",
+    "mtime": 1787784216.1883595,
+    "ast_hash": "0376fd882efa83f7bf519154031bce1d",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -897,6 +897,11 @@
   "src/utils/planejamentoUtils.ts": {
     "mtime": 1787783264.4805994,
     "ast_hash": "cc57287463e74f4b33448a38440f1038",
+    "semantic_hash": ""
+  },
+  "src/utils/registrationFlow.ts": {
+    "mtime": 1787784039.799682,
+    "ast_hash": "5445ebc6a57096835315b381375ee4eb",
     "semantic_hash": ""
   }
 }
