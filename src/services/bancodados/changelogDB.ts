@@ -192,6 +192,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     descricao:
       'Aprimoramos a organização visual do Dashboard, deixando as ferramentas mais limpas e o bloco de atualizações mais compacto e agradável de consultar.',
   },
+  {
+    titulo: 'Novos Filtros no Painel Estatístico',
+    descricao:
+      'Agora a produção da enfermagem pode ser analisada por unidade, profissional e período. Também melhoramos a leitura da distribuição de executores e adicionamos medalhas aos três profissionais com mais processos concluídos dentro dos filtros selecionados.',
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────
