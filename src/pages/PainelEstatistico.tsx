@@ -36,6 +36,8 @@ import {
   Pill,
   Building2,
   SlidersHorizontal,
+  Medal,
+  X,
 } from 'lucide-react';
 import {
   PieChart,
@@ -58,8 +60,10 @@ import {
   obterEstatisticasProcessoEnfermagem,
   EstatisticasProcessoEnfermagem,
   UsuarioRanking,
-  ItemTemporal
+  ItemTemporal,
+  RegistroProducao,
 } from '@/services/bancodados/biProcessosEnfermagemDB';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -175,6 +179,113 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   anual: 'Anual',
 };
 
+const rankingFromValues = (values: string[], limit = 10) => {
+  const counts: Record<string, number> = {};
+  values.filter(Boolean).forEach((value) => { counts[value] = (counts[value] || 0) + 1; });
+  return Object.entries(counts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit);
+};
+
+const agruparTemporal = (registros: RegistroProducao[]) => {
+  const concluidos = registros.filter((registro) => registro.status === 'concluido');
+  const build = (key: (date: Date) => string) => {
+    const counts: Record<string, number> = {};
+    concluidos.forEach((registro) => {
+      const value = key(new Date(registro.dataReferencia));
+      counts[value] = (counts[value] || 0) + 1;
+    });
+    let acumulado = 0;
+    return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)).map(([name, value]) => ({
+      name,
+      value,
+      acumulado: (acumulado += value),
+    }));
+  };
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return {
+    hora: build((date) => `${pad(date.getHours())}h`),
+    diario: build((date) => `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`),
+    diaSemana: build((date) => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()]),
+    mensal: build((date) => `${pad(date.getMonth() + 1)}/${date.getFullYear()}`),
+    anual: build((date) => String(date.getFullYear())),
+  };
+};
+
+const agregarRegistros = (
+  base: EstatisticasProcessoEnfermagem,
+  registros: RegistroProducao[]
+): EstatisticasProcessoEnfermagem => {
+  const concluidos = registros.filter((registro) => registro.status === 'concluido');
+  const pacientes = new Set(registros.map((registro) => registro.pacienteChave));
+  const duracoes = concluidos.map((registro) => registro.duracaoHoras).filter((value): value is number => Boolean(value && value > 0));
+  const porUsuario = new Map<string, RegistroProducao[]>();
+  registros.forEach((registro) => porUsuario.set(registro.usuarioId, [...(porUsuario.get(registro.usuarioId) || []), registro]));
+  const rankingUsuarios = [...porUsuario.entries()].map(([id, producoes]) => {
+    const concluidas = producoes.filter((registro) => registro.status === 'concluido');
+    const tempos = concluidas.map((registro) => registro.duracaoHoras).filter((value): value is number => Boolean(value && value > 0));
+    const executores = rankingFromValues(producoes.flatMap((registro) => registro.executores), 1);
+    return {
+      id,
+      name: producoes[0].usuarioNome,
+      lotacao: producoes[0].lotacao,
+      value: concluidas.length,
+      raioX: {
+        totalPacientes: new Set(producoes.map((registro) => registro.pacienteChave)).size,
+        processosAtivos: producoes.length - concluidas.length,
+        processosConcluidos: concluidas.length,
+        tempoMedioHoras: tempos.length ? Number((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0,
+        topDiagnosticos: rankingFromValues(producoes.flatMap((registro) => registro.diagnosticos), 5).map((item) => item.name),
+        topNHBs: rankingFromValues(producoes.flatMap((registro) => registro.nhbs), 5).map((item) => item.name),
+        topIntervencoes: rankingFromValues(producoes.flatMap((registro) => registro.intervencoesPrescritas), 5).map((item) => item.name),
+        executorMaisFrequente: executores[0]?.name || 'N/A',
+      },
+    };
+  }).sort((a, b) => b.value - a.value);
+
+  return {
+    ...base,
+    totalProcessos: registros.length,
+    totalProcessosConcluidos: concluidos.length,
+    totalProcessosEmAndamento: registros.length - concluidos.length,
+    totalPacientesAtendidos: pacientes.size,
+    taxaConclusao: registros.length ? Math.round((concluidos.length / registros.length) * 100) : 0,
+    tempoMedioProcessoHoras: duracoes.length ? Number((duracoes.reduce((a, b) => a + b, 0) / duracoes.length).toFixed(1)) : 0,
+    rankingUsuarios,
+    rankingLotacoes: rankingFromValues(concluidos.map((registro) => registro.lotacao)),
+    diagnosticosTop: rankingFromValues(registros.flatMap((registro) => registro.diagnosticos)),
+    intervencoesTop: rankingFromValues(registros.flatMap((registro) => registro.intervencoesPrescritas)),
+    resultadosTop: rankingFromValues(registros.flatMap((registro) => registro.resultados)),
+    nhbsTop: rankingFromValues(registros.flatMap((registro) => registro.nhbs)),
+    distribuicaoStatus: [
+      { name: 'Concluídos', value: concluidos.length },
+      { name: 'Em Andamento', value: registros.length - concluidos.length },
+    ],
+    distribuicaoExecutores: rankingFromValues(registros.flatMap((registro) => registro.executores)),
+    etapasPE: {
+      avaliacao: {
+        physical: rankingFromValues(registros.flatMap((registro) => registro.exameFisico)),
+        nhbs: rankingFromValues(registros.flatMap((registro) => registro.nhbs)),
+      },
+      diagnostico: {
+        top: rankingFromValues(registros.flatMap((registro) => registro.diagnosticos)),
+        subset: rankingFromValues(registros.flatMap((registro) => registro.subconjuntos)),
+      },
+      planejamento: {
+        results: rankingFromValues(registros.flatMap((registro) => registro.resultados)),
+        prescribed: rankingFromValues(registros.flatMap((registro) => registro.intervencoesPrescritas)),
+      },
+      implementacao: {
+        applied: rankingFromValues(registros.flatMap((registro) => registro.intervencoesAplicadas)),
+        executors: rankingFromValues(registros.flatMap((registro) => registro.executores)),
+      },
+      evolucao: { nurseApplied: rankingFromValues(registros.flatMap((registro) => registro.acoesEnfermeiro)) },
+    },
+    temporalAvancado: agruparTemporal(registros),
+  };
+};
+
 // ── Componente Principal ───────────────────────────────────────────────────
 const PainelEstatistico = () => {
   const [data, setData] = useState<EstatisticasBI | null>(null);
@@ -188,6 +299,9 @@ const PainelEstatistico = () => {
   const [raioXOpen, setRaioXOpen] = useState(false);
   const [temporalView, setTemporalView] = useState<'hora' | 'diario' | 'diaSemana' | 'mensal' | 'anual'>('mensal');
   const [filtroLotacao, setFiltroLotacao] = useState<string>('__todas__');
+  const [filtroUsuario, setFiltroUsuario] = useState<string>('__todos__');
+  const [periodoInicial, setPeriodoInicial] = useState('');
+  const [periodoFinal, setPeriodoFinal] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -241,82 +355,39 @@ const PainelEstatistico = () => {
 
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
 
-  // ── Filtro de Lotação (client-side) ────────────────────────────────────────
-  // Recomputa KPIs e rankings da Seção 2 com base nos usuários da lotação selecionada.
-  // A série temporal permanece global (não há breakdown por usuário no cache).
+  // Os filtros atuam sobre resumos de produção e todos os agregados são recalculados.
   const dadosFiltrados = useMemo(() => {
     if (!dataProcessos) return null;
-    if (filtroLotacao === '__todas__') return dataProcessos;
-
-    const usuariosFiltrados = dataProcessos.rankingUsuarios.filter(
-      u => u.lotacao === filtroLotacao
-    );
-
-    // KPIs recalculados
-    const totalConcluidos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosConcluidos, 0);
-    const totalAtivos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosAtivos, 0);
-    const totalProcessos = totalConcluidos + totalAtivos;
-    const totalPacientes = usuariosFiltrados.reduce((s, u) => s + u.raioX.totalPacientes, 0);
-    const tempos = usuariosFiltrados.map(u => u.raioX.tempoMedioHoras).filter(t => t > 0);
-    const tempoMedio = tempos.length > 0 ? parseFloat((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0;
-    const taxaConclusao = totalProcessos > 0 ? Math.round((totalConcluidos / totalProcessos) * 100) : 0;
-
-    // Rankings aproximados: acumular top-5 de cada usuário filtrado
-    const diagsAcc: Record<string, number> = {};
-    const nhbsAcc: Record<string, number> = {};
-    const intervsAcc: Record<string, number> = {};
-    const execsAcc: Record<string, number> = {};
-
-    usuariosFiltrados.forEach(u => {
-      u.raioX.topDiagnosticos.forEach((d, i) => {
-        diagsAcc[d] = (diagsAcc[d] || 0) + (5 - i); // Peso decrescente
-      });
-      u.raioX.topNHBs.forEach((n, i) => {
-        nhbsAcc[n] = (nhbsAcc[n] || 0) + (5 - i);
-      });
-      u.raioX.topIntervencoes.forEach((iv, i) => {
-        intervsAcc[iv] = (intervsAcc[iv] || 0) + (5 - i);
-      });
-      if (u.raioX.executorMaisFrequente && u.raioX.executorMaisFrequente !== 'N/A') {
-        execsAcc[u.raioX.executorMaisFrequente] = (execsAcc[u.raioX.executorMaisFrequente] || 0) + 1;
-      }
+    const inicio = periodoInicial ? new Date(`${periodoInicial}T00:00:00`) : null;
+    const fim = periodoFinal ? new Date(`${periodoFinal}T23:59:59.999`) : null;
+    const registros = (dataProcessos.registrosProducao || []).filter((registro) => {
+      const dataRegistro = new Date(registro.dataReferencia);
+      return (filtroLotacao === '__todas__' || registro.lotacao === filtroLotacao)
+        && (filtroUsuario === '__todos__' || registro.usuarioId === filtroUsuario)
+        && (!inicio || dataRegistro >= inicio)
+        && (!fim || dataRegistro <= fim);
     });
-
-    const toRanking = (map: Record<string, number>, limit = 10) =>
-      Object.entries(map)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, limit);
-
-    return {
-      ...dataProcessos,
-      totalProcessos,
-      totalProcessosConcluidos: totalConcluidos,
-      totalProcessosEmAndamento: totalAtivos,
-      totalPacientesAtendidos: totalPacientes,
-      taxaConclusao,
-      tempoMedioProcessoHoras: tempoMedio,
-      rankingUsuarios: usuariosFiltrados,
-      rankingLotacoes: [{ name: filtroLotacao, value: totalConcluidos }],
-      etapasPE: {
-        ...dataProcessos.etapasPE,
-        diagnostico: { ...dataProcessos.etapasPE.diagnostico, top: toRanking(diagsAcc) },
-        avaliacao: { ...dataProcessos.etapasPE.avaliacao, nhbs: toRanking(nhbsAcc) },
-        planejamento: { ...dataProcessos.etapasPE.planejamento, prescribed: toRanking(intervsAcc) },
-        implementacao: { ...dataProcessos.etapasPE.implementacao, executors: toRanking(execsAcc) },
-        evolucao: { nurseApplied: toRanking(intervsAcc) },
-      },
-      distribuicaoStatus: [
-        { name: 'Concluídos', value: totalConcluidos },
-        { name: 'Em Andamento', value: totalAtivos },
-      ],
-      perfilPacientes: dataProcessos.perfilPacientes,
-    };
-  }, [dataProcessos, filtroLotacao]);
+    return agregarRegistros(dataProcessos, registros);
+  }, [dataProcessos, filtroLotacao, filtroUsuario, periodoInicial, periodoFinal]);
 
   const lotacoesDisponiveis = useMemo(() => {
-    return dataProcessos?.lotacoesUnicas || [];
+    return [...new Set((dataProcessos?.registrosProducao || []).map((registro) => registro.lotacao).filter(Boolean))].sort();
   }, [dataProcessos]);
+
+  const usuariosDisponiveis = useMemo(() => {
+    const usuarios = new Map<string, string>();
+    (dataProcessos?.registrosProducao || [])
+      .filter((registro) => filtroLotacao === '__todas__' || registro.lotacao === filtroLotacao)
+      .forEach((registro) => usuarios.set(registro.usuarioId, registro.usuarioNome));
+    return [...usuarios.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [dataProcessos, filtroLotacao]);
+
+  const limparFiltros = () => {
+    setFiltroLotacao('__todas__');
+    setFiltroUsuario('__todos__');
+    setPeriodoInicial('');
+    setPeriodoFinal('');
+  };
 
   if (loading) {
     return (
@@ -826,32 +897,54 @@ const PainelEstatistico = () => {
             </div>
           ) : (
             <div className="space-y-12">
-              {/* ── Seletor de Lotação ── */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                <div className="flex items-center gap-2 text-indigo-700 shrink-0">
+              {/* ── Filtros da produção ── */}
+              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-indigo-700">
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-widest">Filtrar por unidade:</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Filtros de produção</span>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={limparFiltros} className="gap-2 border-indigo-200 text-indigo-700">
+                    <X className="w-3.5 h-3.5" /> Limpar filtros
+                  </Button>
                 </div>
-                <select
-                  id="filtro-lotacao"
-                  value={filtroLotacao}
-                  onChange={(e) => setFiltroLotacao(e.target.value)}
-                  className="flex-1 text-sm font-semibold border border-indigo-200 rounded-xl px-3 py-2 bg-white text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm"
-                  aria-label="Filtrar produção por unidade de lotação"
-                >
-                  <option value="__todas__">Todas as unidades</option>
-                  {lotacoesDisponiveis.map(lot => (
-                    <option key={lot} value={lot}>{lot}</option>
-                  ))}
-                </select>
-                <span className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                  filtroLotacao === '__todas__'
-                    ? 'bg-indigo-100 text-indigo-700'
-                    : 'bg-indigo-600 text-white shadow-md'
-                }`}>
-                  <Building2 className="w-3 h-3" />
-                  {filtroLotacao === '__todas__' ? 'Todas as unidades' : filtroLotacao}
-                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Unidade</span>
+                    <select
+                      id="filtro-lotacao"
+                      value={filtroLotacao}
+                      onChange={(event) => { setFiltroLotacao(event.target.value); setFiltroUsuario('__todos__'); }}
+                      className="w-full h-10 text-sm font-semibold border border-indigo-200 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="__todas__">Todas as unidades com produção</option>
+                      {lotacoesDisponiveis.map((lotacao) => <option key={lotacao} value={lotacao}>{lotacao}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Usuário</span>
+                    <select
+                      id="filtro-usuario"
+                      value={filtroUsuario}
+                      onChange={(event) => setFiltroUsuario(event.target.value)}
+                      className="w-full h-10 text-sm font-semibold border border-indigo-200 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="__todos__">Todos os usuários com produção</option>
+                      {usuariosDisponiveis.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span>Período inicial</span>
+                    <Input type="date" value={periodoInicial} max={periodoFinal || undefined} onChange={(event) => setPeriodoInicial(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span>Período final</span>
+                    <Input type="date" value={periodoFinal} min={periodoInicial || undefined} onChange={(event) => setPeriodoFinal(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                  </label>
+                </div>
+                <p className="text-[11px] text-indigo-600 font-semibold">
+                  {dadosFiltrados?.totalProcessos ?? 0} registro(s) encontrado(s) com os filtros atuais.
+                </p>
               </div>
 
               {/* ── Bloco 0: KPIs e Gráfico Temporal Unificado ── */}
@@ -925,7 +1018,7 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="p-6 h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={dataProcessos.temporalAvancado[temporalView]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <ComposedChart data={dadosFiltrados?.temporalAvancado[temporalView] ?? []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
@@ -1115,21 +1208,16 @@ const PainelEstatistico = () => {
                   </Card>
                   <Card className="border-none shadow-xl h-[450px]">
                     <CardHeader><CardTitle className="text-sm font-bold">Distribuição de Executor</CardTitle></CardHeader>
-                    <CardContent className="h-[350px] flex items-center justify-center">
+                    <CardContent className="h-[350px] pt-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie 
-                            data={dadosFiltrados?.etapasPE.implementacao.executors ?? []} 
-                            cx="50%" cy="50%" 
-                            innerRadius={30} outerRadius={55} 
-                            dataKey="value" 
-                            label={({ name }) => name}
-                          >
-                            <Cell fill="#0891b2" />
-                            <Cell fill="#22d3ee" />
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
+                        <BarChart data={dadosFiltrados?.etapasPE.implementacao.executors ?? []} layout="vertical" margin={{ left: 8, right: 30, top: 5, bottom: 5 }}>
+                          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                          <YAxis dataKey="name" type="category" width={145} tick={{ fontSize: 9, fontWeight: 600 }} />
+                          <Bar dataKey="value" name="Execuções" fill="#0891b2" radius={[0, 5, 5, 0]}>
+                            <LabelList dataKey="value" position="right" style={{ fontWeight: 700, fontSize: 10 }} />
+                          </Bar>
+                          <RechartsTooltip formatter={(value: number) => [value, 'Execuções']} cursor={{ fill: '#ecfeff' }} />
+                        </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
@@ -1189,7 +1277,15 @@ const PainelEstatistico = () => {
                               <TableRow key={user.id || idx} className="hover:bg-indigo-50/30 transition-colors border-indigo-50 h-16">
                                 <TableCell className="font-bold text-gray-800 pl-6">
                                   <div className="flex flex-col">
-                                    <span>{user.name}</span>
+                                    <span className="flex items-center gap-2">
+                                      {idx < 3 && (
+                                        <Medal
+                                          className={`w-5 h-5 shrink-0 ${idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : 'text-amber-700'}`}
+                                          aria-label={`${idx + 1}º lugar`}
+                                        />
+                                      )}
+                                      {user.name}
+                                    </span>
                                     <span className="text-[10px] text-gray-400 font-normal uppercase">{user.lotacao}</span>
                                   </div>
                                 </TableCell>

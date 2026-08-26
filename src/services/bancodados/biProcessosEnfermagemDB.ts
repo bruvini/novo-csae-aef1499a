@@ -24,7 +24,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 
 export interface ItemRanking {
   name: string;
@@ -53,6 +53,26 @@ export interface UsuarioRanking extends ItemRanking {
   id: string;
   lotacao: string;
   raioX: RaioXUsuario;
+}
+
+export interface RegistroProducao {
+  id: string;
+  usuarioId: string;
+  usuarioNome: string;
+  lotacao: string;
+  pacienteChave: string;
+  status: 'em_andamento' | 'concluido';
+  dataReferencia: string;
+  duracaoHoras?: number;
+  exameFisico: string[];
+  nhbs: string[];
+  diagnosticos: string[];
+  subconjuntos: string[];
+  resultados: string[];
+  intervencoesPrescritas: string[];
+  intervencoesAplicadas: string[];
+  executores: string[];
+  acoesEnfermeiro: string[];
 }
 
 export interface EstatisticasProcessoEnfermagem {
@@ -110,6 +130,7 @@ export interface EstatisticasProcessoEnfermagem {
 
   // Lotações únicas (para filtro client-side)
   lotacoesUnicas: string[];
+  registrosProducao: RegistroProducao[];
 
   schemaVersion?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,7 +185,7 @@ interface ProcessoEnfermagemDoc {
       intervencoes: Array<{
         acaoPrescrita: string;
         implementadoNestaConsulta: boolean;
-        quemExecuta?: 'Enfermeiro' | 'Equipe/Outros';
+        quemExecuta?: string[] | string;
       }>;
     }
   >;
@@ -267,14 +288,18 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
   
   const executoresGeral: Record<string, number> = { Enfermeiro: 0, 'Equipe/Outros': 0 };
   const temposHoras: number[] = [];
+  const registrosProducao: RegistroProducao[] = [];
 
   let totalProcessos = 0;
   let totalConcluidos = 0;
   let totalEmAndamento = 0;
   let totalDiagnosticosContados = 0;
+  let pacienteSequencia = 0;
 
   // 3. Processamento
   pacientesSnapshot.forEach((doc) => {
+    pacienteSequencia += 1;
+    const pacienteChave = `p${pacienteSequencia}`;
     const paciente = doc.data();
     const processos: ProcessoEnfermagemDoc[] = paciente.processosEnfermagem || [];
     const dataNasc = paciente.dataNascimento?.toDate();
@@ -381,11 +406,18 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
       // Etapa 4: Implementação
       const impl = p.implementacao || {};
       Object.values(impl).forEach(d => {
-        d.intervencoes?.forEach(i => {
+        d.intervencoes?.forEach((i) => {
           if (i.implementadoNestaConsulta && i.quemExecuta) {
-            executoresGeral[i.quemExecuta]++;
-            uStats.executores[i.quemExecuta] = (uStats.executores[i.quemExecuta] || 0) + 1;
-            interAppliedMap[i.acaoPrescrita] = (interAppliedMap[i.acaoPrescrita] || 0) + 1;
+            const executoresList = Array.isArray(i.quemExecuta)
+              ? i.quemExecuta
+              : [i.quemExecuta];
+            executoresList.forEach((exec) => {
+              executoresGeral[exec] = (executoresGeral[exec] || 0) + 1;
+              uStats.executores[exec] = (uStats.executores[exec] || 0) + 1;
+            });
+            if (executoresList.length > 0) {
+              interAppliedMap[i.acaoPrescrita] = (interAppliedMap[i.acaoPrescrita] || 0) + 1;
+            }
           }
         });
       });
@@ -397,6 +429,44 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
           nurseAppliedMap[acao] = (nurseAppliedMap[acao] || 0) + 1;
         });
       });
+
+      const diagnosticos = diags.map((item) => item.tituloDiagnostico).filter(Boolean);
+      const intervencoesPrescritas = planejado.flatMap((item) =>
+        (item.intervencoesSelecionadas || []).map((intervencao) => intervencao.acaoPrescrita).filter(Boolean)
+      );
+      const resultados = planejado.map((item) => item.resultadoEsperadoSelecionado).filter((item): item is string => Boolean(item));
+      const intervencoesAplicadas: string[] = [];
+      const executores: string[] = [];
+      Object.values(impl).forEach((item) => item.intervencoes?.forEach((intervencao) => {
+        if (!intervencao.implementadoNestaConsulta) return;
+        if (intervencao.acaoPrescrita) intervencoesAplicadas.push(intervencao.acaoPrescrita);
+        if (intervencao.quemExecuta) {
+          executores.push(...(Array.isArray(intervencao.quemExecuta) ? intervencao.quemExecuta : [intervencao.quemExecuta]));
+        }
+      }));
+      const acoesEnfermeiro = Object.values(evol).flat();
+      const dataReferencia = (dtConclusao || dtInicio)?.toISOString();
+      if (dataReferencia) {
+        registrosProducao.push({
+          id: p.idProcesso,
+          usuarioId: userId,
+          usuarioNome: userMeta?.nome || 'Usuário Externo',
+          lotacao: userMeta?.lotacao || 'Sem Lotação',
+          pacienteChave,
+          status: p.status,
+          dataReferencia,
+          ...(dtInicio && dtConclusao ? { duracaoHoras: (dtConclusao.getTime() - dtInicio.getTime()) / 3_600_000 } : {}),
+          exameFisico: Object.keys(ef),
+          nhbs: nhbs.map((item) => item.nhb).filter(Boolean),
+          diagnosticos,
+          subconjuntos: diagnosticos.map((item) => rolMap[item]).filter(Boolean),
+          resultados,
+          intervencoesPrescritas,
+          intervencoesAplicadas,
+          executores,
+          acoesEnfermeiro,
+        });
+      }
     });
   });
 
@@ -489,6 +559,7 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
     rankingUsuarios,
     rankingLotacoes: formatMapToRanking(rankingLotacaoMap),
     lotacoesUnicas,
+    registrosProducao,
 
     etapasPE: {
       avaliacao: {
@@ -524,4 +595,3 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
   await setDoc(cacheDocRef, stats);
   return stats;
 }
-
