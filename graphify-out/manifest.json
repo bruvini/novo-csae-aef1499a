@@ -80,9 +80,9 @@
     "semantic_hash": "2345f20e26e623198b42d6d3d650a972"
   },
   "src/components/ModalNPSObrigatorio.tsx": {
-    "mtime": 1780865849.6752462,
-    "ast_hash": "2bdd756378050e0af9805aa71e8d562d",
-    "semantic_hash": "2bdd756378050e0af9805aa71e8d562d"
+    "mtime": 1787785606.9240494,
+    "ast_hash": "8a317f73e4f1392de2b9ae5b5dff88cc",
+    "semantic_hash": ""
   },
   "src/components/NavigationCards.tsx": {
     "mtime": 1786905854.112429,
@@ -610,8 +610,8 @@
     "semantic_hash": "4d6ab61246ca2f4706a8056be254c0ce"
   },
   "src/pages/CentralAjuda.tsx": {
-    "mtime": 1786905329.2499642,
-    "ast_hash": "ad5ce945f9e830fdbad3385106985081",
+    "mtime": 1787785606.923043,
+    "ast_hash": "c4484688a4c85f9dccf1f49a093110c9",
     "semantic_hash": ""
   },
   "src/pages/Dashboard.tsx": {
@@ -630,8 +630,8 @@
     "semantic_hash": "82581f29278ce8d62424a1ff7858f414"
   },
   "src/pages/GestaoSuporte.tsx": {
-    "mtime": 1786919047.9952648,
-    "ast_hash": "5c4312a0415af1c07fb2deeea03c62e3",
+    "mtime": 1787785648.1241684,
+    "ast_hash": "372c803f57145ef27a9beec67fa0d0c4",
     "semantic_hash": ""
   },
   "src/pages/GestaoUsuarios.tsx": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1787784216.1883595,
-    "ast_hash": "0376fd882efa83f7bf519154031bce1d",
+    "mtime": 1787785655.6682394,
+    "ast_hash": "d13c0aecbdcb2eb6ecc2fab89ca91efa",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -740,8 +740,8 @@
     "semantic_hash": "77d73df49667d3b3e74981634d1a8d54"
   },
   "src/services/bancodados/suporteDB.ts": {
-    "mtime": 1786905329.256425,
-    "ast_hash": "d0d4d9ac75494649cc87c41ad5c5e67b",
+    "mtime": 1787785577.132542,
+    "ast_hash": "e2b681791ac25f4a2dae63eb1a6b49ef",
     "semantic_hash": ""
   },
   "src/services/bancodados/usuariosDB.ts": {
@@ -902,6 +902,11 @@
   "src/utils/registrationFlow.ts": {
     "mtime": 1787784039.799682,
     "ast_hash": "5445ebc6a57096835315b381375ee4eb",
+    "semantic_hash": ""
+  },
+  "src/utils/supportMetrics.ts": {
+    "mtime": 1787785577.13152,
+    "ast_hash": "551a3579a29770ef6312d8aecb617e47",
     "semantic_hash": ""
   }
 }

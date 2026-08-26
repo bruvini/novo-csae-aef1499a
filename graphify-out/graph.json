@@ -2768,8 +2768,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_footer",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "footer.tsx"
     },
     {
@@ -2779,8 +2779,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_footer_footer",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "footer()"
     },
     {
@@ -2790,8 +2790,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_header",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 10,
+      "community_name": "cn",
       "norm_label": "header.tsx"
     },
     {
@@ -2801,8 +2801,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_header_header",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 10,
+      "community_name": "cn",
       "norm_label": "header()"
     },
     {
@@ -2812,8 +2812,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_herobanner",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "herobanner.tsx"
     },
     {
@@ -2823,8 +2823,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_herobanner_herobannerprops",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "herobannerprops"
     },
     {
@@ -2834,8 +2834,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_components_herobanner_herobanner",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "herobanner()"
     },
     {
@@ -2879,7 +2879,7 @@
       "_origin": "ast",
       "id": "src_components_modalhistoricochangelog",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalhistoricochangelog.tsx"
     },
     {
@@ -2890,7 +2890,7 @@
       "_origin": "ast",
       "id": "src_components_modalhistoricochangelog_modalhistoricochangelogprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalhistoricochangelogprops"
     },
     {
@@ -2900,8 +2900,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_modalhistoricochangelog_modalhistoricochangelog",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "modalhistoricochangelog()"
     },
     {
@@ -2912,40 +2912,40 @@
       "_origin": "ast",
       "id": "src_components_modalnpsobrigatorio",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "modalnpsobrigatorio.tsx"
     },
     {
       "label": "ModalNPSObrigatorioProps",
       "file_type": "code",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L9",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_modalnpsobrigatorio_modalnpsobrigatorioprops",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "modalnpsobrigatorioprops"
     },
     {
       "label": "ScoreButton()",
       "file_type": "code",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_modalnpsobrigatorio_scorebutton",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "scorebutton()"
     },
     {
       "label": "ModalNPSObrigatorio()",
       "file_type": "code",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L54",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "src_components_modalnpsobrigatorio_modalnpsobrigatorio",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "modalnpsobrigatorio()"
     },
     {
@@ -2978,7 +2978,7 @@
       "_origin": "ast",
       "id": "src_components_processoenfermagemexplicacao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "processoenfermagemexplicacao.tsx"
     },
     {
@@ -2989,7 +2989,7 @@
       "_origin": "ast",
       "id": "src_components_processoenfermagemexplicacao_processoenfermagemexplicacao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "processoenfermagemexplicacao()"
     },
     {
@@ -3021,8 +3021,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_termoresponsabilidademodal",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "termoresponsabilidademodal.tsx"
     },
     {
@@ -3032,8 +3032,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_termoresponsabilidademodal_termoresponsabilidademodalprops",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "termoresponsabilidademodalprops"
     },
     {
@@ -3043,8 +3043,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_termoresponsabilidademodal_termoresponsabilidademodal",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "termoresponsabilidademodal()"
     },
     {
@@ -3054,8 +3054,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "formulariosistema.tsx"
     },
     {
@@ -3065,8 +3065,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_formulariosistemaprops",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "formulariosistemaprops"
     },
     {
@@ -3076,8 +3076,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_classificacao_suggestions",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "classificacao_suggestions"
     },
     {
@@ -3087,8 +3087,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_emptyachado",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "emptyachado()"
     },
     {
@@ -3098,8 +3098,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_emptyopcao",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "emptyopcao()"
     },
     {
@@ -3109,8 +3109,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_achadoeditstate",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "achadoeditstate"
     },
     {
@@ -3120,8 +3120,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_inferehalteracao",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "inferehalteracao()"
     },
     {
@@ -3131,8 +3131,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_sortedachadoswithindex",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "sortedachadoswithindex()"
     },
     {
@@ -3142,8 +3142,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_helpertext",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "helpertext()"
     },
     {
@@ -3153,8 +3153,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_formulariosistema_formulariosistema",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "formulariosistema()"
     },
     {
@@ -3197,7 +3197,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrodiagnostico",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "modalcadastrodiagnostico.tsx"
     },
@@ -3208,7 +3208,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrodiagnostico_subconjunto",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "subconjunto"
     },
@@ -3219,7 +3219,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrodiagnostico_modalcadastrodiagnostico",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "modalcadastrodiagnostico()"
     },
@@ -3230,7 +3230,7 @@
       "source_location": "L434",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrodiagnostico_materialupload",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "materialupload()"
     },
@@ -3241,8 +3241,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrosubconjunto",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "modalcadastrosubconjunto.tsx"
     },
     {
@@ -3252,8 +3252,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrosubconjunto_modalcadastrosubconjuntoprops",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "modalcadastrosubconjuntoprops"
     },
     {
@@ -3263,8 +3263,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalcadastrosubconjunto_modalcadastrosubconjunto",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "modalcadastrosubconjunto()"
     },
     {
@@ -3275,7 +3275,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalconfirmacaoexclusao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "gestao-conteudos/modalconfirmacaoexclusao.tsx"
     },
     {
@@ -3286,7 +3286,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalconfirmacaoexclusao_modalconfirmacaoexclusaoprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalconfirmacaoexclusaoprops"
     },
     {
@@ -3308,7 +3308,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modaldetalhessubconjunto",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaldetalhessubconjunto.tsx"
     },
     {
@@ -3318,8 +3318,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modaldetalhessubconjunto_modaldetalhessubconjuntoprops",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "modaldetalhessubconjuntoprops"
     },
     {
@@ -3330,7 +3330,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modaldetalhessubconjunto_modaldetalhessubconjunto",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaldetalhessubconjunto()"
     },
     {
@@ -3341,7 +3341,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizardiagnostico",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalvisualizardiagnostico.tsx"
     },
     {
@@ -3352,7 +3352,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizardiagnostico_modalvisualizardiagnosticoprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalvisualizardiagnosticoprops"
     },
     {
@@ -3363,7 +3363,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizardiagnostico_modalvisualizardiagnostico",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalvisualizardiagnostico()"
     },
     {
@@ -3374,7 +3374,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizarsistema",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalvisualizarsistema.tsx"
     },
     {
@@ -3384,8 +3384,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizarsistema_modalvisualizarsistemaprops",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "modalvisualizarsistemaprops"
     },
     {
@@ -3396,7 +3396,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizarsistema_inferehalteracao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "inferehalteracao()"
     },
     {
@@ -3407,7 +3407,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizarsistema_sortedachados",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "sortedachados()"
     },
     {
@@ -3418,7 +3418,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_modalvisualizarsistema_modalvisualizarsistema",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalvisualizarsistema()"
     },
     {
@@ -3439,8 +3439,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_components_gestao_conteudos_tabeladiagnosticos_tabeladiagnosticos",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "tabeladiagnosticos()"
     },
     {
@@ -3605,7 +3605,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_usuarios_modaldetalhesusuario",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaldetalhesusuario.tsx"
     },
     {
@@ -3627,7 +3627,7 @@
       "_origin": "ast",
       "id": "src_components_gestao_usuarios_modaldetalhesusuario_modaldetalhesusuario",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaldetalhesusuario()"
     },
     {
@@ -3637,8 +3637,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_gestao_usuarios_modaledicaoprivilegios",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "modaledicaoprivilegios.tsx"
     },
     {
@@ -3659,8 +3659,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_components_gestao_usuarios_modaledicaoprivilegios_modaledicaoprivilegios",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "modaledicaoprivilegios()"
     },
     {
@@ -3670,8 +3670,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_gestao_usuarios_modalmotivorecusa",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modalmotivorecusa.tsx"
     },
     {
@@ -3737,7 +3737,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaavaliacao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaavaliacao.tsx"
     },
     {
@@ -3748,7 +3748,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaavaliacao_validationstatus",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "validationstatus"
     },
     {
@@ -3758,7 +3758,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaavaliacao_etapaavaliacaoprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapaavaliacaoprops"
     },
@@ -3769,8 +3769,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaavaliacao_etapaavaliacao",
-      "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "etapaavaliacao()"
     },
     {
@@ -3781,7 +3781,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapadiagnostico",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapadiagnostico.tsx"
     },
     {
@@ -3791,7 +3791,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapadiagnostico_etapadiagnosticoprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapadiagnosticoprops"
     },
@@ -3803,7 +3803,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapadiagnostico_diagnosticoporsubconjunto",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "diagnosticoporsubconjunto"
     },
     {
@@ -3814,7 +3814,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapadiagnostico_etapadiagnostico",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapadiagnostico()"
     },
     {
@@ -3825,7 +3825,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaevolucao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaevolucao.tsx"
     },
     {
@@ -3836,7 +3836,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaevolucao_etapaevolucaoprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaevolucaoprops"
     },
     {
@@ -3847,7 +3847,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaevolucao_etapaevolucao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaevolucao()"
     },
     {
@@ -3858,7 +3858,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaimplementacao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaimplementacao.tsx"
     },
     {
@@ -3868,7 +3868,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaimplementacao_etapaimplementacaoprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapaimplementacaoprops"
     },
@@ -3880,7 +3880,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaimplementacao_etapaimplementacao",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaimplementacao()"
     },
     {
@@ -3891,7 +3891,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaplanejamento",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaplanejamento.tsx"
     },
     {
@@ -3901,7 +3901,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaplanejamento_etapaplanejamentoprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapaplanejamentoprops"
     },
@@ -3913,7 +3913,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etapaplanejamento_etapaplanejamento",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etapaplanejamento()"
     },
     {
@@ -3924,7 +3924,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etaparesumo",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etaparesumo.tsx"
     },
     {
@@ -3935,7 +3935,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etaparesumo_etaparesumoprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etaparesumoprops"
     },
     {
@@ -3946,7 +3946,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_etaparesumo_etaparesumo",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "etaparesumo()"
     },
     {
@@ -3990,7 +3990,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_historicoprocessosmodal",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "historicoprocessosmodal.tsx"
     },
     {
@@ -4001,7 +4001,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_historicoprocessosmodal_historicoprocessosmodalprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "historicoprocessosmodalprops"
     },
     {
@@ -4012,7 +4012,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_historicoprocessosmodal_historicoprocessosmodal",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "historicoprocessosmodal()"
     },
     {
@@ -4023,7 +4023,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_indicadoresproducaomodal",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "indicadoresproducaomodal.tsx"
     },
     {
@@ -4034,7 +4034,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_indicadoresproducaomodal_indicadoresproducaomodalprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "indicadoresproducaomodalprops"
     },
     {
@@ -4066,8 +4066,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_intervencaoitem_intervencaoitemprops",
-      "community": 106,
-      "community_name": "IntervencaoItem.tsx",
+      "community": 19,
+      "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "intervencaoitemprops"
     },
     {
@@ -4154,7 +4154,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modalcadastropaciente",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "modalcadastropaciente.tsx"
     },
@@ -4165,7 +4165,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modalcadastropaciente_formvalues",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "formvalues"
     },
@@ -4176,7 +4176,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modalcadastropaciente_modalcadastropacienteprops",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "modalcadastropacienteprops"
     },
@@ -4187,7 +4187,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modalcadastropaciente_modalcadastropaciente",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "modalcadastropaciente()"
     },
@@ -4199,7 +4199,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modaleditarpaciente",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaleditarpaciente.tsx"
     },
     {
@@ -4210,7 +4210,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modaleditarpaciente_modaleditarpacienteprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaleditarpacienteprops"
     },
     {
@@ -4221,7 +4221,7 @@
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_modaleditarpaciente_modaleditarpaciente",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "modaleditarpaciente()"
     },
     {
@@ -4231,7 +4231,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_processoenfermagemmodal",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoenfermagemmodal.tsx"
     },
@@ -4242,7 +4242,7 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_processoenfermagemmodal_processoenfermagemmodalprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoenfermagemmodalprops"
     },
@@ -4253,7 +4253,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_processoenfermagemmodal_processoenfermagemmodal",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoenfermagemmodal()"
     },
@@ -4264,7 +4264,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_stepperprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "stepperprocesso.tsx"
     },
@@ -4275,7 +4275,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_stepperprocesso_stepperprocessoprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "stepperprocessoprops"
     },
@@ -4286,7 +4286,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_stepperprocesso_icones_etapas",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "icones_etapas"
     },
@@ -4297,7 +4297,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_stepperprocesso_stepperprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "stepperprocesso()"
     },
@@ -4308,7 +4308,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_tempoativobadge",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "tempoativobadge.tsx"
     },
@@ -4319,7 +4319,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_tempoativobadge_tempoativobadgeprops",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "tempoativobadgeprops"
     },
@@ -4330,7 +4330,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_components_processo_enfermagem_tempoativobadge_tempoativobadge",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "tempoativobadge()"
     },
@@ -4441,7 +4441,7 @@
       "_origin": "ast",
       "id": "src_components_ui_accordion",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "accordion.tsx"
     },
     {
@@ -4452,7 +4452,7 @@
       "_origin": "ast",
       "id": "src_components_ui_accordion_accordionitem",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "accordionitem"
     },
     {
@@ -4463,7 +4463,7 @@
       "_origin": "ast",
       "id": "src_components_ui_accordion_accordiontrigger",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "accordiontrigger"
     },
     {
@@ -4474,7 +4474,7 @@
       "_origin": "ast",
       "id": "src_components_ui_accordion_accordioncontent",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "accordioncontent"
     },
     {
@@ -4584,7 +4584,7 @@
       "_origin": "ast",
       "id": "src_components_ui_alert",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "alert.tsx"
     },
     {
@@ -4595,7 +4595,7 @@
       "_origin": "ast",
       "id": "src_components_ui_alert_alertvariants",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "alertvariants"
     },
     {
@@ -4606,7 +4606,7 @@
       "_origin": "ast",
       "id": "src_components_ui_alert_alert",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "alert"
     },
     {
@@ -4617,7 +4617,7 @@
       "_origin": "ast",
       "id": "src_components_ui_alert_alerttitle",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "alerttitle"
     },
     {
@@ -4628,7 +4628,7 @@
       "_origin": "ast",
       "id": "src_components_ui_alert_alertdescription",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "alertdescription"
     },
     {
@@ -4694,7 +4694,7 @@
       "_origin": "ast",
       "id": "src_components_ui_badge",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "badge.tsx"
     },
     {
@@ -4705,7 +4705,7 @@
       "_origin": "ast",
       "id": "src_components_ui_badge_badgevariants",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "badgevariants"
     },
     {
@@ -4716,7 +4716,7 @@
       "_origin": "ast",
       "id": "src_components_ui_badge_badgeprops",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "badgeprops"
     },
     {
@@ -4727,7 +4727,7 @@
       "_origin": "ast",
       "id": "src_components_ui_badge_badge",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "badge()"
     },
     {
@@ -4825,8 +4825,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_button",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "button.tsx"
     },
     {
@@ -4858,8 +4858,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_components_ui_button_button",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "button"
     },
     {
@@ -4903,7 +4903,7 @@
       "_origin": "ast",
       "id": "src_components_ui_card",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "card.tsx"
     },
     {
@@ -4914,7 +4914,7 @@
       "_origin": "ast",
       "id": "src_components_ui_card_card",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "card"
     },
     {
@@ -4925,7 +4925,7 @@
       "_origin": "ast",
       "id": "src_components_ui_card_cardheader",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "cardheader"
     },
     {
@@ -4936,7 +4936,7 @@
       "_origin": "ast",
       "id": "src_components_ui_card_cardtitle",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "cardtitle"
     },
     {
@@ -4946,8 +4946,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_components_ui_card_carddescription",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "carddescription"
     },
     {
@@ -4958,7 +4958,7 @@
       "_origin": "ast",
       "id": "src_components_ui_card_cardcontent",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "cardcontent"
     },
     {
@@ -4968,8 +4968,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "src_components_ui_card_cardfooter",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "cardfooter"
     },
     {
@@ -5255,7 +5255,7 @@
       "_origin": "ast",
       "id": "src_components_ui_checkbox",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "checkbox.tsx"
     },
     {
@@ -5266,7 +5266,7 @@
       "_origin": "ast",
       "id": "src_components_ui_checkbox_checkbox",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "checkbox"
     },
     {
@@ -5552,7 +5552,7 @@
       "_origin": "ast",
       "id": "src_components_ui_dialog",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialog.tsx"
     },
     {
@@ -5563,7 +5563,7 @@
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogoverlay",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialogoverlay"
     },
     {
@@ -5574,7 +5574,7 @@
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogcontent",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialogcontent"
     },
     {
@@ -5585,7 +5585,7 @@
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogheader",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialogheader()"
     },
     {
@@ -5595,8 +5595,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogfooter",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "dialogfooter()"
     },
     {
@@ -5607,7 +5607,7 @@
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogtitle",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialogtitle"
     },
     {
@@ -5617,8 +5617,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_components_ui_dialog_dialogdescription",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "dialogdescription"
     },
     {
@@ -5628,8 +5628,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_drawer",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawer.tsx"
     },
     {
@@ -5639,8 +5639,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawer",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawer()"
     },
     {
@@ -5650,8 +5650,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_ui_drawer_draweroverlay",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "draweroverlay"
     },
     {
@@ -5661,8 +5661,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawercontent",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawercontent"
     },
     {
@@ -5672,8 +5672,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawerheader",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawerheader()"
     },
     {
@@ -5683,8 +5683,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawerfooter",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawerfooter()"
     },
     {
@@ -5694,8 +5694,8 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawertitle",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawertitle"
     },
     {
@@ -5705,8 +5705,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "src_components_ui_drawer_drawerdescription",
-      "community": 10,
-      "community_name": "cn",
+      "community": 127,
+      "community_name": "drawer.tsx",
       "norm_label": "drawerdescription"
     },
     {
@@ -6068,8 +6068,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_input",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "input.tsx"
     },
     {
@@ -6079,8 +6079,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_ui_input_input",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "input"
     },
     {
@@ -6090,8 +6090,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_label",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 106,
+      "community_name": "IntervencaoItem.tsx",
       "norm_label": "label.tsx"
     },
     {
@@ -6101,8 +6101,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_ui_label_labelvariants",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 106,
+      "community_name": "IntervencaoItem.tsx",
       "norm_label": "labelvariants"
     },
     {
@@ -6112,8 +6112,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_components_ui_label_label",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 106,
+      "community_name": "IntervencaoItem.tsx",
       "norm_label": "label"
     },
     {
@@ -6464,7 +6464,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_progress",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "progress.tsx"
     },
@@ -6475,7 +6475,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_ui_progress_progress",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "progress"
     },
@@ -6486,8 +6486,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_radio_group",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "radio-group.tsx"
     },
     {
@@ -6497,8 +6497,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_ui_radio_group_radiogroup",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "radiogroup"
     },
     {
@@ -6508,8 +6508,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_ui_radio_group_radiogroupitem",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "radiogroupitem"
     },
     {
@@ -6553,7 +6553,7 @@
       "_origin": "ast",
       "id": "src_components_ui_scroll_area",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "scroll-area.tsx"
     },
     {
@@ -6564,7 +6564,7 @@
       "_origin": "ast",
       "id": "src_components_ui_scroll_area_scrollarea",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "scrollarea"
     },
     {
@@ -6575,7 +6575,7 @@
       "_origin": "ast",
       "id": "src_components_ui_scroll_area_scrollbar",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "scrollbar"
     },
     {
@@ -6585,8 +6585,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_select",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "select.tsx"
     },
     {
@@ -6596,8 +6596,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_ui_select_selecttrigger",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selecttrigger"
     },
     {
@@ -6607,8 +6607,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_components_ui_select_selectscrollupbutton",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectscrollupbutton"
     },
     {
@@ -6618,8 +6618,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_ui_select_selectscrolldownbutton",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectscrolldownbutton"
     },
     {
@@ -6629,8 +6629,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_components_ui_select_selectcontent",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectcontent"
     },
     {
@@ -6640,8 +6640,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "src_components_ui_select_selectlabel",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectlabel"
     },
     {
@@ -6651,8 +6651,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "src_components_ui_select_selectitem",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectitem"
     },
     {
@@ -6662,8 +6662,8 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "src_components_ui_select_selectseparator",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 117,
+      "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "selectseparator"
     },
     {
@@ -6673,8 +6673,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_separator",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "separator.tsx"
     },
     {
@@ -6684,8 +6684,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_ui_separator_separator",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "separator"
     },
     {
@@ -7168,8 +7168,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_switch",
-      "community": 132,
-      "community_name": "utils.ts",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "switch.tsx"
     },
     {
@@ -7179,8 +7179,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_ui_switch_switch",
-      "community": 132,
-      "community_name": "utils.ts",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "switch"
     },
     {
@@ -7289,8 +7289,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_tabs",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "tabs.tsx"
     },
     {
@@ -7300,8 +7300,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_ui_tabs_tabslist",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "tabslist"
     },
     {
@@ -7311,8 +7311,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_ui_tabs_tabstrigger",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "tabstrigger"
     },
     {
@@ -7322,8 +7322,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_ui_tabs_tabscontent",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "tabscontent"
     },
     {
@@ -7333,8 +7333,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_textarea",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "textarea.tsx"
     },
     {
@@ -7344,8 +7344,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_components_ui_textarea_textarea",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "textarea"
     },
     {
@@ -7564,8 +7564,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_tooltip",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 8,
+      "community_name": "PainelEstatistico.tsx",
       "norm_label": "tooltip.tsx"
     },
     {
@@ -7575,8 +7575,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_components_ui_tooltip_tooltipcontent",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 8,
+      "community_name": "PainelEstatistico.tsx",
       "norm_label": "tooltipcontent"
     },
     {
@@ -7586,8 +7586,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_ui_use_toast",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "ui/use-toast.ts"
     },
     {
@@ -7597,7 +7597,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_contexts_authcontext",
-      "community": 19,
+      "community": 5,
       "community_name": "AuthContext.tsx",
       "norm_label": "authcontext.tsx"
     },
@@ -7608,7 +7608,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_contexts_authcontext_sessiondata",
-      "community": 19,
+      "community": 5,
       "community_name": "AuthContext.tsx",
       "norm_label": "sessiondata"
     },
@@ -7619,7 +7619,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_contexts_authcontext_authcontexttype",
-      "community": 19,
+      "community": 5,
       "community_name": "AuthContext.tsx",
       "norm_label": "authcontexttype"
     },
@@ -7630,7 +7630,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_contexts_authcontext_authcontext",
-      "community": 19,
+      "community": 5,
       "community_name": "AuthContext.tsx",
       "norm_label": "authcontext"
     },
@@ -7652,7 +7652,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_contexts_authcontext_authproviderprops",
-      "community": 19,
+      "community": 5,
       "community_name": "AuthContext.tsx",
       "norm_label": "authproviderprops"
     },
@@ -7663,8 +7663,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_contexts_authcontext_authprovider",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "authprovider()"
     },
     {
@@ -7707,8 +7707,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_contexts_supportnotificationscontext",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "supportnotificationscontext.tsx"
     },
     {
@@ -7718,8 +7718,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_contexts_supportnotificationscontext_supportnotificationscontexttype",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "supportnotificationscontexttype"
     },
     {
@@ -7729,8 +7729,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_contexts_supportnotificationscontext_contageminicial",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "contageminicial"
     },
     {
@@ -7740,8 +7740,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_contexts_supportnotificationscontext_supportnotificationscontext",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "supportnotificationscontext"
     },
     {
@@ -7751,8 +7751,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_contexts_supportnotificationscontext_supportnotificationsprovider",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "supportnotificationsprovider()"
     },
     {
@@ -7949,8 +7949,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "src_hooks_use_toast_ts_src_hooks_use_toast_usetoast",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "usetoast()"
     },
     {
@@ -8125,8 +8125,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_useindicadorestemporeal",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 5,
+      "community_name": "AuthContext.tsx",
       "norm_label": "useindicadorestemporeal.ts"
     },
     {
@@ -8136,8 +8136,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_hooks_useindicadorestemporeal_indicadorestemporeal",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 5,
+      "community_name": "AuthContext.tsx",
       "norm_label": "indicadorestemporeal"
     },
     {
@@ -8147,8 +8147,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_hooks_useindicadorestemporeal_useindicadorestemporeal",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 5,
+      "community_name": "AuthContext.tsx",
       "norm_label": "useindicadorestemporeal()"
     },
     {
@@ -8246,8 +8246,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_pages",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "pages.ts"
     },
     {
@@ -8257,8 +8257,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_pages_pageinfo",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "pageinfo"
     },
     {
@@ -8268,8 +8268,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_lib_pages_protectedrouteprops",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "protectedrouteprops"
     },
     {
@@ -8279,8 +8279,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_lib_pages_availablepages",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 3,
+      "community_name": "GestaoUsuarios.tsx",
       "norm_label": "availablepages"
     },
     {
@@ -8346,62 +8346,62 @@
       "_origin": "ast",
       "id": "src_pages_centralajuda",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "centralajuda.tsx"
     },
     {
       "label": "formatarData()",
       "file_type": "code",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L54",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "src_pages_centralajuda_formatardata",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "formatardata()"
     },
     {
       "label": "MODULOS",
       "file_type": "code",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L63",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "src_pages_centralajuda_modulos",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "modulos"
     },
     {
       "label": "CATEGORIAS_SUGESTAO",
       "file_type": "code",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L73",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "src_pages_centralajuda_categorias_sugestao",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "categorias_sugestao"
     },
     {
       "label": "ScoreButton()",
       "file_type": "code",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L83",
+      "source_location": "L85",
       "_origin": "ast",
       "id": "src_pages_centralajuda_scorebutton",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "scorebutton()"
     },
     {
       "label": "CentralAjuda()",
       "file_type": "code",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L118",
+      "source_location": "L120",
       "_origin": "ast",
       "id": "src_pages_centralajuda_centralajuda",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "centralajuda()"
     },
     {
@@ -8411,8 +8411,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_dashboard",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "dashboard.tsx"
     },
     {
@@ -8422,8 +8422,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_pages_dashboard_formatardatahora",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "formatardatahora()"
     },
     {
@@ -8433,8 +8433,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_pages_dashboard_dashboard",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "dashboard()"
     },
     {
@@ -8444,8 +8444,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_debugusers",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "debugusers.tsx"
     },
     {
@@ -8455,8 +8455,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_debugusers_debugusers",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "debugusers()"
     },
     {
@@ -8466,8 +8466,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_gestaoconteudos",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 131,
+      "community_name": "App.tsx",
       "norm_label": "gestaoconteudos.tsx"
     },
     {
@@ -8488,41 +8488,63 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_gestaosuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "gestaosuporte.tsx"
     },
     {
       "label": "formatarData()",
       "file_type": "code",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L44",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "src_pages_gestaosuporte_formatardata",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "formatardata()"
     },
     {
       "label": "media()",
       "file_type": "code",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L53",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "src_pages_gestaosuporte_media",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "media()"
+    },
+    {
+      "label": "BlocoKpisProps",
+      "file_type": "code",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L65",
+      "_origin": "ast",
+      "id": "src_pages_gestaosuporte_blocokpisprops",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "blocokpisprops"
+    },
+    {
+      "label": "BlocoKpis()",
+      "file_type": "code",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L76",
+      "_origin": "ast",
+      "id": "src_pages_gestaosuporte_blocokpis",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "blocokpis()"
     },
     {
       "label": "GestaoSuporte()",
       "file_type": "code",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L61",
+      "source_location": "L142",
       "_origin": "ast",
       "id": "src_pages_gestaosuporte_gestaosuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "gestaosuporte()"
     },
     {
@@ -8554,8 +8576,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_index",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "index.tsx"
     },
     {
@@ -8752,8 +8774,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_processoenfermagem",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "processoenfermagem.tsx"
     },
     {
@@ -8763,8 +8785,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_pages_processoenfermagem_processoenfermagem",
-      "community": 118,
-      "community_name": "useAuth",
+      "community": 5,
+      "community_name": "AuthContext.tsx",
       "norm_label": "processoenfermagem()"
     },
     {
@@ -8774,8 +8796,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_register",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "register.tsx"
     },
     {
@@ -8785,8 +8807,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_pages_register_termodata",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "termodata"
     },
     {
@@ -8796,8 +8818,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_pages_register_register",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "register()"
     },
     {
@@ -8807,8 +8829,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_waitingapproval",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 24,
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "waitingapproval.tsx"
     },
     {
@@ -9049,8 +9071,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "changelogdb.ts"
     },
     {
@@ -9060,8 +9082,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_changelog",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "changelog"
     },
     {
@@ -9071,8 +9093,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_buscarchangelogsrecentes",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "buscarchangelogsrecentes()"
     },
     {
@@ -9082,8 +9104,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_buscartodoschangelogs",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "buscartodoschangelogs()"
     },
     {
@@ -9093,8 +9115,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_salvarchangelog",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "salvarchangelog()"
     },
     {
@@ -9104,8 +9126,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_inserirchangelogidempotente",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "inserirchangelogidempotente()"
     },
     {
@@ -9115,41 +9137,41 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_changelogs_sistema",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "changelogs_sistema"
     },
     {
       "label": "seedChangelogCompleto()",
       "file_type": "code",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L227",
+      "source_location": "L232",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_seedchangelogcompleto",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "seedchangelogcompleto()"
     },
     {
       "label": "seedChangelogInicial()",
       "file_type": "code",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L251",
+      "source_location": "L256",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_seedchangeloginicial",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "seedchangeloginicial()"
     },
     {
       "label": "inserirChangelogRedesignAvaliacao()",
       "file_type": "code",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L257",
+      "source_location": "L262",
       "_origin": "ast",
       "id": "src_services_bancodados_changelogdb_inserirchangelogredesignavaliacao",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "inserirchangelogredesignavaliacao()"
     },
     {
@@ -9159,7 +9181,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "diagnosticosdb.ts"
     },
@@ -9170,7 +9192,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_materialapoio",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "materialapoio"
     },
@@ -9181,7 +9203,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_intervencaoenfermagem",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "intervencaoenfermagem"
     },
@@ -9192,7 +9214,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_resultadoesperado",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "resultadoesperado"
     },
@@ -9203,7 +9225,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_subconjuntovinculado",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "subconjuntovinculado"
     },
@@ -9214,7 +9236,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_diagnosticoenfermagem",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "diagnosticoenfermagem"
     },
@@ -9225,7 +9247,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_verificardiagnosticoduplicado",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "verificardiagnosticoduplicado()"
     },
@@ -9236,7 +9258,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_uploadmaterialapoio",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "uploadmaterialapoio()"
     },
@@ -9247,7 +9269,7 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_services_bancodados_diagnosticosdb_salvardiagnostico",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "salvardiagnostico()"
     },
@@ -9324,8 +9346,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_services_bancodados_examesdb_getexames",
-      "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "getexames()"
     },
     {
@@ -9511,8 +9533,8 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "src_services_bancodados_gestaousuariosdb_buscarestatisticasglobais",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 123,
+      "community_name": "Dashboard.tsx",
       "norm_label": "buscarestatisticasglobais()"
     },
     {
@@ -9522,7 +9544,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_index",
-      "community": 39,
+      "community": 119,
       "community_name": "index.ts",
       "norm_label": "index.ts"
     },
@@ -9533,8 +9555,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_intervencoesautoraisdb",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 19,
+      "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "intervencoesautoraisdb.ts"
     },
     {
@@ -9544,8 +9566,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_services_bancodados_intervencoesautoraisdb_intervencaoautoral",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 19,
+      "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "intervencaoautoral"
     },
     {
@@ -9555,8 +9577,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_services_bancodados_intervencoesautoraisdb_salvarintervencoesautorais",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 19,
+      "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "salvarintervencoesautorais()"
     },
     {
@@ -9567,7 +9589,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "pacientesdb.ts"
     },
     {
@@ -9577,7 +9599,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_cadastrarpaciente",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "cadastrarpaciente()"
     },
@@ -9588,7 +9610,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_atualizarpaciente",
-      "community": 0,
+      "community": 117,
       "community_name": "ModalCadastroPaciente.tsx",
       "norm_label": "atualizarpaciente()"
     },
@@ -9611,7 +9633,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_buscarpacientesusuario",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "buscarpacientesusuario()"
     },
     {
@@ -9622,7 +9644,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_buscarpacientesporenfermeiro",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "buscarpacientesporenfermeiro()"
     },
     {
@@ -9633,7 +9655,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_determinarstatuspaciente",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "determinarstatuspaciente()"
     },
     {
@@ -9644,7 +9666,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_calcularindicadorescomprocessos",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "calcularindicadorescomprocessos()"
     },
     {
@@ -9655,7 +9677,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_calcularindicadoresexpandidos",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "calcularindicadoresexpandidos()"
     },
     {
@@ -9666,7 +9688,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_pacientesdb_calcularindicadores",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "calcularindicadores()"
     },
     {
@@ -9676,7 +9698,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processosenfermagemdb.ts"
     },
@@ -9687,7 +9709,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_sanitizarparafirestore",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "sanitizarparafirestore()"
     },
@@ -9698,7 +9720,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_criarprocessoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "criarprocessoenfermagem()"
     },
@@ -9709,7 +9731,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_iniciarnovasessao",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "iniciarnovasessao()"
     },
@@ -9720,7 +9742,7 @@
       "source_location": "L125",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_finalizarsessaoatual",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "finalizarsessaoatual()"
     },
@@ -9731,7 +9753,7 @@
       "source_location": "L175",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_buscarprocessoativo",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "buscarprocessoativo()"
     },
@@ -9742,7 +9764,7 @@
       "source_location": "L202",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_buscarprocessoconcluido",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "buscarprocessoconcluido()"
     },
@@ -9754,7 +9776,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_buscarprocessosconcluidos",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "buscarprocessosconcluidos()"
     },
     {
@@ -9764,7 +9786,7 @@
       "source_location": "L256",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_salvarprogressoprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "salvarprogressoprocesso()"
     },
@@ -9775,7 +9797,7 @@
       "source_location": "L299",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_concluirprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "concluirprocesso()"
     },
@@ -9786,7 +9808,7 @@
       "source_location": "L343",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_excluirprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "excluirprocesso()"
     },
@@ -9797,7 +9819,7 @@
       "source_location": "L369",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_buscarprocessoporid",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "buscarprocessoporid()"
     },
@@ -9808,7 +9830,7 @@
       "source_location": "L395",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_contarprocessosconcluidos",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "contarprocessosconcluidos()"
     },
@@ -9819,7 +9841,7 @@
       "source_location": "L402",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_contartotalprocessos",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "contartotalprocessos()"
     },
@@ -9830,7 +9852,7 @@
       "source_location": "L410",
       "_origin": "ast",
       "id": "src_services_bancodados_processosenfermagemdb_excluirprocessosporpaciente",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "excluirprocessosporpaciente()"
     },
@@ -9841,8 +9863,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "revisaosistemasdb.ts"
     },
     {
@@ -9852,8 +9874,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_opcaoachado",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "opcaoachado"
     },
     {
@@ -9863,8 +9885,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_achado",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "achado"
     },
     {
@@ -9874,8 +9896,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_examepropedeutico",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "examepropedeutico"
     },
     {
@@ -9885,8 +9907,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_sistemacorporal",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "sistemacorporal"
     },
     {
@@ -9897,7 +9919,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_getsistemas",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "getsistemas()"
     },
     {
@@ -9907,8 +9929,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_addsistema",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "addsistema()"
     },
     {
@@ -9918,8 +9940,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_services_bancodados_revisaosistemasdb_updatesistema",
-      "community": 2,
-      "community_name": "TabelaExames.tsx",
+      "community": 41,
+      "community_name": "FormularioSistema.tsx",
       "norm_label": "updatesistema()"
     },
     {
@@ -9951,8 +9973,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "rolenfermagemdb.ts"
     },
     {
@@ -9962,8 +9984,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_materialapoio",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "materialapoio"
     },
     {
@@ -9973,8 +9995,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_intervencao",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "intervencao"
     },
     {
@@ -9984,8 +10006,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_resultadoesperado",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "resultadoesperado"
     },
     {
@@ -9995,8 +10017,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_subconjunto",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "subconjunto"
     },
     {
@@ -10007,7 +10029,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_diagnostico",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "diagnostico"
     },
     {
@@ -10018,7 +10040,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_getdiagnosticos",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "getdiagnosticos()"
     },
     {
@@ -10028,8 +10050,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_adddiagnostico",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "adddiagnostico()"
     },
     {
@@ -10039,8 +10061,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_updatediagnostico",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "updatediagnostico()"
     },
     {
@@ -10050,8 +10072,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_services_bancodados_rolenfermagemdb_deletediagnostico",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "deletediagnostico()"
     },
     {
@@ -10105,8 +10127,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_services_bancodados_sinaisvitaisdb_getsinaisvitais",
-      "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "getsinaisvitais()"
     },
     {
@@ -10171,8 +10193,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_services_bancodados_subconjuntosdb_subconjuntoenfermagem",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "subconjuntoenfermagem"
     },
     {
@@ -10182,8 +10204,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_services_bancodados_subconjuntosdb_buscarsubconjuntos",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 2,
+      "community_name": "TabelaExames.tsx",
       "norm_label": "buscarsubconjuntos()"
     },
     {
@@ -10204,8 +10226,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_services_bancodados_subconjuntosdb_atualizarsubconjunto",
-      "community": 119,
-      "community_name": "ModalCadastroSubconjunto.tsx",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "atualizarsubconjunto()"
     },
     {
@@ -10260,7 +10282,7 @@
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "suportedb.ts"
     },
     {
@@ -10270,261 +10292,261 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_ticketproblema",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "ticketproblema"
     },
     {
       "label": "SugestaoMelhoria",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L39",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_sugestaomelhoria",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "sugestaomelhoria"
     },
     {
       "label": "ContagemNotificacoesSuporte",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L54",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_contagemnotificacoessuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "contagemnotificacoessuporte"
     },
     {
       "label": "PesquisaNPS",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L60",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_pesquisanps",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "pesquisanps"
     },
     {
       "label": "buscarMeusTickets()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L73",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_buscarmeustickets",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "buscarmeustickets()"
     },
     {
       "label": "buscarTodosTickets()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L80",
+      "source_location": "L82",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_buscartodostickets",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "buscartodostickets()"
     },
     {
       "label": "salvarTicket()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L87",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_salvarticket",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "salvarticket()"
     },
     {
       "label": "responderTicket()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L99",
+      "source_location": "L101",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_responderticket",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "responderticket()"
     },
     {
       "label": "resolverTicket()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L109",
+      "source_location": "L111",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_resolverticket",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "resolverticket()"
     },
     {
       "label": "buscarMinhasSugestoes()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L123",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_buscarminhassugestoes",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "buscarminhassugestoes()"
     },
     {
       "label": "buscarTodasSugestoes()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L130",
+      "source_location": "L132",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_buscartodassugestoes",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "buscartodassugestoes()"
     },
     {
       "label": "salvarSugestao()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L137",
+      "source_location": "L139",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_salvarsugestao",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "salvarsugestao()"
     },
     {
       "label": "responderSugestao()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L148",
+      "source_location": "L150",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_respondersugestao",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "respondersugestao()"
     },
     {
       "label": "criarContagem()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L160",
+      "source_location": "L162",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_criarcontagem",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "criarcontagem()"
     },
     {
       "label": "observarRespostasNaoVisualizadas()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L166",
+      "source_location": "L168",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_observarrespostasnaovisualizadas",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "observarrespostasnaovisualizadas()"
     },
     {
       "label": "observarItensNovosSuporte()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L208",
+      "source_location": "L210",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_observaritensnovossuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 118,
+      "community_name": "useAuth",
       "norm_label": "observaritensnovossuporte()"
     },
     {
       "label": "marcarDocumentosComoVisualizados()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L242",
+      "source_location": "L244",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_marcardocumentoscomovisualizados",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "marcardocumentoscomovisualizados()"
     },
     {
       "label": "marcarTicketsComoVisualizadosPeloUsuario()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L258",
+      "source_location": "L260",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_marcarticketscomovisualizadospelousuario",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "marcarticketscomovisualizadospelousuario()"
     },
     {
       "label": "marcarSugestoesComoVisualizadasPeloUsuario()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L265",
+      "source_location": "L267",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_marcarsugestoescomovisualizadaspelousuario",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "marcarsugestoescomovisualizadaspelousuario()"
     },
     {
       "label": "marcarTicketComoVisualizadoPeloSuporte()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L272",
+      "source_location": "L274",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_marcarticketcomovisualizadopelosuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "marcarticketcomovisualizadopelosuporte()"
     },
     {
       "label": "marcarSugestaoComoVisualizadaPeloSuporte()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L279",
+      "source_location": "L281",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_marcarsugestaocomovisualizadapelosuporte",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "marcarsugestaocomovisualizadapelosuporte()"
     },
     {
       "label": "verificarElegibilidadeNPS()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L292",
+      "source_location": "L294",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_verificarelegibilidadenps",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "verificarelegibilidadenps()"
     },
     {
       "label": "salvarPesquisaNPS()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L314",
+      "source_location": "L316",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_salvarpesquisanps",
       "community": 39,
-      "community_name": "index.ts",
+      "community_name": "CentralAjuda.tsx",
       "norm_label": "salvarpesquisanps()"
     },
     {
       "label": "buscarAvaliacoesNPS()",
       "file_type": "code",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L326",
+      "source_location": "L357",
       "_origin": "ast",
       "id": "src_services_bancodados_suportedb_buscaravaliacoesnps",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
       "norm_label": "buscaravaliacoesnps()"
     },
     {
@@ -10534,8 +10556,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_services_bancodados_usuariosdb",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "usuariosdb.ts"
     },
     {
@@ -10545,8 +10567,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_services_bancodados_usuariosdb_dadospessoais",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "dadospessoais"
     },
     {
@@ -10556,8 +10578,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_services_bancodados_usuariosdb_dadosprofissionais",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "dadosprofissionais"
     },
     {
@@ -10567,8 +10589,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_services_bancodados_usuariosdb_usuariodata",
-      "community": 5,
-      "community_name": "firebase.ts",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "usuariodata"
     },
     {
@@ -10578,8 +10600,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_services_bancodados_usuariosdb_cadastrarusuario",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "cadastrarusuario()"
     },
     {
@@ -10590,7 +10612,7 @@
       "_origin": "ast",
       "id": "src_services_firebase",
       "community": 5,
-      "community_name": "firebase.ts",
+      "community_name": "AuthContext.tsx",
       "norm_label": "firebase.ts"
     },
     {
@@ -10601,7 +10623,7 @@
       "_origin": "ast",
       "id": "src_services_firebase_firebaseconfig",
       "community": 5,
-      "community_name": "firebase.ts",
+      "community_name": "AuthContext.tsx",
       "norm_label": "firebaseconfig"
     },
     {
@@ -10612,7 +10634,7 @@
       "_origin": "ast",
       "id": "src_services_firebase_app",
       "community": 5,
-      "community_name": "firebase.ts",
+      "community_name": "AuthContext.tsx",
       "norm_label": "app"
     },
     {
@@ -10623,7 +10645,7 @@
       "_origin": "ast",
       "id": "src_services_firebase_analytics",
       "community": 5,
-      "community_name": "firebase.ts",
+      "community_name": "AuthContext.tsx",
       "norm_label": "analytics"
     },
     {
@@ -10633,8 +10655,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_services_firebase_auth",
-      "community": 124,
-      "community_name": "button.tsx",
+      "community": 5,
+      "community_name": "AuthContext.tsx",
       "norm_label": "auth"
     },
     {
@@ -10645,7 +10667,7 @@
       "_origin": "ast",
       "id": "src_services_firebase_db",
       "community": 5,
-      "community_name": "firebase.ts",
+      "community_name": "AuthContext.tsx",
       "norm_label": "db"
     },
     {
@@ -10655,8 +10677,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_services_firebase_storage",
-      "community": 39,
-      "community_name": "index.ts",
+      "community": 4,
+      "community_name": "hooks/use-toast.ts",
       "norm_label": "storage"
     },
     {
@@ -10667,7 +10689,7 @@
       "_origin": "ast",
       "id": "src_types_paciente",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "paciente.ts"
     },
     {
@@ -10678,7 +10700,7 @@
       "_origin": "ast",
       "id": "src_types_paciente_processoenfermagem",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "processoenfermagem"
     },
     {
@@ -10689,7 +10711,7 @@
       "_origin": "ast",
       "id": "src_types_paciente_paciente",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "paciente"
     },
     {
@@ -10700,7 +10722,7 @@
       "_origin": "ast",
       "id": "src_types_paciente_statuspaciente",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "statuspaciente"
     },
     {
@@ -10711,7 +10733,7 @@
       "_origin": "ast",
       "id": "src_types_paciente_indicadorespacientes",
       "community": 0,
-      "community_name": "ModalCadastroPaciente.tsx",
+      "community_name": "pacientesDB.ts",
       "norm_label": "indicadorespacientes"
     },
     {
@@ -10732,7 +10754,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_types_processoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoenfermagem.ts"
     },
@@ -10743,7 +10765,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_sessaodetrabalho",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "sessaodetrabalho"
     },
@@ -10754,7 +10776,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_avaliacaoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "avaliacaoenfermagem"
     },
@@ -10765,7 +10787,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_diagnosticoselecionado",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "diagnosticoselecionado"
     },
@@ -10776,7 +10798,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_diagnosticoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "diagnosticoenfermagem"
     },
@@ -10787,7 +10809,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_intervencaoselecionada",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "intervencaoselecionada"
     },
@@ -10799,7 +10821,7 @@
       "_origin": "ast",
       "id": "src_types_processoenfermagem_diagnosticoplanejado",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "diagnosticoplanejado"
     },
     {
@@ -10809,7 +10831,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_planejamentoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "planejamentoenfermagem"
     },
@@ -10820,7 +10842,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_intervencaoimplementada",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "intervencaoimplementada"
     },
@@ -10831,7 +10853,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_implementacaoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "implementacaoenfermagem"
     },
@@ -10843,7 +10865,7 @@
       "_origin": "ast",
       "id": "src_types_processoenfermagem_evolucaoenfermagem",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "evolucaoenfermagem"
     },
     {
@@ -10853,7 +10875,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_processoenfermagem",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoenfermagem"
     },
@@ -10864,7 +10886,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_etapaprocesso",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapaprocesso"
     },
@@ -10875,7 +10897,7 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "src_types_processoenfermagem_etapas_processo",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "etapas_processo"
     },
@@ -10942,7 +10964,7 @@
       "_origin": "ast",
       "id": "src_utils_planejamentoutils",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "planejamentoutils.ts"
     },
     {
@@ -10953,7 +10975,7 @@
       "_origin": "ast",
       "id": "src_utils_planejamentoutils_diagnosticoselecionado",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "diagnosticoselecionado"
     },
     {
@@ -10964,7 +10986,7 @@
       "_origin": "ast",
       "id": "src_utils_planejamentoutils_reconciliardiagnosticosplanejados",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "reconciliardiagnosticosplanejados()"
     },
     {
@@ -10975,7 +10997,7 @@
       "_origin": "ast",
       "id": "src_utils_planejamentoutils_planejamentossaoiguais",
       "community": 24,
-      "community_name": "ProcessoEnfermagemModal.tsx",
+      "community_name": "EtapaAvaliacao.tsx",
       "norm_label": "planejamentossaoiguais()"
     },
     {
@@ -10985,7 +11007,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_processoutils",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "processoutils.ts"
     },
@@ -10996,7 +11018,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_utils_processoutils_calcularetapascompletadas",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "calcularetapascompletadas()"
     },
@@ -11007,7 +11029,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_utils_processoutils_isetapaacessivel",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "isetapaacessivel()"
     },
@@ -11018,7 +11040,7 @@
       "source_location": "L131",
       "_origin": "ast",
       "id": "src_utils_processoutils_getmotivobloqueio",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "getmotivobloqueio()"
     },
@@ -11029,8 +11051,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_registrationflow",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "registrationflow.ts"
     },
     {
@@ -11040,8 +11062,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_utils_registrationflow_iniciarfluxocadastro",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "iniciarfluxocadastro()"
     },
     {
@@ -11051,8 +11073,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_utils_registrationflow_finalizarfluxocadastro",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "finalizarfluxocadastro()"
     },
     {
@@ -11062,9 +11084,108 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_registrationflow_cadastroemandamento",
-      "community": 19,
-      "community_name": "AuthContext.tsx",
+      "community": 116,
+      "community_name": "ProfessionalInfoForm.tsx",
       "norm_label": "cadastroemandamento()"
+    },
+    {
+      "label": "supportMetrics.ts",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "supportmetrics.ts"
+    },
+    {
+      "label": "horasEntre()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_horasentre",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "horasentre()"
+    },
+    {
+      "label": "contarPor()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_contarpor",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "contarpor()"
+    },
+    {
+      "label": "mediaHoras()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_mediahoras",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "mediahoras()"
+    },
+    {
+      "label": "calcularKpisTickets()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_calcularkpistickets",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "calcularkpistickets()"
+    },
+    {
+      "label": "calcularKpisSugestoes()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_calcularkpissugestoes",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "calcularkpissugestoes()"
+    },
+    {
+      "label": "ehDetratorNps()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L50",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_ehdetratornps",
+      "community": 39,
+      "community_name": "CentralAjuda.tsx",
+      "norm_label": "ehdetratornps()"
+    },
+    {
+      "label": "classificarFaixaNps()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L52",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_classificarfaixanps",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "classificarfaixanps()"
+    },
+    {
+      "label": "formatarDuracaoHoras()",
+      "file_type": "code",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L65",
+      "_origin": "ast",
+      "id": "src_utils_supportmetrics_formatarduracaohoras",
+      "community": 31,
+      "community_name": "GestaoSuporte.tsx",
+      "norm_label": "formatarduracaohoras()"
     },
     {
       "label": "timeUtils.ts",
@@ -11073,7 +11194,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_timeutils",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "timeutils.ts"
     },
@@ -11084,7 +11205,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_utils_timeutils_calculartempoativo",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "calculartempoativo()"
     },
@@ -11095,7 +11216,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_utils_timeutils_calcularidade",
-      "community": 24,
+      "community": 19,
       "community_name": "ProcessoEnfermagemModal.tsx",
       "norm_label": "calcularidade()"
     },
@@ -17322,7 +17443,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_modalnpsobrigatorio",
@@ -17333,7 +17454,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L9",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_modalnpsobrigatorio",
@@ -17344,7 +17465,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_modalnpsobrigatorio",
@@ -17424,16 +17545,52 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ModalNPSObrigatorio.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_modalnpsobrigatorio",
+      "target": "src_utils_supportmetrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/ModalNPSObrigatorio.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_modalnpsobrigatorio",
+      "target": "src_utils_supportmetrics_ehdetratornps",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/ModalNPSObrigatorio.tsx",
-      "source_location": "L84",
+      "source_location": "L88",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_modalnpsobrigatorio_modalnpsobrigatorio",
       "target": "src_services_bancodados_suportedb_salvarpesquisanps"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/ModalNPSObrigatorio.tsx",
+      "source_location": "L71",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_modalnpsobrigatorio_modalnpsobrigatorio",
+      "target": "src_utils_supportmetrics_ehdetratornps"
     },
     {
       "relation": "contains",
@@ -38334,7 +38491,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L120",
+      "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -38615,7 +38772,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L124",
+      "source_location": "L126",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -38639,7 +38796,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L63",
+      "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -39352,7 +39509,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L73",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda",
@@ -39363,7 +39520,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda",
@@ -39374,7 +39531,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L54",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda",
@@ -39385,7 +39542,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L63",
+      "source_location": "L64",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda",
@@ -39396,7 +39553,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L83",
+      "source_location": "L85",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda",
@@ -39536,11 +39693,35 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/CentralAjuda.tsx",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_centralajuda",
+      "target": "src_utils_supportmetrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/CentralAjuda.tsx",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_centralajuda",
+      "target": "src_utils_supportmetrics_ehdetratornps",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L476",
+      "source_location": "L486",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39553,7 +39734,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L159",
+      "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39565,7 +39746,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L172",
+      "source_location": "L174",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39577,7 +39758,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L218",
+      "source_location": "L220",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39589,7 +39770,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L328",
+      "source_location": "L338",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39601,7 +39782,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L289",
+      "source_location": "L299",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39613,7 +39794,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L260",
+      "source_location": "L262",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39625,7 +39806,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L240",
+      "source_location": "L242",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
@@ -39637,11 +39818,23 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/CentralAjuda.tsx",
-      "source_location": "L189",
+      "source_location": "L191",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_centralajuda_centralajuda",
       "target": "src_services_bancodados_suportedb_verificarelegibilidadenps"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/CentralAjuda.tsx",
+      "source_location": "L280",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_centralajuda_centralajuda",
+      "target": "src_utils_supportmetrics_ehdetratornps"
     },
     {
       "relation": "contains",
@@ -39859,7 +40052,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L44",
+      "source_location": "L76",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_pages_gestaosuporte_blocokpis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_pages_gestaosuporte_blocokpisprops",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte",
@@ -39870,7 +40085,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L61",
+      "source_location": "L142",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte",
@@ -39881,7 +40096,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L53",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte",
@@ -40021,11 +40236,71 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_utils_supportmetrics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_utils_supportmetrics_calcularkpissugestoes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_utils_supportmetrics_calcularkpistickets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_utils_supportmetrics_classificarfaixanps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte",
+      "target": "src_utils_supportmetrics_formatarduracaohoras",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L315",
+      "source_location": "L412",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40037,7 +40312,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L228",
+      "source_location": "L309",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40050,7 +40325,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L114",
+      "source_location": "L195",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40062,7 +40337,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L102",
+      "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40074,7 +40349,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L90",
+      "source_location": "L171",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40086,7 +40361,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L196",
+      "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40098,7 +40373,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L152",
+      "source_location": "L233",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40110,7 +40385,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L170",
+      "source_location": "L251",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
@@ -40122,11 +40397,59 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/GestaoSuporte.tsx",
-      "source_location": "L214",
+      "source_location": "L295",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_gestaosuporte_gestaosuporte",
       "target": "src_services_bancodados_suportedb_respondersugestao"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L313",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte_gestaosuporte",
+      "target": "src_utils_supportmetrics_calcularkpissugestoes"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L312",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte_gestaosuporte",
+      "target": "src_utils_supportmetrics_calcularkpistickets"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L317",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte_gestaosuporte",
+      "target": "src_utils_supportmetrics_classificarfaixanps"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/GestaoSuporte.tsx",
+      "source_location": "L365",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_gestaosuporte_gestaosuporte",
+      "target": "src_utils_supportmetrics_formatarduracaohoras"
     },
     {
       "relation": "contains",
@@ -41313,7 +41636,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L257",
+      "source_location": "L262",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb",
@@ -41335,7 +41658,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L227",
+      "source_location": "L232",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb",
@@ -41346,7 +41669,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L251",
+      "source_location": "L256",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb",
@@ -41442,7 +41765,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L258",
+      "source_location": "L263",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb_inserirchangelogredesignavaliacao",
@@ -41454,7 +41777,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L231",
+      "source_location": "L236",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb_seedchangelogcompleto",
@@ -41478,7 +41801,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/changelogDB.ts",
-      "source_location": "L252",
+      "source_location": "L257",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_changelogdb_seedchangeloginicial",
@@ -43500,7 +43823,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L326",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43511,7 +43834,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L73",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43522,7 +43845,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L123",
+      "source_location": "L125",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43533,7 +43856,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L130",
+      "source_location": "L132",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43544,7 +43867,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L80",
+      "source_location": "L82",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43555,7 +43878,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L54",
+      "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43566,7 +43889,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L160",
+      "source_location": "L162",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43577,7 +43900,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L242",
+      "source_location": "L244",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43588,7 +43911,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L279",
+      "source_location": "L281",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43599,7 +43922,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L265",
+      "source_location": "L267",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43610,7 +43933,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L272",
+      "source_location": "L274",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43621,7 +43944,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L258",
+      "source_location": "L260",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43632,7 +43955,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L208",
+      "source_location": "L210",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43643,7 +43966,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L166",
+      "source_location": "L168",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43654,7 +43977,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43665,7 +43988,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L109",
+      "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43676,7 +43999,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L148",
+      "source_location": "L150",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43687,7 +44010,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L99",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43698,7 +44021,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L314",
+      "source_location": "L316",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43709,7 +44032,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L137",
+      "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43720,7 +44043,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L87",
+      "source_location": "L89",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43731,7 +44054,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L39",
+      "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43753,7 +44076,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L292",
+      "source_location": "L294",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb",
@@ -43785,11 +44108,47 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_services_bancodados_suportedb",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_services_bancodados_suportedb_ticketproblema",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_services_bancodados_suportedb_sugestaomelhoria",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L215",
+      "source_location": "L217",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb_observaritensnovossuporte",
@@ -43801,7 +44160,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L174",
+      "source_location": "L176",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb_observarrespostasnaovisualizadas",
@@ -43813,7 +44172,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L266",
+      "source_location": "L268",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb_marcarsugestoescomovisualizadaspelousuario",
@@ -43825,7 +44184,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L259",
+      "source_location": "L261",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb_marcarticketscomovisualizadospelousuario",
@@ -43837,7 +44196,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/services/bancodados/suporteDB.ts",
-      "source_location": "L317",
+      "source_location": "L319",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_services_bancodados_suportedb_salvarpesquisanps",
@@ -44425,6 +44784,166 @@
       "_origin": "ast",
       "source": "src_utils_registrationflow_cadastroemandamento",
       "target": "src_utils_registrationflow_finalizarfluxocadastro",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L34",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_calcularkpissugestoes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_calcularkpistickets",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_classificarfaixanps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_contarpor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L50",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_ehdetratornps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_formatarduracaohoras",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_horasentre",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics",
+      "target": "src_utils_supportmetrics_mediahoras",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L45",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpissugestoes",
+      "target": "src_utils_supportmetrics_horasentre",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpistickets",
+      "target": "src_utils_supportmetrics_horasentre",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpissugestoes",
+      "target": "src_utils_supportmetrics_contarpor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpistickets",
+      "target": "src_utils_supportmetrics_contarpor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpissugestoes",
+      "target": "src_utils_supportmetrics_mediahoras",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/supportMetrics.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_supportmetrics_calcularkpistickets",
+      "target": "src_utils_supportmetrics_mediahoras",
       "confidence_score": 1.0
     },
     {
@@ -46335,5 +46854,5 @@
       "source_file": "public/placeholder.svg"
     }
   ],
-  "built_at_commit": "91c2c7b132e0517efe8afbc367753d3cfb6724d5"
+  "built_at_commit": "0de58673442487cd424d68cced82d8692f257b43"
 }
