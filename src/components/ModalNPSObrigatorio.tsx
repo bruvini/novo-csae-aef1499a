@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star, ChevronRight, Loader2, Heart, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { salvarPesquisaNPS } from '@/services/bancodados/suporteDB';
+import { ehDetratorNps } from '@/utils/supportMetrics';
 
 interface ModalNPSObrigatorioProps {
   usuarioId: string;
@@ -64,7 +65,10 @@ const ModalNPSObrigatorio: React.FC<ModalNPSObrigatorioProps> = ({
   const [concluido, setConcluido] = useState(false);
 
   const podeConcluir =
-    notaGeral !== null && notaUsabilidade !== null && notaPerformance !== null;
+    notaGeral !== null &&
+    notaUsabilidade !== null &&
+    notaPerformance !== null &&
+    (!ehDetratorNps(notaGeral) || Boolean(comentario.trim()));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,16 +198,29 @@ const ModalNPSObrigatorio: React.FC<ModalNPSObrigatorioProps> = ({
                   </div>
                 </div>
 
-                {/* Comentário */}
+                {/* Relato de melhoria */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-gray-700">
-                    Comentário{' '}
-                    <span className="font-normal text-gray-400">(opcional)</span>
+                    {ehDetratorNps(notaGeral)
+                      ? 'Queremos entender como melhorar sua experiência'
+                      : 'Conte mais sobre sua experiência'}{' '}
+                    <span className="font-normal text-gray-400">
+                      ({ehDetratorNps(notaGeral) ? 'obrigatório' : 'opcional'})
+                    </span>
                   </label>
+                  {ehDetratorNps(notaGeral) && (
+                    <p className="text-xs text-amber-700">
+                      Conte o que podemos corrigir para que sua próxima experiência com o Portal CSAE seja melhor.
+                    </p>
+                  )}
                   <Textarea
-                    placeholder="Conte-nos o que podemos melhorar ou o que você mais gosta no portal..."
+                    placeholder={ehDetratorNps(notaGeral)
+                      ? 'O que aconteceu e como podemos melhorar o Portal CSAE?'
+                      : 'Conte o que você mais gostou ou o que ainda podemos melhorar...'}
                     value={comentario}
                     onChange={(e) => setComentario(e.target.value)}
+                    required={ehDetratorNps(notaGeral)}
+                    aria-required={ehDetratorNps(notaGeral)}
                     rows={3}
                     className="resize-none focus-visible:ring-csae-green-600"
                   />
@@ -213,7 +230,11 @@ const ModalNPSObrigatorio: React.FC<ModalNPSObrigatorioProps> = ({
                 {!podeConcluir && (
                   <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span>Preencha as três notas para continuar.</span>
+                    <span>
+                      {ehDetratorNps(notaGeral) && !comentario.trim()
+                        ? 'Conte o que podemos melhorar para continuar.'
+                        : 'Preencha as três notas para continuar.'}
+                    </span>
                   </div>
                 )}
 

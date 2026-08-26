@@ -34,6 +34,8 @@ export interface TicketProblema {
   dataVisualizacaoResposta?: Timestamp;
   dataCriacao: Timestamp;
   dataResolucao?: Timestamp;
+  origem?: 'Central de Ajuda' | 'Avaliação NPS';
+  pesquisaNpsId?: string;
 }
 
 export interface SugestaoMelhoria {
@@ -319,8 +321,37 @@ export async function salvarPesquisaNPS(
     throw new Error('Você já avaliou o portal nas últimas 48 horas. Tente novamente mais tarde.');
   }
 
-  const ref = collection(db, 'pesquisas_nps');
-  await addDoc(ref, { ...data, dataCriacao: serverTimestamp() });
+  const comentario = data.comentario?.trim();
+  const detrator = data.notaGeral <= 6;
+
+  if (detrator && !comentario) {
+    throw new Error('Conte para nós o que podemos melhorar antes de enviar esta avaliação.');
+  }
+
+  const pesquisaRef = doc(collection(db, 'pesquisas_nps'));
+  const batch = writeBatch(db);
+  batch.set(pesquisaRef, {
+    ...data,
+    ...(comentario ? { comentario } : {}),
+    dataCriacao: serverTimestamp(),
+  });
+
+  if (detrator && comentario) {
+    const ticketRef = doc(collection(db, 'tickets_suporte'));
+    batch.set(ticketRef, {
+      usuarioId: data.usuarioId,
+      nomeUsuario: data.nomeUsuario,
+      moduloAferido: 'Avaliação NPS',
+      descricao: comentario,
+      status: 'Aberto',
+      origem: 'Avaliação NPS',
+      pesquisaNpsId: pesquisaRef.id,
+      visualizadoPeloSuporte: false,
+      dataCriacao: serverTimestamp(),
+    });
+  }
+
+  await batch.commit();
 }
 
 export async function buscarAvaliacoesNPS(): Promise<PesquisaNPS[]> {

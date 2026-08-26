@@ -219,6 +219,11 @@ const CHANGELOGS_SISTEMA: {
     descricao:
       "Corrigimos uma falha que podia deixar alguns pedidos de cadastro fora da fila de aprovação. O sistema agora conclui a solicitação com segurança e também recupera tentativas anteriores que ficaram incompletas.",
   },
+  {
+    titulo: "Suporte e Avaliações Mais Atentos às Pessoas",
+    descricao:
+      "A Gestão de Suporte ganhou indicadores de volume, resolução e tempo de atendimento. Também passamos a acompanhar avaliações baixas com mais cuidado: o usuário pode explicar como melhorar e a equipe recebe esse relato como um novo chamado para responder e acompanhar.",
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

@@ -48,6 +48,7 @@ import {
   type TicketProblema,
   type SugestaoMelhoria,
 } from '@/services/bancodados';
+import { ehDetratorNps } from '@/utils/supportMetrics';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ const MODULOS = [
   'Gestão de Conteúdos',
   'Painel Estatístico',
   'Central de Ajuda',
+  'Avaliação NPS',
   'Outro',
 ];
 
@@ -273,6 +275,14 @@ const CentralAjuda = () => {
     e.preventDefault();
     if (!notaGeral || !notaUsabilidade || !notaPerformance) {
       toast({ title: 'Atenção', description: 'Por favor, preencha todas as notas antes de enviar.', variant: 'destructive' });
+      return;
+    }
+    if (ehDetratorNps(notaGeral) && !comentarioNPS.trim()) {
+      toast({
+        title: 'Queremos entender como melhorar',
+        description: 'Conte o que aconteceu ou o que podemos melhorar para sua próxima experiência ser melhor.',
+        variant: 'destructive',
+      });
       return;
     }
     setEnviandoNPS(true);
@@ -695,16 +705,30 @@ const CentralAjuda = () => {
                       </div>
                     </div>
 
-                    {/* Comentário livre */}
+                    {/* Relato de melhoria */}
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-gray-700">
-                        Comentário <span className="font-normal text-gray-400">(opcional)</span>
+                        {ehDetratorNps(notaGeral)
+                          ? 'Queremos entender como melhorar sua experiência'
+                          : 'Conte mais sobre sua experiência'}{' '}
+                        <span className="font-normal text-gray-400">
+                          ({ehDetratorNps(notaGeral) ? 'obrigatório' : 'opcional'})
+                        </span>
                       </label>
+                      {ehDetratorNps(notaGeral) && (
+                        <p className="text-xs text-amber-700">
+                          Sua percepção é importante. Conte o que podemos corrigir para buscarmos uma nota maior na próxima vez.
+                        </p>
+                      )}
                       <Textarea
                         id="comentario-nps"
-                        placeholder="Conte-nos o que podemos melhorar ou o que você mais gosta no portal..."
+                        placeholder={ehDetratorNps(notaGeral)
+                          ? 'O que aconteceu e como podemos melhorar o Portal CSAE?'
+                          : 'Conte o que você mais gostou ou o que ainda podemos melhorar...'}
                         value={comentarioNPS}
                         onChange={(e) => setComentarioNPS(e.target.value)}
+                        required={ehDetratorNps(notaGeral)}
+                        aria-required={ehDetratorNps(notaGeral)}
                         rows={4}
                         className="resize-none focus-visible:ring-csae-green-600"
                       />
@@ -713,7 +737,7 @@ const CentralAjuda = () => {
                     <Button
                       id="btn-enviar-nps"
                       type="submit"
-                      disabled={enviandoNPS}
+                      disabled={enviandoNPS || (ehDetratorNps(notaGeral) && !comentarioNPS.trim())}
                       className="csae-btn-primary gap-2"
                     >
                       <ChevronRight className="h-4 w-4" />

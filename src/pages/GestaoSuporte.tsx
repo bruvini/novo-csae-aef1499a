@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Headphones, Lightbulb, BarChart2, CheckCircle2, MessageSquare, Eye, Star } from 'lucide-react';
+import { Headphones, Lightbulb, BarChart2, CheckCircle2, MessageSquare, Eye, Star, Clock3, Percent, Layers3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
@@ -38,6 +38,12 @@ import {
   type SugestaoMelhoria,
   type PesquisaNPS,
 } from '@/services/bancodados';
+import {
+  calcularKpisSugestoes,
+  calcularKpisTickets,
+  classificarFaixaNps,
+  formatarDuracaoHoras,
+} from '@/utils/supportMetrics';
 
 // ─── Helper ───────────────────────────────────────────────────
 
@@ -54,6 +60,81 @@ function media(values: number[]): string {
   if (values.length === 0) return '—';
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
   return avg.toFixed(1);
+}
+
+interface BlocoKpisProps {
+  total: number;
+  porStatus: Record<string, number>;
+  porGrupo: Record<string, number>;
+  rotuloGrupo: string;
+  taxa: number;
+  rotuloTaxa: string;
+  tempo: string;
+  rotuloTempo: string;
+}
+
+function BlocoKpis({
+  total,
+  porStatus,
+  porGrupo,
+  rotuloGrupo,
+  taxa,
+  rotuloTaxa,
+  tempo,
+  rotuloTempo,
+}: BlocoKpisProps) {
+  const gruposOrdenados = Object.entries(porGrupo).sort((a, b) => b[1] - a[1]);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      <Card className="border-none shadow-sm">
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+            <BarChart2 className="h-4 w-4" /> Por status
+          </div>
+          <p className="text-2xl font-bold mt-2">{total}</p>
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {Object.entries(porStatus).map(([status, quantidade]) => (
+              <Badge key={status} variant="outline">{status}: {quantidade}</Badge>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm">
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+            <Layers3 className="h-4 w-4" /> {rotuloGrupo}
+          </div>
+          <div className="space-y-1.5 mt-3 max-h-24 overflow-y-auto pr-1">
+            {gruposOrdenados.length ? gruposOrdenados.map(([grupo, quantidade]) => (
+              <div key={grupo} className="flex justify-between gap-3 text-xs">
+                <span className="text-gray-600 truncate" title={grupo}>{grupo}</span>
+                <strong>{quantidade}</strong>
+              </div>
+            )) : <span className="text-sm text-gray-400">Sem registros</span>}
+          </div>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm">
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+            <Percent className="h-4 w-4" /> {rotuloTaxa}
+          </div>
+          <p className="text-2xl font-bold mt-3">{taxa.toFixed(1)}%</p>
+          <p className="text-xs text-gray-500 mt-1">Considerando todos os registros</p>
+        </CardContent>
+      </Card>
+      <Card className="border-none shadow-sm">
+        <CardContent className="pt-5">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wide">
+            <Clock3 className="h-4 w-4" /> {rotuloTempo}
+          </div>
+          <p className="text-2xl font-bold mt-3">{tempo}</p>
+          <p className="text-xs text-gray-500 mt-1">Média dos registros concluídos</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 // ─── GestaoSuporte ────────────────────────────────────────────
@@ -228,6 +309,12 @@ const GestaoSuporte = () => {
   const mediaGeral = media(avaliacoes.map((a) => a.notaGeral));
   const mediaUsabilidade = media(avaliacoes.map((a) => a.notaUsabilidade));
   const mediaPerformance = media(avaliacoes.map((a) => a.notaPerformance));
+  const kpisTickets = useMemo(() => calcularKpisTickets(tickets), [tickets]);
+  const kpisSugestoes = useMemo(() => calcularKpisSugestoes(sugestoes), [sugestoes]);
+  const notaMediaGeral = avaliacoes.length
+    ? avaliacoes.reduce((soma, avaliacao) => soma + avaliacao.notaGeral, 0) / avaliacoes.length
+    : null;
+  const faixaNps = classificarFaixaNps(notaMediaGeral);
 
   return (
     <AuthenticatedLayout>
@@ -268,6 +355,16 @@ const GestaoSuporte = () => {
 
           {/* ─── ABA 1: Tickets ──────────────────────────────── */}
           <TabsContent value="tickets">
+            <BlocoKpis
+              total={kpisTickets.total}
+              porStatus={kpisTickets.porStatus}
+              porGrupo={kpisTickets.porModulo}
+              rotuloGrupo="Tickets por módulo"
+              taxa={kpisTickets.taxaResolucao}
+              rotuloTaxa="Taxa de resolução"
+              tempo={formatarDuracaoHoras(kpisTickets.tempoMedioResolucaoHoras)}
+              rotuloTempo="Tempo de resolução"
+            />
             <Card className="border-none shadow-sm">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
@@ -344,6 +441,16 @@ const GestaoSuporte = () => {
 
           {/* ─── ABA 2: Sugestões ────────────────────────────── */}
           <TabsContent value="sugestoes">
+            <BlocoKpis
+              total={kpisSugestoes.total}
+              porStatus={kpisSugestoes.porStatus}
+              porGrupo={kpisSugestoes.porCategoria}
+              rotuloGrupo="Sugestões por categoria"
+              taxa={kpisSugestoes.taxaResposta}
+              rotuloTaxa="Taxa de resposta"
+              tempo={formatarDuracaoHoras(kpisSugestoes.tempoMedioRespostaHoras)}
+              rotuloTempo="Tempo de resposta"
+            />
             <Card className="border-none shadow-sm">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
@@ -398,15 +505,27 @@ const GestaoSuporte = () => {
                             )}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-8 px-3 gap-1 text-xs"
-                              onClick={() => handleAbrirSugestao(s)}
-                            >
-                              <MessageSquare className="h-3.5 w-3.5" />
-                              Responder
-                            </Button>
+                            {s.respostaAdmin ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 gap-1 text-xs"
+                                onClick={() => handleAbrirSugestao(s)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                Visualizar
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 px-3 gap-1 text-xs"
+                                onClick={() => handleAbrirSugestao(s)}
+                              >
+                                <MessageSquare className="h-3.5 w-3.5" />
+                                Responder
+                              </Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -423,7 +542,13 @@ const GestaoSuporte = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Total de Avaliações', value: String(avaliacoes.length), icon: Star, color: 'text-yellow-600 bg-yellow-50' },
-                { label: 'Média Geral (1–10)', value: mediaGeral, icon: BarChart2, color: 'text-csae-green-700 bg-csae-green-50' },
+                {
+                  label: 'Média Geral (1–10)',
+                  value: mediaGeral,
+                  detail: `${faixaNps.rotulo} · ${faixaNps.detalhe}`,
+                  icon: BarChart2,
+                  color: faixaNps.cor,
+                },
                 { label: 'Média Usabilidade (1–5)', value: mediaUsabilidade, icon: BarChart2, color: 'text-blue-700 bg-blue-50' },
                 { label: 'Média Performance (1–5)', value: mediaPerformance, icon: BarChart2, color: 'text-purple-700 bg-purple-50' },
               ].map((metric) => (
@@ -434,6 +559,11 @@ const GestaoSuporte = () => {
                     </div>
                     <p className="text-2xl font-bold text-gray-900">{carregandoNPS ? '…' : metric.value}</p>
                     <p className="text-xs text-gray-500 mt-1 leading-tight">{metric.label}</p>
+                    {'detail' in metric && metric.detail && (
+                      <Badge variant="outline" className={`mt-2 text-[10px] border-0 ${metric.color}`}>
+                        {metric.detail}
+                      </Badge>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -601,32 +731,51 @@ const GestaoSuporte = () => {
                   <p className="text-xs font-semibold text-gray-500 mb-2">Sugestão</p>
                   <p className="text-sm text-gray-800 bg-white border rounded-lg p-3 leading-relaxed">{sugestaoSelecionada.descricao}</p>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-gray-700">
-                    Resposta / Agradecimento <span className="font-normal text-gray-400">(será exibida ao usuário)</span>
-                  </label>
-                  <Textarea
-                    id="resposta-sugestao"
-                    value={respostaSugestao}
-                    onChange={(e) => setRespostaSugestao(e.target.value)}
-                    placeholder="Agradeça e dê um retorno ao usuário sobre a sugestão..."
-                    rows={4}
-                    className="resize-none"
-                  />
-                </div>
+                {!sugestaoSelecionada.respostaAdmin ? (
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-gray-700">
+                      Resposta / Agradecimento <span className="font-normal text-gray-400">(será exibida ao usuário)</span>
+                    </label>
+                    <Textarea
+                      id="resposta-sugestao"
+                      value={respostaSugestao}
+                      onChange={(e) => setRespostaSugestao(e.target.value)}
+                      placeholder="Agradeça e dê um retorno ao usuário sobre a sugestão..."
+                      rows={4}
+                      className="resize-none"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-2">Resposta registrada</p>
+                    <p className="text-sm text-gray-800 bg-green-50 border border-green-100 rounded-lg p-3">
+                      {sugestaoSelecionada.respostaAdmin}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setModalSugestaoAberto(false)}>Cancelar</Button>
-              <Button
-                id="btn-responder-sugestao"
-                onClick={handleResponderSugestao}
-                disabled={respondendo || !respostaSugestao.trim()}
-                className="bg-csae-green-600 hover:bg-csae-green-700 text-white gap-2"
-              >
-                <MessageSquare className="h-4 w-4" />
-                {respondendo ? 'Enviando...' : 'Enviar Resposta'}
-              </Button>
+              {sugestaoSelecionada?.respostaAdmin ? (
+                <Button variant="outline" onClick={() => setModalSugestaoAberto(false)}>
+                  Fechar
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={() => setModalSugestaoAberto(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    id="btn-responder-sugestao"
+                    onClick={handleResponderSugestao}
+                    disabled={respondendo || !respostaSugestao.trim()}
+                    className="bg-csae-green-600 hover:bg-csae-green-700 text-white gap-2"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {respondendo ? 'Enviando...' : 'Enviar Resposta'}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
