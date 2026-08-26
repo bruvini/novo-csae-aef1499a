@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { planejamentosSaoIguais, reconciliarDiagnosticosPlanejados } from '@/utils/planejamentoUtils';
 
 interface EtapaPlanejamentoProps {
   processo: ProcessoEnfermagem;
@@ -59,34 +60,36 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
         onUpdatePlanejamento({ diagnosticosPlanejados: updated });
       }
     }
-  }, [diagnosticosDetalhados]);
+  }, [diagnosticosDetalhados, diagnosticosPriorizados, onUpdatePlanejamento]);
 
   useEffect(() => {
-    // Inicializar diagnosticosPriorizados com base nos diagnósticos selecionados
-    if (processo.diagnostico.diagnosticosSelecionados.length > 0 && diagnosticosPriorizados.length === 0) {
-      const diagnosticosIniciais = processo.diagnostico.diagnosticosSelecionados.map((diag, index) => ({
-        diagnosticoId: diag.id,
-        tituloDiagnostico: diag.tituloDiagnostico,
-        ordemPrioridade: index + 1,
-        intervencoesSelecionadas: []
-      }));
+    const planejamentoSalvo = processo.planejamento?.diagnosticosPlanejados ?? [];
+    const planejamentoReconciliado = reconciliarDiagnosticosPlanejados(
+      processo.diagnostico.diagnosticosSelecionados,
+      planejamentoSalvo
+    );
 
-      // Se já existe planejamento salvo, usar esses dados
-      if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
-        setDiagnosticosPrivorizados(processo.planejamento.diagnosticosPlanejados);
-      } else {
-        setDiagnosticosPrivorizados(diagnosticosIniciais);
-      }
+    setDiagnosticosPrivorizados((atuais) =>
+      planejamentosSaoIguais(atuais, planejamentoReconciliado)
+        ? atuais
+        : planejamentoReconciliado
+    );
+
+    if (!planejamentosSaoIguais(planejamentoSalvo, planejamentoReconciliado)) {
+      onUpdatePlanejamento({ diagnosticosPlanejados: planejamentoReconciliado });
     }
-  }, [processo.diagnostico.diagnosticosSelecionados, processo.planejamento, diagnosticosPriorizados.length]);
+  }, [
+    processo.diagnostico.diagnosticosSelecionados,
+    processo.planejamento?.diagnosticosPlanejados,
+    onUpdatePlanejamento,
+  ]);
 
-  const handleDragEnd = (result: unknown) => {
-    const res = result as { destination: any; source: any };
-    if (!res.destination) return;
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
 
     const items = Array.from(diagnosticosPriorizados);
-    const [reorderedItem] = items.splice(res.source.index, 1);
-    items.splice(res.destination.index, 0, reorderedItem);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
     // Atualizar ordem
     const updatedItems = items.map((item, index) => ({
