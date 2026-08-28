@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from "react";
 import {
   Table,
   TableBody,
@@ -7,17 +6,18 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Usuario } from '@/types/usuario';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Eye, Check, X, Trash2, Settings, Undo } from 'lucide-react';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Usuario } from "@/types/usuario";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Eye, Check, X, Trash2, Settings, Undo } from "lucide-react";
+import { Timestamp } from "firebase/firestore";
 
 interface TabelaUsuariosProps {
   usuarios: Usuario[];
-  tipo: 'aguardando' | 'aprovados' | 'recusados';
+  tipo: "aguardando" | "aprovados" | "recusados" | "alteracoes";
   onDetalhes: (usuario: Usuario) => void;
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
@@ -34,35 +34,38 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   onRecusar,
   onExcluir,
   onEditarPrivilegios,
-  onRestaurar
+  onRestaurar,
 }) => {
-  const formatarData = (timestamp: any) => {
-    if (!timestamp) return 'Não informado';
+  const formatarData = (timestamp?: Timestamp) => {
+    if (!timestamp) return "Não informado";
     try {
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return format(date, 'dd/MM/yyyy HH:mm', { locale: ptBR });
+      return format(date, "dd/MM/yyyy HH:mm", { locale: ptBR });
     } catch {
-      return 'Data inválida';
+      return "Data inválida";
     }
   };
 
   const getTipoUsuarioBadge = (usuario: Usuario) => {
     if (usuario.ehAdmin) {
-      return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Administrador</Badge>;
+      return (
+        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+          Administrador
+        </Badge>
+      );
     }
     return <Badge variant="outline">Usuário Comum</Badge>;
   };
 
   if (usuarios.length === 0) {
     const mensagens = {
-      aguardando: 'Nenhum usuário aguardando aprovação',
-      aprovados: 'Nenhum usuário aprovado encontrado',
-      recusados: 'Nenhum usuário recusado encontrado'
+      aguardando: "Nenhum usuário aguardando aprovação",
+      aprovados: "Nenhum usuário aprovado encontrado",
+      recusados: "Nenhum usuário recusado encontrado",
+      alteracoes: "Nenhuma alteração cadastral aguardando revisão",
     };
     return (
-      <div className="text-center py-8 text-gray-500">
-        {mensagens[tipo]}
-      </div>
+      <div className="text-center py-8 text-gray-500">{mensagens[tipo]}</div>
     );
   }
 
@@ -72,48 +75,78 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
         <TableHeader className="bg-slate-50">
           <TableRow>
             <TableHead className="font-bold">Nome Completo</TableHead>
-            {tipo === 'aprovados' && <TableHead className="font-bold">Tipo de Usuário</TableHead>}
-            {tipo === 'aguardando' && <TableHead className="font-bold">Data de Cadastro</TableHead>}
-            {tipo === 'aprovados' && <TableHead className="font-bold">Qtd. Acessos</TableHead>}
-            {tipo === 'aprovados' && <TableHead className="font-bold">Último Acesso</TableHead>}
-            {tipo === 'aprovados' && <TableHead className="font-bold">Data de Aprovação</TableHead>}
-            {tipo === 'recusados' && <TableHead className="font-bold">Data de Recusa</TableHead>}
-            {tipo === 'recusados' && <TableHead className="font-bold">Motivo da Recusa</TableHead>}
-            <TableHead className="text-right font-bold w-[250px]">Ações</TableHead>
+            {tipo === "aprovados" && (
+              <TableHead className="font-bold">Tipo de Usuário</TableHead>
+            )}
+            {tipo === "aguardando" && (
+              <TableHead className="font-bold">Data de Cadastro</TableHead>
+            )}
+            {tipo === "aprovados" && (
+              <TableHead className="font-bold">Qtd. Acessos</TableHead>
+            )}
+            {tipo === "aprovados" && (
+              <TableHead className="font-bold">Último Acesso</TableHead>
+            )}
+            {tipo === "aprovados" && (
+              <TableHead className="font-bold">Data de Aprovação</TableHead>
+            )}
+            {tipo === "recusados" && (
+              <TableHead className="font-bold">Data de Recusa</TableHead>
+            )}
+            {tipo === "recusados" && (
+              <TableHead className="font-bold">Motivo da Recusa</TableHead>
+            )}
+            {(tipo === "aprovados" || tipo === "recusados") && (
+              <TableHead className="font-bold">Analisado por</TableHead>
+            )}
+            {tipo === "alteracoes" && (
+              <TableHead className="font-bold">Data da Solicitação</TableHead>
+            )}
+            <TableHead className="text-right font-bold w-[250px]">
+              Ações
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {usuarios.map((usuario) => (
             <TableRow key={usuario.id} className="hover:bg-slate-50/50">
               <TableCell className="font-medium">
-                {usuario.dadosPessoais?.nomeCompleto || 'Nome não informado'}
+                {usuario.dadosPessoais?.nomeCompleto || "Nome não informado"}
               </TableCell>
-              {tipo === 'aprovados' && (
+              {tipo === "aprovados" && (
                 <>
-                  <TableCell>
-                    {getTipoUsuarioBadge(usuario)}
-                  </TableCell>
-                  <TableCell>
-                    {usuario.totalAcessos || 0}
-                  </TableCell>
-                  <TableCell>
-                    {formatarData(usuario.ultimoAcesso)}
-                  </TableCell>
+                  <TableCell>{getTipoUsuarioBadge(usuario)}</TableCell>
+                  <TableCell>{usuario.totalAcessos || 0}</TableCell>
+                  <TableCell>{formatarData(usuario.ultimoAcesso)}</TableCell>
                 </>
               )}
               <TableCell>
-                {tipo === 'aprovados' 
+                {tipo === "aprovados"
                   ? formatarData(usuario.dataAprovacao || usuario.dataCadastro)
-                  : tipo === 'recusados'
+                  : tipo === "recusados"
                     ? formatarData(usuario.dataRecusa || usuario.dataCadastro)
-                    : formatarData(usuario.dataCadastro)
-                }
+                    : formatarData(usuario.dataCadastro)}
               </TableCell>
-              {tipo === 'recusados' && (
+              {tipo === "recusados" && (
                 <TableCell className="max-w-[300px]">
-                  <p className="text-sm text-gray-600 italic line-clamp-2" title={usuario.motivoRecusa}>
-                    {usuario.motivoRecusa || 'Sem motivo registrado'}
+                  <p
+                    className="text-sm text-gray-600 italic line-clamp-2"
+                    title={usuario.motivoRecusa}
+                  >
+                    {usuario.motivoRecusa || "Sem motivo registrado"}
                   </p>
+                </TableCell>
+              )}
+              {(tipo === "aprovados" || tipo === "recusados") && (
+                <TableCell className="text-sm text-gray-600">
+                  {usuario.analisadoPor || "Não registrado"}
+                </TableCell>
+              )}
+              {tipo === "alteracoes" && (
+                <TableCell>
+                  {formatarData(
+                    usuario.alteracaoProfissionalPendente?.dataSolicitacao,
+                  )}
                 </TableCell>
               )}
               <TableCell className="text-right">
@@ -128,8 +161,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     <Eye className="h-4 w-4" />
                     <span className="sr-only">Detalhes</span>
                   </Button>
-                  
-                  {tipo === 'aguardando' && onAprovar && onRecusar && (
+
+                  {tipo === "aguardando" && onAprovar && onRecusar && (
                     <>
                       <Button
                         variant="default"
@@ -152,7 +185,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     </>
                   )}
 
-                  {tipo === 'aprovados' && onEditarPrivilegios && (
+                  {tipo === "aprovados" && onEditarPrivilegios && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -164,7 +197,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     </Button>
                   )}
 
-                  {tipo === 'recusados' && onRestaurar && (
+                  {tipo === "recusados" && onRestaurar && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -175,7 +208,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                       Restaurar
                     </Button>
                   )}
-                  
+
                   {onExcluir && (
                     <Button
                       variant="destructive"

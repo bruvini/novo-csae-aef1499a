@@ -1,9 +1,8 @@
-
-
 // Re-export all the functions from specific database modules
-export * from './usuariosDB';
-export * from './gestaoUsuariosDB';
-export * from './subconjuntosDB';
+export * from "./usuariosDB";
+export * from "./gestaoUsuariosDB";
+export * from "./perfilDB";
+export * from "./subconjuntosDB";
 
 // Explicit type re-exports from diagnosticosDB to avoid conflicts
 export type {
@@ -11,15 +10,15 @@ export type {
   IntervencaoEnfermagem,
   ResultadoEsperado as DiagnosticoResultadoEsperado,
   SubconjuntoVinculado,
-  DiagnosticoEnfermagem
-} from './diagnosticosDB';
+  DiagnosticoEnfermagem,
+} from "./diagnosticosDB";
 
 // Function re-exports from diagnosticosDB
 export {
   verificarDiagnosticoDuplicado,
   uploadMaterialApoio,
-  salvarDiagnostico
-} from './diagnosticosDB';
+  salvarDiagnostico,
+} from "./diagnosticosDB";
 
 // Explicit type re-exports from rolEnfermagemDB to avoid conflicts
 export type {
@@ -27,23 +26,35 @@ export type {
   Intervencao,
   ResultadoEsperado as RolResultadoEsperado,
   Subconjunto,
-  Diagnostico
-} from './rolEnfermagemDB';
+  Diagnostico,
+} from "./rolEnfermagemDB";
 
 // Function re-exports from rolEnfermagemDB
 export {
   getDiagnosticos,
   addDiagnostico,
   updateDiagnostico,
-  deleteDiagnostico
-} from './rolEnfermagemDB';
+  deleteDiagnostico,
+} from "./rolEnfermagemDB";
 
 // Changelog exports
-export type { Changelog } from './changelogDB';
-export { buscarChangelogsRecentes, buscarTodosChangelogs, seedChangelogInicial, seedChangelogCompleto, salvarChangelog, inserirChangelogIdempotente } from './changelogDB';
+export type { Changelog } from "./changelogDB";
+export {
+  buscarChangelogsRecentes,
+  buscarTodosChangelogs,
+  seedChangelogInicial,
+  seedChangelogCompleto,
+  salvarChangelog,
+  inserirChangelogIdempotente,
+} from "./changelogDB";
 
 // Suporte exports
-export type { TicketProblema, SugestaoMelhoria, PesquisaNPS, ContagemNotificacoesSuporte } from './suporteDB';
+export type {
+  TicketProblema,
+  SugestaoMelhoria,
+  PesquisaNPS,
+  ContagemNotificacoesSuporte,
+} from "./suporteDB";
 export {
   buscarMeusTickets,
   buscarTodosTickets,
@@ -63,4 +74,4 @@ export {
   marcarSugestoesComoVisualizadasPeloUsuario,
   marcarTicketComoVisualizadoPeloSuporte,
   marcarSugestaoComoVisualizadaPeloSuporte,
-} from './suporteDB';
+} from "./suporteDB";

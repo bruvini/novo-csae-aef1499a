@@ -224,6 +224,11 @@ const CHANGELOGS_SISTEMA: {
     descricao:
       "A Gestão de Suporte ganhou indicadores de volume, resolução e tempo de atendimento. Também passamos a acompanhar avaliações baixas com mais cuidado: o usuário pode explicar como melhorar e a equipe recebe esse relato como um novo chamado para responder e acompanhar.",
   },
+  {
+    titulo: "Novo Perfil e Revisão de Dados Profissionais",
+    descricao:
+      "Agora você pode consultar e atualizar seus dados pessoais, profissionais e sua senha pelo próprio perfil. Alterações profissionais passam por uma revisão segura da equipe, e a Gestão de Usuários ganhou comparação das mudanças, histórico organizado das decisões e novos filtros de pesquisa.",
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────
