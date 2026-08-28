@@ -5,18 +5,26 @@ import LoadingOverlay from "./LoadingOverlay";
 import { toast } from "sonner";
 
 import { ProtectedRouteProps } from "@/lib/pages";
+import { temPermissaoPagina } from "@/lib/pages";
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false, allowedPageId }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireAdmin = false,
+  allowedPageId,
+}) => {
   const { user, sessionData, loading } = useAuth();
   const location = useLocation();
 
   const isAuthorized = React.useMemo(() => {
     if (loading) return true;
     if (!user || !sessionData) return false;
-    if (sessionData.ehAdmin === true) return true;
-    if (requireAdmin) return false;
+    if (requireAdmin) return sessionData.ehAdmin === true;
     if (allowedPageId) {
-      return sessionData.paginasPermitidas?.includes(allowedPageId) ?? false;
+      return temPermissaoPagina(
+        sessionData.ehAdmin === true,
+        sessionData.paginasPermitidas,
+        allowedPageId,
+      );
     }
     return true;
   }, [user, sessionData, loading, requireAdmin, allowedPageId]);
@@ -38,7 +46,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
   }
 
   if (!isAuthorized) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/perfil" replace />;
   }
 
   return <>{children}</>;

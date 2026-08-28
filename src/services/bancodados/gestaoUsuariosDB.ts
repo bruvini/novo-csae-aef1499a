@@ -19,6 +19,10 @@ import {
 import { db } from "../firebase";
 import { Usuario, EventoHistoricoUsuario } from "@/types/usuario";
 import { listarAlteracoesProfissionais } from "@/utils/profileUtils";
+import {
+  normalizarSelecaoPaginas,
+  PERMISSION_SCHEMA_VERSION,
+} from "@/lib/pages";
 
 export interface ResponsavelAnalise {
   uid: string;
@@ -94,7 +98,11 @@ export async function buscarUsuariosRecusados(): Promise<Usuario[]> {
       const data = doc.data() as Usuario;
       const status = (data.statusAcesso || "").toLowerCase();
       // Capturar variantes de 'Recusado' ou 'Rejeitado'
-      if (status === "recusado" || status === "rejeitado") {
+      if (
+        status === "recusado" ||
+        status === "rejeitado" ||
+        status === "revogado"
+      ) {
         usuarios.push({ ...data, id: doc.id });
       }
     });
@@ -132,14 +140,18 @@ export async function aprovarUsuario(
 ): Promise<void> {
   try {
     const userRef = doc(db, "usuarios", userId);
+    const paginasNormalizadas = normalizarSelecaoPaginas(
+      isAdmin,
+      paginasPermitidas,
+    );
     const updateData: Record<string, unknown> = {
       statusAcesso: "Liberado",
       dataAprovacao: serverTimestamp(),
       ehAdmin: isAdmin,
       tipoUsuario: isAdmin ? "Administrador" : "Comum",
-      paginasPermitidas: isAdmin ? [] : paginasPermitidas,
-      gestorConteudos:
-        !isAdmin && paginasPermitidas.includes("GestaoConteudos"),
+      paginasPermitidas: paginasNormalizadas,
+      versaoPermissoes: PERMISSION_SCHEMA_VERSION,
+      gestorConteudos: paginasNormalizadas.includes("GestaoConteudos"),
       analisadoPor: analisador.nome,
       analisadoPorUid: analisador.uid,
       historicoRevisoes: arrayUnion(
@@ -163,16 +175,29 @@ export async function editarPrivilegiosUsuario(
   userId: string,
   isAdmin: boolean,
   paginasPermitidas: string[] = [],
+  analisador: ResponsavelAnalise = responsavelSistema,
 ): Promise<void> {
   try {
     const userRef = doc(db, "usuarios", userId);
+    const paginasNormalizadas = normalizarSelecaoPaginas(
+      isAdmin,
+      paginasPermitidas,
+    );
     const updateData: Record<string, unknown> = {
       ehAdmin: isAdmin,
       tipoUsuario: isAdmin ? "Administrador" : "Comum",
-      paginasPermitidas: isAdmin ? [] : paginasPermitidas,
-      gestorConteudos:
-        !isAdmin && paginasPermitidas.includes("GestaoConteudos"),
+      paginasPermitidas: paginasNormalizadas,
+      versaoPermissoes: PERMISSION_SCHEMA_VERSION,
+      gestorConteudos: paginasNormalizadas.includes("GestaoConteudos"),
       dataAtualizacaoPrivilegios: serverTimestamp(),
+      historicoRevisoes: arrayUnion(
+        criarEvento({
+          tipo: "privilegios_atualizados",
+          responsavelId: analisador.uid,
+          responsavelNome: analisador.nome,
+          descricao: `Privilégios atualizados para ${isAdmin ? "Administrador" : "Usuário Comum"}.`,
+        }),
+      ),
     };
 
     await updateDoc(userRef, updateData);
@@ -207,6 +232,38 @@ export async function recusarUsuario(
     });
   } catch (error) {
     console.error("Erro ao recusar usuário:", error);
+    throw error;
+  }
+}
+
+export async function revogarAcessoUsuario(
+  userId: string,
+  motivo: string,
+  analisador: ResponsavelAnalise = responsavelSistema,
+): Promise<void> {
+  const justificativa = motivo.trim();
+  if (!justificativa) throw new Error("Informe o motivo da revogação.");
+
+  try {
+    const userRef = doc(db, "usuarios", userId);
+    await updateDoc(userRef, {
+      statusAcesso: "Revogado",
+      motivoRevogacao: justificativa,
+      dataRevogacao: serverTimestamp(),
+      analisadoPor: analisador.nome,
+      analisadoPorUid: analisador.uid,
+      historicoRevisoes: arrayUnion(
+        criarEvento({
+          tipo: "acesso_revogado",
+          responsavelId: analisador.uid,
+          responsavelNome: analisador.nome,
+          descricao: "Acesso ao portal revogado sem excluir o cadastro.",
+          motivo: justificativa,
+        }),
+      ),
+    });
+  } catch (error) {
+    console.error("Erro ao revogar acesso do usuário:", error);
     throw error;
   }
 }

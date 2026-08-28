@@ -31,6 +31,7 @@ import ModalEdicaoPrivilegios from "@/components/gestao-usuarios/ModalEdicaoPriv
 import ModalConfirmacaoExclusao from "@/components/gestao-usuarios/ModalConfirmacaoExclusao";
 import ModalMotivoRecusa from "@/components/gestao-usuarios/ModalMotivoRecusa";
 import ModalRevisaoCadastral from "@/components/gestao-usuarios/ModalRevisaoCadastral";
+import ModalRevogacaoAcesso from "@/components/gestao-usuarios/ModalRevogacaoAcesso";
 import {
   buscarUsuariosAguardando,
   buscarUsuariosAprovados,
@@ -43,6 +44,7 @@ import {
   excluirUsuario,
   aprovarAlteracaoCadastral,
   recusarAlteracaoCadastral,
+  revogarAcessoUsuario,
 } from "@/services/bancodados";
 import { Usuario } from "@/types/usuario";
 import { useAuth } from "@/contexts/AuthContext";
@@ -107,6 +109,8 @@ const GestaoUsuarios = () => {
   const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
   const [modalRevisaoAberto, setModalRevisaoAberto] = useState(false);
   const [processandoRevisao, setProcessandoRevisao] = useState(false);
+  const [modalRevogacaoAberto, setModalRevogacaoAberto] = useState(false);
+  const [processandoRevogacao, setProcessandoRevogacao] = useState(false);
 
   const responsavelAnalise = {
     uid: sessionData?.uid || "",
@@ -285,6 +289,11 @@ const GestaoUsuarios = () => {
     setUsuarioSelecionado(usuario);
     setModalRevisaoAberto(true);
   };
+  const handleRevogar = (usuario: Usuario) => {
+    if (usuario.uid === sessionData?.uid) return;
+    setUsuarioSelecionado(usuario);
+    setModalRevogacaoAberto(true);
+  };
 
   const handleRestaurar = async (usuario: Usuario) => {
     if (!usuario.id) return;
@@ -344,6 +353,7 @@ const GestaoUsuarios = () => {
         usuarioSelecionado.id,
         isAdmin,
         paginasPermitidas,
+        responsavelAnalise,
       );
       toast({
         title: "Privilégios atualizados!",
@@ -359,6 +369,34 @@ const GestaoUsuarios = () => {
         description: "Não foi possível editar os privilégios.",
         variant: "destructive",
       });
+    }
+  };
+
+  const confirmarRevogacao = async (motivo: string) => {
+    if (!usuarioSelecionado?.id || !motivo.trim()) return;
+    setProcessandoRevogacao(true);
+    try {
+      await revogarAcessoUsuario(
+        usuarioSelecionado.id,
+        motivo,
+        responsavelAnalise,
+      );
+      toast({
+        title: "Acesso revogado",
+        description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} não poderá entrar no portal, mas o cadastro foi preservado.`,
+      });
+      setModalRevogacaoAberto(false);
+      setUsuarioSelecionado(null);
+      carregarUsuarios();
+    } catch (error) {
+      console.error("Erro ao revogar acesso:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível revogar o acesso.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessandoRevogacao(false);
     }
   };
 
@@ -565,7 +603,7 @@ const GestaoUsuarios = () => {
               <KpiUsuario
                 titulo="Usuários por etapa"
                 valor={kpis.total}
-                descricao={`${kpis.aguardando} aguardando · ${kpis.aprovados} aprovados · ${kpis.recusados} recusados · ${kpis.alteracoes} alterações`}
+                descricao={`${kpis.aguardando} aguardando · ${kpis.aprovados} aprovados · ${kpis.recusados} recusados/revogados · ${kpis.alteracoes} alterações`}
                 icone={BarChart3}
               />
               <KpiUsuario
@@ -621,7 +659,7 @@ const GestaoUsuarios = () => {
                   className="rounded-md flex items-center gap-2 font-semibold"
                 >
                   <UserX className="w-4 h-4" />
-                  Recusados
+                  Recusados / Revogados
                   <span className="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded-full border border-red-200">
                     {usuariosRecusados.length}
                   </span>
@@ -657,6 +695,8 @@ const GestaoUsuarios = () => {
                   onEditarPrivilegios={
                     isAdmin ? handleEditarPrivilegios : undefined
                   }
+                  onRevogar={isAdmin ? handleRevogar : undefined}
+                  usuarioAtualUid={sessionData?.uid}
                 />
               </TabsContent>
               <TabsContent value="recusados" className="anim-fade-in">
@@ -737,6 +777,16 @@ const GestaoUsuarios = () => {
           }}
           onAprovar={confirmarAprovacaoAlteracao}
           onRecusar={confirmarRecusaAlteracao}
+        />
+        <ModalRevogacaoAcesso
+          aberto={modalRevogacaoAberto}
+          usuario={usuarioSelecionado}
+          processando={processandoRevogacao}
+          onClose={() => {
+            setModalRevogacaoAberto(false);
+            setUsuarioSelecionado(null);
+          }}
+          onConfirmar={confirmarRevogacao}
         />
       </div>
     </AuthenticatedLayout>

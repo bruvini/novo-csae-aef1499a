@@ -34,6 +34,8 @@ export type TipoEventoUsuario =
   | "cadastro_enviado"
   | "acesso_aprovado"
   | "acesso_recusado"
+  | "acesso_revogado"
+  | "privilegios_atualizados"
   | "acesso_restaurado"
   | "alteracao_profissional_solicitada"
   | "alteracao_profissional_aprovada"
@@ -82,8 +84,10 @@ export interface Usuario {
     | "Recusado"
     | "Aprovado"
     | "Rejeitado"
+    | "Revogado"
     | "RevisaoCadastral";
   paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
+  versaoPermissoes?: number;
   totalAcessos?: number;
   ultimoAcesso?: Timestamp;
   dataCadastro?: Timestamp;
@@ -93,6 +97,8 @@ export interface Usuario {
   dataRecusaAcesso?: Timestamp;
   dataLiberacaoAcesso?: Timestamp;
   motivoRecusa?: string;
+  motivoRevogacao?: string;
+  dataRevogacao?: Timestamp;
   analisadoPor?: string;
   analisadoPorUid?: string;
   historicoAcesso?: HistoricoAcesso[];

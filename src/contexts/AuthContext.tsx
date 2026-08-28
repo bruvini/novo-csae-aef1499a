@@ -24,6 +24,7 @@ import {
   where,
   getDocs,
   increment,
+  onSnapshot,
   Timestamp,
 } from "firebase/firestore";
 import { auth, db } from "@/services/firebase";
@@ -32,8 +33,31 @@ import { useToast } from "@/hooks/use-toast";
 import { Usuario } from "@/types/usuario";
 import { verificarElegibilidadeNPS } from "@/services/bancodados/suporteDB";
 import { cadastroEmAndamento } from "@/utils/registrationFlow";
+import { paginasPadraoPorTipo, PERMISSION_SCHEMA_VERSION } from "@/lib/pages";
 
 const NPS_PENDENTE_KEY = "csae_nps_pendente";
+
+const garantirPermissoesAtuais = async (usuario: Usuario & { id: string }) => {
+  const paginasAtuais = usuario.paginasPermitidas || [];
+  if ((usuario.versaoPermissoes || 0) >= PERMISSION_SCHEMA_VERSION) {
+    return paginasAtuais;
+  }
+
+  const paginasPermitidas = usuario.ehAdmin
+    ? paginasPadraoPorTipo(true)
+    : [...new Set([...paginasPadraoPorTipo(false), ...paginasAtuais])];
+
+  try {
+    await updateDoc(doc(db, "usuarios", usuario.id), {
+      paginasPermitidas,
+      versaoPermissoes: PERMISSION_SCHEMA_VERSION,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar o padrão de permissões:", error);
+  }
+
+  return paginasPermitidas;
+};
 
 interface SessionData {
   nomeCompleto: string;
@@ -139,6 +163,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!user?.uid || !sessionData) return;
+
+    return onSnapshot(
+      doc(db, "usuarios", user.uid),
+      async (snapshot) => {
+        if (!snapshot.exists()) return;
+        const dados = snapshot.data() as Usuario;
+        if (dados.statusAcesso?.toLowerCase() !== "revogado") return;
+
+        toast({
+          title: "Acesso revogado",
+          description: `Sua sessão foi encerrada. Motivo: ${dados.motivoRevogacao || "não informado"}. Para esclarecimentos, entre em contato com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa.`,
+          variant: "destructive",
+        });
+        await signOut(auth);
+        setUser(null);
+        setSessionData(null);
+        localStorage.removeItem("csae_session");
+        navigate("/login");
+      },
+      (error) => console.error("Erro ao acompanhar status de acesso:", error),
+    );
+  }, [navigate, sessionData, toast, user?.uid]);
+
   // Função para carregar dados do usuário no Firestore
   const loadUserData = async (uid: string): Promise<void> => {
     try {
@@ -241,6 +290,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
+    if (status === "revogado") {
+      const dataTexto = userDoc.dataRevogacao?.toDate
+        ? userDoc.dataRevogacao.toDate().toLocaleDateString("pt-BR")
+        : "data não informada";
+      toast({
+        title: "Acesso revogado",
+        description: `Seu acesso foi revogado em ${dataTexto}. Motivo: ${userDoc.motivoRevogacao || "não informado"}. Para esclarecimentos, entre em contato com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa.`,
+        variant: "destructive",
+      });
+      await signOut(auth);
+      setUser(null);
+      setSessionData(null);
+      localStorage.removeItem("csae_session");
+      navigate("/login");
+      return;
+    }
+
     if (status === "rejeitado" || status === "recusado") {
       console.log("Status: rejeitado/recusado - acesso negado");
       toast({
@@ -269,24 +335,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
 
-      // Garantir que usuários existentes tenham paginasPermitidas definidas
-      let paginasPermitidas = userDoc.paginasPermitidas;
-      if (
-        !userDoc.ehAdmin &&
-        (!paginasPermitidas || paginasPermitidas.length === 0)
-      ) {
-        // Usuário comum sem páginas definidas - definir páginas padrão
-        paginasPermitidas = ["ProcessoEnfermagem"];
-
-        // Atualizar no Firestore
-        try {
-          const updateRef = doc(db, "usuarios", userDoc.id);
-          await updateDoc(updateRef, { paginasPermitidas });
-          console.log("Páginas padrão definidas para usuário comum");
-        } catch (error) {
-          console.error("Erro ao definir páginas padrão:", error);
-        }
-      }
+      const paginasPermitidas = await garantirPermissoesAtuais(userDoc);
 
       // Criar objeto de sessão
       const session: SessionData = {
@@ -297,7 +346,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
-        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas,
+        paginasPermitidas,
         numeroCoren: userDoc.dadosProfissionais?.numeroCoren,
         ufCoren: userDoc.dadosProfissionais?.ufCoren,
       };
@@ -452,6 +501,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
+      if (status === "revogado") {
+        const dataTexto = userDoc.dataRevogacao?.toDate
+          ? userDoc.dataRevogacao.toDate().toLocaleDateString("pt-BR")
+          : "data não informada";
+        await signOut(auth);
+        toast({
+          title: "Acesso revogado",
+          description: `Seu acesso foi revogado em ${dataTexto}. Motivo: ${userDoc.motivoRevogacao || "não informado"}. Para esclarecimentos, entre em contato com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (status === "rejeitado" || status === "recusado") {
         await signOut(auth);
         toast({
@@ -531,23 +593,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.error("[Auth] Erro ao verificar elegibilidade NPS:", npsError);
       }
 
-      // Garantir que usuários existentes tenham paginasPermitidas definidas
-      let paginasPermitidas = userDoc.paginasPermitidas;
-      if (
-        !userDoc.ehAdmin &&
-        (!paginasPermitidas || paginasPermitidas.length === 0)
-      ) {
-        paginasPermitidas = ["ProcessoEnfermagem"];
-
-        // Atualizar no Firestore
-        try {
-          const updateRef = doc(db, "usuarios", userDoc.id);
-          await updateDoc(updateRef, { paginasPermitidas });
-          console.log("Páginas padrão definidas para usuário comum");
-        } catch (error) {
-          console.error("Erro ao definir páginas padrão:", error);
-        }
-      }
+      const paginasPermitidas = await garantirPermissoesAtuais(userDoc);
 
       // Criar sessão
       const session: SessionData = {
@@ -558,7 +604,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ehAdmin: userDoc.ehAdmin,
         gestorConteudos: userDoc.gestorConteudos,
         email: userDoc.email,
-        paginasPermitidas: userDoc.ehAdmin ? [] : paginasPermitidas,
+        paginasPermitidas,
         numeroCoren: userDoc.dadosProfissionais?.numeroCoren,
         ufCoren: userDoc.dadosProfissionais?.ufCoren,
       };

@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
-import ModalEdicaoPrivilegios from './ModalEdicaoPrivilegios';
-import { Usuario } from '@/types/usuario';
+import React, { useState } from "react";
+import ModalEdicaoPrivilegios from "./ModalEdicaoPrivilegios";
+import { Usuario } from "@/types/usuario";
 
 interface ModalConfirmacaoAprovacaoProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ const ModalConfirmacaoAprovacao: React.FC<ModalConfirmacaoAprovacaoProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  usuario
+  usuario,
 }) => {
   const handleConfirm = (isAdmin: boolean, paginasPermitidas: string[]) => {
     onConfirm(isAdmin, paginasPermitidas);

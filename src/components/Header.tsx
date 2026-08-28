@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportNotifications } from "@/contexts/SupportNotificationsContext";
 import { cn } from "@/lib/utils";
+import { temPermissaoPagina } from "@/lib/pages";
 
 const Header = () => {
   const { sessionData, logout } = useAuth();
@@ -21,11 +22,17 @@ const Header = () => {
     useSupportNotifications();
 
   const navigationItems = [
-    { title: "Dashboard", url: "/dashboard", icon: Home },
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+      allowedPageId: "Dashboard",
+    },
     {
       title: "Processo de Enfermagem",
       url: "/processo-enfermagem",
       icon: Heart,
+      allowedPageId: "ProcessoEnfermagem",
     },
     {
       title: "Gestão de Conteúdos",
@@ -49,6 +56,7 @@ const Header = () => {
       title: "Central de Ajuda",
       url: "/ajuda",
       icon: LifeBuoy,
+      allowedPageId: "CentralAjuda",
       notificationCount: respostasNaoVisualizadas,
     },
     {
@@ -64,7 +72,7 @@ const Header = () => {
     if (!item.allowedPageId) return true;
     const ehAdmin = sessionData?.ehAdmin === true;
     const paginasPermitidas = sessionData?.paginasPermitidas || [];
-    return ehAdmin || paginasPermitidas.includes(item.allowedPageId);
+    return temPermissaoPagina(ehAdmin, paginasPermitidas, item.allowedPageId);
   });
 
   return (

@@ -13,7 +13,7 @@ import { Usuario } from "@/types/usuario";
 import { normalizarNomeCompleto } from "@/utils/userNormalization";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Eye, Check, X, Trash2, Settings, Undo } from "lucide-react";
+import { Eye, Check, X, Trash2, Settings, Undo, ShieldX } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 
 interface TabelaUsuariosProps {
@@ -25,6 +25,8 @@ interface TabelaUsuariosProps {
   onExcluir?: (usuario: Usuario) => void;
   onEditarPrivilegios?: (usuario: Usuario) => void;
   onRestaurar?: (usuario: Usuario) => void;
+  onRevogar?: (usuario: Usuario) => void;
+  usuarioAtualUid?: string;
 }
 
 const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
@@ -36,6 +38,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   onExcluir,
   onEditarPrivilegios,
   onRestaurar,
+  onRevogar,
+  usuarioAtualUid,
 }) => {
   const formatarData = (timestamp?: Timestamp) => {
     if (!timestamp) return "Não informado";
@@ -92,10 +96,12 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
               <TableHead className="font-bold">Data de Aprovação</TableHead>
             )}
             {tipo === "recusados" && (
-              <TableHead className="font-bold">Data de Recusa</TableHead>
+              <TableHead className="font-bold">Data da Decisão</TableHead>
             )}
             {tipo === "recusados" && (
-              <TableHead className="font-bold">Motivo da Recusa</TableHead>
+              <TableHead className="font-bold">
+                Motivo / Justificativa
+              </TableHead>
             )}
             {(tipo === "aprovados" || tipo === "recusados") && (
               <TableHead className="font-bold">Analisado por</TableHead>
@@ -103,7 +109,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
             {tipo === "alteracoes" && (
               <TableHead className="font-bold">Data da Solicitação</TableHead>
             )}
-            <TableHead className="text-right font-bold w-[250px]">
+            <TableHead className="text-right font-bold w-[360px]">
               Ações
             </TableHead>
           </TableRow>
@@ -114,6 +120,11 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
               <TableCell className="font-medium">
                 {normalizarNomeCompleto(usuario.dadosPessoais?.nomeCompleto) ||
                   "NOME NÃO INFORMADO"}
+                {usuario.statusAcesso?.toLowerCase() === "revogado" && (
+                  <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                    Revogado
+                  </Badge>
+                )}
               </TableCell>
               {tipo === "aprovados" && (
                 <>
@@ -126,16 +137,22 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                 {tipo === "aprovados"
                   ? formatarData(usuario.dataAprovacao || usuario.dataCadastro)
                   : tipo === "recusados"
-                    ? formatarData(usuario.dataRecusa || usuario.dataCadastro)
+                    ? formatarData(
+                        usuario.dataRevogacao ||
+                          usuario.dataRecusa ||
+                          usuario.dataCadastro,
+                      )
                     : formatarData(usuario.dataCadastro)}
               </TableCell>
               {tipo === "recusados" && (
                 <TableCell className="max-w-[300px]">
                   <p
                     className="text-sm text-gray-600 italic line-clamp-2"
-                    title={usuario.motivoRecusa}
+                    title={usuario.motivoRevogacao || usuario.motivoRecusa}
                   >
-                    {usuario.motivoRecusa || "Sem motivo registrado"}
+                    {usuario.motivoRevogacao ||
+                      usuario.motivoRecusa ||
+                      "Sem motivo registrado"}
                   </p>
                 </TableCell>
               )}
@@ -196,6 +213,24 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     >
                       <Settings className="h-3.5 w-3.5" />
                       Privilégios
+                    </Button>
+                  )}
+
+                  {tipo === "aprovados" && onRevogar && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 border-amber-600 text-amber-700 hover:bg-amber-50 text-xs gap-1"
+                      onClick={() => onRevogar(usuario)}
+                      disabled={usuario.uid === usuarioAtualUid}
+                      title={
+                        usuario.uid === usuarioAtualUid
+                          ? "Você não pode revogar o próprio acesso"
+                          : "Revogar acesso sem excluir o cadastro"
+                      }
+                    >
+                      <ShieldX className="h-3.5 w-3.5" />
+                      Revogar
                     </Button>
                   )}
 

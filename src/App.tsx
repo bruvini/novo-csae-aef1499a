@@ -50,7 +50,7 @@ function App() {
                 <Route
                   path="/dashboard"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedPageId="Dashboard">
                       <Dashboard />
                     </ProtectedRoute>
                   }
@@ -74,7 +74,7 @@ function App() {
                 <Route
                   path="/processo-enfermagem"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedPageId="ProcessoEnfermagem">
                       <ProcessoEnfermagem />
                     </ProtectedRoute>
                   }
@@ -98,7 +98,7 @@ function App() {
                 <Route
                   path="/ajuda"
                   element={
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedPageId="CentralAjuda">
                       <CentralAjuda />
                     </ProtectedRoute>
                   }
