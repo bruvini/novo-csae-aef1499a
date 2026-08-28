@@ -40,8 +40,8 @@
     "semantic_hash": "0139d5e57e02feffdb1d422a7cba567f"
   },
   "src/App.tsx": {
-    "mtime": 1786905329.2368922,
-    "ast_hash": "7e74c8813072c59a785b02f8dd3a0209",
+    "mtime": 1787875031.9530416,
+    "ast_hash": "abd7bf68366c2f47f56e3cd2b06233d7",
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "src/components/Header.tsx": {
-    "mtime": 1786905329.2410247,
-    "ast_hash": "46f0894653e62feb76bd2ba61e5f5f42",
+    "mtime": 1787875031.8848298,
+    "ast_hash": "fdbd2c9bd63f7a77fb4d0798eb45bb21",
     "semantic_hash": ""
   },
   "src/components/HeroBanner.tsx": {
@@ -180,9 +180,9 @@
     "semantic_hash": "0590e44628003dc351bd4dea66bc04e7"
   },
   "src/components/gestao-usuarios/ModalDetalhesUsuario.tsx": {
-    "mtime": 1775087189.2065346,
-    "ast_hash": "4a0c78133ca53741f6665379f8774ed6",
-    "semantic_hash": "4a0c78133ca53741f6665379f8774ed6"
+    "mtime": 1787875032.3063703,
+    "ast_hash": "2abdae8b2c45f5d88c25c9c33a3b3e53",
+    "semantic_hash": ""
   },
   "src/components/gestao-usuarios/ModalEdicaoPrivilegios.tsx": {
     "mtime": 1774742855.1747859,
@@ -195,9 +195,9 @@
     "semantic_hash": "ab0615e0ccd10c268cdf522c9fd9736b"
   },
   "src/components/gestao-usuarios/TabelaUsuarios.tsx": {
-    "mtime": 1779418583.258731,
-    "ast_hash": "1cf6b9af24f334bdb202aa93b915a804",
-    "semantic_hash": "1cf6b9af24f334bdb202aa93b915a804"
+    "mtime": 1787875230.696625,
+    "ast_hash": "892621c9d176faa12bd96571e262d728",
+    "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
     "mtime": 1786918266.703664,
@@ -545,8 +545,8 @@
     "semantic_hash": "226311834bdbec4a05c6b17ed6f58de7"
   },
   "src/contexts/AuthContext.tsx": {
-    "mtime": 1787784039.8007379,
-    "ast_hash": "3c2af68071a8f1c5c8356eeced23b229",
+    "mtime": 1787875165.3077312,
+    "ast_hash": "684798260c06ff0f2cf5f39a610cc6aa",
     "semantic_hash": ""
   },
   "src/contexts/QueryContext.tsx": {
@@ -635,9 +635,9 @@
     "semantic_hash": ""
   },
   "src/pages/GestaoUsuarios.tsx": {
-    "mtime": 1779418591.6381433,
-    "ast_hash": "80a70a5d20f898333e82d49b60b9056a",
-    "semantic_hash": "80a70a5d20f898333e82d49b60b9056a"
+    "mtime": 1787875248.200005,
+    "ast_hash": "b1bb13fc9a850361f804507b509d74c8",
+    "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
     "mtime": 1786913620.8043232,
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1787785655.6682394,
-    "ast_hash": "d13c0aecbdcb2eb6ecc2fab89ca91efa",
+    "mtime": 1787875086.8483715,
+    "ast_hash": "679364bfa9f59cf2bd8cdfdc1535b882",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -695,13 +695,13 @@
     "semantic_hash": ""
   },
   "src/services/bancodados/gestaoUsuariosDB.ts": {
-    "mtime": 1786918518.7236228,
-    "ast_hash": "b3c64f30b83125e90fd2d2669a06f0d7",
+    "mtime": 1787875410.4018216,
+    "ast_hash": "debf694cd03013823f100aafd7f2781b",
     "semantic_hash": ""
   },
   "src/services/bancodados/index.ts": {
-    "mtime": 1786905329.2553444,
-    "ast_hash": "6f7945381af4e2b5eb27e08bea80fa88",
+    "mtime": 1787875031.170185,
+    "ast_hash": "41cb2f483fcebd942a13e406caaeae41",
     "semantic_hash": ""
   },
   "src/services/bancodados/intervencoesAutoraisDB.ts": {
@@ -765,9 +765,9 @@
     "semantic_hash": ""
   },
   "src/types/usuario.ts": {
-    "mtime": 1775515593.3071468,
-    "ast_hash": "ca102569e617fc9752ee68a84dad9f43",
-    "semantic_hash": "ca102569e617fc9752ee68a84dad9f43"
+    "mtime": 1787875230.6956122,
+    "ast_hash": "d7133a38e6643c2ad40288437f9b9a4a",
+    "semantic_hash": ""
   },
   "src/utils/processoUtils.ts": {
     "mtime": 1786914467.550658,
@@ -907,6 +907,26 @@
   "src/utils/supportMetrics.ts": {
     "mtime": 1787785577.13152,
     "ast_hash": "551a3579a29770ef6312d8aecb617e47",
+    "semantic_hash": ""
+  },
+  "src/components/gestao-usuarios/ModalRevisaoCadastral.tsx": {
+    "mtime": 1787875410.402856,
+    "ast_hash": "7c1cdba035dcf1ede99d133bbc02b81b",
+    "semantic_hash": ""
+  },
+  "src/pages/Perfil.tsx": {
+    "mtime": 1787875122.8438418,
+    "ast_hash": "e26c0cca33c3e2784fbd733f133e0e16",
+    "semantic_hash": ""
+  },
+  "src/services/bancodados/perfilDB.ts": {
+    "mtime": 1787875410.4007883,
+    "ast_hash": "f867613cf0f58fa877f1e349ba9c6d1e",
+    "semantic_hash": ""
+  },
+  "src/utils/profileUtils.ts": {
+    "mtime": 1787875410.39975,
+    "ast_hash": "d54b71edcfd887703d59babcc4b97fda",
     "semantic_hash": ""
   }
 }
