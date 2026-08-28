@@ -195,8 +195,8 @@
     "semantic_hash": "ab0615e0ccd10c268cdf522c9fd9736b"
   },
   "src/components/gestao-usuarios/TabelaUsuarios.tsx": {
-    "mtime": 1787875230.696625,
-    "ast_hash": "892621c9d176faa12bd96571e262d728",
+    "mtime": 1787876962.2122014,
+    "ast_hash": "76c61702a105f8dd705aa9fe8fa6fbcc",
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
@@ -280,9 +280,9 @@
     "semantic_hash": "31446628d8a602d69ef48d2c77e96685"
   },
   "src/components/register/PersonalInfoForm.tsx": {
-    "mtime": 1774760827.5391817,
-    "ast_hash": "5c4ce2eef222eda236d5530216ea0a58",
-    "semantic_hash": "5c4ce2eef222eda236d5530216ea0a58"
+    "mtime": 1787876962.1756475,
+    "ast_hash": "304f95e0772bdf086f41a479efa5541a",
+    "semantic_hash": ""
   },
   "src/components/register/ProfessionalInfoForm.tsx": {
     "mtime": 1774760848.6785588,
@@ -635,8 +635,8 @@
     "semantic_hash": ""
   },
   "src/pages/GestaoUsuarios.tsx": {
-    "mtime": 1787875248.200005,
-    "ast_hash": "b1bb13fc9a850361f804507b509d74c8",
+    "mtime": 1787876962.3192549,
+    "ast_hash": "4ec2ebfd7446aa882f5429cddedf5464",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -660,8 +660,8 @@
     "semantic_hash": "82efef85cdf531505a50ed495e19b9a3"
   },
   "src/pages/Register.tsx": {
-    "mtime": 1787784039.8017573,
-    "ast_hash": "027285314c6376ecf7652cde8050deec",
+    "mtime": 1787877153.2059224,
+    "ast_hash": "6d722cbb0e37ae89d6df2c93dee1a335",
     "semantic_hash": ""
   },
   "src/pages/WaitingApproval.tsx": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1787875086.8483715,
-    "ast_hash": "679364bfa9f59cf2bd8cdfdc1535b882",
+    "mtime": 1787876949.9478216,
+    "ast_hash": "eb94fcb41cde14b5b2d4e1b7af5bd021",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -745,9 +745,9 @@
     "semantic_hash": ""
   },
   "src/services/bancodados/usuariosDB.ts": {
-    "mtime": 1774742836.9658222,
-    "ast_hash": "b618379faa10c343b09e9acc5be65008",
-    "semantic_hash": "b618379faa10c343b09e9acc5be65008"
+    "mtime": 1787876961.9027596,
+    "ast_hash": "e71ef66e70ba343b6da643cbc18f82e9",
+    "semantic_hash": ""
   },
   "src/services/firebase.ts": {
     "mtime": 1774742666.1554577,
@@ -915,18 +915,28 @@
     "semantic_hash": ""
   },
   "src/pages/Perfil.tsx": {
-    "mtime": 1787875122.8438418,
-    "ast_hash": "e26c0cca33c3e2784fbd733f133e0e16",
+    "mtime": 1787876885.415564,
+    "ast_hash": "2c8d39c9738bcf93f41af97107a4c8b8",
     "semantic_hash": ""
   },
   "src/services/bancodados/perfilDB.ts": {
-    "mtime": 1787875410.4007883,
-    "ast_hash": "f867613cf0f58fa877f1e349ba9c6d1e",
+    "mtime": 1787876874.1886861,
+    "ast_hash": "545817f797d2a364c6d0be9326af3327",
     "semantic_hash": ""
   },
   "src/utils/profileUtils.ts": {
     "mtime": 1787875410.39975,
     "ast_hash": "d54b71edcfd887703d59babcc4b97fda",
+    "semantic_hash": ""
+  },
+  "src/utils/userManagementMetrics.ts": {
+    "mtime": 1787876859.264704,
+    "ast_hash": "6e4472c76cd7b673f8f710723ae48e1a",
+    "semantic_hash": ""
+  },
+  "src/utils/userNormalization.ts": {
+    "mtime": 1787876961.8355927,
+    "ast_hash": "a9a85e574dfb14f7c781fd00ef3be736",
     "semantic_hash": ""
   }
 }
