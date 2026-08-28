@@ -2,6 +2,10 @@
 
 import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/services/firebase";
+import {
+  normalizarCidade,
+  normalizarNomeCompleto,
+} from "@/utils/userNormalization";
 
 interface DadosPessoais {
   nomeCompleto: string;
@@ -45,6 +49,11 @@ export async function cadastrarUsuario(usuario: UsuarioData): Promise<void> {
   const ref = doc(collection(db, "usuarios"), usuario.uid);
   await setDoc(ref, {
     ...usuario,
+    dadosPessoais: {
+      ...usuario.dadosPessoais,
+      nomeCompleto: normalizarNomeCompleto(usuario.dadosPessoais.nomeCompleto),
+      cidade: normalizarCidade(usuario.dadosPessoais.cidade),
+    },
     statusAcesso: "Aguardando",
     dataCadastro: serverTimestamp(),
   });

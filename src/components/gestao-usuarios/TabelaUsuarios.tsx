@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Usuario } from "@/types/usuario";
+import { normalizarNomeCompleto } from "@/utils/userNormalization";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Eye, Check, X, Trash2, Settings, Undo } from "lucide-react";
@@ -111,7 +112,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
           {usuarios.map((usuario) => (
             <TableRow key={usuario.id} className="hover:bg-slate-50/50">
               <TableCell className="font-medium">
-                {usuario.dadosPessoais?.nomeCompleto || "Nome não informado"}
+                {normalizarNomeCompleto(usuario.dadosPessoais?.nomeCompleto) ||
+                  "NOME NÃO INFORMADO"}
               </TableCell>
               {tipo === "aprovados" && (
                 <>

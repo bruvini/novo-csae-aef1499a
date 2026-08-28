@@ -31,6 +31,10 @@ import type {
   DadosProfissionais,
   Usuario,
 } from "@/types/usuario";
+import {
+  normalizarCidade,
+  normalizarNomeCompleto,
+} from "@/utils/userNormalization";
 
 const Perfil = () => {
   const { user, sessionData, logout, atualizarNomeSessao } = useAuth();
@@ -80,9 +84,14 @@ const Perfil = () => {
     }
     setSalvando(true);
     try {
+      const dadosNormalizados = {
+        ...pessoais,
+        nomeCompleto: normalizarNomeCompleto(pessoais.nomeCompleto),
+        cidade: normalizarCidade(pessoais.cidade),
+      };
       await atualizarDadosPessoais(
         sessionData.uid,
-        pessoais,
+        dadosNormalizados,
         sessionData.nomeCompleto,
       );
       toast({
@@ -90,9 +99,10 @@ const Perfil = () => {
         description: "As alterações foram salvas com sucesso.",
       });
       setPerfil((atual) =>
-        atual ? { ...atual, dadosPessoais: pessoais } : atual,
+        atual ? { ...atual, dadosPessoais: dadosNormalizados } : atual,
       );
-      atualizarNomeSessao(pessoais.nomeCompleto);
+      setPessoais(dadosNormalizados);
+      atualizarNomeSessao(dadosNormalizados.nomeCompleto);
     } catch {
       toast({
         title: "Erro",
@@ -277,9 +287,24 @@ const Perfil = () => {
                       <Input
                         id={campo}
                         value={pessoais[campo]}
+                        className={campo === "nomeCompleto" ? "uppercase" : ""}
                         onChange={(e) =>
                           atualizarPessoal(campo, e.target.value)
                         }
+                        onBlur={() => {
+                          if (campo === "nomeCompleto") {
+                            atualizarPessoal(
+                              campo,
+                              normalizarNomeCompleto(pessoais[campo]),
+                            );
+                          }
+                          if (campo === "cidade") {
+                            atualizarPessoal(
+                              campo,
+                              normalizarCidade(pessoais[campo]),
+                            );
+                          }
+                        }}
                       />
                     </div>
                   ))}

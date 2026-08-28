@@ -229,6 +229,11 @@ const CHANGELOGS_SISTEMA: {
     descricao:
       "Agora você pode consultar e atualizar seus dados pessoais, profissionais e sua senha pelo próprio perfil. Alterações profissionais passam por uma revisão segura da equipe, e a Gestão de Usuários ganhou comparação das mudanças, histórico organizado das decisões e novos filtros de pesquisa.",
   },
+  {
+    titulo: "Gestão de Usuários Mais Organizada",
+    descricao:
+      "A Gestão de Usuários agora reúne indicadores importantes sobre cadastros, aprovações e tempo de análise. Os filtros ficaram mais compactos, cidades com grafias diferentes são agrupadas corretamente e os nomes passam a ser apresentados de forma padronizada.",
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

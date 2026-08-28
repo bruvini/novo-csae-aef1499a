@@ -12,6 +12,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  BarChart3,
+  Clock3,
+  Hourglass,
+  Percent,
   Search,
   RotateCcw,
   UserMinus,
@@ -42,6 +46,39 @@ import {
 } from "@/services/bancodados";
 import { Usuario } from "@/types/usuario";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  normalizarChaveTexto,
+  normalizarCidade,
+  obterCidadesUnicas,
+} from "@/utils/userNormalization";
+import {
+  calcularKpisUsuarios,
+  formatarDias,
+} from "@/utils/userManagementMetrics";
+
+interface KpiUsuarioProps {
+  titulo: string;
+  valor: string | number;
+  descricao: string;
+  icone: React.ComponentType<{ className?: string }>;
+}
+
+const KpiUsuario = ({
+  titulo,
+  valor,
+  descricao,
+  icone: Icone,
+}: KpiUsuarioProps) => (
+  <Card className="border-none shadow-sm">
+    <CardContent className="pt-5">
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <Icone className="h-4 w-4" /> {titulo}
+      </div>
+      <p className="mt-3 text-2xl font-bold text-slate-800">{valor}</p>
+      <p className="mt-1 text-xs text-slate-500">{descricao}</p>
+    </CardContent>
+  </Card>
+);
 
 const GestaoUsuarios = () => {
   const { toast } = useToast();
@@ -111,18 +148,20 @@ const GestaoUsuarios = () => {
         const dadosProfissionais =
           usuario.alteracaoProfissionalPendente?.dadosNovos ||
           usuario.dadosProfissionais;
-        const nomeCompleto =
-          usuario.dadosPessoais?.nomeCompleto?.toLowerCase() || "";
-        const matricula = dadosProfissionais?.matricula?.toLowerCase() || "";
-        const numeroCoren =
-          dadosProfissionais?.numeroCoren?.toLowerCase() || "";
-        const email = usuario.email?.toLowerCase() || "";
-        const cpf = usuario.dadosPessoais?.cpf?.toLowerCase() || "";
-        const rg = usuario.dadosPessoais?.rg?.toLowerCase() || "";
-        const cidade = usuario.dadosPessoais?.cidade?.toLowerCase() || "";
-        const bairro = usuario.dadosPessoais?.bairro?.toLowerCase() || "";
-        const lotacao = dadosProfissionais?.lotacao?.toLowerCase() || "";
-        const buscaLower = textoBusca.toLowerCase();
+        const nomeCompleto = normalizarChaveTexto(
+          usuario.dadosPessoais?.nomeCompleto,
+        );
+        const matricula = normalizarChaveTexto(dadosProfissionais?.matricula);
+        const numeroCoren = normalizarChaveTexto(
+          dadosProfissionais?.numeroCoren,
+        );
+        const email = normalizarChaveTexto(usuario.email);
+        const cpf = normalizarChaveTexto(usuario.dadosPessoais?.cpf);
+        const rg = normalizarChaveTexto(usuario.dadosPessoais?.rg);
+        const cidade = normalizarChaveTexto(usuario.dadosPessoais?.cidade);
+        const bairro = normalizarChaveTexto(usuario.dadosPessoais?.bairro);
+        const lotacao = normalizarChaveTexto(dadosProfissionais?.lotacao);
+        const buscaLower = normalizarChaveTexto(textoBusca);
 
         const matchBusca =
           textoBusca === "" ||
@@ -144,7 +183,7 @@ const GestaoUsuarios = () => {
           dadosProfissionais?.lotacao === filtroLotacao;
         const matchCidade =
           filtroCidade === "todos" ||
-          usuario.dadosPessoais?.cidade === filtroCidade;
+          normalizarCidade(usuario.dadosPessoais?.cidade) === filtroCidade;
         const matchAtuaSms =
           filtroAtuaSms === "todos" ||
           String(dadosProfissionais?.atuaSMS) === filtroAtuaSms;
@@ -194,13 +233,25 @@ const GestaoUsuarios = () => {
         .filter(Boolean),
     ),
   ] as string[];
-  const cidades = [
-    ...new Set(
-      todosUsuarios
-        .map((usuario) => usuario.dadosPessoais?.cidade)
-        .filter(Boolean),
-    ),
-  ] as string[];
+  const cidades = obterCidadesUnicas(
+    todosUsuarios.map((usuario) => usuario.dadosPessoais?.cidade),
+  );
+
+  const kpis = useMemo(
+    () =>
+      calcularKpisUsuarios({
+        aguardando: aguardandoFiltrados,
+        aprovados: aprovadosFiltrados,
+        recusados: recusadosFiltrados,
+        alteracoes: alteracoesFiltradas,
+      }),
+    [
+      aguardandoFiltrados,
+      aprovadosFiltrados,
+      recusadosFiltrados,
+      alteracoesFiltradas,
+    ],
+  );
 
   const limparFiltros = () => {
     setTextoBusca("");
@@ -437,8 +488,8 @@ const GestaoUsuarios = () => {
                   Localizar Usuário
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 pt-6">
-                <div className="md:col-span-2 xl:col-span-2">
+              <CardContent className="grid grid-cols-1 gap-4 pt-6 md:grid-cols-2 xl:grid-cols-[minmax(260px,2fr)_repeat(4,minmax(145px,1fr))_auto] xl:items-center">
+                <div>
                   <Input
                     placeholder="Nome, e-mail, CPF, RG, matrícula, COREN, cidade..."
                     value={textoBusca}
@@ -480,7 +531,7 @@ const GestaoUsuarios = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas as cidades</SelectItem>
-                    {cidades.sort().map((item) => (
+                    {cidades.map((item) => (
                       <SelectItem key={item} value={item}>
                         {item}
                       </SelectItem>
@@ -497,11 +548,11 @@ const GestaoUsuarios = () => {
                     <SelectItem value="false">Não atua na SMS</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="xl:col-span-5">
+                <div>
                   <Button
                     variant="outline"
                     onClick={limparFiltros}
-                    className="gap-2"
+                    className="w-full gap-2 whitespace-nowrap xl:w-auto"
                   >
                     <RotateCcw className="h-4 w-4" />
                     Limpar filtros
@@ -509,6 +560,39 @@ const GestaoUsuarios = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <KpiUsuario
+                titulo="Usuários por etapa"
+                valor={kpis.total}
+                descricao={`${kpis.aguardando} aguardando · ${kpis.aprovados} aprovados · ${kpis.recusados} recusados · ${kpis.alteracoes} alterações`}
+                icone={BarChart3}
+              />
+              <KpiUsuario
+                titulo="Aguardando análise"
+                valor={kpis.aguardando}
+                descricao="Cadastros que ainda precisam de uma decisão"
+                icone={Hourglass}
+              />
+              <KpiUsuario
+                titulo="Taxa de aprovação"
+                valor={`${kpis.taxaAprovacao.toFixed(1)}%`}
+                descricao="Aprovados entre os cadastros já analisados"
+                icone={Percent}
+              />
+              <KpiUsuario
+                titulo="Tempo para decisão"
+                valor={formatarDias(kpis.tempoMedioDecisaoDias)}
+                descricao="Média entre cadastro e aprovação ou recusa"
+                icone={Clock3}
+              />
+              <KpiUsuario
+                titulo="Espera atual"
+                valor={formatarDias(kpis.tempoMedioEsperaDias)}
+                descricao="Tempo médio dos cadastros ainda aguardando"
+                icone={Hourglass}
+              />
+            </div>
 
             <Tabs defaultValue="aguardando" className="space-y-6">
               <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-4xl grid grid-cols-4 h-12">

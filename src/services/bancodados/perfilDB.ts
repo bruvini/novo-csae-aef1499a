@@ -14,6 +14,10 @@ import type {
   Usuario,
 } from "@/types/usuario";
 import { listarAlteracoesProfissionais } from "@/utils/profileUtils";
+import {
+  normalizarCidade,
+  normalizarNomeCompleto,
+} from "@/utils/userNormalization";
 
 export async function buscarMeuPerfil(uid: string): Promise<Usuario> {
   const snapshot = await getDoc(doc(db, "usuarios", uid));
@@ -26,6 +30,11 @@ export async function atualizarDadosPessoais(
   dadosPessoais: DadosPessoais,
   nomeUsuario: string,
 ): Promise<void> {
+  const dadosNormalizados = {
+    ...dadosPessoais,
+    nomeCompleto: normalizarNomeCompleto(dadosPessoais.nomeCompleto),
+    cidade: normalizarCidade(dadosPessoais.cidade),
+  };
   const evento: EventoHistoricoUsuario = {
     tipo: "dados_pessoais_atualizados",
     dataHora: Timestamp.now(),
@@ -35,7 +44,7 @@ export async function atualizarDadosPessoais(
   };
 
   await updateDoc(doc(db, "usuarios", uid), {
-    dadosPessoais,
+    dadosPessoais: dadosNormalizados,
     dataAtualizacaoDadosPessoais: serverTimestamp(),
     historicoRevisoes: arrayUnion(evento),
   });
