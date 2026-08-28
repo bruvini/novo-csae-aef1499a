@@ -40,8 +40,8 @@
     "semantic_hash": "0139d5e57e02feffdb1d422a7cba567f"
   },
   "src/App.tsx": {
-    "mtime": 1787875031.9530416,
-    "ast_hash": "abd7bf68366c2f47f56e3cd2b06233d7",
+    "mtime": 1787877936.9200935,
+    "ast_hash": "5b9a829618bbde6c447799a3367284d1",
     "semantic_hash": ""
   },
   "src/components/AppSidebar.tsx": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "src/components/Header.tsx": {
-    "mtime": 1787875031.8848298,
-    "ast_hash": "fdbd2c9bd63f7a77fb4d0798eb45bb21",
+    "mtime": 1787878107.6922321,
+    "ast_hash": "f8230d15d9f9226775b4674d3cad9828",
     "semantic_hash": ""
   },
   "src/components/HeroBanner.tsx": {
@@ -95,9 +95,9 @@
     "semantic_hash": "a11f529f3954abb1e5edd948fada27ca"
   },
   "src/components/ProtectedRoute.tsx": {
-    "mtime": 1779417671.5485582,
-    "ast_hash": "c1ac981d377e2384b418e7420ee20104",
-    "semantic_hash": "c1ac981d377e2384b418e7420ee20104"
+    "mtime": 1787878107.65018,
+    "ast_hash": "27fdaaeef7a2c077006a849f8e9bf8df",
+    "semantic_hash": ""
   },
   "src/components/TermoResponsabilidadeModal.tsx": {
     "mtime": 1774760889.5333393,
@@ -170,9 +170,9 @@
     "semantic_hash": "af973ca0f9f012662352db2240d55257"
   },
   "src/components/gestao-usuarios/ModalConfirmacaoAprovacao.tsx": {
-    "mtime": 1774742855.1737804,
-    "ast_hash": "efe0a6137324a97c26e4aa539dff3f1a",
-    "semantic_hash": "efe0a6137324a97c26e4aa539dff3f1a"
+    "mtime": 1787878107.5449586,
+    "ast_hash": "55c04ac4838531bbc0b9b298cdc68e0c",
+    "semantic_hash": ""
   },
   "src/components/gestao-usuarios/ModalConfirmacaoExclusao.tsx": {
     "mtime": 1750959249.5335746,
@@ -185,9 +185,9 @@
     "semantic_hash": ""
   },
   "src/components/gestao-usuarios/ModalEdicaoPrivilegios.tsx": {
-    "mtime": 1774742855.1747859,
-    "ast_hash": "b22f031b9ebc385c1eb4510f14396323",
-    "semantic_hash": "b22f031b9ebc385c1eb4510f14396323"
+    "mtime": 1787878154.1465402,
+    "ast_hash": "90fbd6d10ec0adee15f90f6930e369f1",
+    "semantic_hash": ""
   },
   "src/components/gestao-usuarios/ModalMotivoRecusa.tsx": {
     "mtime": 1774758649.598676,
@@ -195,8 +195,8 @@
     "semantic_hash": "ab0615e0ccd10c268cdf522c9fd9736b"
   },
   "src/components/gestao-usuarios/TabelaUsuarios.tsx": {
-    "mtime": 1787876962.2122014,
-    "ast_hash": "76c61702a105f8dd705aa9fe8fa6fbcc",
+    "mtime": 1787878154.1486747,
+    "ast_hash": "750b89bd73c8cf0b1a15fd1405ffafb2",
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
@@ -545,8 +545,8 @@
     "semantic_hash": "226311834bdbec4a05c6b17ed6f58de7"
   },
   "src/contexts/AuthContext.tsx": {
-    "mtime": 1787875165.3077312,
-    "ast_hash": "684798260c06ff0f2cf5f39a610cc6aa",
+    "mtime": 1787878108.0311022,
+    "ast_hash": "41cdb9c604c6718721df7455776e0d56",
     "semantic_hash": ""
   },
   "src/contexts/QueryContext.tsx": {
@@ -590,9 +590,9 @@
     "semantic_hash": "7b7565f1a4d2258ee2a749f3cff0e60f"
   },
   "src/lib/pages.ts": {
-    "mtime": 1779420411.2152898,
-    "ast_hash": "aed9dbc327abcb057d2c9fc93a587d6a",
-    "semantic_hash": "aed9dbc327abcb057d2c9fc93a587d6a"
+    "mtime": 1787878107.4584332,
+    "ast_hash": "9c1f7bf0110d546c476b4b6ffb022c1c",
+    "semantic_hash": ""
   },
   "src/lib/utils.ts": {
     "mtime": 1743602126.5720665,
@@ -635,8 +635,8 @@
     "semantic_hash": ""
   },
   "src/pages/GestaoUsuarios.tsx": {
-    "mtime": 1787876962.3192549,
-    "ast_hash": "4ec2ebfd7446aa882f5429cddedf5464",
+    "mtime": 1787878095.0327728,
+    "ast_hash": "5f09a756edf94f90c4d7c253121bd7c1",
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
@@ -695,8 +695,8 @@
     "semantic_hash": ""
   },
   "src/services/bancodados/gestaoUsuariosDB.ts": {
-    "mtime": 1787875410.4018216,
-    "ast_hash": "debf694cd03013823f100aafd7f2781b",
+    "mtime": 1787878095.0296466,
+    "ast_hash": "c5ad6cb0d7673d89bdf680cb5e903777",
     "semantic_hash": ""
   },
   "src/services/bancodados/index.ts": {
@@ -765,8 +765,8 @@
     "semantic_hash": ""
   },
   "src/types/usuario.ts": {
-    "mtime": 1787875230.6956122,
-    "ast_hash": "d7133a38e6643c2ad40288437f9b9a4a",
+    "mtime": 1787877899.2982602,
+    "ast_hash": "7e9b272b4c42264de7516f42d0786fe3",
     "semantic_hash": ""
   },
   "src/utils/processoUtils.ts": {
@@ -937,6 +937,11 @@
   "src/utils/userNormalization.ts": {
     "mtime": 1787876961.8355927,
     "ast_hash": "a9a85e574dfb14f7c781fd00ef3be736",
+    "semantic_hash": ""
+  },
+  "src/components/gestao-usuarios/ModalRevogacaoAcesso.tsx": {
+    "mtime": 1787877967.731815,
+    "ast_hash": "dc61238e7137c96e64a52b1e58a20f7b",
     "semantic_hash": ""
   }
 }
