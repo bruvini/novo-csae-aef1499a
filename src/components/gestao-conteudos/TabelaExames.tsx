@@ -15,6 +15,7 @@ import { getSubconjuntosNhb } from '@/services/bancodados/subconjuntosDB';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Select, 
   SelectContent, 
@@ -73,6 +74,8 @@ const TabelaExames = () => {
   const [nomeExame, setNomeExame] = useState('');
   const [descricaoExame, setDescricaoExame] = useState('');
   const [tipoExame, setTipoExame] = useState<'Laboratorial' | 'Imagem'>('Laboratorial');
+  const [grupoExibicao, setGrupoExibicao] = useState('');
+  const [ordemExibicao, setOrdemExibicao] = useState<number | ''>('');
   const [componentes, setComponentes] = useState<ComponenteExame[]>([]);
 
   useEffect(() => {
@@ -123,6 +126,8 @@ const TabelaExames = () => {
     setNomeExame('');
     setDescricaoExame('');
     setTipoExame('Laboratorial');
+    setGrupoExibicao('');
+    setOrdemExibicao('');
     setComponentes([]);
     setEditandoExame(null);
   };
@@ -136,24 +141,39 @@ const TabelaExames = () => {
     setNomeExame(exame.nomeExame);
     setDescricaoExame(exame.descricaoExame);
     setTipoExame(exame.tipoExame);
-    setComponentes(exame.componentes || []);
+    setGrupoExibicao(exame.grupoExibicao || '');
+    setOrdemExibicao(exame.ordemExibicao ?? '');
+    setComponentes(
+      (exame.componentes || []).map((comp) => ({
+        ...comp,
+        tipoResultado:
+          comp.tipoResultado ||
+          (componenteEhClassificatorio(exame.tipoExame, comp)
+            ? 'classificatorio'
+            : 'numerico'),
+      }))
+    );
     setEditandoExame(exame);
     setSheetOpen(true);
   };
 
   const adicionarComponente = () => {
-    setComponentes([...componentes, {
-      componenteAnalisado: '',
-      unidadeMedida: '',
-      resultados: []
-    }]);
+    setComponentes([
+      ...componentes,
+      {
+        componenteAnalisado: '',
+        unidadeMedida: tipoExame === 'Imagem' ? 'Qualitativo' : '',
+        tipoResultado: tipoExame === 'Imagem' ? 'classificatorio' : 'numerico',
+        resultados: [],
+      },
+    ]);
   };
 
   const removerComponente = (index: number) => {
     setComponentes(componentes.filter((_, i) => i !== index));
   };
 
-  const atualizarComponente = <K extends keyof ComponenteExame,>(
+  const atualizarComponente = <K extends keyof ComponenteExame>(
     index: number,
     campo: K,
     valor: ComponenteExame[K]
@@ -165,22 +185,33 @@ const TabelaExames = () => {
 
   const adicionarResultado = (componenteIndex: number) => {
     const novosComponentes = [...componentes];
-    const classificatorio = componenteEhClassificatorio(tipoExame, novosComponentes[componenteIndex]);
-    const novoResultado: ResultadoExame = !classificatorio ? {
-      idadeMinima: null,
-      idadeMaxima: null,
-      idadeUnidade: '',
-      criterioSexo: 'Ambos',
-      valorMinimo: null,
-      valorMaximo: null,
-      nomeAlteracao: '',
-      subconjuntoNHBVinculado: ''
-    } : {
-      resultadoClassificatorio: '',
-      nomeAlteracao: '',
-      subconjuntoNHBVinculado: ''
-    };
-    
+    const comp = novosComponentes[componenteIndex];
+    const classificatorio =
+      comp.tipoResultado === 'classificatorio' ||
+      componenteEhClassificatorio(tipoExame, comp);
+
+    const novoResultado: ResultadoExame = !classificatorio
+      ? {
+          idadeMinima: null,
+          idadeMaxima: null,
+          idadeUnidade: '',
+          criterioSexo: 'Ambos',
+          valorMinimo: null,
+          valorMaximo: null,
+          nomeAlteracao: '',
+          subconjuntoNHBVinculado: '',
+        }
+      : {
+          resultadoClassificatorio: '',
+          permiteValorTexto: false,
+          rotuloValorTexto: '',
+          tipoValorTexto: 'texto',
+          opcoesValorTexto: [],
+          valorTextoObrigatorio: false,
+          nomeAlteracao: '',
+          subconjuntoNHBVinculado: '',
+        };
+
     novosComponentes[componenteIndex].resultados.push(novoResultado);
     setComponentes(novosComponentes);
   };
@@ -191,7 +222,7 @@ const TabelaExames = () => {
     setComponentes(novosComponentes);
   };
 
-  const atualizarResultado = <K extends keyof ResultadoExame,>(
+  const atualizarResultado = <K extends keyof ResultadoExame>(
     componenteIndex: number,
     resultadoIndex: number,
     campo: K,
@@ -217,11 +248,17 @@ const TabelaExames = () => {
         nomeExame: nomeExame.trim(),
         descricaoExame: descricaoExame.trim(),
         tipoExame,
+        ...(grupoExibicao.trim() ? { grupoExibicao: grupoExibicao.trim() } : {}),
+        ...(ordemExibicao !== '' ? { ordemExibicao } : {}),
         componentes: componentes.map(comp => ({
           ...comp,
           resultados: comp.resultados.map(res => ({
             ...res,
-            subconjuntoNHBVinculado: res.subconjuntoNHBVinculado === 'none' ? '' : res.subconjuntoNHBVinculado
+            subconjuntoNHBVinculado: res.subconjuntoNHBVinculado === 'none' ? '' : res.subconjuntoNHBVinculado,
+            opcoesValorTexto:
+              res.permiteValorTexto && res.tipoValorTexto === 'lista' && Array.isArray(res.opcoesValorTexto)
+                ? res.opcoesValorTexto.map((s) => s.trim()).filter(Boolean)
+                : []
           }))
         }))
       };
@@ -341,6 +378,28 @@ const TabelaExames = () => {
                   </Select>
                   <p className="text-[11px] text-muted-foreground mt-1">Laboratorial = inserção de valores numéricos pelo enfermeiro. Imagem = seleção de resultado classificatório.</p>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Grupo de exibição</label>
+                    <Input
+                      value={grupoExibicao}
+                      onChange={(e) => setGrupoExibicao(e.target.value)}
+                      placeholder="Ex: Testes rápidos — IST e hepatites"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">Exames com o mesmo grupo aparecem juntos. Campo opcional e compatível com cadastros antigos.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Ordem no grupo</label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={ordemExibicao}
+                      onChange={(e) => setOrdemExibicao(e.target.value === '' ? '' : Math.max(0, Number(e.target.value)))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
               </div>
 
               {/* Componentes */}
@@ -367,25 +426,53 @@ const TabelaExames = () => {
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-1.5">Componente Analisado *</label>
                         <Input
                           value={componente.componenteAnalisado}
                           onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
-                          placeholder="Ex: Glicose, Hemoglobina"
+                          placeholder="Ex: Glicose, VDRL, Anti-HIV"
                           spellCheck
                         />
-                        <p className="text-[11px] text-muted-foreground mt-1">Nome exato do parâmetro. Será usado como chave no processo de enfermagem — não abrevie.</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Nome exato do parâmetro (ex: Glicose, VDRL, Anti-HIV).</p>
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1.5">Unidade de Medida *</label>
                         <Input
                           value={componente.unidadeMedida}
                           onChange={(e) => atualizarComponente(componenteIndex, 'unidadeMedida', e.target.value)}
-                          placeholder="Ex: mg/dL, g/dL, %"
+                          placeholder={
+                            (componente.tipoResultado === 'classificatorio' || componenteEhClassificatorio(tipoExame, componente))
+                              ? "Qualitativo"
+                              : "Ex: mg/dL, g/dL, %"
+                          }
                         />
-                        <p className="text-[11px] text-muted-foreground mt-1">Use a unidade padrão abreviada.</p>
+                        <p className="text-[11px] text-muted-foreground mt-1">Unidade física ou "Qualitativo" para classificatórios.</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Formato do Resultado *</label>
+                        <Select
+                          value={
+                            componente.tipoResultado ||
+                            (componenteEhClassificatorio(tipoExame, componente) ? 'classificatorio' : 'numerico')
+                          }
+                          onValueChange={(val: 'numerico' | 'classificatorio') => {
+                            atualizarComponente(componenteIndex, 'tipoResultado', val);
+                            if (val === 'classificatorio' && (!componente.unidadeMedida || componente.unidadeMedida.trim() === '')) {
+                              atualizarComponente(componenteIndex, 'unidadeMedida', 'Qualitativo');
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-10 bg-white">
+                            <SelectValue placeholder="Selecione o formato" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="numerico">📊 Numérico (Faixas Mín / Máx)</SelectItem>
+                            <SelectItem value="classificatorio">🏷️ Classificatório (Reagente, Positivo, etc.)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground mt-1">Define se o enfermeiro digitará número ou selecionará opção.</p>
                       </div>
                     </div>
 
@@ -403,110 +490,246 @@ const TabelaExames = () => {
                         </Button>
                       </div>
 
-                      {componente.resultados.map((resultado, resultadoIndex) => (
-                        <div key={resultadoIndex} className="border rounded p-3 space-y-3 bg-gray-50">
-                          <div className="flex justify-between items-center">
-                            <h6 className="text-sm font-medium">Resultado {resultadoIndex + 1}</h6>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removerResultado(componenteIndex, resultadoIndex)}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Remover
-                            </Button>
-                          </div>
+                      {componente.resultados.map((resultado, resultadoIndex) => {
+                        const ehClassificatorio =
+                          componente.tipoResultado === 'classificatorio' ||
+                          componenteEhClassificatorio(tipoExame, componente);
 
-                          {!componenteEhClassificatorio(tipoExame, componente) ? (
-                            <>
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Idade Mínima</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.idadeMinima || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Idade Máxima</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.idadeMaxima || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Unidade Idade</label>
-                                  <Select
-                                    value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="not-specified">Não especificado</SelectItem>
-                                      <SelectItem value="dias">Dias</SelectItem>
-                                      <SelectItem value="meses">Meses</SelectItem>
-                                      <SelectItem value="anos">Anos</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Critério Sexo</label>
-                                  <Select
-                                    value={resultado.criterioSexo}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
-                                  >
-                                    <SelectTrigger className="h-8">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Ambos">Ambos</SelectItem>
-                                      <SelectItem value="Masculino">Masculino</SelectItem>
-                                      <SelectItem value="Feminino">Feminino</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.valorMinimo || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-medium mb-1">Valor Máximo</label>
-                                  <Input
-                                    type="number"
-                                    className="h-8"
-                                    value={resultado.valorMaximo || ''}
-                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <div>
-                              <label className="block text-xs font-medium mb-1">Resultado Classificatório</label>
-                              <Input
-                                className="h-8"
-                                value={resultado.resultadoClassificatorio || ''}
-                                onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
-                                placeholder="Ex: Normal"
-                              />
+                        return (
+                          <div key={resultadoIndex} className="border rounded p-3 space-y-3 bg-gray-50">
+                            <div className="flex justify-between items-center">
+                              <h6 className="text-sm font-medium">Resultado {resultadoIndex + 1}</h6>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => removerResultado(componenteIndex, resultadoIndex)}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Remover
+                              </Button>
                             </div>
-                          )}
+
+                            {!ehClassificatorio ? (
+                              <>
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Idade Mínima</label>
+                                    <Input
+                                      type="number"
+                                      className="h-8"
+                                      value={resultado.idadeMinima || ''}
+                                      onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Idade Máxima</label>
+                                    <Input
+                                      type="number"
+                                      className="h-8"
+                                      value={resultado.idadeMaxima || ''}
+                                      onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Unidade Idade</label>
+                                    <Select
+                                      value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
+                                      onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="not-specified">Não especificado</SelectItem>
+                                        <SelectItem value="dias">Dias</SelectItem>
+                                        <SelectItem value="meses">Meses</SelectItem>
+                                        <SelectItem value="anos">Anos</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Critério Sexo</label>
+                                    <Select
+                                      value={resultado.criterioSexo}
+                                      onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
+                                    >
+                                      <SelectTrigger className="h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Ambos">Ambos</SelectItem>
+                                        <SelectItem value="Masculino">Masculino</SelectItem>
+                                        <SelectItem value="Feminino">Feminino</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Valor Mínimo</label>
+                                    <Input
+                                      type="number"
+                                      className="h-8"
+                                      value={resultado.valorMinimo || ''}
+                                      onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium mb-1">Valor Máximo</label>
+                                    <Input
+                                      type="number"
+                                      className="h-8"
+                                      value={resultado.valorMaximo || ''}
+                                      onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-xs font-medium mb-1">Resultado Classificatório *</label>
+                                  <Input
+                                    className="h-8"
+                                    value={resultado.resultadoClassificatorio || ''}
+                                    onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
+                                    placeholder="Ex: Reagente, Não Reagente, Positivo, Negativo, Normal, Alterado"
+                                  />
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">Opção exibida no select para o enfermeiro selecionar.</p>
+                                </div>
+
+                                {/* Configuração de Valor Complementar / Dinâmico */}
+                                <div className="p-3 bg-white border rounded-md space-y-3">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`permite-texto-${componenteIndex}-${resultadoIndex}`}
+                                      checked={!!resultado.permiteValorTexto}
+                                      onCheckedChange={(checked) => {
+                                        atualizarResultado(componenteIndex, resultadoIndex, 'permiteValorTexto', !!checked);
+                                        if (checked && !resultado.tipoValorTexto) {
+                                          atualizarResultado(componenteIndex, resultadoIndex, 'tipoValorTexto', 'texto');
+                                        }
+                                      }}
+                                    />
+                                    <label
+                                      htmlFor={`permite-texto-${componenteIndex}-${resultadoIndex}`}
+                                      className="text-xs font-semibold text-gray-700 cursor-pointer"
+                                    >
+                                      Permite valor complementar associado
+                                    </label>
+                                  </div>
+
+                                  {resultado.permiteValorTexto && (
+                                    <div className="space-y-3 pt-1 pl-6 border-l-2 border-csae-green-200 ml-1">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {/* Rótulo do Campo */}
+                                        <div>
+                                          <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                            Rótulo do Campo Complementar
+                                          </label>
+                                          <Input
+                                            className="h-8 text-xs bg-white"
+                                            value={resultado.rotuloValorTexto || ''}
+                                            onChange={(e) =>
+                                              atualizarResultado(componenteIndex, resultadoIndex, 'rotuloValorTexto', e.target.value)
+                                            }
+                                            placeholder="Ex: Titulação, Aspecto, Cor, etc."
+                                          />
+                                        </div>
+
+                                        {/* Tipo de Entrada */}
+                                        <div>
+                                          <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                            Tipo de Entrada *
+                                          </label>
+                                          <Select
+                                            value={resultado.tipoValorTexto || 'texto'}
+                                            onValueChange={(val: 'texto' | 'lista') =>
+                                              atualizarResultado(componenteIndex, resultadoIndex, 'tipoValorTexto', val)
+                                            }
+                                          >
+                                            <SelectTrigger className="h-8 text-xs bg-white">
+                                              <SelectValue placeholder="Selecione o tipo" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              <SelectItem value="texto" className="text-xs">
+                                                📝 Texto Livre (Input digitável)
+                                              </SelectItem>
+                                              <SelectItem value="lista" className="text-xs">
+                                                📋 Lista de Opções (Dropdown)
+                                              </SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                      </div>
+
+                                      {/* Se for Lista de Opções, renderiza o Textarea para cadastrar opções */}
+                                      {resultado.tipoValorTexto === 'lista' && (
+                                        <div>
+                                          <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                                            Opções da Lista (uma por linha) *
+                                          </label>
+                                          <Textarea
+                                            rows={4}
+                                            className="text-xs font-mono bg-white"
+                                            value={(resultado.opcoesValorTexto || []).join('\n')}
+                                            onChange={(e) => {
+                                              const linhas = e.target.value.split('\n');
+                                              atualizarResultado(componenteIndex, resultadoIndex, 'opcoesValorTexto', linhas);
+                                            }}
+                                            placeholder={`Ex:\n1:1 (Puro / Baixa titulação)\n1:2\n1:4\n1:8\n1:16\n1:32...`}
+                                          />
+                                          <p className="text-[10px] text-muted-foreground mt-1">
+                                            Insira cada opção em uma linha separada. Elas serão exibidas em um menu dropdown para o enfermeiro selecionar no atendimento.
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {/* Checkbox de Obrigatoriedade */}
+                                      <div className="flex items-center space-x-2 pt-1">
+                                        <Checkbox
+                                          id={`obrigatorio-${componenteIndex}-${resultadoIndex}`}
+                                          checked={!!resultado.valorTextoObrigatorio}
+                                          onCheckedChange={(checked) =>
+                                            atualizarResultado(componenteIndex, resultadoIndex, 'valorTextoObrigatorio', !!checked)
+                                          }
+                                        />
+                                        <label
+                                          htmlFor={`obrigatorio-${componenteIndex}-${resultadoIndex}`}
+                                          className="text-xs font-medium text-gray-600 cursor-pointer"
+                                        >
+                                          Preenchimento obrigatório pelo enfermeiro
+                                        </label>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
                           <div className="grid grid-cols-2 gap-3">
+                            <div className="col-span-2">
+                              <label className="block text-xs font-medium mb-1">Situação na faixa de referência</label>
+                              <Select
+                                value={resultado.statusReferencia || 'legado'}
+                                onValueChange={(value) => atualizarResultado(
+                                  componenteIndex,
+                                  resultadoIndex,
+                                  'statusReferencia',
+                                  value === 'legado' ? undefined : value as ResultadoExame['statusReferencia'],
+                                )}
+                              >
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="legado">Automático pelo texto (legado)</SelectItem>
+                                  <SelectItem value="normal">Normal — verde</SelectItem>
+                                  <SelectItem value="atencao">Atenção — âmbar</SelectItem>
+                                  <SelectItem value="alterado">Alterado — vermelho</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <p className="text-[10px] text-muted-foreground mt-1">A cor indica o enquadramento na referência cadastrada, não um diagnóstico.</p>
+                            </div>
                             <div>
                               <label className="block text-xs font-medium mb-1">Nome da Alteração</label>
                               <Input
@@ -543,9 +766,10 @@ const TabelaExames = () => {
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
+                </div>
                 ))}
               </div>
 

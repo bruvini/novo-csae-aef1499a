@@ -17,6 +17,7 @@ import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnfermagemDB';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { formatarResultadoExame } from '@/utils/resultadosExames';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
@@ -81,9 +82,11 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     if (Object.keys(exameFisico).length > 0) {
       linhas.push('EXAME FÍSICO:');
       Object.entries(exameFisico).forEach(([parametro, valor]) => {
-        if (valor !== null && valor !== undefined && valor !== '') {
-          linhas.push(`${parametro}: ${valor}`);
-        }
+        const valorFormatado = formatarResultadoExame(
+          valor,
+          processo.avaliacao.examesValoresTexto?.[parametro],
+        );
+        if (valorFormatado) linhas.push(`${parametro}: ${valorFormatado}`);
       });
       linhas.push('');
     }
@@ -130,11 +133,17 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
           linhas.push(`  [${tituloDiag}]`);
           implementadas.forEach(int => {
             let itemStr = `  • ${int.acaoPrescrita}`;
-            if (int.prazo && int.prazoUnidade) {
-               itemStr += ` - Prazo: ${int.prazo} ${int.prazoUnidade}`;
+            const aprazamentoTexto =
+              int.aprazamento ||
+              (int.prazo && int.prazoUnidade ? `${int.prazo} ${int.prazoUnidade}` : '');
+            if (aprazamentoTexto) {
+              itemStr += ` - Prazo: ${aprazamentoTexto}`;
             }
             if (int.quemExecuta) {
-               itemStr += ` (Executor: ${int.quemExecuta})`;
+              const execStr = Array.isArray(int.quemExecuta)
+                ? int.quemExecuta.join(', ')
+                : int.quemExecuta;
+              itemStr += ` (Executor(es): ${execStr})`;
             }
             linhas.push(itemStr);
           });

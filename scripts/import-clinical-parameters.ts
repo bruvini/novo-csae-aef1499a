@@ -40,7 +40,10 @@ const resultadoExameSchema = z.object({
   resultadoClassificatorio: z.string().trim().min(1).optional(),
   permiteValorTexto: z.boolean().optional(),
   rotuloValorTexto: z.string().trim().min(1).optional(),
+  tipoValorTexto: z.enum(['texto', 'livre', 'lista']).optional(),
+  opcoesValorTexto: z.array(z.string()).optional(),
   valorTextoObrigatorio: z.boolean().optional(),
+  statusReferencia: z.enum(['normal', 'atencao', 'alterado']).optional(),
   nomeAlteracao: z.string().trim().min(1),
   subconjuntoNHBVinculado: z.string(),
 });
@@ -48,6 +51,7 @@ const resultadoExameSchema = z.object({
 const componenteExameSchema = z.object({
   componenteAnalisado: z.string().trim().min(1),
   unidadeMedida: z.string().trim().min(1),
+  tipoResultado: z.enum(['numerico', 'classificatorio']).optional(),
   resultados: z.array(resultadoExameSchema).min(1),
 });
 
@@ -56,6 +60,8 @@ const exameSchema = z.object({
   nomeExame: z.string().trim().min(1),
   descricaoExame: z.string(),
   tipoExame: z.enum(['Laboratorial', 'Imagem']),
+  grupoExibicao: z.string().trim().min(1).optional(),
+  ordemExibicao: z.number().int().nonnegative().optional(),
   dataCadastro: z.unknown().optional(),
   componentes: z.array(componenteExameSchema).min(1),
 });

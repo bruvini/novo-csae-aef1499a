@@ -150,8 +150,8 @@
     "semantic_hash": "1e68460d0b886b50a36b644a69b2fa11"
   },
   "src/components/gestao-conteudos/TabelaExames.tsx": {
-    "mtime": 1786917703.1269321,
-    "ast_hash": "1a70571a2b293a1695d245f509ef7268",
+    "mtime": 1790004940.1759133,
+    "ast_hash": "feb9a7899eaba512ec27fd2b09130ceb",
     "semantic_hash": ""
   },
   "src/components/gestao-conteudos/TabelaRevisaoSistemas.tsx": {
@@ -200,8 +200,8 @@
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaAvaliacao.tsx": {
-    "mtime": 1786918266.703664,
-    "ast_hash": "c38c417d326e2b4f6889d243b1cc6c53",
+    "mtime": 1790005012.767059,
+    "ast_hash": "cbe2c25b86aa7884529c70f205b69167",
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaDiagnostico.tsx": {
@@ -225,13 +225,13 @@
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/EtapaResumo.tsx": {
-    "mtime": 1786914492.049188,
-    "ast_hash": "97988eba6bc257b6a3dc888dca171781",
+    "mtime": 1790004969.9529452,
+    "ast_hash": "74a0a62d32b79aff9bd3c5ee750b244f",
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/HistoricoProcessosModal.tsx": {
-    "mtime": 1786914501.882028,
-    "ast_hash": "669563d4798839d91895f0b2095aca1a",
+    "mtime": 1790004969.9539442,
+    "ast_hash": "3bed83b37935eb4e2d95b0155c0df5c7",
     "semantic_hash": ""
   },
   "src/components/processo-enfermagem/IndicadoresProducaoModal.tsx": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1787876949.9478216,
-    "ast_hash": "eb94fcb41cde14b5b2d4e1b7af5bd021",
+    "mtime": 1790005012.769054,
+    "ast_hash": "d84833a00ed59557065f179344fe01ae",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -690,8 +690,8 @@
     "semantic_hash": "893875a5103f6ce69eb2694a2821087f"
   },
   "src/services/bancodados/examesDB.ts": {
-    "mtime": 1786917645.460657,
-    "ast_hash": "5e46c8f48f9483deb24c94b0f040ba8f",
+    "mtime": 1790004895.4567306,
+    "ast_hash": "d2e678478ab4b68eaacdfd58a7f9c2df",
     "semantic_hash": ""
   },
   "src/services/bancodados/gestaoUsuariosDB.ts": {
@@ -760,8 +760,8 @@
     "semantic_hash": "f8b661d81cea6afde27937b7a5f3a2c8"
   },
   "src/types/processoEnfermagem.ts": {
-    "mtime": 1786914404.1803179,
-    "ast_hash": "165ba99036495c78f0567e415b16f54d",
+    "mtime": 1790004895.4587345,
+    "ast_hash": "2aeaae6fd9add6cb03b5fd304eca784b",
     "semantic_hash": ""
   },
   "src/types/usuario.ts": {
@@ -875,8 +875,8 @@
     "semantic_hash": ""
   },
   "scripts/import-clinical-parameters.ts": {
-    "mtime": 1786905329.235784,
-    "ast_hash": "9ea3a9457d9d83583d87fa5ef7d189de",
+    "mtime": 1790005012.7680526,
+    "ast_hash": "be4f2b2d8610a287213536308acca7ff",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260816_155840_como_importar_com_seguran\u00e7a_par\u00e2metros_cl\u00ednicos_em.md": {
@@ -942,6 +942,16 @@
   "src/components/gestao-usuarios/ModalRevogacaoAcesso.tsx": {
     "mtime": 1787877967.731815,
     "ast_hash": "dc61238e7137c96e64a52b1e58a20f7b",
+    "semantic_hash": ""
+  },
+  "src/utils/resultadosExames.test.ts": {
+    "mtime": 1790005012.7700534,
+    "ast_hash": "d75d8421ab77bd9c275f8d14f3ff065c",
+    "semantic_hash": ""
+  },
+  "src/utils/resultadosExames.ts": {
+    "mtime": 1790005012.7650504,
+    "ast_hash": "e0cc022213e64cd874c1e602a98af845",
     "semantic_hash": ""
   }
 }

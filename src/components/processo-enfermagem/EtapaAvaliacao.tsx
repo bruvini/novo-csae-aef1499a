@@ -15,14 +15,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
+import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio, ordenarExamesParaExibicao } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
 import { ExameResultadoInput } from './ExameResultadoInput';
+import { encontrarFaixaNumerica, resolverStatusReferencia } from '@/utils/resultadosExames';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
-  status: 'normal' | 'alterado' | 'neutro';
+  status: 'normal' | 'atencao' | 'alterado' | 'neutro';
   nomeAlteracao?: string;
   nhb?: string;
 }
@@ -85,14 +86,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     loadData();
   }, []); // Array vazio: executa apenas na montagem
 
-  // Effect 2: Sincroniza NHBs locais quando o processo é carregado (montagem)
-  useEffect(() => {
-    if (processo.avaliacao?.nhbsAfetadas) {
-      setNhbsAfetadas(processo.avaliacao.nhbsAfetadas);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Inicialização apenas — atualizações subsequentes são gerenciadas por updateNhbs
-
   const calculateAge = (dataNascimento: Timestamp): number => {
     const birth = dataNascimento.toDate();
     const today = new Date();
@@ -104,192 +97,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
 
     return age;
-  };
-
-  // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
-  const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
-    const outras = nhbsAfetadas.filter((n) => n.parametro !== parametro);
-    const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
-
-    setNhbsAfetadas(novaLista);
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      nhbsAfetadas: novaLista,
-    });
-  };
-
-  // Utilitário: define o status de validação de um parâmetro
-  const setParametroValidation = (
-    parametro: string,
-    status: ValidationStatus['status'],
-    nomeAlteracao?: string,
-    nhb?: string
-  ) => {
-    setValidationStates((prev) => ({
-      ...prev,
-      [parametro]: { status, nomeAlteracao, nhb },
-    }));
-  };
-
-  // Valida um valor específico dentro de um exame (simples ou opção dentro de opcoes)
-  const getSistemaValidationForValue = (
-    exame: ExamePropedeutico,
-    selectedValue: string
-  ): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
-    for (const achado of exame.achados) {
-      if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === selectedValue) {
-        const isAlt = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
-        if (isAlt && !isTextoNormal(achado.nomeAlteracao)) {
-          return { status: 'alterado', nomeAlteracao: achado.nomeAlteracao, nhb: achado.subconjuntoNHBVinculado };
-        }
-        return { status: 'normal' };
-      }
-      if (achado.tipoAchado === 'opcoes' && achado.opcoes) {
-        const opcao = achado.opcoes.find((o) => o.textoOpcao === selectedValue);
-        if (opcao) {
-          if (opcao.ehAlteracao && opcao.subconjuntoNHBVinculado) {
-            return { status: 'alterado', nomeAlteracao: opcao.nomeAlteracao, nhb: opcao.subconjuntoNHBVinculado };
-          }
-          return { status: 'normal' };
-        }
-      }
-    }
-    return { status: 'neutro' };
-  };
-
-  // Função centralizada para recalcular todas as NHBs do processo
-  const calculateAllNhbs = (
-    tempExameFisico: Record<string, string | number>,
-    tempExameFisicoMulti: Record<string, string[]> = {}
-  ) => {
-    const novaLista: { parametro: string; nhb: string }[] = [];
-
-    // Sinais Vitais
-    sinaisVitais.forEach(sv => {
-      const val = tempExameFisico[sv.sinalVitalNome];
-      if (val !== undefined && val !== '') {
-        const v = getNumericValidation(sv.sinalVitalNome, val, 'sinal');
-        if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: sv.sinalVitalNome, nhb: v.nhb });
-      }
-    });
-
-    // Exames
-    exames.forEach(ex => {
-      ex.componentes.forEach(comp => {
-        const val = tempExameFisico[comp.componenteAnalisado];
-        if (val !== undefined && val !== '') {
-          const v = componenteEhClassificatorio(ex.tipoExame, comp)
-            ? getImagemValidation(comp.componenteAnalisado, String(val))
-            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
-          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
-        }
-      });
-    });
-
-    // Revisão de Sistemas — lê multi-select, com fallback para valor único legado
-    sistemas.forEach(sist => {
-      sist.exames.forEach(ex => {
-        const multiVals = tempExameFisicoMulti[ex.nomeExame] || [];
-        const legacyVal = tempExameFisico[ex.nomeExame];
-        const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
-        values.forEach(val => {
-          const v = getSistemaValidationForValue(ex, val);
-          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: v.nhb });
-        });
-      });
-    });
-
-    return novaLista;
-  };
-
-  // ATUALIZAÇÃO ATÔMICA: Calcula Exame Físico e NHBs sincronizadamente (sinais vitais + exames diag.)
-  const updateAvaliacaoAtomic = (
-    parametro: string,
-    value: string | number,
-    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string },
-    extra: Partial<AvaliacaoEnfermagem> = {}
-  ) => {
-    const novoExameFisico = { ...(processo.avaliacao?.exameFisico || {}), [parametro]: value };
-    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
-    const novaListaNhbs = calculateAllNhbs(novoExameFisico, multiAtual);
-
-    setNhbsAfetadas(novaListaNhbs);
-    setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb);
-
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      exameFisico: novoExameFisico,
-      nhbsAfetadas: novaListaNhbs,
-      ...extra,
-    });
-  };
-
-  const updateResultadoClassificatorio = (parametro: string, selected: string) => {
-    const textos = { ...(processo.avaliacao?.examesValoresTexto || {}) };
-    if (textos[parametro]?.resultadoClassificatorio !== selected) delete textos[parametro];
-    updateAvaliacaoAtomic(
-      parametro,
-      selected,
-      getImagemValidation(parametro, selected),
-      { examesValoresTexto: textos }
-    );
-  };
-
-  const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      examesValoresTexto: {
-        ...(processo.avaliacao?.examesValoresTexto || {}),
-        [parametro]: {
-          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
-          valorTexto,
-        },
-      },
-    });
-  };
-
-  // ATUALIZAÇÃO MULTI-SELECT: Para revisão de sistemas (checkboxes)
-  const updateSistemaMulti = (
-    nomeExame: string,
-    newSelectedValues: string[],
-    newDescricoes?: Record<string, string>
-  ) => {
-    const novoMulti = { ...(processo.avaliacao?.exameFisicoMulti || {}), [nomeExame]: newSelectedValues };
-    const exameAtual = processo.avaliacao?.exameFisico || {};
-    const novaListaNhbs = calculateAllNhbs(exameAtual, novoMulti);
-
-    setNhbsAfetadas(novaListaNhbs);
-
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      exameFisicoMulti: novoMulti,
-      ...(newDescricoes !== undefined ? { exameFisicoDescricoes: newDescricoes } : {}),
-      nhbsAfetadas: novaListaNhbs,
-    });
-  };
-
-  const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
-    const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
-    const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
-
-    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
-    if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
-
-    updateSistemaMulti(nomeExame, updated, descricoes);
-  };
-
-  const updateDescricaoRS = (nomeExame: string, descricaoAchado: string, texto: string) => {
-    const key = `${nomeExame}|||${descricaoAchado}`;
-    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}), [key]: texto };
-    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
-    const exameAtual = processo.avaliacao?.exameFisico || {};
-    const novaListaNhbs = calculateAllNhbs(exameAtual, multiAtual);
-
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      exameFisicoDescricoes: descricoes,
-      nhbsAfetadas: novaListaNhbs,
-    });
   };
 
   // Normalização de normalidade por texto clínico (fallback para quando não há faixa ou o resultado é classificatório)
@@ -342,32 +149,23 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     if (possibleRanges.length === 0) return { status: 'neutro' as const };
 
     // 2. Encontrar a faixa específica onde o VALOR se encaixa
-    const matchingRange = possibleRanges.find((ref: ValorReferenciaVital | ResultadoExame) => {
-      const r = ref as unknown as Record<string, number | undefined>;
-      const min = r.valorMinimo;
-      const max = r.valorMaximo;
-      
-      if (min != null && max != null) return numValue >= min && numValue <= max;
-      if (min != null) return numValue >= min;
-      if (max != null) return numValue <= max;
-      return false;
-    }) as (ValorReferenciaVital | ResultadoExame) | undefined;
+    const matchingRange = encontrarFaixaNumerica(possibleRanges, numValue);
 
     if (!matchingRange) {
       return { status: 'neutro' as const };
     }
 
-    const matchingAny = matchingRange as unknown as Record<string, string | undefined>;
-    const nomeAlt: string | null | undefined = matchingAny.nomeAlteracao;
-    const nhb: string | undefined = matchingAny.subconjuntoNHBVinculado;
-    const isNormal = isTextoNormal(nomeAlt);
-
-    return isNormal 
-      ? { status: 'normal' } 
-      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
+    const nomeAlt = matchingRange.nomeAlteracao;
+    const nhb = matchingRange.subconjuntoNHBVinculado;
+    const status = 'statusReferencia' in matchingRange
+      ? resolverStatusReferencia(matchingRange, isTextoNormal)
+      : (isTextoNormal(nomeAlt) ? 'normal' : 'alterado');
+    return status === 'normal'
+      ? { status }
+      : { status, nomeAlteracao: nomeAlt || (status === 'atencao' ? 'Faixa de atenção' : 'Alteração'), nhb };
   };
 
-  // Validação para exames de imagem
+  // Validação para exames de imagem e classificatórios
   const getImagemValidation = (parametro: string, selected: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     if (!selected) return { status: 'neutro' };
 
@@ -382,11 +180,36 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
     const nomeAlt = resultado.nomeAlteracao;
     const nhb = resultado.subconjuntoNHBVinculado;
-    const isNormal = isTextoNormal(nomeAlt);
+    const status = resolverStatusReferencia(resultado, isTextoNormal);
+    return status === 'normal'
+      ? { status }
+      : { status, nomeAlteracao: nomeAlt || (status === 'atencao' ? 'Faixa de atenção' : 'Alteração'), nhb };
+  };
 
-    return isNormal 
-      ? { status: 'normal' } 
-      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
+  // Valida um valor específico dentro de um exame (simples ou opção dentro de opcoes)
+  const getSistemaValidationForValue = (
+    exame: ExamePropedeutico,
+    selectedValue: string
+  ): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
+    for (const achado of exame.achados) {
+      if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === selectedValue) {
+        const isAlt = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
+        if (isAlt && !isTextoNormal(achado.nomeAlteracao)) {
+          return { status: 'alterado', nomeAlteracao: achado.nomeAlteracao, nhb: achado.subconjuntoNHBVinculado };
+        }
+        return { status: 'normal' };
+      }
+      if (achado.tipoAchado === 'opcoes' && achado.opcoes) {
+        const opcao = achado.opcoes.find((o) => o.textoOpcao === selectedValue);
+        if (opcao) {
+          if (opcao.ehAlteracao && opcao.subconjuntoNHBVinculado) {
+            return { status: 'alterado', nomeAlteracao: opcao.nomeAlteracao, nhb: opcao.subconjuntoNHBVinculado };
+          }
+          return { status: 'normal' };
+        }
+      }
+    }
+    return { status: 'neutro' };
   };
 
   // Validação para revisão de sistemas
@@ -409,9 +232,251 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const nhb = (achadoSelecionado as Achado).subconjuntoNHBVinculado;
     const isNormal = isTextoNormal(nomeAlt);
 
-    return isNormal 
-      ? { status: 'normal' } 
+    return isNormal
+      ? { status: 'normal' }
       : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
+  };
+
+  // Função centralizada para recalcular todas as NHBs do processo
+  const calculateAllNhbs = (
+    tempExameFisico: Record<string, string | number>,
+    tempExameFisicoMulti: Record<string, string[]> = {}
+  ) => {
+    const novaLista: { parametro: string; nhb: string }[] = [];
+
+    // Sinais Vitais
+    sinaisVitais.forEach(sv => {
+      const val = tempExameFisico[sv.sinalVitalNome];
+      if (val !== undefined && val !== '' && val !== null) {
+        const v = getNumericValidation(sv.sinalVitalNome, val, 'sinal');
+        if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: sv.sinalVitalNome, nhb: v.nhb });
+      }
+    });
+
+    // Exames
+    exames.forEach(ex => {
+      ex.componentes.forEach(comp => {
+        const val = tempExameFisico[comp.componenteAnalisado];
+        if (val !== undefined && val !== '' && val !== null) {
+          const v = componenteEhClassificatorio(ex.tipoExame, comp)
+            ? getImagemValidation(comp.componenteAnalisado, String(val))
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
+          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
+        }
+      });
+    });
+
+    // Revisão de Sistemas — lê multi-select, com fallback para valor único legado
+    sistemas.forEach(sist => {
+      sist.exames.forEach(ex => {
+        const multiVals = tempExameFisicoMulti[ex.nomeExame] || [];
+        const legacyVal = tempExameFisico[ex.nomeExame];
+        const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
+        values.forEach(val => {
+          const v = getSistemaValidationForValue(ex, val);
+          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: v.nhb });
+        });
+      });
+    });
+
+    return novaLista;
+  };
+
+  // Função centralizada para recalcular todos os estados visuais (normal/alterado) dos inputs
+  const calculateAllValidationStates = (
+    tempExameFisico: Record<string, string | number>,
+    tempExameFisicoMulti: Record<string, string[]> = {}
+  ) => {
+    const states: { [parametro: string]: ValidationStatus } = {};
+
+    // Sinais Vitais
+    sinaisVitais.forEach((sv) => {
+      const val = tempExameFisico[sv.sinalVitalNome];
+      if (val !== undefined && val !== '' && val !== null) {
+        states[sv.sinalVitalNome] = getNumericValidation(sv.sinalVitalNome, val, 'sinal');
+      }
+    });
+
+    // Exames
+    exames.forEach((ex) => {
+      ex.componentes.forEach((comp) => {
+        const val = tempExameFisico[comp.componenteAnalisado];
+        if (val !== undefined && val !== '' && val !== null) {
+          states[comp.componenteAnalisado] = componenteEhClassificatorio(ex.tipoExame, comp)
+            ? getImagemValidation(comp.componenteAnalisado, String(val))
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
+        }
+      });
+    });
+
+    // Revisão de Sistemas
+    sistemas.forEach((sist) => {
+      sist.exames.forEach((ex) => {
+        const multiVals = tempExameFisicoMulti[ex.nomeExame] || [];
+        const legacyVal = tempExameFisico[ex.nomeExame];
+        const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
+        if (values.length > 0) {
+          const alterado = values.map((v) => getSistemaValidationForValue(ex, v)).find((v) => v.status === 'alterado');
+          if (alterado) {
+            states[ex.nomeExame] = alterado;
+          } else {
+            states[ex.nomeExame] = { status: 'normal' };
+          }
+        }
+      });
+    });
+
+    return states;
+  };
+
+  // Effect 2: Executa validação completa e recalcula NHBs automaticamente ao carregar referências ou abrir rascunho
+  useEffect(() => {
+    if (!loading && (sinaisVitais.length > 0 || exames.length > 0 || sistemas.length > 0)) {
+      const exameFisico = processo.avaliacao?.exameFisico || {};
+      const exameFisicoMulti = processo.avaliacao?.exameFisicoMulti || {};
+
+      // 1. Recalcula todos os estados de validação para colorir e alertar inputs
+      const novosStates = calculateAllValidationStates(exameFisico, exameFisicoMulti);
+      setValidationStates(novosStates);
+
+      // 2. Recalcula a lista completa de NHBs afetadas
+      const nhbsCalculadas = calculateAllNhbs(exameFisico, exameFisicoMulti);
+      setNhbsAfetadas(nhbsCalculadas);
+
+      // 3. Sincroniza com o estado do processo pai evitando loops
+      const nhbsSalvas = processo.avaliacao?.nhbsAfetadas || [];
+      const saoIdenticas =
+        nhbsSalvas.length === nhbsCalculadas.length &&
+        nhbsSalvas.every(
+          (ns, idx) =>
+            ns.parametro === nhbsCalculadas[idx]?.parametro &&
+            ns.nhb === nhbsCalculadas[idx]?.nhb
+        );
+
+      if (!saoIdenticas) {
+        onUpdateAvaliacao({
+          ...processo.avaliacao,
+          nhbsAfetadas: nhbsCalculadas,
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, processo.id]);
+
+  // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
+  const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
+    const outras = nhbsAfetadas.filter((n) => n.parametro !== parametro);
+    const novaLista = isNormal || !nhb ? outras : [...outras, { parametro, nhb }];
+
+    setNhbsAfetadas(novaLista);
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      nhbsAfetadas: novaLista,
+    });
+  };
+
+  // Utilitário: define o status de validação de um parâmetro
+  const setParametroValidation = (
+    parametro: string,
+    status: ValidationStatus['status'],
+    nomeAlteracao?: string,
+    nhb?: string
+  ) => {
+    setValidationStates((prev) => ({
+      ...prev,
+      [parametro]: { status, nomeAlteracao, nhb },
+    }));
+  };
+
+  // ATUALIZAÇÃO ATÔMICA: Calcula Exame Físico e NHBs sincronizadamente (sinais vitais + exames diag.)
+  const updateAvaliacaoAtomic = (
+    parametro: string,
+    value: string | number,
+    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string },
+    extra: Partial<AvaliacaoEnfermagem> = {}
+  ) => {
+    const novoExameFisico = { ...(processo.avaliacao?.exameFisico || {}), [parametro]: value };
+    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
+    const novaListaNhbs = calculateAllNhbs(novoExameFisico, multiAtual);
+
+    setNhbsAfetadas(novaListaNhbs);
+    setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb);
+
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      exameFisico: novoExameFisico,
+      nhbsAfetadas: novaListaNhbs,
+      ...extra,
+    });
+  };
+
+  const updateResultadoClassificatorio = (parametro: string, selected: string) => {
+    const textos = { ...(processo.avaliacao?.examesValoresTexto || {}) };
+    if (textos[parametro]?.resultadoClassificatorio !== selected) delete textos[parametro];
+    updateAvaliacaoAtomic(
+      parametro,
+      selected,
+      getImagemValidation(parametro, selected),
+      { examesValoresTexto: textos }
+    );
+  };
+
+  const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      examesValoresTexto: {
+        ...(processo.avaliacao?.examesValoresTexto || {}),
+        [parametro]: {
+          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
+          valorTexto,
+          rotuloValorTexto: resultado.rotuloValorTexto,
+        },
+      },
+    });
+  };
+
+  // ATUALIZAÇÃO MULTI-SELECT: Para revisão de sistemas (checkboxes)
+  const updateSistemaMulti = (
+    nomeExame: string,
+    newSelectedValues: string[],
+    newDescricoes?: Record<string, string>
+  ) => {
+    const novoMulti = { ...(processo.avaliacao?.exameFisicoMulti || {}), [nomeExame]: newSelectedValues };
+    const exameAtual = processo.avaliacao?.exameFisico || {};
+    const novaListaNhbs = calculateAllNhbs(exameAtual, novoMulti);
+
+    setNhbsAfetadas(novaListaNhbs);
+
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      exameFisicoMulti: novoMulti,
+      ...(newDescricoes !== undefined ? { exameFisicoDescricoes: newDescricoes } : {}),
+      nhbsAfetadas: novaListaNhbs,
+    });
+  };
+
+  const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
+    const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
+    const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
+
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
+    if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
+
+    updateSistemaMulti(nomeExame, updated, descricoes);
+  };
+
+  const updateDescricaoRS = (nomeExame: string, descricaoAchado: string, texto: string) => {
+    const key = `${nomeExame}|||${descricaoAchado}`;
+    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}), [key]: texto };
+    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
+    const exameAtual = processo.avaliacao?.exameFisico || {};
+    const novaListaNhbs = calculateAllNhbs(exameAtual, multiAtual);
+
+    onUpdateAvaliacao({
+      ...processo.avaliacao,
+      exameFisicoDescricoes: descricoes,
+      nhbsAfetadas: novaListaNhbs,
+    });
   };
 
   const handleColetaDadosChange = (value: string) => {
@@ -491,15 +556,17 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const status = validationStates[parametro]?.status || 'neutro';
     const base = "transition-all duration-200 ";
     if (status === 'alterado') return base + 'border-red-300 bg-red-50 focus-visible:ring-red-400';
+    if (status === 'atencao') return base + 'border-amber-300 bg-amber-50 focus-visible:ring-amber-400';
     if (status === 'normal') return base + 'border-emerald-300 bg-emerald-50 focus-visible:ring-emerald-400';
     return base;
   };
 
   const renderValidationMessage = (parametro: string) => {
     const v = validationStates[parametro];
-    if (!v || v.status !== 'alterado') return null;
+    if (!v || (v.status !== 'alterado' && v.status !== 'atencao')) return null;
+    const atencao = v.status === 'atencao';
     return (
-      <div className="flex items-center gap-1.5 text-red-600 mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className={`flex items-center gap-1.5 mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200 ${atencao ? 'text-amber-700' : 'text-red-600'}`}>
         <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
         <p className="text-[11px] font-bold leading-tight">{v.nomeAlteracao}</p>
       </div>
@@ -897,7 +964,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                 </AccordionTrigger>
                 <AccordionContent className="bg-slate-50/40 p-6 border-t">
                   <div className="space-y-8">
-                    {exames
+                    {ordenarExamesParaExibicao(exames)
                       .filter(ex =>
                         matchesBusca(ex.nomeExame, buscaExameFisico) ||
                         matchesBusca(ex.descricaoExame || '', buscaExameFisico) ||
@@ -907,6 +974,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                       <div key={exame.id} className="space-y-4">
                         <div className="col-span-full border-b pb-1.5 mb-2 mt-4 first:mt-0 flex items-center gap-1">
                           <h5 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/80">{exame.nomeExame}</h5>
+                          {exame.grupoExibicao && <Badge variant="outline" className="ml-2 text-[9px]">{exame.grupoExibicao}</Badge>}
                           {exame.descricaoExame && (
                             <Tooltip><TooltipTrigger asChild><Info className="w-3 h-3 text-gray-400 cursor-help" /></TooltipTrigger><TooltipContent className="max-w-[250px] text-xs">{exame.descricaoExame}</TooltipContent></Tooltip>
                           )}

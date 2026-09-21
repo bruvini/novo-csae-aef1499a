@@ -12,10 +12,11 @@ import {
 import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
-import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames } from '@/services/bancodados/examesDB';
-import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
+import { getSinaisVitais, type SinalVital } from '@/services/bancodados/sinaisVitaisDB';
+import { getExames, type Exame } from '@/services/bancodados/examesDB';
+import { getSistemas, type SistemaCorporal } from '@/services/bancodados/revisaoSistemasDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { formatarResultadoExame, formatarValorClinico } from '@/utils/resultadosExames';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -30,9 +31,9 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 }) => {
   const [textoEvolucao, setTextoEvolucao] = useState(processo.evolucao?.resumoGerado || '');
   const { toast } = useToast();
-  const [sinaisVitais, setSinaisVitais] = useState<any[]>([]);
-  const [exames, setExames] = useState<any[]>([]);
-  const [sistemas, setSistemas] = useState<any[]>([]);
+  const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
+  const [exames, setExames] = useState<Exame[]>([]);
+  const [sistemas, setSistemas] = useState<SistemaCorporal[]>([]);
   const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
 
 
@@ -40,10 +41,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const loadCatalogs = async () => {
       try {
         const [sv, ex, sist] = await Promise.all([
-          new Promise<any[]>((resolve) => {
+          new Promise<SinalVital[]>((resolve) => {
             const unsubscribe = getSinaisVitais((data) => { resolve(data); unsubscribe(); });
           }),
-          new Promise<any[]>((resolve) => {
+          new Promise<Exame[]>((resolve) => {
             const unsubscribe = getExames((data) => { resolve(data); unsubscribe(); });
           }),
           getSistemas()
@@ -145,19 +146,25 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     if (Object.keys(exameFisicoData).length > 0) {
       linhas.push('EXAME FÍSICO:');
 
-      const svAtivos = sinaisVitais.filter(s => exameFisicoData[s.sinalVitalNome]);
+      const svAtivos = sinaisVitais.filter(s => formatarValorClinico(exameFisicoData[s.sinalVitalNome]) !== null);
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`));
+        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${formatarValorClinico(exameFisicoData[s.sinalVitalNome])}`));
       }
 
       const exMap = new Map<string, string[]>();
       exames.forEach(ex => {
-        ex.componentes.forEach((c: any) => {
-          if (exameFisicoData[c.componenteAnalisado]) {
-            const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
+        ex.componentes.forEach((c) => {
+          const valor = exameFisicoData[c.componenteAnalisado];
+          const complemento = processo.avaliacao?.examesValoresTexto?.[c.componenteAnalisado];
+          const resultadoSelecionado = c.resultados.find(
+            (resultado) => resultado.resultadoClassificatorio === formatarValorClinico(valor),
+          );
+          const valorFormatado = formatarResultadoExame(valor, complemento, resultadoSelecionado?.rotuloValorTexto);
+          if (valorFormatado) {
+            const grp = `${ex.tipoExame} - ${ex.nomeExame}`;
             if (!exMap.has(grp)) exMap.set(grp, []);
-            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
+            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${valorFormatado}`);
           }
         });
       });
@@ -168,12 +175,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
       // Peso e Altura (campos auxiliares do cálculo de IMC)
       const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
-      const temIMCAux = camposIMCAux.some(k => exameFisicoData[k]);
+      const temIMCAux = camposIMCAux.some(k => formatarValorClinico(exameFisicoData[k]) !== null);
       if (temIMCAux) {
         if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
         camposIMCAux.forEach((chave) => {
           const val = exameFisicoData[chave];
-          if (val !== undefined && val !== '') linhas.push(`  • ${chave}: ${val}`);
+          const valorFormatado = formatarValorClinico(val);
+          if (valorFormatado) linhas.push(`  • ${chave}: ${valorFormatado}`);
         });
       }
 
@@ -181,14 +189,16 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       const exameFisicoMultiData = processo.avaliacao?.exameFisicoMulti || {};
       const exameFisicoDescricoesData = processo.avaliacao?.exameFisicoDescricoes || {};
       sistemas.forEach(s => {
-        s.exames.forEach((e: any) => {
+        s.exames.forEach((e) => {
           const multiVals: string[] = exameFisicoMultiData[e.nomeExame] || [];
           const legacyVal = exameFisicoData[e.nomeExame];
-          const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
+          const legacyFormatado = formatarValorClinico(legacyVal);
+          const values = multiVals.length > 0 ? multiVals : (legacyFormatado ? [legacyFormatado] : []);
           if (values.length > 0) {
             const withDesc = values.map((v: string) => {
               const desc = exameFisicoDescricoesData[`${e.nomeExame}|||${v}`];
-              return desc ? `${v}: ${desc}` : v;
+              const descricao = formatarValorClinico(desc);
+              return descricao ? `${v}: ${descricao}` : v;
             });
             rsEncontrados.push(`${e.nomeExame}: ${withDesc.join(', ')}`);
           }
@@ -241,8 +251,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
       implementadas.forEach((int: any) => {
-        const executor = int.quemExecuta ? ` (Executor: ${int.quemExecuta})` : '';
-        linhas.push(`• ${int.acaoPrescrita}${executor}`);
+        const executorTexto = Array.isArray(int.quemExecuta)
+          ? int.quemExecuta.join(', ')
+          : (int.quemExecuta || '');
+        const executor = executorTexto ? ` (Executor(es): ${executorTexto})` : '';
+        const aprazamentoTexto = int.aprazamento
+          ? ` - Aprazamento: ${int.aprazamento}`
+          : (int.prazo && int.prazoUnidade ? ` - Prazo: ${int.prazo} ${int.prazoUnidade}` : '');
+        linhas.push(`• ${int.acaoPrescrita}${executor}${aprazamentoTexto}`);
       });
       linhas.push('');
     }
@@ -485,19 +501,35 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                     titulo={titulo}
                     resultado={planejadoDiag?.resultadoEsperadoSelecionado}
                     intervencoes={implementadas}
-                    renderIntervencao={(iv, idx) => (
-                      <li key={idx} className="flex items-start justify-between gap-2">
-                        <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                          {iv.acaoPrescrita}
-                        </span>
-                        {iv.quemExecuta && (
-                          <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
-                            Executor: {iv.quemExecuta}
-                          </Badge>
-                        )}
-                      </li>
-                    )}
+                    renderIntervencao={(iv, idx) => {
+                      const executorTexto = Array.isArray(iv.quemExecuta)
+                        ? iv.quemExecuta.join(', ')
+                        : (iv.quemExecuta || '');
+                      const aprazamentoTexto =
+                        iv.aprazamento ||
+                        (iv.prazo && iv.prazoUnidade ? `${iv.prazo} ${iv.prazoUnidade}` : '');
+
+                      return (
+                        <li key={idx} className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-2 rounded-md hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-colors">
+                          <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
+                            {iv.acaoPrescrita}
+                          </span>
+                          <div className="flex flex-wrap items-center gap-1.5 shrink-0 pl-6 sm:pl-0">
+                            {executorTexto && (
+                              <Badge variant="outline" className="text-[10px] whitespace-normal">
+                                Executor(es): {executorTexto}
+                              </Badge>
+                            )}
+                            {aprazamentoTexto && (
+                              <Badge variant="secondary" className="text-[10px] whitespace-normal bg-blue-50 text-blue-700 border-blue-200">
+                                Prazo: {aprazamentoTexto}
+                              </Badge>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    }}
                   />
                 );
               })}

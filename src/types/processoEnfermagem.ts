@@ -22,6 +22,7 @@ export interface AvaliacaoEnfermagem {
     [componente: string]: {
       resultadoClassificatorio: string;
       valorTexto: string;
+      rotuloValorTexto?: string;
     };
   };
   nhbsAfetadas: { parametro: string; nhb: string }[];
@@ -59,8 +60,9 @@ export interface PlanejamentoEnfermagem {
 // NOVOS TIPOS para a Etapa de Implementação
 export interface IntervencaoImplementada extends IntervencaoSelecionada {
   implementadoNestaConsulta: boolean;
-  quemExecuta?: string;
-  prazo?: number;
+  quemExecuta?: string[] | string; // Array de executores conforme Res. COFEN 736/2024 (com retrocompatibilidade para string)
+  aprazamento?: string; // Aprazamento híbrido (preset APS ou texto livre)
+  prazo?: number; // Mantido para retrocompatibilidade
   prazoUnidade?: 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos';
 }
 

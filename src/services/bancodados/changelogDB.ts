@@ -234,6 +234,11 @@ const CHANGELOGS_SISTEMA: {
     descricao:
       "A Gestão de Usuários agora reúne indicadores importantes sobre cadastros, aprovações e tempo de análise. Os filtros ficaram mais compactos, cidades com grafias diferentes são agrupadas corretamente e os nomes passam a ser apresentados de forma padronizada.",
   },
+  {
+    titulo: "Exames Diagnósticos: Testes Rápidos e HbA1c",
+    descricao:
+      "Aprimoramos a organização dos testes rápidos no Exame Físico, aproximando o teste de HIV dos demais testes relacionados a IST e hepatites. Também corrigimos a geração do prontuário para impedir a exibição de informações indefinidas e revisamos o feedback visual da hemoglobina glicada, diferenciando resultados desejáveis, faixas de atenção e alterações conforme as referências clínicas cadastradas.",
+  },
 ];
 
 // ─── Seed completo e idempotente ─────────────────────────────

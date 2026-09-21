@@ -22,11 +22,14 @@ export interface ResultadoExame {
   criterioSexo?: 'Masculino' | 'Feminino' | 'Ambos';
   valorMinimo?: number | null;
   valorMaximo?: number | null;
-  // Campo para exames de imagem
+  // Campo para exames de imagem e classificatórios
   resultadoClassificatorio?: string;
   permiteValorTexto?: boolean;
   rotuloValorTexto?: string;
+  tipoValorTexto?: 'texto' | 'lista';
+  opcoesValorTexto?: string[];
   valorTextoObrigatorio?: boolean;
+  statusReferencia?: 'normal' | 'atencao' | 'alterado';
   // Campos comuns
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;
@@ -35,6 +38,7 @@ export interface ResultadoExame {
 export interface ComponenteExame {
   componenteAnalisado: string;
   unidadeMedida: string;
+  tipoResultado?: 'numerico' | 'classificatorio';
   resultados: ResultadoExame[];
 }
 
@@ -43,20 +47,38 @@ export interface Exame {
   nomeExame: string;
   descricaoExame: string;
   tipoExame: 'Laboratorial' | 'Imagem';
+  grupoExibicao?: string;
+  ordemExibicao?: number;
   componentes: ComponenteExame[];
   dataCadastro?: Timestamp;
 }
 
 export type ExameInput = Omit<Exame, 'id' | 'dataCadastro'>;
 
+export const ordenarExamesParaExibicao = (exames: Exame[]): Exame[] =>
+  [...exames].sort((a, b) => {
+    const grupoA = a.grupoExibicao?.trim() || a.nomeExame;
+    const grupoB = b.grupoExibicao?.trim() || b.nomeExame;
+    const grupo = grupoA.localeCompare(grupoB, 'pt-BR', { sensitivity: 'base' });
+    if (grupo !== 0) return grupo;
+
+    const ordemA = Number.isFinite(a.ordemExibicao) ? a.ordemExibicao! : Number.MAX_SAFE_INTEGER;
+    const ordemB = Number.isFinite(b.ordemExibicao) ? b.ordemExibicao! : Number.MAX_SAFE_INTEGER;
+    return ordemA - ordemB || a.nomeExame.localeCompare(b.nomeExame, 'pt-BR', { sensitivity: 'base' });
+  });
+
 export const componenteEhClassificatorio = (
   tipoExame: Exame['tipoExame'],
   componente: ComponenteExame
-): boolean => (
-  tipoExame === 'Imagem'
-  || componente.unidadeMedida.trim().toLocaleLowerCase('pt-BR').includes('qualitativo')
-  || componente.resultados.some((resultado) => Boolean(resultado.resultadoClassificatorio))
-);
+): boolean => {
+  if (tipoExame === 'Imagem') return true;
+  if (componente.tipoResultado === 'classificatorio') return true;
+  if (componente.tipoResultado === 'numerico') return false;
+  return (
+    componente.unidadeMedida?.trim().toLocaleLowerCase('pt-BR').includes('qualitativo') ||
+    componente.resultados.some((resultado) => Boolean(resultado.resultadoClassificatorio))
+  );
+};
 
 const COLLECTION_NAME = 'ExamesLabImagem';
 
