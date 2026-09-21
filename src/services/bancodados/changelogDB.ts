@@ -87,6 +87,11 @@ const CHANGELOGS_SISTEMA: {
   dataHora?: Timestamp;
 }[] = [
   {
+    titulo: "Acesso ao Portal mais confiável",
+    descricao:
+      "O login e a recuperação de senha agora desconsideram espaços e diferenças entre letras maiúsculas e minúsculas no e-mail. As mensagens de erro também ficaram mais seguras e orientam melhor em casos de bloqueio, excesso de tentativas ou falha de conexão.",
+  },
+  {
     titulo: "Nova Interface do Dashboard",
     descricao:
       "Otimizamos a área inicial e adicionamos o mural de atualizações para manter você informado.",

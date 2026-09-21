@@ -34,6 +34,10 @@ import { Usuario } from "@/types/usuario";
 import { verificarElegibilidadeNPS } from "@/services/bancodados/suporteDB";
 import { cadastroEmAndamento } from "@/utils/registrationFlow";
 import { paginasPadraoPorTipo, PERMISSION_SCHEMA_VERSION } from "@/lib/pages";
+import {
+  normalizarEmailAutenticacao,
+  obterFeedbackErroAutenticacao,
+} from "@/utils/auth";
 
 const NPS_PENDENTE_KEY = "csae_nps_pendente";
 
@@ -432,11 +436,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      console.log("Tentando fazer login com:", email);
+      const emailNormalizado = normalizarEmailAutenticacao(email);
 
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        emailNormalizado,
         password,
       );
       const user = userCredential.user;
@@ -622,38 +626,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       navigate("/dashboard");
     } catch (error: unknown) {
       console.error("Erro no login:", error);
-      let errorMessage = "Erro ao efetuar login. Tente novamente mais tarde.";
       const errorCode =
         error && typeof error === "object" && "code" in error
           ? String(error.code)
           : "";
-
-      if (errorCode === "auth/user-not-found") {
-        errorMessage = "Este e-mail não está cadastrado. Faça seu cadastro!";
-        toast({
-          title: "E-mail não encontrado",
-          description: errorMessage,
-          variant: "destructive",
-          action: (
-            <button
-              onClick={() => navigate("/registrar")}
-              className="bg-csae-green-600 text-white px-3 py-1 rounded text-sm hover:bg-csae-green-700"
-            >
-              Cadastrar-se
-            </button>
-          ),
-        });
-        return;
-      } else if (errorCode === "auth/wrong-password") {
-        errorMessage = "Senha incorreta! Verifique e tente novamente.";
-      } else if (errorCode === "auth/invalid-credential") {
-        errorMessage =
-          "Credenciais inválidas. Verifique seus dados e tente novamente.";
-      }
+      const feedback = obterFeedbackErroAutenticacao(errorCode);
 
       toast({
-        title: "Erro no login",
-        description: errorMessage,
+        title: feedback.titulo,
+        description: feedback.descricao,
         variant: "destructive",
       });
     } finally {

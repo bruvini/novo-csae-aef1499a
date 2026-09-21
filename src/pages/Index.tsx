@@ -9,6 +9,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, LogIn, ArrowRight, KeyRound, Eye, EyeOff } from "lucide-react";
 import { auth } from "@/services/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import Footer from "@/components/Footer";
+import { normalizarEmailAutenticacao } from "@/utils/auth";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -40,7 +42,8 @@ const Index = () => {
   };
 
   const handleEsqueciSenha = async () => {
-    if (!email) {
+    const emailNormalizado = normalizarEmailAutenticacao(email);
+    if (!emailNormalizado) {
       toast({
         title: "E-mail necessário",
         description: "Por favor, insira seu e-mail funcional no campo acima para redefinir a senha.",
@@ -51,7 +54,7 @@ const Index = () => {
 
     setResetLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(auth, emailNormalizado);
       toast({
         title: "Instruções enviadas",
         description: "Um link de redefinição foi enviado para o seu e-mail.",
@@ -202,9 +205,7 @@ const Index = () => {
         </div>
       </main>
 
-      <footer className="py-8 bg-white border-t text-gray-500 text-sm text-center mt-auto">
-        <p>© {new Date().getFullYear()} Portal CSAE Floripa 2.0. Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) e Enf. Bruno Vinícius - Todos os direitos reservados</p>
-      </footer>
+      <Footer />
     </div>
   );
 };

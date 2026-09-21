@@ -1,26 +1,26 @@
 # Graph Report - novo-csae-aef1499a  (2026-09-21)
 
 ## Corpus Check
-- 184 files · ~473,835 words
+- 186 files · ~474,070 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1231 nodes · 3115 edges · 125 communities (60 shown, 65 thin omitted)
+- 1236 nodes · 3145 edges · 128 communities (63 shown, 65 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 37 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `6ce7f115`
+- Built from commit: `92ce64d9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - EtapaAvaliacao.tsx
 - import-clinical-parameters.ts
-- CentralAjuda.tsx
+- index.ts
 - GestaoUsuarios.tsx
-- hooks/use-toast.ts
-- examesDB.ts
+- use-toast.tsx
+- TabelaExames.tsx
 - devDependencies
 - Portal CSAE Floripa 2.0
 - PainelEstatistico.tsx
@@ -31,21 +31,21 @@
 - sidebar.tsx
 - components.json
 - dependencies
-- ModalCadastroDiagnostico.tsx
-- react
+- TabelaSubconjuntos.tsx
+- chart.tsx
 - clsx
-- AuthContext.tsx
+- pages.ts
 - menubar.tsx
 - compilerOptions
 - Enfermagem e Saúde Digital no Centro de Saúde Saco dos Limões
 - Q: Implementar badges de respostas não visualizadas na Central de Ajuda e de novos itens na Gestão de Suporte
-- ProcessoEnfermagemModal.tsx
+- pacientesDB.ts
 - context-menu.tsx
 - dropdown-menu.tsx
 - Shell HTML do Portal CSAE Floripa
 - package.json
 - Profissional de Saúde com Notebook no Centro de Saúde Trindade
-- useAuth
+- AuthContext.tsx
 - utils.ts
 - navigation-menu.tsx
 - CSAE Brand Mark
@@ -54,7 +54,7 @@
 - dotenv
 - approve-user.ts
 - Q: Atualizar a interface do Processo de Enfermagem para exames qualitativos e híbridos, bloquear números negativos e ampliar o modal
-- GestaoSuporte.tsx
+- TabelaDiagnosticos.tsx
 - QueryContext.tsx
 - IntervencaoItem.tsx
 - cmdk
@@ -73,7 +73,7 @@
 - @radix-ui/react-avatar
 - @radix-ui/react-checkbox
 - @radix-ui/react-collapsible
-- index.ts
+- ListaPacientes.tsx
 - @radix-ui/react-dialog
 - @radix-ui/react-dropdown-menu
 - @radix-ui/react-hover-card
@@ -123,14 +123,17 @@
 - vite
 - @vitejs/plugin-react-swc
 - Perfil.tsx
-- SupportNotificationsContext.tsx
-- avatar.tsx
+- hooks/use-toast.ts
+- TabelaSinaisVitais.tsx
 - combobox.tsx
 - @radix-ui/react-context-menu
 - @types/node
+- resultadosExames.ts
+- react
+- toast.tsx
+- DashboardLayout.tsx
 - drawer.tsx
-- TabelaExames.tsx
-- input-otp.tsx
+- FormularioSistema.tsx
 
 ## God Nodes (most connected - your core abstractions)
 1. `cn()` - 82 edges
@@ -170,31 +173,31 @@
 - **Integração Clínica Digital na Atenção Primária** — public_lovable_uploads_9753344e_5ca4_43b0_8479_c33f5880810f_profissional_de_saude, public_lovable_uploads_9753344e_5ca4_43b0_8479_c33f5880810f_notebook_clinico, public_lovable_uploads_9753344e_5ca4_43b0_8479_c33f5880810f_centro_saude_trindade, public_lovable_uploads_9753344e_5ca4_43b0_8479_c33f5880810f_saude_digital_na_atencao_primaria [INFERRED 0.85]
 - **Centered Placeholder Composition** — public_placeholder_centered_image_icon, public_placeholder_radial_alignment_guides, public_placeholder_concentric_focus_rings, public_placeholder_monochrome_visual_system [INFERRED 0.95]
 
-## Communities (125 total, 65 thin omitted)
+## Communities (128 total, 65 thin omitted)
 
 ### Community 0 - "EtapaAvaliacao.tsx"
-Cohesion: 0.07
-Nodes (70): ModalCadastroSubconjuntoProps, ModalConfirmacaoExclusaoProps, ModalDetalhesSubconjuntoProps, ModalVisualizarDiagnosticoProps, inferEhAlteracao(), ModalVisualizarSistema(), sortedAchados(), ModalHistoricoChangelogProps (+62 more)
+Cohesion: 0.05
+Nodes (89): Subconjunto, ModalCadastroSubconjuntoProps, ModalConfirmacaoExclusaoProps, ModalDetalhesSubconjuntoProps, inferEhAlteracao(), ModalVisualizarSistema(), sortedAchados(), ModalHistoricoChangelogProps (+81 more)
 
 ### Community 1 - "import-clinical-parameters.ts"
 Cohesion: 0.09
 Nodes (37): achadoSchema, canonicalizeNhbs(), collectNhbs(), Compendio, compendioSchema, componenteExameSchema, countCollection(), documentId() (+29 more)
 
-### Community 2 - "CentralAjuda.tsx"
-Cohesion: 0.19
-Nodes (17): ModalNPSObrigatorio(), ModalNPSObrigatorioProps, AlertTitle, CATEGORIAS_SUGESTAO, CentralAjuda(), formatarData(), MODULOS, buscarMeusTickets() (+9 more)
+### Community 2 - "index.ts"
+Cohesion: 0.06
+Nodes (73): AppSidebar(), AuthenticatedLayout(), ModalCadastroDiagnostico(), Header(), ModalHistoricoChangelog(), ModalNPSObrigatorio(), ModalNPSObrigatorioProps, NavigationCards() (+65 more)
 
 ### Community 3 - "GestaoUsuarios.tsx"
-Cohesion: 0.05
-Nodes (69): ModalConfirmacaoAprovacao(), ModalConfirmacaoAprovacaoProps, ModalConfirmacaoExclusao(), ModalDetalhesUsuarioProps, ModalEdicaoPrivilegiosProps, ModalMotivoRecusa(), ModalMotivoRecusaProps, ModalRevisaoCadastral() (+61 more)
-
-### Community 4 - "hooks/use-toast.ts"
 Cohesion: 0.08
-Nodes (36): Toast, ToastAction, ToastActionElement, ToastClose, ToastDescription, ToastProps, ToastTitle, toastVariants (+28 more)
+Nodes (47): ModalConfirmacaoAprovacao(), ModalConfirmacaoAprovacaoProps, ModalDetalhesUsuarioProps, ModalEdicaoPrivilegiosProps, ModalMotivoRecusa(), ModalMotivoRecusaProps, ModalRevisaoCadastral(), ModalRevisaoCadastralProps (+39 more)
 
-### Community 5 - "examesDB.ts"
-Cohesion: 0.13
-Nodes (24): TabelaExames(), EtapaAvaliacao(), EtapaResumo(), ExameResultadoInput(), ExameResultadoInputProps, HistoricoProcessosModal(), addExame(), componenteEhClassificatorio() (+16 more)
+### Community 4 - "use-toast.tsx"
+Cohesion: 0.17
+Nodes (15): ToastProps, generateId(), Action, ActionType, actionTypes, addToRemoveQueue(), dispatch(), listeners (+7 more)
+
+### Community 5 - "TabelaExames.tsx"
+Cohesion: 0.17
+Nodes (20): TabelaExames(), ExameResultadoInput(), ExameResultadoInputProps, SelectContent, SelectItem, SelectLabel, SelectScrollDownButton, SelectScrollUpButton (+12 more)
 
 ### Community 6 - "devDependencies"
 Cohesion: 0.18
@@ -225,8 +228,8 @@ Cohesion: 0.11
 Nodes (17): ES2023, vite.config.ts, compilerOptions, allowImportingTsExtensions, isolatedModules, lib, module, moduleDetection (+9 more)
 
 ### Community 13 - "sidebar.tsx"
-Cohesion: 0.08
-Nodes (29): navigationItems, Separator, Sidebar, SidebarContent, SidebarContext, SidebarFooter, SidebarGroup, SidebarGroupAction (+21 more)
+Cohesion: 0.10
+Nodes (24): navigationItems, Sidebar, SidebarContent, SidebarContext, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupContent (+16 more)
 
 ### Community 14 - "components.json"
 Cohesion: 0.12
@@ -236,17 +239,17 @@ Nodes (16): aliases, components, hooks, lib, ui, utils, rsc, $schema (+8 more)
 Cohesion: 0.13
 Nodes (15): class-variance-authority, dependencies, class-variance-authority, @radix-ui/react-scroll-area, @radix-ui/react-tabs, @radix-ui/react-toast, react-dom, react-input-mask (+7 more)
 
-### Community 16 - "ModalCadastroDiagnostico.tsx"
-Cohesion: 0.14
-Nodes (16): ModalCadastroDiagnostico(), Subconjunto, ModalCadastroSubconjunto(), TabelaSubconjuntos(), DiagnosticoEnfermagem, IntervencaoEnfermagem, MaterialApoio, ResultadoEsperado (+8 more)
+### Community 16 - "TabelaSubconjuntos.tsx"
+Cohesion: 0.15
+Nodes (17): ModalCadastroSubconjunto(), ModalConfirmacaoExclusao(), TabelaSubconjuntos(), EtapaDiagnostico(), Table, TableBody, TableCaption, TableCell (+9 more)
 
-### Community 17 - "react"
-Cohesion: 0.12
-Nodes (14): react, react, useCarousel(), ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent (+6 more)
+### Community 17 - "chart.tsx"
+Cohesion: 0.20
+Nodes (7): ChartConfig, ChartContainer, ChartContext, ChartContextProps, ChartLegendContent, ChartTooltipContent, THEMES
 
-### Community 19 - "AuthContext.tsx"
+### Community 19 - "pages.ts"
 Cohesion: 0.17
-Nodes (14): ModalEdicaoPrivilegios(), AuthContext, AuthContextType, AuthProvider(), AuthProviderProps, garantirPermissoesAtuais(), SessionData, ALL_PAGE_IDS (+6 more)
+Nodes (13): ModalEdicaoPrivilegios(), LoadingOverlay(), LoadingOverlayProps, ProtectedRoute(), garantirPermissoesAtuais(), ALL_PAGE_IDS, availablePages, DEFAULT_COMMON_PAGE_IDS (+5 more)
 
 ### Community 20 - "menubar.tsx"
 Cohesion: 0.17
@@ -264,9 +267,9 @@ Nodes (10): Centro de Saúde Saco dos Limões, Colaboração Digital na Atençã
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Implementar badges de respostas não visualizadas na Central de Ajuda e de novos itens na Gestão de Suporte, Source Nodes
 
-### Community 24 - "ProcessoEnfermagemModal.tsx"
-Cohesion: 0.09
-Nodes (30): ModalCadastroPaciente(), ProcessoEnfermagemModal(), StepperProcesso(), TempoAtivoBadge(), TempoAtivoBadgeProps, useToast(), IntervencaoAutoral, salvarIntervencoesAutorais() (+22 more)
+### Community 24 - "pacientesDB.ts"
+Cohesion: 0.20
+Nodes (7): ModalCadastroPaciente(), atualizarPaciente(), buscarPacientesPorEnfermeiro(), buscarPacientesUsuario(), cadastrarPaciente(), IndicadoresPacientes, StatusPaciente
 
 ### Community 25 - "context-menu.tsx"
 Cohesion: 0.20
@@ -288,13 +291,13 @@ Nodes (4): name, private, type, version
 Cohesion: 0.43
 Nodes (8): Centro de Saúde Trindade, Emblema de Ponte e Lâmpada da Enfermagem, Profissional de Saúde com Notebook no Centro de Saúde Trindade, Identidade Local de Florianópolis, Notebook para Uso Clínico, Profissional de Saúde, Saúde Digital na Atenção Primária, Secretaria Municipal de Saúde de Florianópolis
 
-### Community 30 - "useAuth"
-Cohesion: 0.20
-Nodes (13): AppSidebar(), AuthenticatedLayout(), Header(), LoadingOverlay(), LoadingOverlayProps, NavigationCards(), IndicadoresProducaoModal(), ProtectedRoute() (+5 more)
+### Community 30 - "AuthContext.tsx"
+Cohesion: 0.22
+Nodes (11): AuthContext, AuthContextType, AuthProvider(), AuthProviderProps, SessionData, Index(), FeedbackErroAutenticacao, normalizarEmailAutenticacao() (+3 more)
 
 ### Community 31 - "utils.ts"
-Cohesion: 0.21
-Nodes (7): ICONES_ETAPAS, StepperProcessoProps, HoverCardContent, Progress, Slider, TooltipContent, ETAPAS_PROCESSO
+Cohesion: 0.12
+Nodes (10): Avatar, AvatarFallback, AvatarImage, HoverCardContent, InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot (+2 more)
 
 ### Community 32 - "navigation-menu.tsx"
 Cohesion: 0.25
@@ -320,17 +323,17 @@ Nodes (3): app, db, firebaseConfig
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: Atualizar a interface do Processo de Enfermagem para exames qualitativos e híbridos, bloquear números negativos e ampliar o modal, Source Nodes
 
-### Community 39 - "GestaoSuporte.tsx"
+### Community 39 - "TabelaDiagnosticos.tsx"
 Cohesion: 0.16
-Nodes (22): TabsContent, TabsList, TabsTrigger, BlocoKpisProps, formatarData(), GestaoSuporte(), media(), buscarAvaliacoesNPS() (+14 more)
+Nodes (19): ModalVisualizarDiagnosticoProps, TabelaDiagnosticos(), SheetContent, SheetContentProps, SheetDescription, SheetFooter(), SheetHeader(), SheetOverlay (+11 more)
 
 ### Community 41 - "IntervencaoItem.tsx"
 Cohesion: 0.21
 Nodes (11): consolidarAprazamento(), IntervencaoItem(), IntervencaoItemProps, OPCOES_EXECUTORES, parseAprazamento(), PRESETS_APRAZAMENTO, ToggleGroup, ToggleGroupContext (+3 more)
 
-### Community 58 - "index.ts"
-Cohesion: 0.27
-Nodes (11): ModalHistoricoChangelog(), buscarTodosChangelogs(), Changelog, CHANGELOGS_SISTEMA, inserirChangelogIdempotente(), inserirChangelogRedesignAvaliacao(), salvarChangelog(), seedChangelogCompleto() (+3 more)
+### Community 58 - "ListaPacientes.tsx"
+Cohesion: 0.23
+Nodes (16): TabelaRevisaoSistemas(), ModalConfirmacaoExclusao(), ModalConfirmacaoExclusaoProps, ListaPacientes(), AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription (+8 more)
 
 ### Community 104 - "Q: Como importar com segurança parâmetros clínicos em lote no Firestore e adaptar a UI para exames qualitativos?"
 Cohesion: 0.40
@@ -349,61 +352,73 @@ Cohesion: 0.25
 Nodes (7): Breadcrumb, BreadcrumbEllipsis(), BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator()
 
 ### Community 116 - "Perfil.tsx"
-Cohesion: 0.07
-Nodes (50): queryClient, AuthenticatedLayoutProps, Footer(), IndicadoresConteudo(), IndicadoresData, HeroBannerProps, AccessInfoFormProps, PersonalInfoFormProps (+42 more)
+Cohesion: 0.05
+Nodes (73): queryClient, AuthenticatedLayoutProps, Footer(), IndicadoresConteudo(), IndicadoresData, TabelaUsuarios(), HeroBannerProps, IndicadoresProducaoModalProps (+65 more)
 
-### Community 117 - "SupportNotificationsContext.tsx"
+### Community 117 - "hooks/use-toast.ts"
+Cohesion: 0.17
+Nodes (15): ToastActionElement, genId(), Action, ActionType, actionTypes, addToRemoveQueue(), dispatch(), listeners (+7 more)
+
+### Community 118 - "TabelaSinaisVitais.tsx"
 Cohesion: 0.31
-Nodes (8): contagemInicial, SupportNotificationsContext, SupportNotificationsContextType, SupportNotificationsProvider(), ContagemNotificacoesSuporte, criarContagem(), observarItensNovosSuporte(), observarRespostasNaoVisualizadas()
-
-### Community 118 - "avatar.tsx"
-Cohesion: 0.50
-Nodes (3): Avatar, AvatarFallback, AvatarImage
+Nodes (10): TabelaSinaisVitais(), Skeleton(), addSinalVital(), deleteSinalVital(), getSinaisVitais(), SinalVital, SinalVitalInput, updateSinalVital() (+2 more)
 
 ### Community 119 - "combobox.tsx"
 Cohesion: 0.20
 Nodes (11): ComboboxProps, Command, CommandDialogProps, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList (+3 more)
 
+### Community 122 - "resultadosExames.ts"
+Cohesion: 0.27
+Nodes (11): EtapaAvaliacao(), EtapaResumo(), ordenarExamesParaExibicao(), getSistemas(), encontrarFaixaNumerica(), formatarResultadoExame(), formatarValorClinico(), resolverStatusReferencia() (+3 more)
+
+### Community 123 - "react"
+Cohesion: 0.22
+Nodes (8): react, react, useCarousel(), useChart(), Combobox(), useFormField(), useSidebar(), useIsMobile()
+
+### Community 124 - "toast.tsx"
+Cohesion: 0.36
+Nodes (7): Toast, ToastAction, ToastClose, ToastDescription, ToastTitle, toastVariants, ToastViewport
+
+### Community 125 - "DashboardLayout.tsx"
+Cohesion: 0.40
+Nodes (3): SidebarInset, SidebarProvider, Toaster()
+
 ### Community 127 - "drawer.tsx"
 Cohesion: 0.25
 Nodes (6): DrawerContent, DrawerDescription, DrawerFooter(), DrawerHeader(), DrawerOverlay, DrawerTitle
 
-### Community 128 - "TabelaExames.tsx"
-Cohesion: 0.06
-Nodes (72): AchadoEditState, CLASSIFICACAO_SUGGESTIONS, emptyAchado(), emptyOpcao(), FormularioSistema(), FormularioSistemaProps, inferEhAlteracao(), sortedAchadosWithIndex() (+64 more)
-
-### Community 132 - "input-otp.tsx"
-Cohesion: 0.40
-Nodes (4): InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot
+### Community 128 - "FormularioSistema.tsx"
+Cohesion: 0.16
+Nodes (17): AchadoEditState, CLASSIFICACAO_SUGGESTIONS, emptyAchado(), emptyOpcao(), FormularioSistema(), FormularioSistemaProps, inferEhAlteracao(), sortedAchadosWithIndex() (+9 more)
 
 ## Ambiguous Edges - Review These
 - `Emblema de Ponte e Lâmpada da Enfermagem` → `Identidade Local de Florianópolis`  [AMBIGUOUS]
   public/lovable-uploads/9753344e-5ca4-43b0-8479-c33f5880810f.png · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **398 isolated node(s):** `idadeUnidadeSchema`, `sexoSchema`, `numeroOpcionalSchema`, `referenciaVitalSchema`, `sinalVitalSchema` (+393 more)
+- **398 isolated node(s):** `$schema`, `style`, `rsc`, `tsx`, `config` (+393 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **65 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Work-memory lessons
 
 **Preferred sources** — corroborated by past sessions; start here.
-- `Exame` (2× useful, score=0.8713932) _(code changed — re-verify)_
+- `Exame` (2× useful, score=0.869361956)
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What is the exact relationship between `Emblema de Ponte e Lâmpada da Enfermagem` and `Identidade Local de Florianópolis`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `dependencies` connect `dependencies` to `react`, `clsx`, `package.json`, `cmdk`, `date-fns`, `firebase`, `framer-motion`, `@hookform/resolvers`, `html2pdf.js`, `input-otp`, `lucide-react`, `next-themes`, `@radix-ui/react-accordion`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-aspect-ratio`, `@radix-ui/react-avatar`, `@radix-ui/react-checkbox`, `@radix-ui/react-collapsible`, `@radix-ui/react-dialog`, `@radix-ui/react-dropdown-menu`, `@radix-ui/react-hover-card`, `@radix-ui/react-label`, `@radix-ui/react-menubar`, `@radix-ui/react-navigation-menu`, `@radix-ui/react-popover`, `@radix-ui/react-progress`, `@radix-ui/react-radio-group`, `@radix-ui/react-select`, `@radix-ui/react-separator`, `@radix-ui/react-slider`, `@radix-ui/react-slot`, `@radix-ui/react-switch`, `@radix-ui/react-toggle`, `@radix-ui/react-toggle-group`, `@radix-ui/react-tooltip`, `react-beautiful-dnd`, `react-day-picker`, `react-hook-form`, `react-resizable-panels`, `react-router-dom`, `sonner`, `tailwind-merge`, `tailwindcss-animate`, `@tanstack/react-query`, `@tanstack/react-table`, `@types/react-beautiful-dnd`, `uuid`, `vaul`, `zod`, `embla-carousel-react`, `@radix-ui/react-context-menu`?**
-  _High betweenness centrality (0.209) - this node is a cross-community bridge._
-- **Why does `react` connect `react` to `TabelaExames.tsx`, `hooks/use-toast.ts`, `sidebar.tsx`, `dependencies`, `ProcessoEnfermagemModal.tsx`, `useAuth`?**
-  _High betweenness centrality (0.195) - this node is a cross-community bridge._
-- **Why does `cn()` connect `cn` to `EtapaAvaliacao.tsx`, `TabelaExames.tsx`, `input-otp.tsx`, `hooks/use-toast.ts`, `sidebar.tsx`, `react`, `menubar.tsx`, `ProcessoEnfermagemModal.tsx`, `context-menu.tsx`, `dropdown-menu.tsx`, `useAuth`, `utils.ts`, `navigation-menu.tsx`, `GestaoSuporte.tsx`, `IntervencaoItem.tsx`, `carousel.tsx`, `breadcrumb.tsx`, `Perfil.tsx`, `avatar.tsx`, `combobox.tsx`, `drawer.tsx`?**
-  _High betweenness centrality (0.126) - this node is a cross-community bridge._
-- **What connects `idadeUnidadeSchema`, `sexoSchema`, `numeroOpcionalSchema` to the rest of the system?**
+- **Why does `dependencies` connect `dependencies` to `clsx`, `package.json`, `cmdk`, `date-fns`, `firebase`, `framer-motion`, `@hookform/resolvers`, `html2pdf.js`, `input-otp`, `lucide-react`, `next-themes`, `@radix-ui/react-accordion`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-aspect-ratio`, `@radix-ui/react-avatar`, `@radix-ui/react-checkbox`, `@radix-ui/react-collapsible`, `@radix-ui/react-dialog`, `@radix-ui/react-dropdown-menu`, `@radix-ui/react-hover-card`, `@radix-ui/react-label`, `@radix-ui/react-menubar`, `@radix-ui/react-navigation-menu`, `@radix-ui/react-popover`, `@radix-ui/react-progress`, `@radix-ui/react-radio-group`, `@radix-ui/react-select`, `@radix-ui/react-separator`, `@radix-ui/react-slider`, `@radix-ui/react-slot`, `@radix-ui/react-switch`, `@radix-ui/react-toggle`, `@radix-ui/react-toggle-group`, `@radix-ui/react-tooltip`, `react-beautiful-dnd`, `react-day-picker`, `react-hook-form`, `react-resizable-panels`, `react-router-dom`, `sonner`, `tailwind-merge`, `tailwindcss-animate`, `@tanstack/react-query`, `@tanstack/react-table`, `@types/react-beautiful-dnd`, `uuid`, `vaul`, `zod`, `embla-carousel-react`, `@radix-ui/react-context-menu`, `react`?**
+  _High betweenness centrality (0.188) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `use-toast.tsx`, `dependencies`, `pages.ts`, `hooks/use-toast.ts`, `ListaPacientes.tsx`?**
+  _High betweenness centrality (0.174) - this node is a cross-community bridge._
+- **Why does `cn()` connect `cn` to `EtapaAvaliacao.tsx`, `FormularioSistema.tsx`, `index.ts`, `TabelaExames.tsx`, `sidebar.tsx`, `TabelaSubconjuntos.tsx`, `chart.tsx`, `menubar.tsx`, `context-menu.tsx`, `dropdown-menu.tsx`, `utils.ts`, `navigation-menu.tsx`, `TabelaDiagnosticos.tsx`, `IntervencaoItem.tsx`, `ListaPacientes.tsx`, `carousel.tsx`, `breadcrumb.tsx`, `Perfil.tsx`, `TabelaSinaisVitais.tsx`, `combobox.tsx`, `react`, `toast.tsx`, `drawer.tsx`?**
+  _High betweenness centrality (0.115) - this node is a cross-community bridge._
+- **What connects `$schema`, `style`, `rsc` to the rest of the system?**
   _398 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `EtapaAvaliacao.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06563706563706563 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05108780108780109 - nodes in this community are weakly interconnected._
 - **Should `import-clinical-parameters.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.08534850640113797 - nodes in this community are weakly interconnected._

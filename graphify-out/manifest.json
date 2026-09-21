@@ -545,8 +545,8 @@
     "semantic_hash": "226311834bdbec4a05c6b17ed6f58de7"
   },
   "src/contexts/AuthContext.tsx": {
-    "mtime": 1787878108.0311022,
-    "ast_hash": "41cdb9c604c6718721df7455776e0d56",
+    "mtime": 1790015434.766036,
+    "ast_hash": "6d47689194813b286d3517c178ff2b80",
     "semantic_hash": ""
   },
   "src/contexts/QueryContext.tsx": {
@@ -640,8 +640,8 @@
     "semantic_hash": ""
   },
   "src/pages/Index.tsx": {
-    "mtime": 1786913620.8043232,
-    "ast_hash": "ac52275a8849851199ddbbe97fd56b72",
+    "mtime": 1790015434.768042,
+    "ast_hash": "ed8bbd0ed9fea5cee417e90d82231aff",
     "semantic_hash": ""
   },
   "src/pages/NotFound.tsx": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1790005012.769054,
-    "ast_hash": "d84833a00ed59557065f179344fe01ae",
+    "mtime": 1790015434.7690449,
+    "ast_hash": "d660943d8cc7816fbac45df6bfd5b998",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -952,6 +952,16 @@
   "src/utils/resultadosExames.ts": {
     "mtime": 1790005012.7650504,
     "ast_hash": "e0cc022213e64cd874c1e602a98af845",
+    "semantic_hash": ""
+  },
+  "src/utils/auth.test.ts": {
+    "mtime": 1790015434.7650378,
+    "ast_hash": "56e61655af206638d20290abc5f10311",
+    "semantic_hash": ""
+  },
+  "src/utils/auth.ts": {
+    "mtime": 1790015434.7640364,
+    "ast_hash": "c8d3e6fc5a3782ab1847cfb4ebe7bf3f",
     "semantic_hash": ""
   }
 }
