@@ -59,12 +59,14 @@ import {
 import { obterEstatisticasUsuariosBI, EstatisticasBI, EvolucaoEntry } from '@/services/bancodados/biUsuariosDB';
 import {
   obterEstatisticasProcessoEnfermagem,
+  obterRegistrosProducaoCache,
   EstatisticasProcessoEnfermagem,
   UsuarioRanking,
   ItemTemporal,
   agregarRegistrosProducao,
 } from '@/services/bancodados/biProcessosEnfermagemDB';
 import { filtrarRegistrosProducao, formatarVariacao } from '@/utils/painelEstatistico';
+import { exportacaoPainelHabilitada, resolverEstadoProducao } from '@/utils/painelEstatisticoCache';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -193,6 +195,8 @@ const PainelEstatistico = () => {
   const [lotacoesOpen, setLotacoesOpen] = useState(false);
   const [dataProcessos, setDataProcessos] = useState<EstatisticasProcessoEnfermagem | null>(null);
   const [loadingProcessos, setLoadingProcessos] = useState(true);
+  const [erroProcessos, setErroProcessos] = useState<string | null>(null);
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UsuarioRanking | null>(null);
   const [raioXOpen, setRaioXOpen] = useState(false);
   const [temporalView, setTemporalView] = useState<'hora' | 'diario' | 'diaSemana' | 'mensal' | 'anual'>('mensal');
@@ -216,19 +220,35 @@ const PainelEstatistico = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchProcessos = async () => {
-      try {
-        const stats = await obterEstatisticasProcessoEnfermagem();
-        setDataProcessos(stats);
-      } catch (error) {
-        console.error('Erro ao carregar dados de produção:', error);
-      } finally {
-        setLoadingProcessos(false);
+  const fetchProcessos = useCallback(async () => {
+    setLoadingProcessos(true);
+    setErroProcessos(null);
+    try {
+      const stats = await obterEstatisticasProcessoEnfermagem();
+      if (!stats) throw new Error('O serviço de produção não retornou dados.');
+      setDataProcessos(stats);
+      setLoadingProcessos(false);
+      if (stats.totalProcessos > 0 && stats.registrosProducao.length === 0 && stats.registroChunks > 0) {
+        setCarregandoDetalhes(true);
+        try {
+          const registros = await obterRegistrosProducaoCache(stats.registroChunks);
+          setDataProcessos((atual) => atual ? { ...atual, registrosProducao: registros } : atual);
+        } catch (error) {
+          console.warn('Indicadores carregados, mas os filtros avançados ficaram indisponíveis:', error);
+        } finally {
+          setCarregandoDetalhes(false);
+        }
       }
-    };
-    fetchProcessos();
+    } catch (error) {
+      console.error('Erro ao carregar dados de produção:', error);
+      setDataProcessos(null);
+      setErroProcessos('Não foi possível carregar os indicadores de produção.');
+    } finally {
+      setLoadingProcessos(false);
+    }
   }, []);
+
+  useEffect(() => { void fetchProcessos(); }, [fetchProcessos]);
 
   const evolucaoAtiva = useCallback((): EvolucaoEntry[] => {
     if (!data) return [];
@@ -253,6 +273,7 @@ const PainelEstatistico = () => {
   }, [data, viewModeAcessos]);
 
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
+  const estadoProducao = resolverEstadoProducao(loadingProcessos, erroProcessos, dataProcessos?.totalProcessos);
 
   // Usa o agregado exato do cache para a lotação simples; filtros adicionais reutilizam os mesmos registros carregados.
   const dadosFiltrados = useMemo(() => {
@@ -262,7 +283,8 @@ const PainelEstatistico = () => {
     }
     const inicio = periodoInicial ? new Date(`${periodoInicial}T00:00:00`) : null;
     const fim = periodoFinal ? new Date(`${periodoFinal}T23:59:59.999`) : null;
-    const registros = filtrarRegistrosProducao(dataProcessos.registrosProducao || [], {
+    if (dataProcessos.registrosProducao.length === 0) return null;
+    const registros = filtrarRegistrosProducao(dataProcessos.registrosProducao, {
       lotacao: filtroLotacao === '__todas__' ? undefined : filtroLotacao,
       usuarioId: filtroUsuario === '__todos__' ? undefined : filtroUsuario,
       inicio,
@@ -353,7 +375,7 @@ const PainelEstatistico = () => {
           <Button
             type="button"
             onClick={handleExportar}
-            disabled={loading || loadingProcessos || !data || !dadosFiltrados || exportando}
+            disabled={!exportacaoPainelHabilitada(loading, estadoProducao, Boolean(data), Boolean(dadosFiltrados), exportando)}
             className="gap-2 bg-csae-green-700 hover:bg-csae-green-800"
           >
             <Download className={`h-4 w-4 ${exportando ? 'animate-bounce' : ''}`} />
@@ -822,14 +844,25 @@ const PainelEstatistico = () => {
             </p>
           </div>
 
-          {loadingProcessos ? (
+          {estadoProducao === 'loading' ? (
             <div className="flex flex-col items-center justify-center h-64 space-y-4">
               <HeartPulse className="w-10 h-10 text-indigo-500 animate-pulse" />
               <p className="text-gray-400 font-medium text-sm animate-pulse">
                 Consolidando inteligência de produção...
               </p>
             </div>
-          ) : !dataProcessos || dataProcessos.totalProcessos === 0 ? (
+          ) : estadoProducao === 'error' ? (
+            <div className="p-10 border-2 border-dashed rounded-3xl text-center space-y-4 bg-rose-50/30 border-rose-200">
+              <HeartPulse className="w-12 h-12 text-rose-300 mx-auto" />
+              <div>
+                <p className="text-rose-900 font-bold">Não foi possível carregar os indicadores de produção</p>
+                <p className="text-sm text-rose-700 mt-1">Os dados permanecem preservados. Tente atualizar o painel novamente.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void fetchProcessos()} className="border-rose-300 text-rose-800">
+                Tentar novamente
+              </Button>
+            </div>
+          ) : estadoProducao === 'empty' ? (
             <div className="p-10 border-2 border-dashed rounded-3xl text-center space-y-4 bg-indigo-50/20 border-indigo-200">
                <ClipboardList className="w-12 h-12 text-indigo-300 mx-auto" />
                <p className="text-indigo-900 font-bold">Nenhum dado clínico processado ainda.</p>
@@ -865,6 +898,7 @@ const PainelEstatistico = () => {
                     <select
                       id="filtro-usuario"
                       value={filtroUsuario}
+                      disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0}
                       onChange={(event) => setFiltroUsuario(event.target.value)}
                       className="w-full h-10 text-sm font-semibold border border-indigo-200 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
                     >
@@ -874,15 +908,17 @@ const PainelEstatistico = () => {
                   </label>
                   <label className="space-y-1 text-[11px] font-bold text-indigo-900">
                     <span>Período inicial</span>
-                    <Input type="date" value={periodoInicial} max={periodoFinal || undefined} onChange={(event) => setPeriodoInicial(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                    <Input type="date" disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0} value={periodoInicial} max={periodoFinal || undefined} onChange={(event) => setPeriodoInicial(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
                   </label>
                   <label className="space-y-1 text-[11px] font-bold text-indigo-900">
                     <span>Período final</span>
-                    <Input type="date" value={periodoFinal} min={periodoInicial || undefined} onChange={(event) => setPeriodoFinal(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                    <Input type="date" disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0} value={periodoFinal} min={periodoInicial || undefined} onChange={(event) => setPeriodoFinal(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
                   </label>
                 </div>
                 <p className="text-[11px] text-indigo-600 font-semibold">
-                  {dadosFiltrados?.totalProcessos ?? 0} registro(s) encontrado(s) com os filtros atuais.
+                  {carregandoDetalhes
+                    ? 'Carregando filtros avançados em segundo plano...'
+                    : `${dadosFiltrados?.totalProcessos ?? 0} registro(s) encontrado(s) com os filtros atuais.`}
                 </p>
               </div>
 

@@ -1,20 +1,82 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { differenceInYears } from 'date-fns';
 import { db } from '@/services/firebase';
 import { agregarRegistrosProducao, type EstatisticasProducao, type RegistroProducao } from '@/utils/painelEstatistico';
+import {
+  CACHE_PROCESSOS_SCHEMA_VERSION,
+  cacheProducaoValido,
+  normalizarExecutores,
+  particionarRegistrosPorTamanho,
+  removerUndefined,
+  tentarPersistirCache,
+} from '@/utils/painelEstatisticoCache';
 
 export type { EstatisticasProducao, ItemRanking, ItemTemporal, RaioXUsuario, RegistroProducao, UsuarioRanking } from '@/utils/painelEstatistico';
 export { agregarRegistrosProducao } from '@/utils/painelEstatistico';
-
-const SCHEMA_VERSION = 8;
 
 export interface EstatisticasProcessoEnfermagem extends EstatisticasProducao {
   porLotacao: Record<string, EstatisticasProducao>;
   lotacoesUnicas: string[];
   registrosProducao: RegistroProducao[];
+  registroChunks: number;
+  lotacaoDocumentos: Array<{ id: string; lotacao: string }>;
   schemaVersion?: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ultimaAtualizacao?: any;
+}
+
+function idDocumentoLotacao(lotacao: string): string {
+  return encodeURIComponent(lotacao).slice(0, 500);
+}
+
+async function lerAgregadosLotacoes(
+  cacheDocRef: ReturnType<typeof doc>,
+  referencias: Array<{ id: string; lotacao: string }>,
+): Promise<Record<string, EstatisticasProducao>> {
+  const snapshots = await Promise.all(referencias.map((item) => getDoc(doc(collection(cacheDocRef, 'lotacoes'), item.id))));
+  const porLotacao: Record<string, EstatisticasProducao> = {};
+  snapshots.forEach((snapshot, index) => {
+    if (!snapshot.exists()) throw new Error(`Cache da lotação ${referencias[index].lotacao} está incompleto.`);
+    porLotacao[referencias[index].lotacao] = snapshot.data().agregado as EstatisticasProducao;
+  });
+  return porLotacao;
+}
+
+export async function obterRegistrosProducaoCache(totalChunks: number): Promise<RegistroProducao[]> {
+  if (totalChunks <= 0) return [];
+  const cacheDocRef = doc(db, 'estatisticas', 'painel_processos');
+  const snapshots = await Promise.all(Array.from({ length: totalChunks }, (_, index) =>
+    getDoc(doc(collection(cacheDocRef, 'registros'), `chunk-${String(index).padStart(4, '0')}`))));
+  const registros: RegistroProducao[] = [];
+  snapshots.forEach((snapshot, index) => {
+    if (!snapshot.exists()) throw new Error(`Chunk ${index} do cache de produção não foi encontrado.`);
+    registros.push(...((snapshot.data().registros || []) as RegistroProducao[]));
+  });
+  return registros;
+}
+
+async function persistirCacheSegmentado(stats: EstatisticasProcessoEnfermagem): Promise<void> {
+  const cacheDocRef = doc(db, 'estatisticas', 'painel_processos');
+  const chunks = particionarRegistrosPorTamanho(stats.registrosProducao);
+  await Promise.all([
+    ...stats.lotacaoDocumentos.map(({ id, lotacao }) => setDoc(
+      doc(collection(cacheDocRef, 'lotacoes'), id),
+      removerUndefined({ schemaVersion: CACHE_PROCESSOS_SCHEMA_VERSION, lotacao, agregado: stats.porLotacao[lotacao] }),
+    )),
+    ...chunks.map((registros, index) => setDoc(
+      doc(collection(cacheDocRef, 'registros'), `chunk-${String(index).padStart(4, '0')}`),
+      { schemaVersion: CACHE_PROCESSOS_SCHEMA_VERSION, index, registros },
+    )),
+  ]);
+  const { porLotacao: _porLotacao, registrosProducao: _registros, ultimaAtualizacao: _atualizacao, ...compacto } = stats;
+  await setDoc(cacheDocRef, {
+    ...removerUndefined({
+    ...compacto,
+    registroChunks: chunks.length,
+    schemaVersion: CACHE_PROCESSOS_SCHEMA_VERSION,
+    }),
+    ultimaAtualizacao: serverTimestamp(),
+  });
 }
 
 interface FirestoreTimestamp { toDate: () => Date }
@@ -67,20 +129,15 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
     const cacheSnap = await getDoc(cacheDocRef);
     if (cacheSnap.exists()) {
       const data = cacheSnap.data();
-      const ultimaAtualizacao = data.ultimaAtualizacao?.toDate?.();
-      const cacheValido = data.schemaVersion === SCHEMA_VERSION
-        && ultimaAtualizacao
-        && Date.now() - ultimaAtualizacao.getTime() < 12 * 60 * 60 * 1000
-        && data.porLotacao
-        && Array.isArray(data.registrosProducao);
-      if (cacheValido) {
-        console.log(`BI Processos: Cache válido (schema v${SCHEMA_VERSION}). Custo: 1 leitura.`);
-        return data as EstatisticasProcessoEnfermagem;
+      if (cacheProducaoValido(data)) {
+        const lotacaoDocumentos = data.lotacaoDocumentos as Array<{ id: string; lotacao: string }>;
+        const porLotacao = await lerAgregadosLotacoes(cacheDocRef, lotacaoDocumentos);
+        console.log(`BI Processos: Cache segmentado válido (schema v${CACHE_PROCESSOS_SCHEMA_VERSION}).`);
+        return { ...data, porLotacao, registrosProducao: [] } as unknown as EstatisticasProcessoEnfermagem;
       }
-      await deleteDoc(cacheDocRef).catch(() => undefined);
     }
   } catch (error) {
-    console.error('Erro ao ler cache do BI de processos:', error);
+    console.warn('BI Processos: cache indisponível ou incompleto; recalculando pelas fontes.', error);
   }
 
   console.warn('BI Processos: recalculando agregados globais e por lotação...');
@@ -109,20 +166,25 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
 
   const registrosProducao: RegistroProducao[] = [];
   let pacienteSequencia = 0;
+  let processosIgnorados = 0;
   pacientesSnapshot.forEach((pacienteDoc) => {
     pacienteSequencia += 1;
     const paciente = pacienteDoc.data();
     const pacienteChave = `p${pacienteSequencia}`;
     const nascimento = paciente.dataNascimento?.toDate?.();
-    ((paciente.processosEnfermagem || []) as ProcessoEnfermagemDoc[]).forEach((processo) => {
+    const processos = Array.isArray(paciente.processosEnfermagem) ? paciente.processosEnfermagem as ProcessoEnfermagemDoc[] : [];
+    processos.forEach((processo) => {
+      try {
       const dataInicio = processo.dataInicio?.toDate?.();
       const dataConclusao = processo.dataConclusao?.toDate?.();
       const dataReferencia = dataConclusao || dataInicio;
       if (!dataReferencia) return;
       const usuario = usuariosMap[processo.enfermeiroId] || { nome: 'Usuário externo', lotacao: 'Sem lotação' };
-      const nhbs = (processo.avaliacao?.nhbsAfetadas || []).map((item) => item.nhb).filter(Boolean);
-      const diagnosticos = (processo.diagnostico?.diagnosticosSelecionados || []).map((item) => item.tituloDiagnostico).filter(Boolean);
-      const planejados = processo.planejamento?.diagnosticosPlanejados || [];
+      const nhbsAfetadas = Array.isArray(processo.avaliacao?.nhbsAfetadas) ? processo.avaliacao.nhbsAfetadas : [];
+      const nhbs = nhbsAfetadas.map((item) => item?.nhb).filter(Boolean);
+      const diagnosticosSelecionados = Array.isArray(processo.diagnostico?.diagnosticosSelecionados) ? processo.diagnostico.diagnosticosSelecionados : [];
+      const diagnosticos = diagnosticosSelecionados.map((item) => item?.tituloDiagnostico).filter(Boolean);
+      const planejados = Array.isArray(processo.planejamento?.diagnosticosPlanejados) ? processo.planejamento.diagnosticosPlanejados : [];
       const resultados = planejados.map((item) => item.resultadoEsperadoSelecionado).filter((item): item is string => Boolean(item));
       const intervencoesPrescritas = planejados.flatMap((item) => (item.intervencoesSelecionadas || [])
         .map((intervencao) => intervencao.acaoPrescrita).filter(Boolean));
@@ -131,7 +193,7 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
       Object.values(processo.implementacao || {}).forEach((grupo) => (grupo.intervencoes || []).forEach((intervencao) => {
         if (!intervencao.implementadoNestaConsulta) return;
         if (intervencao.acaoPrescrita) intervencoesAplicadas.push(intervencao.acaoPrescrita);
-        if (intervencao.quemExecuta) executores.push(...(Array.isArray(intervencao.quemExecuta) ? intervencao.quemExecuta : [intervencao.quemExecuta]));
+        executores.push(...normalizarExecutores(intervencao.quemExecuta));
       }));
       const duracaoHoras = dataInicio && dataConclusao ? (dataConclusao.getTime() - dataInicio.getTime()) / 3_600_000 : undefined;
       registrosProducao.push({
@@ -141,11 +203,11 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
         lotacao: usuario.lotacao,
         pacienteChave,
         pacienteSexo: normalizarSexo(paciente.sexo),
-        pacienteFaixaEtaria: faixaEtaria(nascimento),
+        ...(faixaEtaria(nascimento) ? { pacienteFaixaEtaria: faixaEtaria(nascimento) } : {}),
         status: processo.status,
         dataReferencia: dataReferencia.toISOString(),
-        dataInicioReferencia: dataInicio?.toISOString(),
-        dataConclusaoReferencia: dataConclusao?.toISOString(),
+        ...(dataInicio ? { dataInicioReferencia: dataInicio.toISOString() } : {}),
+        ...(dataConclusao ? { dataConclusaoReferencia: dataConclusao.toISOString() } : {}),
         ...(duracaoHoras !== undefined && duracaoHoras > 0 && duracaoHoras < 720 ? { duracaoHoras } : {}),
         exameFisico: Object.keys(processo.avaliacao?.exameFisico || {}),
         nhbs,
@@ -157,8 +219,13 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
         executores,
         acoesEnfermeiro: Object.values(processo.evolucao?.intervencoesExecutadas || {}).flat(),
       });
+      } catch (error) {
+        processosIgnorados += 1;
+        console.warn('BI Processos: processo legado incompatível ignorado.', { idProcesso: processo?.idProcesso, error });
+      }
     });
   });
+  if (processosIgnorados > 0) console.warn(`BI Processos: ${processosIgnorados} processo(s) ignorado(s) durante o cálculo.`);
 
   const lotacoesUnicas = [...new Set(registrosProducao.map((registro) => registro.lotacao).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, 'pt-BR'));
@@ -166,14 +233,21 @@ export async function obterEstatisticasProcessoEnfermagem(): Promise<Estatistica
     lotacao,
     agregarRegistrosProducao(registrosProducao.filter((registro) => registro.lotacao === lotacao)),
   ]));
+  const lotacaoDocumentos = lotacoesUnicas.map((lotacao) => ({ id: idDocumentoLotacao(lotacao), lotacao }));
+  const registroChunks = particionarRegistrosPorTamanho(registrosProducao).length;
   const stats: EstatisticasProcessoEnfermagem = {
     ...agregarRegistrosProducao(registrosProducao),
     porLotacao,
     lotacoesUnicas,
+    lotacaoDocumentos,
     registrosProducao,
-    schemaVersion: SCHEMA_VERSION,
-    ultimaAtualizacao: serverTimestamp(),
+    registroChunks,
+    schemaVersion: CACHE_PROCESSOS_SCHEMA_VERSION,
+    ultimaAtualizacao: new Date(),
   };
-  await setDoc(cacheDocRef, stats);
+  await tentarPersistirCache(
+    () => persistirCacheSegmentado(stats),
+    (error) => console.error('BI Processos: falha ao persistir cache; dados calculados serão exibidos.', error),
+  );
   return stats;
 }
