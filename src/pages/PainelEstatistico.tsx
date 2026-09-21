@@ -38,6 +38,7 @@ import {
   SlidersHorizontal,
   Medal,
   X,
+  Download,
 } from 'lucide-react';
 import {
   PieChart,
@@ -61,8 +62,10 @@ import {
   EstatisticasProcessoEnfermagem,
   UsuarioRanking,
   ItemTemporal,
-  RegistroProducao,
+  agregarRegistrosProducao,
 } from '@/services/bancodados/biProcessosEnfermagemDB';
+import { filtrarRegistrosProducao, formatarVariacao } from '@/utils/painelEstatistico';
+import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -139,14 +142,18 @@ const ProducaoTooltip = ({
   payload?: Array<{
     dataKey: string;
     value: number;
-    payload: { variacaoPercentual?: number };
+    payload: ItemTemporal;
   }>;
   label?: string;
 }) => {
   if (!active || !payload || !payload.length) return null;
   const valor = (payload.find((p) => p.dataKey === 'value') || payload.find((p) => p.dataKey === 'novos'))?.value ?? 0;
-  const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value ?? 0;
-  const variacao: number = payload[0]?.payload?.variacaoPercentual ?? 0;
+  const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value;
+  const item = payload[0]?.payload;
+  const variacao = item?.variacaoPercentual;
+  const variacaoClasse = item?.variacaoTipo === 'percentual' && (variacao ?? 0) > 0
+    ? 'text-emerald-600'
+    : item?.variacaoTipo === 'percentual' && (variacao ?? 0) < 0 ? 'text-rose-600' : 'text-indigo-500';
 
   return (
     <div className="bg-white shadow-xl rounded-xl p-3 border border-indigo-100 text-sm min-w-[160px]">
@@ -154,17 +161,14 @@ const ProducaoTooltip = ({
       <p className="text-indigo-600">
         <span className="font-bold">No Período:</span> {valor}
       </p>
-      {acumulado > 0 && (
+      {acumulado !== undefined && (
         <p className="text-indigo-400">
           <span className="font-bold">Acumulado:</span> {acumulado}
         </p>
       )}
-      {variacao !== 0 && (
-        <p className={variacao > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
-          Variação: {variacao > 0 ? '+' : ''}
-          {variacao}%
-        </p>
-      )}
+      <p className={`${variacaoClasse} font-bold`}>
+        Variação em relação ao período anterior: {item ? formatarVariacao(item) : 'Sem base de comparação'}
+      </p>
     </div>
   );
 };
@@ -179,115 +183,9 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   anual: 'Anual',
 };
 
-const rankingFromValues = (values: string[], limit = 10) => {
-  const counts: Record<string, number> = {};
-  values.filter(Boolean).forEach((value) => { counts[value] = (counts[value] || 0) + 1; });
-  return Object.entries(counts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, limit);
-};
-
-const agruparTemporal = (registros: RegistroProducao[]) => {
-  const concluidos = registros.filter((registro) => registro.status === 'concluido');
-  const build = (key: (date: Date) => string) => {
-    const counts: Record<string, number> = {};
-    concluidos.forEach((registro) => {
-      const value = key(new Date(registro.dataReferencia));
-      counts[value] = (counts[value] || 0) + 1;
-    });
-    let acumulado = 0;
-    return Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)).map(([name, value]) => ({
-      name,
-      value,
-      acumulado: (acumulado += value),
-    }));
-  };
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return {
-    hora: build((date) => `${pad(date.getHours())}h`),
-    diario: build((date) => `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`),
-    diaSemana: build((date) => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][date.getDay()]),
-    mensal: build((date) => `${pad(date.getMonth() + 1)}/${date.getFullYear()}`),
-    anual: build((date) => String(date.getFullYear())),
-  };
-};
-
-const agregarRegistros = (
-  base: EstatisticasProcessoEnfermagem,
-  registros: RegistroProducao[]
-): EstatisticasProcessoEnfermagem => {
-  const concluidos = registros.filter((registro) => registro.status === 'concluido');
-  const pacientes = new Set(registros.map((registro) => registro.pacienteChave));
-  const duracoes = concluidos.map((registro) => registro.duracaoHoras).filter((value): value is number => Boolean(value && value > 0));
-  const porUsuario = new Map<string, RegistroProducao[]>();
-  registros.forEach((registro) => porUsuario.set(registro.usuarioId, [...(porUsuario.get(registro.usuarioId) || []), registro]));
-  const rankingUsuarios = [...porUsuario.entries()].map(([id, producoes]) => {
-    const concluidas = producoes.filter((registro) => registro.status === 'concluido');
-    const tempos = concluidas.map((registro) => registro.duracaoHoras).filter((value): value is number => Boolean(value && value > 0));
-    const executores = rankingFromValues(producoes.flatMap((registro) => registro.executores), 1);
-    return {
-      id,
-      name: producoes[0].usuarioNome,
-      lotacao: producoes[0].lotacao,
-      value: concluidas.length,
-      raioX: {
-        totalPacientes: new Set(producoes.map((registro) => registro.pacienteChave)).size,
-        processosAtivos: producoes.length - concluidas.length,
-        processosConcluidos: concluidas.length,
-        tempoMedioHoras: tempos.length ? Number((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0,
-        topDiagnosticos: rankingFromValues(producoes.flatMap((registro) => registro.diagnosticos), 5).map((item) => item.name),
-        topNHBs: rankingFromValues(producoes.flatMap((registro) => registro.nhbs), 5).map((item) => item.name),
-        topIntervencoes: rankingFromValues(producoes.flatMap((registro) => registro.intervencoesPrescritas), 5).map((item) => item.name),
-        executorMaisFrequente: executores[0]?.name || 'N/A',
-      },
-    };
-  }).sort((a, b) => b.value - a.value);
-
-  return {
-    ...base,
-    totalProcessos: registros.length,
-    totalProcessosConcluidos: concluidos.length,
-    totalProcessosEmAndamento: registros.length - concluidos.length,
-    totalPacientesAtendidos: pacientes.size,
-    taxaConclusao: registros.length ? Math.round((concluidos.length / registros.length) * 100) : 0,
-    tempoMedioProcessoHoras: duracoes.length ? Number((duracoes.reduce((a, b) => a + b, 0) / duracoes.length).toFixed(1)) : 0,
-    rankingUsuarios,
-    rankingLotacoes: rankingFromValues(concluidos.map((registro) => registro.lotacao)),
-    diagnosticosTop: rankingFromValues(registros.flatMap((registro) => registro.diagnosticos)),
-    intervencoesTop: rankingFromValues(registros.flatMap((registro) => registro.intervencoesPrescritas)),
-    resultadosTop: rankingFromValues(registros.flatMap((registro) => registro.resultados)),
-    nhbsTop: rankingFromValues(registros.flatMap((registro) => registro.nhbs)),
-    distribuicaoStatus: [
-      { name: 'Concluídos', value: concluidos.length },
-      { name: 'Em Andamento', value: registros.length - concluidos.length },
-    ],
-    distribuicaoExecutores: rankingFromValues(registros.flatMap((registro) => registro.executores)),
-    etapasPE: {
-      avaliacao: {
-        physical: rankingFromValues(registros.flatMap((registro) => registro.exameFisico)),
-        nhbs: rankingFromValues(registros.flatMap((registro) => registro.nhbs)),
-      },
-      diagnostico: {
-        top: rankingFromValues(registros.flatMap((registro) => registro.diagnosticos)),
-        subset: rankingFromValues(registros.flatMap((registro) => registro.subconjuntos)),
-      },
-      planejamento: {
-        results: rankingFromValues(registros.flatMap((registro) => registro.resultados)),
-        prescribed: rankingFromValues(registros.flatMap((registro) => registro.intervencoesPrescritas)),
-      },
-      implementacao: {
-        applied: rankingFromValues(registros.flatMap((registro) => registro.intervencoesAplicadas)),
-        executors: rankingFromValues(registros.flatMap((registro) => registro.executores)),
-      },
-      evolucao: { nurseApplied: rankingFromValues(registros.flatMap((registro) => registro.acoesEnfermeiro)) },
-    },
-    temporalAvancado: agruparTemporal(registros),
-  };
-};
-
 // ── Componente Principal ───────────────────────────────────────────────────
 const PainelEstatistico = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<EstatisticasBI | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('mensal');
@@ -302,6 +200,7 @@ const PainelEstatistico = () => {
   const [filtroUsuario, setFiltroUsuario] = useState<string>('__todos__');
   const [periodoInicial, setPeriodoInicial] = useState('');
   const [periodoFinal, setPeriodoFinal] = useState('');
+  const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -355,23 +254,25 @@ const PainelEstatistico = () => {
 
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
 
-  // Os filtros atuam sobre resumos de produção e todos os agregados são recalculados.
+  // Usa o agregado exato do cache para a lotação simples; filtros adicionais reutilizam os mesmos registros carregados.
   const dadosFiltrados = useMemo(() => {
     if (!dataProcessos) return null;
+    if (filtroUsuario === '__todos__' && !periodoInicial && !periodoFinal) {
+      return filtroLotacao === '__todas__' ? dataProcessos : dataProcessos.porLotacao[filtroLotacao] || agregarRegistrosProducao([]);
+    }
     const inicio = periodoInicial ? new Date(`${periodoInicial}T00:00:00`) : null;
     const fim = periodoFinal ? new Date(`${periodoFinal}T23:59:59.999`) : null;
-    const registros = (dataProcessos.registrosProducao || []).filter((registro) => {
-      const dataRegistro = new Date(registro.dataReferencia);
-      return (filtroLotacao === '__todas__' || registro.lotacao === filtroLotacao)
-        && (filtroUsuario === '__todos__' || registro.usuarioId === filtroUsuario)
-        && (!inicio || dataRegistro >= inicio)
-        && (!fim || dataRegistro <= fim);
+    const registros = filtrarRegistrosProducao(dataProcessos.registrosProducao || [], {
+      lotacao: filtroLotacao === '__todas__' ? undefined : filtroLotacao,
+      usuarioId: filtroUsuario === '__todos__' ? undefined : filtroUsuario,
+      inicio,
+      fim,
     });
-    return agregarRegistros(dataProcessos, registros);
+    return agregarRegistrosProducao(registros);
   }, [dataProcessos, filtroLotacao, filtroUsuario, periodoInicial, periodoFinal]);
 
   const lotacoesDisponiveis = useMemo(() => {
-    return [...new Set((dataProcessos?.registrosProducao || []).map((registro) => registro.lotacao).filter(Boolean))].sort();
+    return dataProcessos?.lotacoesUnicas || [];
   }, [dataProcessos]);
 
   const usuariosDisponiveis = useMemo(() => {
@@ -389,6 +290,33 @@ const PainelEstatistico = () => {
     setPeriodoFinal('');
   };
 
+  const handleExportar = async () => {
+    if (!data || !dataProcessos || !dadosFiltrados || exportando) return;
+    setExportando(true);
+    try {
+      const { exportarPainelEstatisticoXlsx } = await import('@/utils/painelEstatisticoXlsx');
+      const filtro = filtroLotacao === '__todas__' ? 'Todas as unidades' : filtroLotacao;
+      const nome = await exportarPainelEstatisticoXlsx({
+        usuarios: data,
+        producao: dadosFiltrados,
+        ultimaAtualizacao: dataProcessos.ultimaAtualizacao || data.ultimaAtualizacao,
+        filtroProducao: filtro,
+        visaoCadastros: VIEW_LABELS[viewMode],
+        visaoAcessos: VIEW_LABELS[viewModeAcessos],
+        visaoProducao: { hora: 'Hora', diario: 'Dia', diaSemana: 'Dia da Semana', mensal: 'Mês', anual: 'Ano' }[temporalView],
+        evolucaoCadastros: evolucaoAtiva(),
+        evolucaoAcessos: evolucaoAcessosAtiva(),
+        serieProducao: dadosFiltrados.temporalAvancado[temporalView],
+      });
+      toast({ title: 'Excel gerado com sucesso', description: `${nome} foi baixado com os filtros atuais.` });
+    } catch (error) {
+      console.error('Erro ao exportar painel:', error);
+      toast({ title: 'Não foi possível gerar o Excel', description: 'Tente novamente em alguns instantes.', variant: 'destructive' });
+    } finally {
+      setExportando(false);
+    }
+  };
+
   if (loading) {
     return (
       <AuthenticatedLayout>
@@ -404,11 +332,12 @@ const PainelEstatistico = () => {
     <AuthenticatedLayout>
       <div className="space-y-10 pb-20 max-w-7xl mx-auto">
         {/* ── Cabeçalho ── */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-black text-csae-green-900 tracking-tight flex items-center gap-3">
-            <BarChartIcon className="w-10 h-10 text-csae-green-600" />
-            Painel Estatístico <span className="text-csae-green-500/50">BI</span>
-          </h1>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-black text-csae-green-900 tracking-tight flex items-center gap-3">
+              <BarChartIcon className="w-10 h-10 text-csae-green-600" />
+              Painel Estatístico <span className="text-csae-green-500/50">BI</span>
+            </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
             <span>Visão global de métricas e indicadores de produção da rede municipal de Florianópolis.</span>
             {data?.ultimaAtualizacao && (
@@ -420,6 +349,16 @@ const PainelEstatistico = () => {
               </span>
             )}
           </div>
+          </div>
+          <Button
+            type="button"
+            onClick={handleExportar}
+            disabled={loading || loadingProcessos || !data || !dadosFiltrados || exportando}
+            className="gap-2 bg-csae-green-700 hover:bg-csae-green-800"
+          >
+            <Download className={`h-4 w-4 ${exportando ? 'animate-bounce' : ''}`} />
+            {exportando ? 'Gerando XLSX...' : 'Exportar XLSX'}
+          </Button>
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -954,10 +893,9 @@ const PainelEstatistico = () => {
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardDescription className="text-indigo-100 text-[10px] font-bold uppercase tracking-wider">Total de Processos</CardDescription>
-                        {dataProcessos.temporalAvancado.mensal.length > 0 && (
+                        {(dadosFiltrados?.temporalAvancado.mensal.length ?? 0) > 0 && (
                           <div className="bg-white/20 px-2 py-0.5 rounded-full text-[9px] font-black">
-                            {dataProcessos.temporalAvancado.mensal[dataProcessos.temporalAvancado.mensal.length-1].variacaoPercentual > 0 ? '+' : ''}
-                            {dataProcessos.temporalAvancado.mensal[dataProcessos.temporalAvancado.mensal.length-1].variacaoPercentual}%
+                            {formatarVariacao(dadosFiltrados!.temporalAvancado.mensal[dadosFiltrados!.temporalAvancado.mensal.length - 1])}
                           </div>
                         )}
                       </div>
@@ -1045,13 +983,13 @@ const PainelEstatistico = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
-                            data={dataProcessos.perfilPacientes.sexo} 
+                            data={dadosFiltrados?.perfilPacientes.sexo ?? []}
                             cx="50%" cy="50%" 
                             innerRadius={60} outerRadius={100} 
                             paddingAngle={8} dataKey="value"
                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           >
-                            {dataProcessos.perfilPacientes.sexo.map((_, i) => (
+                            {(dadosFiltrados?.perfilPacientes.sexo ?? []).map((_, i) => (
                               <Cell key={`sex-${i}`} fill={i === 0 ? '#6366f1' : i === 1 ? '#f43f5e' : '#94a3b8'} />
                             ))}
                           </Pie>
@@ -1068,7 +1006,7 @@ const PainelEstatistico = () => {
                     </CardHeader>
                     <CardContent className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.perfilPacientes.faixasEtarias} layout="vertical">
+                        <BarChart data={dadosFiltrados?.perfilPacientes.faixasEtarias ?? []} layout="vertical">
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 12, fontWeight: 700 }} />
                           <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
