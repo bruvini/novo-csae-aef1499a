@@ -15,8 +15,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1786913652.029825,
-    "ast_hash": "4bfd79d6c023f571820baba3959eb9cc",
+    "mtime": 1790018088.8239949,
+    "ast_hash": "81a0e0c3b5054aa467e00aa69c5594d9",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -650,8 +650,8 @@
     "semantic_hash": "ae75445e38e704549f03c920e728d506"
   },
   "src/pages/PainelEstatistico.tsx": {
-    "mtime": 1787782219.4109416,
-    "ast_hash": "c5ec31e8004f561f57f9a39f6cb22ebf",
+    "mtime": 1790018919.8541055,
+    "ast_hash": "3c211021bdeb4d8dcc2a21401d620ce5",
     "semantic_hash": ""
   },
   "src/pages/ProcessoEnfermagem.tsx": {
@@ -670,8 +670,8 @@
     "semantic_hash": "2190f30a97bf1672b6e44bf02dd901d7"
   },
   "src/services/bancodados/biProcessosEnfermagemDB.ts": {
-    "mtime": 1787782219.4088912,
-    "ast_hash": "f437cb129e61f846ec0e5ccca8dca1fa",
+    "mtime": 1790018056.0159054,
+    "ast_hash": "4f799f075816a1cea9d121150f82af97",
     "semantic_hash": ""
   },
   "src/services/bancodados/biUsuariosDB.ts": {
@@ -680,8 +680,8 @@
     "semantic_hash": "68f963e0b19723252b41e354f3c23a25"
   },
   "src/services/bancodados/changelogDB.ts": {
-    "mtime": 1790015434.7690449,
-    "ast_hash": "d660943d8cc7816fbac45df6bfd5b998",
+    "mtime": 1790018518.8232298,
+    "ast_hash": "936043f0a2c9a78325ba68d7d1c77e2b",
     "semantic_hash": ""
   },
   "src/services/bancodados/diagnosticosDB.ts": {
@@ -962,6 +962,26 @@
   "src/utils/auth.ts": {
     "mtime": 1790015434.7640364,
     "ast_hash": "c8d3e6fc5a3782ab1847cfb4ebe7bf3f",
+    "semantic_hash": ""
+  },
+  "src/utils/painelEstatistico.test.ts": {
+    "mtime": 1790018747.244559,
+    "ast_hash": "44e1f7149f6bf822083d9d9c96224d7f",
+    "semantic_hash": ""
+  },
+  "src/utils/painelEstatistico.ts": {
+    "mtime": 1790017837.8586843,
+    "ast_hash": "c74de82338243d9d01d5ea8ff462a1a2",
+    "semantic_hash": ""
+  },
+  "src/utils/painelEstatisticoXlsx.ts": {
+    "mtime": 1790018646.9158876,
+    "ast_hash": "eb93fe34f48c68bf5b5db141167654e2",
+    "semantic_hash": ""
+  },
+  "graphify-out/converted/Painel_Estatistico_validacao_08c2c08c.md": {
+    "mtime": 1790018931.7324984,
+    "ast_hash": "4907a3382539135a9671c53717e2ad8c",
     "semantic_hash": ""
   }
 }
