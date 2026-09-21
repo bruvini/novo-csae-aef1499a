@@ -650,8 +650,8 @@
     "semantic_hash": "ae75445e38e704549f03c920e728d506"
   },
   "src/pages/PainelEstatistico.tsx": {
-    "mtime": 1790018919.8541055,
-    "ast_hash": "3c211021bdeb4d8dcc2a21401d620ce5",
+    "mtime": 1790026766.5955646,
+    "ast_hash": "0fc07e80ddeb223eaedb8a9d857506db",
     "semantic_hash": ""
   },
   "src/pages/ProcessoEnfermagem.tsx": {
@@ -670,8 +670,8 @@
     "semantic_hash": "2190f30a97bf1672b6e44bf02dd901d7"
   },
   "src/services/bancodados/biProcessosEnfermagemDB.ts": {
-    "mtime": 1790018056.0159054,
-    "ast_hash": "4f799f075816a1cea9d121150f82af97",
+    "mtime": 1790026766.5935574,
+    "ast_hash": "334bdb3e61a436bfc9cecb9196f721c6",
     "semantic_hash": ""
   },
   "src/services/bancodados/biUsuariosDB.ts": {
@@ -982,6 +982,16 @@
   "graphify-out/converted/Painel_Estatistico_validacao_08c2c08c.md": {
     "mtime": 1790018931.7324984,
     "ast_hash": "4907a3382539135a9671c53717e2ad8c",
+    "semantic_hash": ""
+  },
+  "src/utils/painelEstatisticoCache.test.ts": {
+    "mtime": 1790026687.6181953,
+    "ast_hash": "bfbc07ad8cf48058f0994a7be7d37e45",
+    "semantic_hash": ""
+  },
+  "src/utils/painelEstatisticoCache.ts": {
+    "mtime": 1790026617.0555665,
+    "ast_hash": "b1fa5ed3691c081391c6f35d82722551",
     "semantic_hash": ""
   }
 }
