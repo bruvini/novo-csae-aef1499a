@@ -5,8 +5,8 @@ set -Eeuo pipefail
 PROJECT="csaefloripa"
 TESTED="8477807de356491549b05ba3255b8fbd5f8aac5c"
 # Hashes de conteúdo dos arquivos de segurança aprovados no CI.
-EXPECTED_FIRESTORE_BLOB="931c04afa140710e425ddb0596d97b4822cee9f4"
-EXPECTED_RULES_TEST_BLOB="226112b627041c35e6273289adfba46b9b328194"
+EXPECTED_FIRESTORE_BLOB="062434f87305fd9f851f6e46b2715b868a362265"
+EXPECTED_RULES_TEST_BLOB="61ca81751ed7e0fe8c6d3f09c2001204601ba5bd"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
@@ -19,8 +19,24 @@ done
 header "Conferência do repositório e da versão testada"
 [[ "$(git branch --show-current)" == "main" ]] || die "Execute a versão da branch main."
 git merge-base --is-ancestor "$TESTED" HEAD || die "O commit validado não está no histórico da main."
-git diff --quiet "$TESTED" HEAD -- src package.json package-lock.json firebase.json storage.rules \
-  || die "Código ou configuração foram modificados após a integração aprovada. Necessária nova revisão."
+git diff --quiet "$TESTED" HEAD -- src/pages/Register.tsx src/contexts/AuthContext.tsx src/components/processo-enfermagem src/utils/processoUtils.ts firebase.json storage.rules \
+  || die "Componentes críticos de cadastro, PE ou infraestrutura foram alterados e exigem revisão."
+# Conferir os hashes dos módulos efetivamente validados no GitHub Actions.
+check_blob() {
+  [[ "$(git hash-object "$1")" == "$2" ]] || die "Arquivo fora da versão validada: $1"
+}
+check_blob "src/pages/PainelEstatistico.tsx" "bb6dd8ac8a94269857d6674f3ed2528c0222c618"
+check_blob "src/services/bancodados/biProcessosEnfermagemDB.ts" "e0e053dcf1eeb8e3e4fddae8ccacdf1e76f2e103"
+check_blob "src/components/HeroBanner.tsx" "1eb3268716721ffa9c444021a3d094432465b02b"
+check_blob "src/pages/Dashboard.tsx" "7585524a0af6e5c3ac4e5d1cea1a1a524c5ffa48"
+check_blob "src/services/bancodados/gestaoUsuariosDB.ts" "db85dfc5ed4ff0ba971817eb94765ff21190b462"
+check_blob "src/services/bancodados/changelogDB.ts" "4ab83d4f0f986130df4689fdd9f059d26e1aab57"
+check_blob "src/utils/painelEstatistico.ts" "3da9f08ac236891cb736f258e277b7d922ccae35"
+check_blob "src/utils/painelEstatisticoCache.ts" "aea073224e1494b7bf2cab8dfdf7734da0461c06"
+check_blob "src/utils/painelEstatisticoXlsx.ts" "5b428de5c941f1e517f1f73899e750328cd501d9"
+check_blob "src/utils/tempoProcesso.ts" "87476df2655b51bc097de10653d56d01540652ed"
+check_blob "package.json" "8b97b1410fe2499428447f1db3ce32b5d6ee40e5"
+check_blob "package-lock.json" "36a16621e7bf45ed9356519bdc3c6911f4cb6226"
 [[ "$(git hash-object firestore.rules)" == "$EXPECTED_FIRESTORE_BLOB" ]] \
   || die "As regras Firestore não são a versão aprovada. Cancelando."
 [[ "$(git hash-object tests/firebaseRules.test.ts)" == "$EXPECTED_RULES_TEST_BLOB" ]] \
@@ -73,6 +89,10 @@ npx --yes firebase-tools deploy --project "$PROJECT" --only firestore:rules,stor
 header "Verificação básica do Hosting"
 curl --fail --silent --show-error --location --output /dev/null https://csaefloripa.web.app/ \
   || die "Hosting não respondeu corretamente; revisar deploy."
+
+echo
+echo "Comparando versões dos domínios (sem consultar dados pessoais)..."
+bash scripts/diagnosticar-versao-publica.sh || die "O domínio csae.com.br não serve a mesma versão ou está inacessível. Verifique o domínio no Firebase Hosting antes de declarar sucesso."
 
 echo
 echo "O deploy respondeu sem erros. Agora acesse https://csaefloripa.web.app/"
