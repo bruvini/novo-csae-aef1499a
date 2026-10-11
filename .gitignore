@@ -42,3 +42,8 @@ graphify-out/.graphify_semantic*.json
 graphify-out/.graphify_chunk_*.json
 graphify-out/.needs_update
 graphify-out/.vocab.txt
+
+# Cloud Shell: ambiente temporário de publicação (não versionar)
+.venv-csae-release/
+__pycache__/
+*.pyc
