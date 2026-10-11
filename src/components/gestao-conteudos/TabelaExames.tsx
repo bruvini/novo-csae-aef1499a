@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CONTEXTOS_CLINICOS } from '@/utils/referenciasClinicas';
 
 const TabelaExames = () => {
   const [exames, setExames] = useState<Exame[]>([]);
@@ -174,10 +175,14 @@ const TabelaExames = () => {
       valorMinimo: null,
       valorMaximo: null,
       nomeAlteracao: '',
+      interpretacaoClinica: 'indeterminado',
+      contextoClinico: 'geral',
+      criterioCondicao: '',
       subconjuntoNHBVinculado: ''
     } : {
       resultadoClassificatorio: '',
       nomeAlteracao: '',
+      interpretacaoClinica: 'indeterminado',
       subconjuntoNHBVinculado: ''
     };
     
@@ -240,7 +245,7 @@ const TabelaExames = () => {
       setSheetOpen(false);
       limparFormulario();
     } catch (error) {
-      toast.error('Erro ao salvar exame');
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar exame');
       console.error(error);
     } finally {
       setSalvandoExame(false);
@@ -425,7 +430,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.idadeMinima || ''}
+                                    value={resultado.idadeMinima ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -434,7 +439,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.idadeMaxima || ''}
+                                    value={resultado.idadeMaxima ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -489,7 +494,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.valorMinimo || ''}
+                                    value={resultado.valorMinimo ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -498,7 +503,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.valorMaximo || ''}
+                                    value={resultado.valorMaximo ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -516,6 +521,42 @@ const TabelaExames = () => {
                             </div>
                           )}
 
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {!classificatorio && (
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Contexto clínico da referência</label>
+                                <Select value={resultado.contextoClinico || 'legado'} onValueChange={v =>
+                                  atualizarResultado(componenteIndex, resultadoIndex, 'contextoClinico', v === 'legado' ? '' : v)}>
+                                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {!resultado.contextoClinico && <SelectItem value="legado">Legado — revisar condição</SelectItem>}
+                                    {CONTEXTOS_CLINICOS.map(ctx => <SelectItem key={ctx.id} value={ctx.id}>{ctx.titulo}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Interpretação do resultado</label>
+                              <Select value={resultado.interpretacaoClinica || 'legado'} onValueChange={v =>
+                                atualizarResultado(componenteIndex, resultadoIndex, 'interpretacaoClinica', v === 'legado' ? undefined : v as 'normal' | 'alterado' | 'indeterminado')}>
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {!resultado.interpretacaoClinica && <SelectItem value="legado">Legado — sem regra explícita</SelectItem>}
+                                  <SelectItem value="normal">Normal / dentro da meta</SelectItem>
+                                  <SelectItem value="alterado">Alterado — avaliar NHB</SelectItem>
+                                  <SelectItem value="indeterminado">Indeterminado — sem alerta</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          {!classificatorio && (
+                            <div className="mt-2">
+                              <label className="block text-xs font-medium mb-1">Condição ou técnica de coleta</label>
+                              <Input className="h-8" value={resultado.criterioCondicao || ''} onChange={e =>
+                                atualizarResultado(componenteIndex, resultadoIndex, 'criterioCondicao', e.target.value)}
+                                placeholder="Ex.: jejum, pós-prandial, gestação (texto orientativo)" />
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-medium mb-1">Nome da Alteração</label>
