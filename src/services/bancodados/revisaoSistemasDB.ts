@@ -3,7 +3,8 @@ import {
   collection, 
   query, 
   orderBy, 
-  getDocs, 
+  getDocs,
+  getDoc, 
   doc, 
   addDoc,
   updateDoc, 
@@ -14,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
+import { validarAtualizacaoSistema } from '@/utils/protecaoCatalogoHistorico';
 
 export interface OpcaoAchado {
   textoOpcao: string;
@@ -111,9 +113,14 @@ export const addSistema = async (sistema: Omit<SistemaCorporal, 'id' | 'dataCada
 };
 
 export const updateSistema = async (id: string, sistema: Partial<SistemaCorporal>): Promise<void> => {
-  if (sistema.nomeSistema && sistema.exames) await validarUnicidadeSistema(sistema.nomeSistema, sistema.exames, id);
+  const docRef = doc(db, 'RevisaoSistemas', id);
+  const anterior = await getDoc(docRef);
+  if (!anterior.exists()) throw new Error('Sistema corporal não encontrado.');
+  const original = anterior.data() as SistemaCorporal;
+  const proximo = { ...original, ...sistema };
+  validarAtualizacaoSistema(original, proximo);
+  if (proximo.nomeSistema && proximo.exames) await validarUnicidadeSistema(proximo.nomeSistema, proximo.exames, id);
   try {
-    const docRef = doc(db, 'RevisaoSistemas', id);
     const { dataCadastro, ...dadosParaAtualizar } = sistema;
     await updateDoc(docRef, dadosParaAtualizar);
   } catch (error) {
