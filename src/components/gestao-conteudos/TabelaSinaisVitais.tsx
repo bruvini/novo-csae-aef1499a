@@ -146,7 +146,9 @@ const TabelaSinaisVitais = () => {
     if (campo === 'idadeUnidade' && valor === 'not-specified') {
       valor = '';
     }
-    novosValores[index] = { ...novosValores[index], [campo]: valor };
+    const atualizado = { ...novosValores[index], [campo]: valor };
+    if (valor === undefined) delete atualizado[campo];
+    novosValores[index] = atualizado;
     setValoresReferencia(novosValores);
   };
 
