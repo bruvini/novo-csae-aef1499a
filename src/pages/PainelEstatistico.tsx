@@ -57,6 +57,7 @@ import {
   LabelList,
 } from 'recharts';
 import { obterEstatisticasUsuariosBI, EstatisticasBI, EvolucaoEntry } from '@/services/bancodados/biUsuariosDB';
+import { timestampToDate } from '@/utils/registrationData';
 import {
   obterEstatisticasProcessoEnfermagem,
   obterRegistrosProducaoCache,
@@ -365,9 +366,7 @@ const PainelEstatistico = () => {
             {data?.ultimaAtualizacao && (
               <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
                 Atualizado:{' '}
-                {data.ultimaAtualizacao.toDate
-                  ? data.ultimaAtualizacao.toDate().toLocaleDateString('pt-BR')
-                  : 'Agora'}
+                {timestampToDate(data.ultimaAtualizacao)?.toLocaleDateString('pt-BR') ?? 'Agora'}
               </span>
             )}
           </div>
