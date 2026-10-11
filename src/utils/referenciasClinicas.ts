@@ -88,7 +88,8 @@ export function sexoCompativel(ref: RegraReferenciaClinica, sexo: string): boole
 export function contextoDaReferencia(ref: RegraReferenciaClinica): string {
   if (ref.contextoClinico?.trim()) return ref.contextoClinico;
   const text = normalizarNomeClinico(ref.criterioCondicao || '');
-  if (/gestant|gravidez|dmg/.test(text)) {
+  const excluiGestacao = /exceto gestant|nao gestant|excluindo gestant/.test(text);
+  if (!excluiGestacao && /gestant|gravidez|dmg/.test(text)) {
     if (/jejum/.test(text)) return 'gestante_jejum';
     if (/\b1h\b|1 hora/.test(text)) return 'gestante_pos_1h';
     if (/\b2h\b|2 horas/.test(text)) return 'gestante_pos_2h';
@@ -161,6 +162,12 @@ export function classificarReferenciaNumerica(
     return { status: 'neutro', motivo: 'Referências sobrepostas com interpretações diferentes. Solicite revisão à Gestão de Conteúdos.' };
   }
   const escolhido = resultados[0];
+  // Nunca classificar como normal se há outra faixa compatível sinalizando
+  // alteração: gestação/jejum e limites de urgência podem se sobrepor.
+  if (escolhido.interpretacao === 'normal' && candidatas.some(r =>
+    !selecionadas.includes(r) && interpretarRegra(r) === 'alterado')) {
+    return { status: 'neutro', motivo: 'Há uma faixa de alerta também aplicável. A classificação exige revisão clínica.' };
+  }
   if (escolhido.interpretacao === 'indeterminado') {
     return { status: 'neutro', motivo: 'Interpretação não definida na Gestão de Conteúdos.' };
   }
