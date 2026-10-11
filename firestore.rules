@@ -102,7 +102,7 @@ service cloud.firestore {
     function validProfileDocument(data) {
       return data is map
         && data.keys().hasAll(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro'])
-        && data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
+        && data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao', 'versaoPermissoes', 'historicoRevisoes', 'analisadoPor', 'analisadoPorUid', 'dataAtualizacaoDadosPessoais'])
         && data.uid is string
         && boundedString(data.email, 254)
         && validPersonalData(data.dadosPessoais)
@@ -115,7 +115,7 @@ service cloud.firestore {
         && data.statusAcesso in ['Aguardando', 'Liberado', 'Aprovado', 'Recusado', 'Rejeitado', 'Revogado', 'AguardandoRevisaoCadastro']
         && (!('paginasPermitidas' in data) || (data.paginasPermitidas is list
           && data.paginasPermitidas.size() <= 12
-          && data.paginasPermitidas.hasOnly(['ProcessoEnfermagem', 'GestaoConteudos', 'GestaoUsuarios', 'PainelEstatistico', 'GestaoSuporte'])))
+          && data.paginasPermitidas.hasOnly(['ProcessoEnfermagem', 'GestaoConteudos', 'GestaoUsuarios', 'PainelEstatistico', 'GestaoSuporte', 'Dashboard', 'CentralAjuda'])))
         && (!('totalAcessos' in data) || (data.totalAcessos is int && data.totalAcessos >= 0))
         && (!('ultimoAcesso' in data) || data.ultimoAcesso is timestamp)
         && (!('historicoAcesso' in data) || (data.historicoAcesso is list && data.historicoAcesso.size() <= 200))
