@@ -1,13 +1,11 @@
 
 import { 
   collection, 
-  addDoc, 
   getDocs, 
   doc, 
-  updateDoc, 
-  deleteDoc, 
   onSnapshot,
   getDoc,
+  runTransaction,
   query,
   orderBy,
   where,
@@ -16,6 +14,7 @@ import {
 import { db } from '../firebase';
 import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
 import { validarAtualizacaoExame } from '@/utils/protecaoCatalogoHistorico';
+import { chaveCatalogo, chavesNovas, reservarIdentidades } from './identidadesCatalogoDB';
 
 export interface ResultadoExame {
   // Campos para exames laboratoriais
@@ -68,6 +67,11 @@ export const componenteEhClassificatorio = (
 
 const COLLECTION_NAME = 'ExamesLabImagem';
 
+const chavesDeExame = (exame: ExameInput) => [
+  chaveCatalogo('exame', exame.nomeExame),
+  ...exame.componentes.map(componente => chaveCatalogo('parametro', componente.componenteAnalisado)),
+];
+
 export const getExames = (callback: (exames: Exame[]) => void) => {
   const q = query(collection(db, COLLECTION_NAME), orderBy('nomeExame'));
   
@@ -116,9 +120,10 @@ async function validarUnicidadeExame(exame: ExameInput, editingId?: string) {
 
 export const addExame = async (exame: ExameInput) => {
   await validarUnicidadeExame(exame);
-  const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-    ...exame,
-    dataCadastro: Timestamp.now()
+  const docRef = doc(collection(db, COLLECTION_NAME));
+  await runTransaction(db, async transaction => {
+    await reservarIdentidades(transaction, chavesDeExame(exame), 'ExamesLabImagem', docRef.id);
+    transaction.set(docRef, { ...exame, dataCadastro: Timestamp.now() });
   });
   return docRef.id;
 };
@@ -129,7 +134,15 @@ export const updateExame = async (id: string, exame: ExameInput) => {
   if (!anterior.exists()) throw new Error('Exame não encontrado.');
   validarAtualizacaoExame(anterior.data() as Exame, exame);
   await validarUnicidadeExame(exame, id);
-  await updateDoc(docRef, exame);
+  await runTransaction(db, async transaction => {
+    const atual = await transaction.get(docRef);
+    if (!atual.exists()) throw new Error('Exame excluído durante a edição.');
+    const original = atual.data() as Exame;
+    validarAtualizacaoExame(original, exame);
+    const novas = chavesNovas(chavesDeExame(original), chavesDeExame(exame));
+    await reservarIdentidades(transaction, novas, 'ExamesLabImagem', docRef.id);
+    transaction.update(docRef, exame);
+  });
 };
 
 export const deleteExame = async (_id: string): Promise<void> => {
