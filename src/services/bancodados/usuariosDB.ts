@@ -1,6 +1,6 @@
 // src/services/bancodados/usuariosDB.ts
 
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, type Firestore } from "firebase/firestore";
 import { db } from "@/services/firebase";
 
 interface DadosPessoais {
@@ -41,8 +41,8 @@ export interface UsuarioData {
   statusAcesso?: "Aguardando" | "Liberado" | "Recusado";
 }
 
-export async function cadastrarUsuario(usuario: UsuarioData): Promise<void> {
-  const ref = doc(collection(db, "usuarios"), usuario.uid);
+export async function cadastrarUsuario(usuario: UsuarioData, firestore: Firestore = db): Promise<void> {
+  const ref = doc(collection(firestore, "usuarios"), usuario.uid);
   await setDoc(ref, {
     ...usuario,
     statusAcesso: "Aguardando",

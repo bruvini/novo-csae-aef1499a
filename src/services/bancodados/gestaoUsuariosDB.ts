@@ -8,7 +8,6 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
-  orderBy,
   getAggregateFromServer,
   sum,
   count
@@ -16,71 +15,50 @@ import {
 import { deleteUser } from 'firebase/auth';
 import { db, auth } from '../firebase';
 import { Usuario } from '@/types/usuario';
+import { agruparStatusCadastro, ordenarPerfisPorDataCadastro } from '@/utils/registrationData';
+
+export interface UsuariosGestao {
+  aguardando: Usuario[];
+  aprovados: Usuario[];
+  recusados: Usuario[];
+}
+
+export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'usuarios'));
+    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [] };
+
+    querySnapshot.forEach((doc) => {
+      const data = { ...doc.data(), id: doc.id } as Usuario;
+      const status = agruparStatusCadastro(data.statusAcesso);
+      // Status ausentes/desconhecidos ficam visíveis para revisão manual;
+      // isso não altera o status nem libera acesso automaticamente.
+      if (status === 'Aguardando' || status === 'Status não identificado') usuarios.aguardando.push(data);
+      else if (status === 'Liberado') usuarios.aprovados.push(data);
+      else if (status === 'Recusado') usuarios.recusados.push(data);
+    });
+
+    return {
+      aguardando: ordenarPerfisPorDataCadastro(usuarios.aguardando),
+      aprovados: ordenarPerfisPorDataCadastro(usuarios.aprovados),
+      recusados: ordenarPerfisPorDataCadastro(usuarios.recusados),
+    };
+  } catch (error) {
+    console.error("Falha na leitura dos perfis da Gestão de Usuários.");
+    throw error;
+  }
+}
 
 export async function buscarUsuariosAguardando(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Aguardando'
-      if (status === 'aguardando' || status === 'pendente' || status === '') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários aguardando:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).aguardando;
 }
 
 export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Liberado' ou 'Aprovado'
-      if (status === 'liberado' || status === 'aprovado') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários aprovados:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).aprovados;
 }
 
 export async function buscarUsuariosRecusados(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Recusado' ou 'Rejeitado'
-      if (status === 'recusado' || status === 'rejeitado') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários recusados:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).recusados;
 }
 
 export async function aprovarUsuario(
@@ -201,11 +179,12 @@ export async function buscarEstatisticasGlobais(): Promise<{
       
       processosSnap.forEach(doc => {
         const data = doc.data();
-        const processos = data.processosEnfermagem || [];
-        processos.forEach((p: any) => {
-          if (p.status === 'concluido') {
+        const processos: unknown[] = Array.isArray(data.processosEnfermagem) ? data.processosEnfermagem : [];
+        processos.forEach((processo) => {
+          if (typeof processo !== 'object' || processo === null || !('status' in processo)) return;
+          if (processo.status === 'concluido') {
             concluidos++;
-          } else if (p.status === 'em_andamento') {
+          } else if (processo.status === 'em_andamento') {
             andamento++;
           }
         });

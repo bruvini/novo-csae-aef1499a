@@ -15,9 +15,7 @@ import ModalEdicaoPrivilegios from '@/components/gestao-usuarios/ModalEdicaoPriv
 import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import ModalMotivoRecusa from '@/components/gestao-usuarios/ModalMotivoRecusa';
 import {
-  buscarUsuariosAguardando,
-  buscarUsuariosAprovados,
-  buscarUsuariosRecusados,
+  buscarUsuariosGestao,
   aprovarUsuario,
   editarPrivilegiosUsuario,
   recusarUsuario,
@@ -35,6 +33,7 @@ const GestaoUsuarios = () => {
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [usuariosRecusados, setUsuariosRecusados] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState(false);
   
   const [textoBusca, setTextoBusca] = useState('');
   const [filtroFormacao, setFiltroFormacao] = useState('todos');
@@ -48,17 +47,15 @@ const GestaoUsuarios = () => {
 
   const carregarUsuarios = useCallback(async () => {
     setCarregando(true);
+    setErroCarregamento(false);
     try {
-      const [aguardando, aprovados, recusados] = await Promise.all([
-        buscarUsuariosAguardando(),
-        buscarUsuariosAprovados(),
-        buscarUsuariosRecusados()
-      ]);
-      setUsuariosAguardando(aguardando);
-      setUsuariosAprovados(aprovados);
-      setUsuariosRecusados(recusados);
+      const usuarios = await buscarUsuariosGestao();
+      setUsuariosAguardando(usuarios.aguardando);
+      setUsuariosAprovados(usuarios.aprovados);
+      setUsuariosRecusados(usuarios.recusados);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
+      setErroCarregamento(true);
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os usuários.',
@@ -73,7 +70,7 @@ const GestaoUsuarios = () => {
     carregarUsuarios();
   }, [carregarUsuarios]);
 
-  const filtrarUsuarios = (usuarios: Usuario[]) => {
+  const filtrarUsuarios = useCallback((usuarios: Usuario[]) => {
     return usuarios.filter(usuario => {
       const nomeCompleto = usuario.dadosPessoais?.nomeCompleto?.toLowerCase() || '';
       const matricula = usuario.dadosProfissionais?.matricula?.toLowerCase() || '';
@@ -90,11 +87,11 @@ const GestaoUsuarios = () => {
       
       return matchBusca && matchFormacao;
     });
-  };
+  }, [textoBusca, filtroFormacao]);
 
-  const aguardandoFiltrados = useMemo(() => filtrarUsuarios(usuariosAguardando), [usuariosAguardando, textoBusca, filtroFormacao]);
-  const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, textoBusca, filtroFormacao]);
-  const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, textoBusca, filtroFormacao]);
+  const aguardandoFiltrados = useMemo(() => filtrarUsuarios(usuariosAguardando), [usuariosAguardando, filtrarUsuarios]);
+  const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, filtrarUsuarios]);
+  const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, filtrarUsuarios]);
 
   const handleDetalhes = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalDetalhesAberto(true); };
   const handleAprovar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalAprovacaoAberto(true); };
@@ -188,6 +185,18 @@ const GestaoUsuarios = () => {
               <p className="text-gray-500 font-medium anim-pulse">Buscando dados no servidor...</p>
             </div>
           </div>
+        ) : erroCarregamento ? (
+          <Card className="border border-red-200 bg-red-50">
+            <CardContent className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-red-900">Não foi possível carregar os perfis.</p>
+                <p className="text-sm text-red-800">A lista não está vazia: houve uma falha na consulta. Tente novamente.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={carregarUsuarios}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Tentar novamente
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <>
             <Card className="border-none shadow-sm h-fit">
