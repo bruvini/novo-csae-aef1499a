@@ -20,6 +20,7 @@ import { ptBR } from 'date-fns/locale';
 import { obterRegistrosExameFisico } from '@/utils/processoUtils';
 import { Exame, getExames } from '@/services/bancodados/examesDB';
 import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
+import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
@@ -100,7 +101,7 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
           valor,
           resultadosConfigurados: cadastro?.componente.resultados,
           valorTexto: processo.avaliacao?.examesValoresTexto?.[exame],
-        }));
+        }) + contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, exame));
       });
       if (achados.length > 0) {
         linhas.push('[REVISÃO DE SISTEMAS]');
