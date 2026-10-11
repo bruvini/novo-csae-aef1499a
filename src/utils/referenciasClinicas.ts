@@ -100,7 +100,7 @@ export function contextosDoParametro(refs: readonly RegraReferenciaClinica[]): s
 export function interpretarRegra(ref: RegraReferenciaClinica): InterpretacaoClinica {
   if (ref.interpretacaoClinica) return ref.interpretacaoClinica;
   const nome = normalizarNomeClinico(ref.nomeAlteracao || '');
-  if (/^(normal\b|normalidade\b|normo|nao reagente\b|negativo\b|negativa\b|dentro da meta\b|adequado\b|adequada\b|desejavel\b|ausente\b|preservado\b)/.test(nome)) return 'normal';
+  if (/(^| )(normal|normalidade|negativo|negativa|nao reagente|adequado|adequada|desejavel|dentro da meta|ausente|preservado)( |$)/.test(nome) || /^normo/.test(nome)) return 'normal';
   if (!nome && !ref.subconjuntoNHBVinculado?.trim()) return 'indeterminado';
   if (ref.subconjuntoNHBVinculado?.trim() || nome) return 'alterado';
   return 'indeterminado';
