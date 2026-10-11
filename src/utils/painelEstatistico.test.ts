@@ -69,6 +69,7 @@ test('séries diária, mensal e semanal são exatas e a semana respeita Dom a S�
 
 const usuariosFixture: EstatisticasBI = {
   ultimaAtualizacao: new Date('2026-09-21T12:00:00Z'), totalCadastrados: 10, totalAprovados: 8,
+  totalAguardando: 1, totalRecusados: 1, totalIncompletos: 0,
   taxaAprovacao: 80, tempoMedioLiberacaoHoras: 12, totalAcessosPlataforma: 50, mediaAcessosUsuario: 6.25,
   usuariosPorLotacao: { 'CS CENTRO': [{ nome: 'PROFISSIONAL 1', acessos: 5 }] },
   distribuicaoFormacao: [{ name: 'Enfermeiro', value: 10 }], distribuicaoAtuaSMS: [{ name: 'Sim', value: 10 }],
