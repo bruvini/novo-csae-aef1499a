@@ -22,6 +22,7 @@ import { getExames, Exame } from '@/services/bancodados/examesDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
 import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
+import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -154,7 +155,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         linhas.push('  [SINAIS VITAIS]');
         svAtivos.forEach(s => {
           parametrosRenderizados.add(s.sinalVitalNome);
-          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`);
+          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}${contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, s.sinalVitalNome)}`);
         });
       }
 
@@ -174,7 +175,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
           valor: registro.valor,
           resultadosConfigurados: cadastro?.componente.resultados,
           valorTexto: processo.avaliacao?.examesValoresTexto?.[registro.exame],
-        }));
+        }) + contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, registro.exame));
         parametrosRenderizados.add(registro.exame);
       });
       if (resultadosExame.length > 0) {
@@ -394,7 +395,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                     {Object.entries(exameFisico).map(([chave, valor]) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
-                        <span className="text-gray-600">{valor}</span>
+                        <span className="text-gray-600">{valor}{contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, chave)}</span>
                       </li>
                     ))}
                   </ul>
