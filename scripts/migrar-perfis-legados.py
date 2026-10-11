@@ -138,6 +138,32 @@ def apply(db, expected, confirmation):
     print("Migração transacional executada. Rodar verify imediatamente.")
 
 
+
+def resume(db, confirmation):
+    if not MANIFEST_FILE.exists():
+        stop("Manifesto privado não encontrado; não retomar sem referência original.")
+    with MANIFEST_FILE.open(encoding="utf-8") as f:
+        manifest = json.load(f)
+    items = manifest.get("documentos", [])
+    if manifest.get("projeto") != PROJECT or len(items) != EXPECTED_COUNT:
+        stop("Manifesto inválido ou com quantidade inesperada.")
+    if confirmation != f"RETOMAR {EXPECTED_COUNT} PERFIS":
+        stop("A retomada exige confirmação explícita.")
+    done = 0
+    for item in items:
+        old = db.collection(COLLECTION).document(item["origem"])
+        new = db.collection(COLLECTION).document(item["destino"])
+        source, target = old.get(), new.get()
+        if source.exists and not target.exists:
+            move_one(db.transaction(), old, new, item["destino"])
+        elif not source.exists and target.exists and (target.to_dict() or {}).get("uid") == item["destino"]:
+            pass
+        else:
+            stop("Conflito na retomada. Não sobrescrever nem excluir documentos.")
+        done += 1
+        print(f"Verificados/migrados: {done}/{EXPECTED_COUNT}", flush=True)
+    verify(db)
+
 def verify(db):
     if not MANIFEST_FILE.exists():
         stop("Manifesto não encontrado: não é possível verificar uma migração.")
@@ -167,7 +193,7 @@ def verify(db):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["plan", "apply", "verify"])
+    parser.add_argument("action", choices=["plan", "apply", "resume", "verify"])
     parser.add_argument("--expected", type=int, default=0)
     parser.add_argument("--confirm", default="")
     args = parser.parse_args()
@@ -178,6 +204,8 @@ def main():
             print("PLANEJAMENTO SOMENTE LEITURA. Nenhum documento alterado.")
         elif args.action == "apply":
             apply(db, args.expected, args.confirm)
+        elif args.action == "resume":
+            resume(db, args.confirm)
         else:
             verify(db)
     except Exception as exc:
