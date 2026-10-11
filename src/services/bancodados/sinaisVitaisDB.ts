@@ -12,7 +12,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { familiaPressaoArterial, normalizarNomeClinico } from '@/utils/referenciasClinicas';
+import { familiaPressaoArterial, identidadeParametroVital, normalizarNomeClinico } from '@/utils/referenciasClinicas';
 
 export interface ValorReferenciaVital {
   idadeMinima: number | null;
@@ -60,6 +60,7 @@ export const getSinaisVitais = (callback: (sinais: SinalVital[]) => void) => {
 async function validarUnicidadeVital(nome: string, editingId?: string) {
   const alvo = normalizarNomeClinico(nome);
   const familia = familiaPressaoArterial(nome);
+  const identidade = identidadeParametroVital(nome);
   const snapshot = await getDocs(collection(db, COLLECTION_NAME));
   const vigente = editingId ? snapshot.docs.find(d => d.id === editingId)?.data().sinalVitalNome : null;
   // Editar metadados de um registro legado não deve bloquear a sua manutenção.
@@ -67,8 +68,11 @@ async function validarUnicidadeVital(nome: string, editingId?: string) {
   const conflito = snapshot.docs.find(d => {
     if (d.id === editingId) return false;
     const existente = d.data().sinalVitalNome;
+    const existenteIdentidade = identidadeParametroVital(existente || '');
     return normalizarNomeClinico(existente || '') === alvo
-      || (familia !== null && familiaPressaoArterial(existente || '') === familia);
+      || existenteIdentidade === identidade
+      || (familia !== null && familiaPressaoArterial(existente || '') === familia)
+      || (identidade === 'pressao-arterial-composta' && familiaPressaoArterial(existente || '') !== null);
   });
   if (conflito) throw new Error(
     'Já existe este parâmetro, ou um cadastro de PAS/PAD equivalente. ' +
