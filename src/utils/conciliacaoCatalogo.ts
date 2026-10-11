@@ -83,7 +83,7 @@ function assinaturaVitalInventario(r: Record<string, unknown>) {
   ].join('|');
 }
 function conferirNHB(
-  aba: AbaOrigem, rows: LinhaFonte[], indice: number, nhbs: Set<string>,
+  rows: LinhaFonte[], indice: number, nhbs: Set<string>,
 ): string[] {
   const faltantes = [...new Set(rows.map(l => texto(l, indice))
     .filter(v => v && !nhbs.has(norm(v))))];
@@ -109,10 +109,10 @@ export function conciliarCatalogoClinico(
     RevisaoSistemas: fontes.RevisaoSistemas || [],
     ExamesLabImagem: fontes.ExamesLabImagem || [],
   };
-  for (const [key, entries] of mapaLinhas(sources.SinaisVitais, 0)) {
+  for (const [, entries] of mapaLinhas(sources.SinaisVitais, 0)) {
     const candidatos = inventario.colecoes.SinaisVitais.filter(s =>
       identidadeParametroVital(s.nome) === identidadeParametroVital(texto(entries[0], 0)));
-    const nhbErrors = conferirNHB('SinaisVitais', entries, 11, nhbs);
+    const nhbErrors = conferirNHB(entries, 11, nhbs);
     if (candidatos.length > 1 || nhbErrors.length) {
       propostas.push(proposta('SinaisVitais', texto(entries[0], 0),
         'revisao-obrigatoria', entries, ids(candidatos),
@@ -135,7 +135,7 @@ export function conciliarCatalogoClinico(
   }
   for (const [key, entries] of mapaLinhas(sources.ExamesLabImagem, 0)) {
     const candidatos = inventario.colecoes.ExamesLabImagem.filter(e => norm(e.nome) === key);
-    const nhbErrors = conferirNHB('ExamesLabImagem', entries, 13, nhbs);
+    const nhbErrors = conferirNHB(entries, 13, nhbs);
     if (candidatos.length > 1 || nhbErrors.length) {
       propostas.push(proposta('ExamesLabImagem', texto(entries[0], 0),
         'revisao-obrigatoria', entries, ids(candidatos),
@@ -166,7 +166,7 @@ export function conciliarCatalogoClinico(
   }
   for (const [key, entries] of mapaLinhas(sources.RevisaoSistemas, 0)) {
     const candidatos = inventario.colecoes.RevisaoSistemas.filter(s => norm(s.nome) === key);
-    const nhbErrors = conferirNHB('RevisaoSistemas', entries, 10, nhbs);
+    const nhbErrors = conferirNHB(entries, 10, nhbs);
     if (candidatos.length > 1 || nhbErrors.length) {
       propostas.push(proposta('RevisaoSistemas', texto(entries[0], 0),
         'revisao-obrigatoria', entries, ids(candidatos),
