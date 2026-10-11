@@ -12,6 +12,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { familiaPressaoArterial, normalizarNomeClinico } from '@/utils/referenciasClinicas';
 
 export interface ValorReferenciaVital {
   idadeMinima: number | null;
@@ -55,7 +56,27 @@ export const getSinaisVitais = (callback: (sinais: SinalVital[]) => void) => {
   });
 };
 
+
+async function validarUnicidadeVital(nome: string, editingId?: string) {
+  const alvo = normalizarNomeClinico(nome);
+  const familia = familiaPressaoArterial(nome);
+  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+  const vigente = editingId ? snapshot.docs.find(d => d.id === editingId)?.data().sinalVitalNome : null;
+  // Editar metadados de um registro legado não deve bloquear a sua manutenção.
+  if (vigente && normalizarNomeClinico(vigente) === alvo) return;
+  const conflito = snapshot.docs.find(d => {
+    if (d.id === editingId) return false;
+    const existente = d.data().sinalVitalNome;
+    return normalizarNomeClinico(existente || '') === alvo
+      || (familia !== null && familiaPressaoArterial(existente || '') === familia);
+  });
+  if (conflito) throw new Error(
+    'Já existe este parâmetro, ou um cadastro de PAS/PAD equivalente. ' +
+    'Edite suas faixas por idade, sexo e contexto no registro existente.');
+}
+
 export const addSinalVital = async (sinal: SinalVitalInput) => {
+  await validarUnicidadeVital(sinal.sinalVitalNome);
   const docRef = await addDoc(collection(db, COLLECTION_NAME), {
     ...sinal,
     dataCadastro: Timestamp.now()
@@ -64,6 +85,7 @@ export const addSinalVital = async (sinal: SinalVitalInput) => {
 };
 
 export const updateSinalVital = async (id: string, sinal: SinalVitalInput) => {
+  await validarUnicidadeVital(sinal.sinalVitalNome, id);
   const docRef = doc(db, COLLECTION_NAME, id);
   await updateDoc(docRef, sinal);
 };
