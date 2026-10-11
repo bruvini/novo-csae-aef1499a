@@ -60,6 +60,12 @@ UPDATES = (
         "das informações com mais segurança, orienta quando ocorre alguma dificuldade "
         "e facilita a análise das solicitações pela equipe responsável.",
     ),
+    (
+        "Filtros de produção e tempo de uso restaurados",
+        "O Painel Estatístico voltou a oferecer filtros por unidade, profissional "
+        "e datas inicial e final, além da exportação em Excel. O painel inicial "
+        "também voltou a mostrar o tempo registrado no Processo de Enfermagem.",
+    ),
 )
 
 
