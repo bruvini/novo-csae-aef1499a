@@ -20,6 +20,9 @@ export interface ResultadoExame {
   idadeMaxima?: number | null;
   idadeUnidade?: 'dias' | 'meses' | 'anos' | '';
   criterioSexo?: 'Masculino' | 'Feminino' | 'Ambos';
+  criterioCondicao?: string;
+  contextoClinico?: string;
+  interpretacaoClinica?: 'normal' | 'alterado' | 'indeterminado';
   valorMinimo?: number | null;
   valorMaximo?: number | null;
   // Campo para exames de imagem
