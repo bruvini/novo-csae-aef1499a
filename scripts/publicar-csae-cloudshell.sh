@@ -41,7 +41,19 @@ check_blob "package-lock.json" "36a16621e7bf45ed9356519bdc3c6911f4cb6226"
   || die "As regras Firestore não são a versão aprovada. Cancelando."
 [[ "$(git hash-object tests/firebaseRules.test.ts)" == "$EXPECTED_RULES_TEST_BLOB" ]] \
   || die "Os testes de segurança não são a versão aprovada. Cancelando."
-[[ -z "$(git status --porcelain)" ]] || die "Há alterações locais. Use um clone limpo do repositório."
+# O Firebase CLI regrava seu cache de deploy. Este repositório já versiona
+# .firebase/hosting.*.cache: a mudança nesses caches não afeta a versão do app.
+# Qualquer OUTRA alteração (inclusive regras, código, scripts e arquivos novos)
+# continua bloqueando a publicação.
+local_changes="$(git status --porcelain)"
+unexpected_changes="$(printf '%s\n' "$local_changes" | sed '/^$/d' | grep -Ev '^ M \.firebase/hosting\.[[:alnum:]]+\.cache$' || true)"
+if [[ -n "$unexpected_changes" ]]; then
+  printf '\nArquivos locais que precisam de revisão antes de publicar:\n%s\n' "$unexpected_changes" >&2
+  die "Há alterações locais fora dos caches conhecidos. Não apague nem descarte nada automaticamente."
+fi
+if [[ -n "$local_changes" ]]; then
+  echo "Aviso: cache de Hosting alterado por execução anterior; código e regras seguem verificados."
+fi
 grep -Eq '^VITE_FIREBASE_PROJECT_ID=csaefloripa[[:space:]]*$' .env \
   || die "A configuração .env não aponta para csaefloripa."
 printf 'HEAD: %s\nProjeto: %s\n' "$(git rev-parse --short HEAD)" "$PROJECT"
@@ -95,7 +107,7 @@ echo "Comparando versões dos domínios (sem consultar dados pessoais)..."
 bash scripts/diagnosticar-versao-publica.sh || die "O domínio csae.com.br não serve a mesma versão ou está inacessível. Verifique o domínio no Firebase Hosting antes de declarar sucesso."
 
 echo
-echo "O deploy respondeu sem erros. Agora acesse https://csaefloripa.web.app/"
+echo "O deploy respondeu sem erros. Agora acesse https://csae.com.br/"
 echo "Confirme: login de um profissional aprovado, cadastro, Gestão de Usuários, Processo de Enfermagem"
 echo "e resposta aos tickets. Se algo falhar, NÃO finalize o changelog e peça suporte."
 read -r -p "Digite VALIDADO após conferir os fluxos para registrar a correção de sífilis e o changelog: " verified
@@ -106,6 +118,6 @@ header "Correção pontual do exame e registro do changelog"
   || die "Deploy realizado, mas finalização pendente. Não declarar conclusão até resolver."
 
 header "CONCLUÍDO"
-printf 'Portal: https://csaefloripa.web.app/\n'
+printf 'Portal oficial: https://csae.com.br/\n'
 printf 'Projeto: %s\nCommit: %s\n' "$PROJECT" "$(git rev-parse HEAD)"
 printf 'Registros do changelog criados sem duplicações.\n'
