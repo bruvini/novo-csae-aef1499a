@@ -46,7 +46,14 @@ check_blob "package-lock.json" "36a16621e7bf45ed9356519bdc3c6911f4cb6226"
 # Qualquer OUTRA alteração (inclusive regras, código, scripts e arquivos novos)
 # continua bloqueando a publicação.
 local_changes="$(git status --porcelain)"
-unexpected_changes="$(printf '%s\n' "$local_changes" | sed '/^$/d' | grep -Ev '^ M \.firebase/hosting\.[[:alnum:]]+\.cache
+unexpected_changes="$(printf '%s\n' "$local_changes" | sed '/^$/d' | grep -Ev '^ M \.firebase/hosting\.[[:alnum:]]+\.cache$' || true)"
+if [[ -n "$unexpected_changes" ]]; then
+  printf '\nArquivos locais que precisam de revisão antes de publicar:\n%s\n' "$unexpected_changes" >&2
+  die "Há alterações locais fora dos caches conhecidos. Não apague nem descarte nada automaticamente."
+fi
+if [[ -n "$local_changes" ]]; then
+  echo "Aviso: cache de Hosting alterado por execução anterior; código e regras seguem verificados."
+fi
 grep -Eq '^VITE_FIREBASE_PROJECT_ID=csaefloripa[[:space:]]*$' .env \
   || die "A configuração .env não aponta para csaefloripa."
 printf 'HEAD: %s\nProjeto: %s\n' "$(git rev-parse --short HEAD)" "$PROJECT"
@@ -112,80 +119,5 @@ header "Correção pontual do exame e registro do changelog"
 
 header "CONCLUÍDO"
 printf 'Portal oficial: https://csae.com.br/\n'
-printf 'Projeto: %s\nCommit: %s\n' "$PROJECT" "$(git rev-parse HEAD)"
-printf 'Registros do changelog criados sem duplicações.\n'
- || true)"
-if [[ -n "$unexpected_changes" ]]; then
-  printf '\nArquivos locais que precisam de revisão antes de publicar:\n%s\n' "$unexpected_changes" >&2
-  die "Há alterações locais fora dos caches conhecidos. Não apague nem descarte nada automaticamente."
-fi
-if [[ -n "$local_changes" ]]; then
-  echo "Aviso: cache de Hosting alterado por execução anterior; código e regras seguem verificados."
-fi
-grep -Eq '^VITE_FIREBASE_PROJECT_ID=csaefloripa[[:space:]]*$' .env \
-  || die "A configuração .env não aponta para csaefloripa."
-printf 'HEAD: %s\nProjeto: %s\n' "$(git rev-parse --short HEAD)" "$PROJECT"
-
-header "Verificação de credenciais Google sem exportar segredos"
-gcloud config set project "$PROJECT" >/dev/null
-if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
-  printf 'Autorize sua conta Google para leitura e atualização controlada do Firestore.\n'
-  gcloud auth application-default login
-fi
-
-header "Instalação de dependências e pré-validação"
-if [[ ! -d .venv-csae-release ]]; then
-  python3 -m venv .venv-csae-release
-fi
-.venv-csae-release/bin/pip -q install 'google-cloud-firestore>=2.19,<3'
-.venv-csae-release/bin/python scripts/publicacao_csae_firestore.py preflight \
-  || die "Os perfis reais não são compatíveis com as novas regras. NÃO publicar até corrigir."
-
-header "Build e testes do código da main"
-npm ci --legacy-peer-deps
-npm test
-npx tsc -b
-npm run build
-printf 'A suíte Firebase Emulator já passou no GitHub Actions:\n'
-printf 'https://github.com/bruvini/novo-csae-aef1499a/actions/runs/38171497764\n'
-
-header "Autenticação do Firebase CLI"
-if ! npx --yes firebase-tools projects:list --json >/dev/null 2>&1; then
-  printf 'O Firebase CLI precisa de autorização; conclua o login solicitado.\n'
-  npx --yes firebase-tools login --no-localhost
-fi
-npx --yes firebase-tools use "$PROJECT" --project "$PROJECT" >/dev/null 2>&1 || true
-
-echo
-echo "ATENÇÃO: isto publicará REGRAS FIRESTORE, STORAGE e HOSTING no projeto csaefloripa."
-echo "As regras públicas antigas serão substituídas por regras restritas."
-read -r -p "Digite PUBLICAR CSAE para autorizar a implantação: " approval
-[[ "$approval" == "PUBLICAR CSAE" ]] || die "Publicação cancelada."
-
-header "DEPLOY DO PROJETO csaefloripa"
-npx --yes firebase-tools deploy --project "$PROJECT" --only firestore:rules,storage,hosting --non-interactive \
-  || die "Deploy falhou. Conferir mensagens do Firebase antes de tentar novamente."
-
-header "Verificação básica do Hosting"
-curl --fail --silent --show-error --location --output /dev/null https://csaefloripa.web.app/ \
-  || die "Hosting não respondeu corretamente; revisar deploy."
-
-echo
-echo "Comparando versões dos domínios (sem consultar dados pessoais)..."
-bash scripts/diagnosticar-versao-publica.sh || die "O domínio csae.com.br não serve a mesma versão ou está inacessível. Verifique o domínio no Firebase Hosting antes de declarar sucesso."
-
-echo
-echo "O deploy respondeu sem erros. Agora acesse https://csaefloripa.web.app/"
-echo "Confirme: login de um profissional aprovado, cadastro, Gestão de Usuários, Processo de Enfermagem"
-echo "e resposta aos tickets. Se algo falhar, NÃO finalize o changelog e peça suporte."
-read -r -p "Digite VALIDADO após conferir os fluxos para registrar a correção de sífilis e o changelog: " verified
-[[ "$verified" == "VALIDADO" ]] || die "Deploy publicado. Correção clínica e changelog não executados."
-
-header "Correção pontual do exame e registro do changelog"
-.venv-csae-release/bin/python scripts/publicacao_csae_firestore.py finish \
-  || die "Deploy realizado, mas finalização pendente. Não declarar conclusão até resolver."
-
-header "CONCLUÍDO"
-printf 'Portal: https://csaefloripa.web.app/\n'
 printf 'Projeto: %s\nCommit: %s\n' "$PROJECT" "$(git rev-parse HEAD)"
 printf 'Registros do changelog criados sem duplicações.\n'
