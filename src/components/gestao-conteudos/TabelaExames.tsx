@@ -203,10 +203,12 @@ const TabelaExames = () => {
     valor: ResultadoExame[K]
   ) => {
     const novosComponentes = [...componentes];
-    novosComponentes[componenteIndex].resultados[resultadoIndex] = {
+    const atualizado = {
       ...novosComponentes[componenteIndex].resultados[resultadoIndex],
       [campo]: valor
     };
+    if (valor === undefined) delete atualizado[campo];
+    novosComponentes[componenteIndex].resultados[resultadoIndex] = atualizado;
     setComponentes(novosComponentes);
   };
 
