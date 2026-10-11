@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, familiaPressaoArterial, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, familiaPressaoArterial, identidadeParametroVital, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
 
 const pessoa = { dataNascimento: new Date(1995, 3, 10), sexo: 'Feminino', dataAvaliacao: new Date(2026, 9, 11) };
 const base = { idadeUnidade: 'anos' as const, criterioSexo: 'Ambos', nomeAlteracao: 'Normal', valorMinimo: 60, valorMaximo: 100 };
@@ -48,4 +48,10 @@ test('protege família de PA sem confundir cálculos e medidas derivadas', () =>
   assert.equal(familiaPressaoArterial('Pressão diferencial (Convergência)'),null);
   assert.equal(familiaPressaoArterial('Queda da PA sistólica na manobra postural'),null);
   assert.equal(normalizarNomeClinico(' Pressão   ARTERIAL '), 'pressao arterial');
+});
+
+test('não permite aliases de PA, FC ou FR como outro parâmetro', () => {
+  assert.equal(identidadeParametroVital('Frequência Cardíaca'), identidadeParametroVital('Frequência Cardíaca (FC)'));
+  assert.equal(identidadeParametroVital('FR'), identidadeParametroVital('Frequência Respiratória'));
+  assert.equal(identidadeParametroVital('Pressão Arterial'), 'pressao-arterial-composta');
 });
