@@ -50,5 +50,6 @@ jobs:
           bash -n scripts/regularizar-e-publicar-csae.sh
           bash -n scripts/diagnosticar-versao-publica.sh
           python3 -m py_compile scripts/migrar-perfis-legados.py
+          python3 -m py_compile scripts/conferir-changelogs-csae.py
       - name: Verificar alterações
         run: git diff --check
