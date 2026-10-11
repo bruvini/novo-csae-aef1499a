@@ -132,9 +132,8 @@ export const updateExame = async (id: string, exame: ExameInput) => {
   await updateDoc(docRef, exame);
 };
 
-export const deleteExame = async (id: string) => {
-  const docRef = doc(db, COLLECTION_NAME, id);
-  await deleteDoc(docRef);
+export const deleteExame = async (_id: string): Promise<void> => {
+  throw new Error('Para preservar os resultados históricos, a exclusão de exames está indisponível até existir arquivamento versionado.');
 };
 
 export const getExamesCount = async (): Promise<number> => {
