@@ -18,7 +18,6 @@ import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
-import { Timestamp } from 'firebase/firestore';
 import { ExameResultadoInput } from './ExameResultadoInput';
 import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
@@ -110,19 +109,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Inicialização apenas — atualizações subsequentes são gerenciadas por updateNhbs
 
-  const calculateAge = (dataNascimento: Timestamp): number => {
-    const birth = dataNascimento.toDate();
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  };
-
   // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
   const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
     const outras = nhbsAfetadas.filter((n) => n.parametro !== parametro);
@@ -155,6 +141,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     selectedValue: string
   ): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     for (const achado of exame.achados) {
+      if (!idadeCompativel(achado, paciente.dataNascimento.toDate()) || !sexoCompativel(achado, paciente.sexo)) continue;
       if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === selectedValue) {
         const isAlt = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
         if (isAlt && interpretarRegra({ nomeAlteracao: achado.nomeAlteracao, subconjuntoNHBVinculado: achado.subconjuntoNHBVinculado }) === 'alterado') {
@@ -396,7 +383,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     sistemas.some((sist) => {
       const exame = sist.exames.find((ex) => ex.nomeExame === parametro);
       if (exame) {
-        achadoSelecionado = exame.achados.find((a) => a.descricaoAchado === selectedDescricao);
+        achadoSelecionado = exame.achados.find((a) => a.descricaoAchado === selectedDescricao
+          && idadeCompativel(a, paciente.dataNascimento.toDate()) && sexoCompativel(a, paciente.sexo));
         return true;
       }
       return false;
@@ -993,11 +981,15 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                 : []);
                             const descricoes = processo.avaliacao?.exameFisicoDescricoes || {};
 
+                            const aplicavel = (a: Achado) =>
+                              (idadeCompativel(a, paciente.dataNascimento.toDate()) && sexoCompativel(a, paciente.sexo))
+                              || selectedValues.includes(a.descricaoAchado)
+                              || (a.opcoes || []).some(o => selectedValues.includes(o.textoOpcao));
                             const simpleAchados = (exame.achados || []).filter(
-                              (a) => !a.tipoAchado || a.tipoAchado === 'simples'
+                              (a) => aplicavel(a) && (!a.tipoAchado || a.tipoAchado === 'simples')
                             );
                             const opcoesAchados = (exame.achados || []).filter(
-                              (a) => a.tipoAchado === 'opcoes'
+                              (a) => aplicavel(a) && a.tipoAchado === 'opcoes'
                             );
 
                             return (
