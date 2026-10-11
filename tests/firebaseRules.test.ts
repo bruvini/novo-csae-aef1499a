@@ -176,7 +176,8 @@ test('tickets e sugestões ficam limitados ao autor; suporte lê e responde sem 
   await assertSucceeds(getDocs(query(collection(authorDb, 'tickets_suporte'), where('usuarioId', '==', 'autor'))));
   await assertFails(getDocs(collection(otherDb, 'tickets_suporte')));
   await assertSucceeds(getDocs(collection(supportDb, 'tickets_suporte')));
-  await assertSucceeds(updateDoc(ticketRef, {
+  const supportTicketRef = doc(supportDb, ticketRef.path);
+  await assertSucceeds(updateDoc(supportTicketRef, {
     respostaAdmin: 'Retorno', visualizadoPeloSuporte: true, respostaVisualizadaPeloUsuario: false,
     dataRespostaAdmin: serverTimestamp(),
   }));
