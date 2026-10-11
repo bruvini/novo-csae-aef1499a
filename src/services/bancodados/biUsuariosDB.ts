@@ -4,13 +4,14 @@ import {
   doc,
   getDoc,
   setDoc,
-  deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { agruparStatusCadastro, perfilCadastroIncompleto, timestampToDate } from '@/utils/registrationData';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
+const CACHE_TTL_MS = 15 * 60 * 1000;
 
 export interface EvolucaoEntry {
   name: string;
@@ -21,9 +22,12 @@ export interface EvolucaoEntry {
 
 export interface EstatisticasBI {
   schemaVersion?: number;
-  ultimaAtualizacao: any;
+  ultimaAtualizacao: unknown;
   totalCadastrados: number;
   totalAprovados: number;
+  totalAguardando: number;
+  totalRecusados: number;
+  totalIncompletos: number;
   taxaAprovacao: number;
   tempoMedioLiberacaoHoras: number;
   totalAcessosPlataforma: number;
@@ -80,23 +84,22 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     const cacheSnap = await getDoc(cacheDocRef);
     if (cacheSnap.exists()) {
       const data = cacheSnap.data();
-      const ultimaAtualizacao = data.ultimaAtualizacao?.toDate();
+      const ultimaAtualizacao = timestampToDate(data.ultimaAtualizacao);
       const agora = new Date();
-      const seisHorasEmMs = 6 * 60 * 60 * 1000;
 
       // Validar schema version e campos obrigatórios
       const cacheValido =
         data.schemaVersion === SCHEMA_VERSION &&
         ultimaAtualizacao &&
-        agora.getTime() - ultimaAtualizacao.getTime() < seisHorasEmMs &&
-        typeof data.totalAcessosPlataforma === 'number';
+        agora.getTime() - ultimaAtualizacao.getTime() < CACHE_TTL_MS &&
+        typeof data.totalAcessosPlataforma === 'number' &&
+        typeof data.totalIncompletos === 'number';
 
       if (cacheValido) {
         console.log('BI: Cache válido (schema v' + SCHEMA_VERSION + '). Custo: 1 leitura.');
         return data as EstatisticasBI;
       } else {
         console.warn('BI: Cache desatualizado (schema mismatch ou campos faltando). Recalculando...');
-        await deleteDoc(cacheDocRef).catch(() => {});
       }
     }
   } catch (error) {
@@ -111,6 +114,9 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     if (totalDocs === 0) return null;
 
     let aprovados = 0;
+    let aguardando = 0;
+    let recusados = 0;
+    let incompletos = 0;
     let somaHorasLiberacao = 0;
     let countComDataAprovacao = 0;
     let totalAcessosPlataforma = 0;
@@ -119,7 +125,7 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     const mapAtuaSMS: Record<string, number> = { Sim: 0, Não: 0 };
     const mapLotacao: Record<string, number> = {};
     const mapUsuariosLotacao: Record<string, { nome: string, acessos: number }[]> = {};
-    const mapSituacao: Record<string, number> = { Liberado: 0, Aguardando: 0, Recusado: 0 };
+    const mapSituacao: Record<string, number> = { Liberado: 0, Aguardando: 0, Recusado: 0, 'Status não identificado': 0 };
 
     // Mapas para séries temporais - Cadastros
     const mapCDiario: Record<string, number> = {};
@@ -135,24 +141,31 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
 
     usuariosSnap.forEach((uDoc) => {
       const data = uDoc.data();
+      if (perfilCadastroIncompleto(data)) incompletos++;
 
       // Status
-      const status = (data.statusAcesso || '').toLowerCase().trim();
-      const isAprovado = status === 'liberado' || status === 'aprovado';
+      const status = agruparStatusCadastro(data.statusAcesso);
+      const isAprovado = status === 'Liberado';
       if (isAprovado) {
         aprovados++;
         mapSituacao['Liberado']++;
         totalAcessosPlataforma += data.totalAcessos || 0;
-      } else if (status === 'recusado' || status === 'rejeitado') {
+      } else if (status === 'Recusado') {
+        recusados++;
         mapSituacao['Recusado']++;
-      } else {
+      } else if (status === 'Aguardando') {
+        aguardando++;
         mapSituacao['Aguardando']++;
+      } else {
+        mapSituacao['Status não identificado']++;
       }
 
       // Tempo de liberação
-      if (data.dataCadastro && data.dataAprovacao) {
-        const dCad = data.dataCadastro.toDate();
-        const dAprov = data.dataAprovacao.toDate();
+      const dataCadastro = timestampToDate(data.dataCadastro);
+      const dataAprovacao = timestampToDate(data.dataAprovacao);
+      if (dataCadastro && dataAprovacao) {
+        const dCad = dataCadastro;
+        const dAprov = dataAprovacao;
         const diffHoras = (dAprov.getTime() - dCad.getTime()) / (1000 * 60 * 60);
         if (diffHoras >= 0) {
           somaHorasLiberacao += diffHoras;
@@ -181,8 +194,8 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       });
 
       // Evolução temporal de Cadastros
-      if (data.dataCadastro) {
-        const date: Date = data.dataCadastro.toDate();
+      if (dataCadastro) {
+        const date: Date = dataCadastro;
         const dia = date.getDate().toString().padStart(2, '0');
         const mes = (date.getMonth() + 1).toString().padStart(2, '0');
         const ano = date.getFullYear().toString();
@@ -194,10 +207,12 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       }
 
       // Evolução temporal de Acessos
-      if (data.historicoAcesso && Array.isArray(data.historicoAcesso)) {
-        data.historicoAcesso.forEach((acesso: any) => {
+      if (Array.isArray(data.historicoAcesso)) {
+        const historicoAcesso: Record<string, unknown>[] = data.historicoAcesso;
+        historicoAcesso.forEach((acesso) => {
           if (acesso.dataHora) {
-            const date: Date = acesso.dataHora.toDate ? acesso.dataHora.toDate() : new Date(acesso.dataHora);
+            const date = timestampToDate(acesso.dataHora);
+            if (!date) return;
             const dia = date.getDate().toString().padStart(2, '0');
             const mes = (date.getMonth() + 1).toString().padStart(2, '0');
             const ano = date.getFullYear().toString();
@@ -216,17 +231,17 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       mapUsuariosLotacao[lotacao].sort((a, b) => b.acessos - a.acessos);
     }
 
-    const sortDiario = (a: any, b: any) => {
+    const sortDiario = (a: [string, number], b: [string, number]) => {
       const [da, ma, ya] = a[0].split('/');
       const [db2, mb, yb] = b[0].split('/');
       return new Date(`${ya}-${ma}-${da}`).getTime() - new Date(`${yb}-${mb}-${db2}`).getTime();
     };
-    const sortMensal = (a: any, b: any) => {
+    const sortMensal = (a: [string, number], b: [string, number]) => {
       const [ma, ya] = a[0].split('/');
       const [mb, yb] = b[0].split('/');
       return new Date(`${ya}-${ma}-01`).getTime() - new Date(`${yb}-${mb}-01`).getTime();
     };
-    const sortAnual = (a: any, b: any) => Number(a[0]) - Number(b[0]);
+    const sortAnual = (a: [string, number], b: [string, number]) => Number(a[0]) - Number(b[0]);
 
     // Cadastros
     const evolucaoDiaria = calcAcumuladoComVariacao(Object.entries(mapCDiario).sort(sortDiario).map(([key, novos]) => ({ key, novos })));
@@ -251,6 +266,9 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       ultimaAtualizacao: serverTimestamp(),
       totalCadastrados: totalDocs,
       totalAprovados: aprovados,
+      totalAguardando: aguardando,
+      totalRecusados: recusados,
+      totalIncompletos: incompletos,
       taxaAprovacao: Number(((aprovados / totalDocs) * 100).toFixed(1)),
       tempoMedioLiberacaoHoras: countComDataAprovacao > 0 ? Number((somaHorasLiberacao / countComDataAprovacao).toFixed(1)) : 0,
       totalAcessosPlataforma,

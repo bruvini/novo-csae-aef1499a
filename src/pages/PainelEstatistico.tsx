@@ -36,6 +36,7 @@ import {
   Pill,
   Building2,
   SlidersHorizontal,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   PieChart,
@@ -54,6 +55,7 @@ import {
   LabelList,
 } from 'recharts';
 import { obterEstatisticasUsuariosBI, EstatisticasBI, EvolucaoEntry } from '@/services/bancodados/biUsuariosDB';
+import { timestampToDate } from '@/utils/registrationData';
 import {
   obterEstatisticasProcessoEnfermagem,
   EstatisticasProcessoEnfermagem,
@@ -77,6 +79,7 @@ const STATUS_COLORS: Record<string, string> = {
   Liberado: '#059669',
   Aguardando: '#f59e0b',
   Recusado: '#e11d48',
+  'Status não identificado': '#64748b',
 };
 
 // ── Paleta da Seção 2 (Produção Clínica) ─────────────────────────────────
@@ -343,9 +346,7 @@ const PainelEstatistico = () => {
             {data?.ultimaAtualizacao && (
               <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
                 Atualizado:{' '}
-                {data.ultimaAtualizacao.toDate
-                  ? data.ultimaAtualizacao.toDate().toLocaleDateString('pt-BR')
-                  : 'Agora'}
+                {timestampToDate(data.ultimaAtualizacao)?.toLocaleDateString('pt-BR') || 'Não informado'}
               </span>
             )}
           </div>
@@ -360,12 +361,12 @@ const PainelEstatistico = () => {
               Quem são nossos usuários?
             </h2>
             <p className="text-gray-500 text-sm">
-              Perfil demográfico e comportamento dos profissionais conectados ao portal.
+              Indicadores calculados a partir dos perfis salvos. Tentativas que falharam antes de salvar não entram nestas contagens.
             </p>
           </div>
 
-          {/* ── LINHA 1: BIG NUMBERS (5 CARDS) ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          {/* ── LINHA 1: INDICADORES DE PERFIL ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6">
             
             {/* Card Cadastros */}
             <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
@@ -374,7 +375,7 @@ const PainelEstatistico = () => {
               </div>
               <CardHeader className="pb-2">
                 <CardDescription className="uppercase text-[9px] font-black tracking-widest text-csae-green-600">
-                  Solicitações de Cadastro
+                  Perfis cadastrados
                 </CardDescription>
                 <CardTitle className="text-3xl font-black text-csae-green-900">
                   {data?.totalCadastrados || 0}
@@ -385,6 +386,24 @@ const PainelEstatistico = () => {
                   <ArrowRight className="w-3 h-3 mr-1" />
                   Sendo <span className="font-black mx-1 text-csae-green-900">{data?.totalAprovados || 0}</span> liberados
                 </div>
+                <p className="mt-2 text-[10px] text-gray-500">Perfis salvos no sistema; tentativas que não chegaram ao envio não entram nesta contagem.</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <AlertTriangle className="w-16 h-16 text-amber-900" />
+              </div>
+              <CardHeader className="pb-2">
+                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-amber-700">
+                  Perfis incompletos
+                </CardDescription>
+                <CardTitle className="text-3xl font-black text-amber-900">
+                  {data?.totalIncompletos || 0}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-[10px] font-semibold text-amber-800">Campos básicos ou status ausentes</div>
               </CardContent>
             </Card>
 

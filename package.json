@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "import:clinical": "tsx scripts/import-clinical-parameters.ts",
     "lint": "eslint .",
+    "test": "tsx --test tests/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

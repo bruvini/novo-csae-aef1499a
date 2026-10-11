@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        console.log('Documento encontrado por UID direto:', docSnap.data());
+        console.log('Documento do usuário localizado pelo ID.');
         return { id: docSnap.id, ...docSnap.data() } as Usuario & { id: string };
       }
       
@@ -74,12 +74,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (!querySnap.empty) {
         const firstDoc = querySnap.docs[0];
-        console.log('Documento encontrado por query uid:', firstDoc.data());
+        console.log('Documento do usuário localizado pelo campo UID.');
         return { id: firstDoc.id, ...firstDoc.data() } as Usuario & { id: string };
       }
       
       // Nenhum documento encontrado
-      console.log('Nenhum documento encontrado para UID:', uid);
+      console.log('Nenhum perfil correspondente foi localizado.');
       return null;
       
     } catch (error) {
@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Função para carregar dados do usuário no Firestore
   const loadUserData = async (uid: string): Promise<void> => {
     try {
-      console.log('Buscando dados do usuário com UID:', uid);
+      console.log('Buscando perfil do usuário autenticado.');
       
       const userDoc = await getUserDoc(uid);
       
@@ -118,16 +118,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Documento do usuário não encontrado');
         toast({
           title: "Cadastro não localizado",
-          description: "Seu cadastro não foi localizado. Entre em contato com o suporte pelo nosso Instagram @portalcsaefloripa ou faça seu cadastro.",
+          description: "Não encontramos um perfil vinculado a esta conta. Se você já tentou se cadastrar, não crie outra conta nem use outro e-mail. Fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa para verificarmos a situação.",
           variant: "destructive",
-          action: (
-            <button 
-              onClick={() => navigate('/registrar')}
-              className="bg-csae-green-600 text-white px-3 py-1 rounded text-sm hover:bg-csae-green-700"
-            >
-              Cadastrar-se
-            </button>
-          ),
         });
         
         await signOut(auth);
@@ -235,7 +227,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('csae_session', JSON.stringify(session));
       setSessionData(session);
       
-      console.log('Usuário autorizado. Sessão criada:', session);
+      console.log('Sessão autorizada e carregada.');
       return;
     }
     
@@ -263,7 +255,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Monitorar mudanças no estado de autenticação
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-          console.log('Auth state changed. User:', user?.uid);
+          console.log('Estado de autenticação atualizado.');
           
           if (user) {
             // Usuário autenticado - buscar dados
@@ -442,11 +434,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no login:', error);
       let errorMessage = "Erro ao efetuar login. Tente novamente mais tarde.";
+      const errorCode = typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+        ? error.code
+        : '';
       
-      if (error.code === 'auth/user-not-found') {
+      if (errorCode === 'auth/user-not-found') {
         errorMessage = "Este e-mail não está cadastrado. Faça seu cadastro!";
         toast({
           title: "E-mail não encontrado",
@@ -462,9 +457,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           ),
         });
         return;
-      } else if (error.code === 'auth/wrong-password') {
+      } else if (errorCode === 'auth/wrong-password') {
         errorMessage = "Senha incorreta! Verifique e tente novamente.";
-      } else if (error.code === 'auth/invalid-credential') {
+      } else if (errorCode === 'auth/invalid-credential') {
         errorMessage = "Credenciais inválidas. Verifique seus dados e tente novamente.";
       }
 

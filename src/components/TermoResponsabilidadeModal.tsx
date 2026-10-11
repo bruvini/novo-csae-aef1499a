@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 interface TermoResponsabilidadeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAccept: () => void;
+  onAccept: () => Promise<void>;
   dadosUsuario: {
     nomeCompleto: string;
     formacao: string;
@@ -69,12 +69,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
 
       const pdfOutput = await html2pdf().set(opcoes).from(elemento).output("bloburl");
       window.open(pdfOutput, "_blank"); 
-      onAccept();
-      
-      toast({
-        title: "Termo aceito!",
-        description: "Documento gerado e aberto em nova aba. Processando cadastro...",
-      });
+      await onAccept();
     } catch (error) {
       console.error("PDF Error:", error);
       toast({ title: "Erro no PDF", description: "Falha ao gerar o termo. Tente novamente.", variant: "destructive" });
@@ -107,6 +102,9 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
               </div>
 
               <div className="text-sm space-y-4">
+                <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                  O aceite e a geração deste termo não confirmam que o cadastro foi enviado. O envio só será concluído após a confirmação de salvamento do perfil.
+                </p>
                 <p>Eu, <strong className="text-gray-900 underline decoration-csae-green-200 decoration-2">{dadosUsuario.nomeCompleto}</strong>, 
                 inscrito no CPF sob o nº <strong>{formatarCPF(dadosUsuario.cpf)}</strong> e portador do RG nº <strong>{formatarRG(dadosUsuario.rg)}</strong>, 
                 na qualidade de profissional de saúde (<strong>{dadosUsuario.formacao}</strong>) 
@@ -126,7 +124,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
                 <p className="text-gray-500 font-medium tracking-tight">Florianópolis, {formatarDataExtenso()}</p>
                 <div className="mt-8 flex justify-center">
                   <div className="w-64 border-t border-gray-400 pt-2 opacity-50">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Assinatura Eletrônica Registrada</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Aceite do termo</p>
                   </div>
                 </div>
               </div>
@@ -145,6 +143,10 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
               <h2 style={{ textAlign: 'center', marginBottom: '30px', fontSize: '14pt', fontWeight: 'bold' }}>
                 TERMO DE RESPONSABILIDADE E COMPROMISSO DE SIGILO
               </h2>
+
+              <p style={{ textAlign: 'center', marginBottom: '20px', fontSize: '9pt', color: '#7c2d12' }}>
+                Este documento registra o aceite do termo e não confirma o envio do cadastro. O envio depende da confirmação de salvamento do perfil no Portal.
+              </p>
 
               <p style={{ textAlign: 'justify', marginBottom: '20px' }}>
                 Eu, <strong>{dadosUsuario.nomeCompleto}</strong>, brasileiro(a), {dadosUsuario.formacao}, {dadosUsuario.numeroCoren && `inscrito no COREN/${dadosUsuario.ufCoren} sob o nº ${dadosUsuario.numeroCoren},`} portador da cédula de identidade RG nº {formatarRG(dadosUsuario.rg)} e inscrito no CPF sob o nº {formatarCPF(dadosUsuario.cpf)}, residente em {dadosUsuario.rua}, nº {dadosUsuario.numero}, {dadosUsuario.bairro}, {dadosUsuario.cidade}/{dadosUsuario.uf}.
@@ -170,7 +172,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
               </div>
 
               <div style={{ marginTop: '100px', fontSize: '8pt', color: '#999', textAlign: 'center', borderTop: '1px solid #eee', paddingTop: '10px' }}>
-                Documento gerado eletronicamente através do Portal CSAE 2.0 - Autenticação Digital Vinculada ao CPF do Usuário.
+                Documento gerado no Portal CSAE para registrar o aceite do termo. Ele não confirma o envio do cadastro nem a aprovação do acesso.
               </div>
             </div>
           </div>
@@ -204,7 +206,7 @@ const TermoResponsabilidadeModal: React.FC<TermoResponsabilidadeModalProps> = ({
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                Aceitar e Gerar Comprovante
+                Aceitar Termo e Iniciar Cadastro
               </>
             )}
           </Button>

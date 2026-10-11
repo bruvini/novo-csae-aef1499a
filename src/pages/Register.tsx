@@ -8,8 +8,8 @@ import { ArrowLeft, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
 import { serverTimestamp } from "firebase/firestore";
-import { createUserWithEmailAndPassword, signOut, deleteUser } from "firebase/auth";
-import { auth } from "@/services/firebase";
+import { createUserWithEmailAndPassword, inMemoryPersistence, setPersistence, signOut } from "firebase/auth";
+import { registrationAuth, registrationDb } from "@/services/firebase";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 import {
   registrationSchema,
@@ -19,8 +19,13 @@ import { Form } from "@/components/ui/form";
 import PersonalInfoForm from "@/components/register/PersonalInfoForm";
 import ProfessionalInfoForm from "@/components/register/ProfessionalInfoForm";
 import AccessInfoForm from "@/components/register/AccessInfoForm";
+import { v4 as uuidv4 } from "uuid";
+import { completeRegistration, RegistrationFlowError } from "@/services/registrationFlow";
+import { registrarEventoCadastro } from "@/services/registrationTelemetry";
+import type { UsuarioData } from "@/services/bancodados/usuariosDB";
 
 interface TermoData {
+  correlationId: string;
   nomeCompleto: string;
   formacao: string;
   numeroCoren?: string;
@@ -75,14 +80,12 @@ const Register = () => {
 
   useEffect(() => {
     // Limpeza inteligente de campos condicionados à formação
-    const fieldsToClear = [];
     if (!["Enfermeiro", "Residente de Enfermagem", "Técnico de Enfermagem"].includes(formacao)) {
-      fieldsToClear.push("numeroCoren", "ufCoren");
+      setValue("numeroCoren", "");
+      setValue("ufCoren", "");
     }
-    if (formacao !== "Residente de Enfermagem") fieldsToClear.push("dataInicioResidencia");
-    if (formacao !== "Acadêmico de Enfermagem") fieldsToClear.push("iesEnfermagem");
-    
-    fieldsToClear.forEach(field => setValue(field as any, ""));
+    if (formacao !== "Residente de Enfermagem") setValue("dataInicioResidencia", "");
+    if (formacao !== "Acadêmico de Enfermagem") setValue("iesEnfermagem", "");
   }, [formacao, setValue]);
 
   useEffect(() => {
@@ -97,14 +100,10 @@ const Register = () => {
   }, [atuaSMS, setValue]);
 
   const sanitizarDados = (data: RegistrationSchema) => {
-    const raw = { ...data };
-    
-    // 1. Remover campos de controle de UI/Auth sensíveis
-    delete (raw as any).confirmarSenha;
-    delete (raw as any).senha; // Senha vai apenas para o Auth, não para o Firestore
-
-    // 2. Higienização de Strings (Trim e Limpeza)
-    const processed: any = {};
+    const raw = Object.fromEntries(
+      Object.entries(data).filter(([key]) => key !== "confirmarSenha" && key !== "senha"),
+    );
+    const processed: Record<string, unknown> = {};
     Object.entries(raw).forEach(([key, value]) => {
       if (typeof value === 'string') {
         const trimmed = value.trim();
@@ -115,40 +114,30 @@ const Register = () => {
     });
 
     // 3. Destilação do Payload (Remover lixo de campos ocultos)
-    const payload: any = {
-      dadosPessoais: {
-        nomeCompleto: processed.nomeCompleto,
-        rg: processed.rg,
-        cpf: processed.cpf,
-        rua: processed.rua,
-        numero: processed.numero,
-        bairro: processed.bairro,
-        cidade: processed.cidade,
-        uf: processed.uf,
-        cep: processed.cep,
-      },
-      dadosProfissionais: {
-        formacao: processed.formacao,
-        atuaSMS: processed.atuaSMS,
-      }
+    const text = (key: string) => typeof processed[key] === "string" ? processed[key] as string : "";
+    const dadosPessoais: UsuarioData["dadosPessoais"] = {
+      nomeCompleto: text("nomeCompleto"), rg: text("rg"), cpf: text("cpf"), rua: text("rua"),
+      numero: text("numero"), bairro: text("bairro"), cidade: text("cidade"), uf: text("uf"), cep: text("cep"),
+    };
+    const dadosProfissionais: UsuarioData["dadosProfissionais"] = {
+      formacao: text("formacao"),
+      atuaSMS: processed.atuaSMS === true,
     };
 
-    // Adição condicional baseada na formação (apenas o que existe)
-    if (processed.numeroCoren) payload.dadosProfissionais.numeroCoren = processed.numeroCoren;
-    if (processed.ufCoren) payload.dadosProfissionais.ufCoren = processed.ufCoren;
-    if (processed.dataInicioResidencia) payload.dadosProfissionais.dataInicioResidencia = processed.dataInicioResidencia;
-    if (processed.iesEnfermagem) payload.dadosProfissionais.iesEnfermagem = processed.iesEnfermagem;
+    if (text("numeroCoren")) dadosProfissionais.numeroCoren = text("numeroCoren");
+    if (text("ufCoren")) dadosProfissionais.ufCoren = text("ufCoren");
+    if (text("dataInicioResidencia")) dadosProfissionais.dataInicioResidencia = text("dataInicioResidencia");
+    if (text("iesEnfermagem")) dadosProfissionais.iesEnfermagem = text("iesEnfermagem");
 
-    // Adição condicional baseada na lotação
-    if (processed.atuaSMS) {
-      payload.dadosProfissionais.lotacao = processed.lotacao;
-      payload.dadosProfissionais.matricula = processed.matricula;
+    if (dadosProfissionais.atuaSMS) {
+      if (text("lotacao")) dadosProfissionais.lotacao = text("lotacao");
+      if (text("matricula")) dadosProfissionais.matricula = text("matricula");
     } else {
-      payload.dadosProfissionais.cidadeTrabalho = processed.cidadeTrabalho;
-      payload.dadosProfissionais.localCargo = processed.localCargo;
+      if (text("cidadeTrabalho")) dadosProfissionais.cidadeTrabalho = text("cidadeTrabalho");
+      if (text("localCargo")) dadosProfissionais.localCargo = text("localCargo");
     }
 
-    return payload;
+    return { dadosPessoais, dadosProfissionais };
   };
 
   const onSubmit = (data: RegistrationSchema) => {
@@ -161,7 +150,10 @@ const Register = () => {
       return;
     }
 
+    const correlationId = uuidv4();
+    registrarEventoCadastro({ correlationId, stage: "form_validated" });
     setDadosParaTermo({
+      correlationId,
       nomeCompleto: data.nomeCompleto,
       formacao: data.formacao,
       numeroCoren: data.numeroCoren,
@@ -181,47 +173,45 @@ const Register = () => {
     setCarregando(true);
     setModalTermoAberto(false);
     const data = form.getValues();
+    const correlationId = dadosParaTermo?.correlationId ?? uuidv4();
+    registrarEventoCadastro({ correlationId, stage: "terms_accepted" });
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.senha);
-      const usuarioAuth = userCredential.user;
-
-      if (!usuarioAuth?.uid) {
-        throw new Error("Falha na autenticação: UID inválido.");
-      }
-
       const sanitizedData = sanitizarDados(data);
+      const profile = {
+        email: data.email.trim().toLowerCase(),
+        ...sanitizedData,
+        termoResponsabilidadeAceito: true,
+        termoResponsabilidadeData: serverTimestamp(),
+        ehAdmin: false,
+        gestorConteudos: false,
+        tipoUsuario: "Comum",
+        statusAcesso: "Aguardando",
+      } as Omit<UsuarioData, "uid">;
 
-      try {
-        await cadastrarUsuario({
-          uid: usuarioAuth.uid,
-          email: data.email.trim().toLowerCase(),
-          ...sanitizedData,
-          termoResponsabilidadeAceito: true,
-          termoResponsabilidadeData: serverTimestamp(),
-          ehAdmin: false,
-          gestorConteudos: false,
-          tipoUsuario: "Comum",
-          statusAcesso: "Aguardando", // Explicitamente definindo status inicial
-        });
-      } catch (firestoreError) {
-        console.error("Erro ao gravar documento no Firestore:", firestoreError);
-        // Rollback: excluir usuário do Authentication se Firestore falhar
-        try {
-          await deleteUser(usuarioAuth);
-          console.log("Rollback executado: usuário removido do Auth.");
-        } catch (rollbackError) {
-          console.error("Erro severo ao realizar rollback no Auth:", rollbackError);
-        }
-        
-        // Relançar um erro claro
-        if (firestoreError instanceof Error && firestoreError.message.includes('permission-denied')) {
-            throw new Error("Permissão negada no Firestore (permission-denied). Contate o suporte.");
-        }
-        throw new Error("Falha na gravação do Firestore. O cadastro foi revertido.");
-      }
-
-      await signOut(auth);
+      await completeRegistration({
+        email: data.email.trim().toLowerCase(),
+        password: data.senha,
+        profile,
+        correlationId,
+        dependencies: {
+          prepare: async () => {
+            await setPersistence(registrationAuth, inMemoryPersistence);
+            if (registrationAuth.currentUser) await signOut(registrationAuth);
+          },
+          createAccount: async (email, password) => {
+            const credential = await createUserWithEmailAndPassword(registrationAuth, email, password);
+            return { uid: credential.user.uid };
+          },
+          saveProfile: async (uid, userProfile) => {
+            await cadastrarUsuario({ uid, ...userProfile }, registrationDb);
+          },
+          cleanup: async () => {
+            if (registrationAuth.currentUser) await signOut(registrationAuth);
+          },
+          track: registrarEventoCadastro,
+        },
+      });
 
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -230,20 +220,22 @@ const Register = () => {
 
       navigate("/login");
     } catch (error) {
-      console.error("Erro ao cadastrar:", error);
-      let description = "Ocorreu um erro ao realizar o cadastro. Por favor, tente novamente.";
-      if (error instanceof Error && 'code' in error) {
-        const firebaseError = error as { code: string };
-        if (firebaseError.code === 'auth/email-already-in-use') {
-            description = "Este e-mail já está em uso por outra conta.";
-        } else if (firebaseError.code === 'auth/weak-password') {
-            description = "A senha é muito fraca. Use pelo menos 6 caracteres.";
-        }
-      } else if (error instanceof Error) {
-        description = error.message; // Mostrar a mensagem real de erro caso não seja firebase auth
+      const flowError = error instanceof RegistrationFlowError ? error : null;
+      const errorCode = flowError?.errorCode ?? "unknown-error";
+      let description = `Não foi possível concluir o envio. Informe o código ${correlationId} ao suporte e tente novamente somente após receber orientação.`;
+
+      if (errorCode === "auth/email-already-in-use") {
+        description = `Já existe uma conta associada a este e-mail. Não tente contornar usando outro endereço. Tente entrar ou recuperar a senha; se o cadastro anterior não aparecer para análise, fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa e informe o código ${correlationId}.`;
+      } else if (errorCode === "auth/weak-password") {
+        description = "A senha não atende aos requisitos. Escolha uma senha mais segura e tente novamente.";
+      } else if (flowError?.stage === "profile") {
+        description = `A conta foi criada, mas o perfil não foi confirmado no sistema. Não faça outro cadastro nem use outro e-mail. Fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa e informe o código ${correlationId}.`;
+      } else if (errorCode === "auth/network-request-failed" || errorCode === "unavailable") {
+        description = `A conexão falhou antes da confirmação do cadastro. Verifique a internet e informe o código ${correlationId} ao suporte antes de repetir a tentativa.`;
       }
+
       toast({
-        title: "Erro no cadastro",
+        title: flowError?.stage === "profile" ? "Cadastro não confirmado" : "Não foi possível concluir o cadastro",
         description,
         variant: "destructive",
       });
@@ -272,7 +264,9 @@ const Register = () => {
 
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={form.handleSubmit(onSubmit, () => {
+                registrarEventoCadastro({ correlationId: uuidv4(), stage: "validation_rejected" });
+              })}
               className="space-y-4"
             >
               <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden divide-y divide-gray-100">
