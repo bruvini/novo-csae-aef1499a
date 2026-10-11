@@ -105,6 +105,11 @@ async function validarUnicidadeExame(exame: ExameInput, editingId?: string) {
   if (conflito) throw new Error(
     'Existe um exame com este nome ou componente já cadastrado. ' +
     'Complemente o exame existente para preservar resultados históricos.');
+  const sinais = await getDocs(collection(db, 'SinaisVitais'));
+  if (componentes.some(nome => sinais.docs.some(d =>
+    normalizarNomeClinico(d.data().sinalVitalNome || '') === nome))) {
+    throw new Error('Um dos componentes já existe nos sinais vitais. Use o cadastro atual para evitar sobrescrever o mesmo campo.');
+  }
 }
 
 export const addExame = async (exame: ExameInput) => {
