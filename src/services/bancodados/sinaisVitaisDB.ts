@@ -19,6 +19,8 @@ export interface ValorReferenciaVital {
   idadeUnidade: 'dias' | 'meses' | 'anos' | '' | 'not-specified';
   criterioSexo: 'Masculino' | 'Feminino' | 'Ambos';
   criterioCondicao: string;
+  contextoClinico?: string;
+  interpretacaoClinica?: 'normal' | 'alterado' | 'indeterminado';
   valorMinimo: number | null;
   valorMaximo: number | null;
   nomeAlteracao: string;
