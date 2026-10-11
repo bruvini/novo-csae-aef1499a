@@ -246,11 +246,12 @@ const TabelaSinaisVitais = () => {
                   <label className="block text-sm font-medium mb-1.5">Nome do Sinal Vital *</label>
                   <Input
                     value={sinalVitalNome}
+                    disabled={Boolean(editandoSinalVital)}
                     onChange={(e) => setSinalVitalNome(e.target.value)}
                     placeholder="Ex: Pressão Arterial Sistólica"
                     spellCheck
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">PAS e PAD são componentes do mesmo bloco de pressão arterial. Não crie novos cadastros por doença, idade ou sexo: acrescente as faixas ao cadastro já existente.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">O nome de um sinal existente não pode ser alterado, pois identifica registros históricos. PAS e PAD são componentes do mesmo bloco de pressão arterial. Não crie novos cadastros por doença, idade ou sexo: acrescente as faixas ao cadastro já existente.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Descrição</label>
@@ -496,7 +497,7 @@ const TabelaSinaisVitais = () => {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
+                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0" disabled title="Exclusão permanente bloqueada para preservar os prontuários históricos">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
