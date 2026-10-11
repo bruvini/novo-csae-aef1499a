@@ -5,8 +5,8 @@ set -Eeuo pipefail
 PROJECT="csaefloripa"
 TESTED="8477807de356491549b05ba3255b8fbd5f8aac5c"
 # Hashes de conteúdo dos arquivos de segurança aprovados no CI.
-EXPECTED_FIRESTORE_BLOB="f489ad596e5592e2f3bc241beb5ed0d2ac708901"
-EXPECTED_RULES_TEST_BLOB="60ba2bd62381c673d6aeae5ca1863868bd3cbd37"
+EXPECTED_FIRESTORE_BLOB="931c04afa140710e425ddb0596d97b4822cee9f4"
+EXPECTED_RULES_TEST_BLOB="226112b627041c35e6273289adfba46b9b328194"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
