@@ -89,6 +89,12 @@ test('novo cadastro só cria o próprio perfil como pendente, sem permissões el
     termoResponsabilidadeData: serverTimestamp(),
     dataCadastro: serverTimestamp(),
   }));
+  const forgedProfileDb = environment.authenticatedContext('novo-legado', { email: 'novo-legado@example.test' }).firestore();
+  await assertFails(setDoc(doc(forgedProfileDb, 'usuarios', 'novo-legado'), {
+    ...profile('novo-legado', 'Aguardando', { versaoPermissoes: 999, paginasPermitidas: [] }),
+    termoResponsabilidadeData: serverTimestamp(),
+    dataCadastro: serverTimestamp(),
+  }));
 });
 
 test('pendente lê somente o próprio perfil e não acessa catálogos nem se aprova', async () => {
