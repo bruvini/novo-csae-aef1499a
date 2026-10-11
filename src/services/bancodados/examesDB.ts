@@ -7,6 +7,7 @@ import {
   updateDoc, 
   deleteDoc, 
   onSnapshot,
+  getDoc,
   query,
   orderBy,
   where,
@@ -14,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
+import { validarAtualizacaoExame } from '@/utils/protecaoCatalogoHistorico';
 
 export interface ResultadoExame {
   // Campos para exames laboratoriais
@@ -122,8 +124,11 @@ export const addExame = async (exame: ExameInput) => {
 };
 
 export const updateExame = async (id: string, exame: ExameInput) => {
-  await validarUnicidadeExame(exame, id);
   const docRef = doc(db, COLLECTION_NAME, id);
+  const anterior = await getDoc(docRef);
+  if (!anterior.exists()) throw new Error('Exame não encontrado.');
+  validarAtualizacaoExame(anterior.data() as Exame, exame);
+  await validarUnicidadeExame(exame, id);
   await updateDoc(docRef, exame);
 };
 
