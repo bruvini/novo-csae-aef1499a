@@ -312,7 +312,9 @@ const TabelaExames = () => {
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Nome do Exame *</label>
-                  {loadingExames ? (
+                  {editandoExame ? (
+                    <Input value={nomeExame} disabled aria-label="Nome do exame (preservado por integridade histórica)" />
+                  ) : loadingExames ? (
                     <Input value={nomeExame} onChange={(e) => setNomeExame(e.target.value)} placeholder="Carregando..." disabled />
                   ) : (
                     <Combobox
@@ -324,7 +326,7 @@ const TabelaExames = () => {
                       emptyText="Nenhum exame encontrado"
                     />
                   )}
-                  <p className="text-[11px] text-muted-foreground mt-1">Ex: "Hemograma Completo", "Glicemia de Jejum". Selecione um exame existente para adicionar um novo componente a ele.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">O nome e os componentes de exames existentes são preservados por segurança dos históricos. Adicione novos componentes sem substituir os já utilizados.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Descrição</label>
@@ -379,6 +381,7 @@ const TabelaExames = () => {
                         <label className="block text-sm font-medium mb-1.5">Componente Analisado *</label>
                         <Input
                           value={componente.componenteAnalisado}
+                          disabled={Boolean(editandoExame?.componentes.some(comp => comp.componenteAnalisado === componente.componenteAnalisado))}
                           onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
                           placeholder="Ex: Glicose, Hemoglobina"
                           spellCheck
