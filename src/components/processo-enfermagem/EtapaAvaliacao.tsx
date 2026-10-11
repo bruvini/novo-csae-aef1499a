@@ -19,6 +19,7 @@ import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassifi
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { Timestamp } from 'firebase/firestore';
 import { ExameResultadoInput } from './ExameResultadoInput';
+import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
@@ -31,12 +32,14 @@ interface EtapaAvaliacaoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
   onUpdateAvaliacao: (avaliacao: AvaliacaoEnfermagem) => void;
+  onUpdateRequisitosDescricao: (requisitos: RequisitoDescricaoAvaliacao[]) => void;
 }
 
 const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   processo,
   paciente,
-  onUpdateAvaliacao
+  onUpdateAvaliacao,
+  onUpdateRequisitosDescricao,
 }) => {
   const [guiaColetaOpen, setGuiaColetaOpen] = useState(false);
   const [guiaExameOpen, setGuiaExameOpen] = useState(false);
@@ -75,6 +78,17 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
+        const requisitosDescricao = sistemasData.flatMap((sistema) =>
+          sistema.exames.flatMap((exame) =>
+            exame.achados.flatMap((achado) => [
+              ...(achado.exigeDescricao ? [{ exame: exame.nomeExame, achado: achado.descricaoAchado }] : []),
+              ...(achado.opcoes || [])
+                .filter((opcao) => opcao.exigeDescricao)
+                .map((opcao) => ({ exame: exame.nomeExame, achado: opcao.textoOpcao })),
+            ])
+          )
+        );
+        onUpdateRequisitosDescricao(requisitosDescricao);
       } catch (error) {
         console.error('Erro ao carregar dados da avaliação:', error);
       } finally {
@@ -83,7 +97,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     };
 
     loadData();
-  }, []); // Array vazio: executa apenas na montagem
+  }, [onUpdateRequisitosDescricao]);
 
   // Effect 2: Sincroniza NHBs locais quando o processo é carregado (montagem)
   useEffect(() => {
@@ -238,13 +252,18 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
     onUpdateAvaliacao({
       ...processo.avaliacao,
-      examesValoresTexto: {
-        ...(processo.avaliacao?.examesValoresTexto || {}),
-        [parametro]: {
-          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
-          valorTexto,
-        },
-      },
+      examesValoresTexto: valorTexto.trim()
+        ? {
+            ...(processo.avaliacao?.examesValoresTexto || {}),
+            [parametro]: {
+              resultadoClassificatorio: resultado.resultadoClassificatorio || '',
+              valorTexto,
+            },
+          }
+        : Object.fromEntries(
+            Object.entries(processo.avaliacao?.examesValoresTexto || {})
+              .filter(([nomeComponente]) => nomeComponente !== parametro)
+          ),
     });
   };
 
@@ -269,8 +288,12 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   };
 
   const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
+    if (checked && !isAchadoDoCatalogoAprovado(sistemas, nomeExame, valor)) return;
+
     const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
-    const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
+    const updated = checked
+      ? current.includes(valor) ? current : [...current, valor]
+      : current.filter((v) => v !== valor);
 
     const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
     if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
@@ -769,6 +792,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
               </Dialog>
             </div>
 
+            <p className="text-xs text-muted-foreground rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              Os exames e achados disponíveis seguem os Protocolos de Enfermagem do Município de Florianópolis. Sugestões de inclusão devem ser encaminhadas à CSAE para avaliação.
+            </p>
+
             {/* Barra de busca */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1062,6 +1089,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                             placeholder={achado.dicaAchado || 'Descreva o achado encontrado…'}
                                             className="text-xs resize-none min-h-[56px]"
                                             rows={2}
+                                            required
+                                            aria-label={`Descrição obrigatória para ${achado.descricaoAchado}`}
                                           />
                                           {!descAtual.trim() && (
                                             <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
@@ -1136,6 +1165,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                                 placeholder="Descreva este achado…"
                                                 className="text-xs resize-none min-h-[48px]"
                                                 rows={2}
+                                                required
+                                                aria-label={`Descrição obrigatória para ${opcao.textoOpcao}`}
                                               />
                                             </div>
                                           )}

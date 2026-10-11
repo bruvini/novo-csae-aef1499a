@@ -1,0 +1,44 @@
+name: Validar regras Firebase e integração
+
+on:
+  push:
+    branches:
+      - codex/regularizacao-cadastros
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Testes de segurança e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependências
+        run: npm ci --legacy-peer-deps # compatibilidade temporária: firebase@11 + rules-unit-testing@5; alinhar versões após validação
+      - name: Verificar regras Firestore e Storage no Emulator
+        run: npm run test:rules
+      - name: Rodar testes da aplicação
+        run: npm test
+      - name: Checar tipagem
+        run: npx tsc -b
+      - name: Compilar o portal
+        run: npm run build
+      - name: Verificar alterações
+        run: git diff --check

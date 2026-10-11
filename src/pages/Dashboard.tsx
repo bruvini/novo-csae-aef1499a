@@ -6,13 +6,13 @@ import { auth, db } from '@/services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
 import ModalHistoricoChangelog from '@/components/ModalHistoricoChangelog';
 import {
   buscarEstatisticasGlobais,
   buscarChangelogsRecentes,
-  seedChangelogCompleto,
   type Changelog,
 } from '@/services/bancodados';
 
@@ -26,6 +26,7 @@ function formatarDataHora(ts: Timestamp | undefined): string {
 
 // ── Dashboard ────────────────────────────────────────────────
 const Dashboard = () => {
+  const { sessionData } = useAuth();
   const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number } | null>(null);
@@ -48,8 +49,10 @@ const Dashboard = () => {
 
       // ── Estatísticas ────────────────────────────────────────
       try {
-        const globalStats = await buscarEstatisticasGlobais();
-        setStats(globalStats);
+        if (sessionData?.ehAdmin === true) {
+          const globalStats = await buscarEstatisticasGlobais();
+          setStats(globalStats);
+        }
       } catch (error) {
         console.error('Erro ao buscar estatísticas:', error);
       } finally {
@@ -57,10 +60,7 @@ const Dashboard = () => {
       }
 
       // ── Changelogs ──────────────────────────────────────────
-      // Fluxo sequencial: seed idempotente → buscar → exibir.
-      // Não depende de localStorage; deduplicação feita por título no Firestore.
       try {
-        await seedChangelogCompleto();
         const logs = await buscarChangelogsRecentes();
         setChangelogs(logs);
       } catch (error) {
@@ -71,7 +71,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [sessionData?.ehAdmin]);
 
   if (loading) {
     return (

@@ -1,23 +1,139 @@
-import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
+
+export interface RequisitoDescricaoAvaliacao {
+  exame: string;
+  achado: string;
+}
+
+export interface RegistroExameFisico {
+  exame: string;
+  valor: string | number;
+  tipo: 'parametro' | 'achado';
+  descricao?: string;
+}
+
+export interface ValidacaoAvaliacao {
+  coletaValida: boolean;
+  exameFisicoValido: boolean;
+  descricoesObrigatoriasPendentes: string[];
+  completa: boolean;
+}
+
+export interface CatalogoAchadosAprovados {
+  exames: Array<{
+    nomeExame: string;
+    achados: Array<{
+      descricaoAchado: string;
+      tipoAchado?: 'simples' | 'opcoes';
+      opcoes?: Array<{ textoOpcao: string }>;
+    }>;
+  }>;
+}
+
+export function isAchadoDoCatalogoAprovado(
+  sistemas: CatalogoAchadosAprovados[],
+  exame: string,
+  achado: string
+): boolean {
+  return sistemas.some((sistema) =>
+    sistema.exames.some((item) =>
+      item.nomeExame === exame
+      && item.achados.some((opcao) =>
+        (opcao.tipoAchado !== 'opcoes' && opcao.descricaoAchado === achado)
+        || (opcao.opcoes || []).some((subopcao) => subopcao.textoOpcao === achado)
+      )
+    )
+  );
+}
+
+export function isValorAvaliacaoValido(value: unknown): value is string | number {
+  if (typeof value === 'number') return Number.isFinite(value);
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+export function obterRegistrosExameFisico(avaliacao?: AvaliacaoEnfermagem): RegistroExameFisico[] {
+  if (!avaliacao) return [];
+
+  const parametros = avaliacao.exameFisico || {};
+  const selecoes = avaliacao.exameFisicoMulti || {};
+  const descricoes = avaliacao.exameFisicoDescricoes || {};
+  const registros: RegistroExameFisico[] = [];
+
+  Object.entries(parametros).forEach(([exame, valor]) => {
+    if (!isValorAvaliacaoValido(valor)) return;
+
+    const selecoesDoExame = selecoes[exame];
+    if (typeof valor === 'string' && Array.isArray(selecoesDoExame) && selecoesDoExame.includes(valor)) return;
+    registros.push({ exame, valor, tipo: 'parametro' });
+  });
+
+  Object.entries(selecoes).forEach(([exame, valores]) => {
+    if (!Array.isArray(valores)) return;
+    valores.forEach((valor) => {
+      if (!isValorAvaliacaoValido(valor)) return;
+      const descricao = descricoes[`${exame}|||${valor}`];
+      registros.push({
+        exame,
+        valor,
+        tipo: 'achado',
+        ...(isValorAvaliacaoValido(descricao) ? { descricao } : {}),
+      });
+    });
+  });
+
+  return registros;
+}
+
+export function validarAvaliacao(
+  processo: ProcessoEnfermagem,
+  requisitosDescricao: RequisitoDescricaoAvaliacao[] = []
+): ValidacaoAvaliacao {
+  const avaliacao = processo.avaliacao;
+  const coletaValida = typeof avaliacao?.coletaDeDadosSubjetivos === 'string'
+    && avaliacao.coletaDeDadosSubjetivos.trim().length > 0;
+  const exameFisicoValido = obterRegistrosExameFisico(avaliacao).length > 0;
+  const descricoesObrigatoriasPendentes = requisitosDescricao
+    .filter(({ exame, achado }) => {
+      const selecaoAtual = avaliacao?.exameFisicoMulti?.[exame];
+      const valorLegado = avaliacao?.exameFisico?.[exame];
+      const selecionado = (Array.isArray(selecaoAtual) && selecaoAtual.includes(achado)) || valorLegado === achado;
+      if (!selecionado) return false;
+
+      const descricao = avaliacao?.exameFisicoDescricoes?.[`${exame}|||${achado}`];
+      return !isValorAvaliacaoValido(descricao);
+    })
+    .map(({ achado }) => achado);
+
+  return {
+    coletaValida,
+    exameFisicoValido,
+    descricoesObrigatoriasPendentes,
+    completa: coletaValida && exameFisicoValido && descricoesObrigatoriasPendentes.length === 0,
+  };
+}
 
 /**
  * Calcula quais etapas do processo de enfermagem estão concluídas.
  * Fonte única de verdade para validação de progresso.
  */
-export function calcularEtapasCompletadas(processo: ProcessoEnfermagem): number[] {
+export function calcularEtapasCompletadas(
+  processo: ProcessoEnfermagem,
+  requisitosDescricao: RequisitoDescricaoAvaliacao[] = []
+): number[] {
   const concluidas: number[] = [];
 
-  // Etapa 1 — Avaliação: requer dados subjetivos E pelo menos 1 item no exame físico
-  const temColeta = !!(processo.avaliacao?.coletaDeDadosSubjetivos?.trim());
-  const temExameFisico = Object.keys(processo.avaliacao?.exameFisico || {}).length > 0;
-  if (temColeta && temExameFisico) concluidas.push(1);
+  if (validarAvaliacao(processo, requisitosDescricao).completa) concluidas.push(1);
 
-  // Etapa 2 — Diagnóstico: pelo menos 1 diagnóstico selecionado
-  if ((processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0) concluidas.push(2);
+  // A etapa de diagnóstico só fica concluída quando a avaliação também está válida.
+  if (
+    concluidas.includes(1)
+    && (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0
+  ) concluidas.push(2);
 
   // Etapa 3 — Planejamento: todos os diagnósticos não-positivos têm resultado E intervenção
   const diagnosticosPlanejados = processo.planejamento?.diagnosticosPlanejados ?? [];
   const planejamentoOk =
+    concluidas.includes(2) &&
     diagnosticosPlanejados.length > 0 &&
     diagnosticosPlanejados.every((diag) => {
       if (diag.isPositivo) return true;
@@ -64,22 +180,27 @@ export function isEtapaAcessivel(
   numeroEtapa: number,
   etapaAtual: number,
   etapasCompletadas: number[],
-  processo: ProcessoEnfermagem
+  processo: ProcessoEnfermagem,
+  requisitosDescricao: RequisitoDescricaoAvaliacao[] = []
 ): boolean {
-  // Etapas já visitadas ou completadas são sempre acessíveis
-  if (numeroEtapa <= etapaAtual || etapasCompletadas.includes(numeroEtapa)) return true;
+  // A etapa atual e as anteriores seguem acessíveis para edição/revisão.
+  if (numeroEtapa <= etapaAtual) return true;
+
+  // Uma conclusão anterior não pode liberar a etapa seguinte após a avaliação
+  // local ter sido esvaziada ou perder uma descrição obrigatória.
+  if (numeroEtapa === 2 && !validarAvaliacao(processo, requisitosDescricao).completa) return false;
+  if (etapasCompletadas.includes(numeroEtapa)) return true;
 
   switch (numeroEtapa) {
-    case 2: {
-      const temColeta = !!(processo.avaliacao?.coletaDeDadosSubjetivos?.trim());
-      const temExameFisico = Object.keys(processo.avaliacao?.exameFisico || {}).length > 0;
-      return temColeta && temExameFisico;
-    }
+    case 2:
+      return validarAvaliacao(processo, requisitosDescricao).completa;
     case 3:
-      return (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0;
+      return etapasCompletadas.includes(2)
+        && validarAvaliacao(processo, requisitosDescricao).completa
+        && (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0;
     case 4: {
       const diags = processo.planejamento?.diagnosticosPlanejados ?? [];
-      if (diags.length === 0) return false;
+      if (!etapasCompletadas.includes(3) || diags.length === 0) return false;
       return diags.every((diag) => {
         if (diag.isPositivo) return true;
         return (
@@ -118,15 +239,26 @@ export function getMotivoBloqueio(
   numeroEtapa: number,
   etapaAtual: number,
   etapasCompletadas: number[],
-  processo: ProcessoEnfermagem
+  processo: ProcessoEnfermagem,
+  requisitosDescricao: RequisitoDescricaoAvaliacao[] = []
 ): string | null {
-  if (isEtapaAcessivel(numeroEtapa, etapaAtual, etapasCompletadas, processo)) return null;
+  if (isEtapaAcessivel(numeroEtapa, etapaAtual, etapasCompletadas, processo, requisitosDescricao)) return null;
 
   switch (numeroEtapa) {
-    case 2:
-      return 'Para liberar esta etapa, preencha a coleta de dados subjetivos e pelo menos um item do exame físico.';
+    case 2: {
+      const validacao = validarAvaliacao(processo, requisitosDescricao);
+      const pendencias: string[] = [];
+      if (!validacao.coletaValida) pendencias.push('preencha a coleta de dados subjetivos (entrevista)');
+      if (!validacao.exameFisicoValido) {
+        pendencias.push('registre ao menos um sinal vital ou achado válido selecionado no catálogo aprovado de exame físico');
+      }
+      if (validacao.descricoesObrigatoriasPendentes.length > 0) {
+        pendencias.push('preencha as descrições obrigatórias dos achados selecionados');
+      }
+      return `Para avançar ao Diagnóstico, ${pendencias.join(' e ')}.`;
+    }
     case 3:
-      return 'Para liberar esta etapa, selecione pelo menos um diagnóstico de enfermagem na etapa anterior.';
+      return 'Para liberar esta etapa, conclua a avaliação e selecione pelo menos um diagnóstico de enfermagem na etapa anterior.';
     case 4:
       return 'Para liberar esta etapa, todos os diagnósticos precisam ter um resultado esperado e pelo menos uma intervenção definida no planejamento.';
     case 5:
@@ -147,5 +279,20 @@ export function getMotivoBloqueio(
     }
     default:
       return 'Complete as etapas anteriores para liberar.';
+  }
+}
+
+/** Executa a transição somente depois de confirmar que o salvamento foi concluído. */
+export async function executarAvancoAposSalvar(
+  salvar: () => Promise<boolean>,
+  avancar: () => void
+): Promise<boolean> {
+  try {
+    const salvo = await salvar();
+    if (!salvo) return false;
+    avancar();
+    return true;
+  } catch {
+    return false;
   }
 }

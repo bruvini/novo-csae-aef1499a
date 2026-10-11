@@ -6,13 +6,14 @@ import { CheckCircle, Circle, Search, FileText, Target, Play, TrendingUp } from 
 import { ETAPAS_PROCESSO } from '@/types/processoEnfermagem';
 import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { cn } from '@/lib/utils';
-import { isEtapaAcessivel, getMotivoBloqueio } from '@/utils/processoUtils';
+import { getMotivoBloqueio, isEtapaAcessivel, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 
 interface StepperProcessoProps {
   etapaAtual: number;
   onEtapaChange: (etapa: number) => void;
   etapasCompletadas: number[];
   processo?: ProcessoEnfermagem;
+  requisitosDescricao?: RequisitoDescricaoAvaliacao[];
 }
 
 const ICONES_ETAPAS = {
@@ -28,7 +29,8 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
   etapaAtual,
   onEtapaChange,
   etapasCompletadas,
-  processo
+  processo,
+  requisitosDescricao = [],
 }) => {
   const progressoAtual = (etapaAtual / 6) * 100;
 
@@ -53,8 +55,20 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
             const IconeComponent = ICONES_ETAPAS[etapa.icone as keyof typeof ICONES_ETAPAS];
             const isAtual = etapa.numero === etapaAtual;
             const isCompletada = etapasCompletadas.includes(etapa.numero);
-            const isAcessivel = isEtapaAcessivel(etapa.numero, etapaAtual, etapasCompletadas, processo!);
-            const motivoBloqueio = getMotivoBloqueio(etapa.numero, etapaAtual, etapasCompletadas, processo!);
+            const isAcessivel = isEtapaAcessivel(
+              etapa.numero,
+              etapaAtual,
+              etapasCompletadas,
+              processo!,
+              requisitosDescricao
+            );
+            const motivoBloqueio = getMotivoBloqueio(
+              etapa.numero,
+              etapaAtual,
+              etapasCompletadas,
+              processo!,
+              requisitosDescricao
+            );
 
             return (
               <Tooltip key={etapa.numero}>

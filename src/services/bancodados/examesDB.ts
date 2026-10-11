@@ -27,6 +27,8 @@ export interface ResultadoExame {
   permiteValorTexto?: boolean;
   rotuloValorTexto?: string;
   valorTextoObrigatorio?: boolean;
+  tipoValorTexto?: 'lista' | 'livre';
+  opcoesValorTexto?: string[];
   // Campos comuns
   nomeAlteracao: string;
   subconjuntoNHBVinculado: string;

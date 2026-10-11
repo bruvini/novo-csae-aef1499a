@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,9 @@ import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnfermagemDB';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { obterRegistrosExameFisico } from '@/utils/processoUtils';
+import { Exame, getExames } from '@/services/bancodados/examesDB';
+import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
@@ -32,10 +35,13 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
   enfermeiroId
 }) => {
   const [processos, setProcessos] = useState<ProcessoEnfermagem[]>([]);
+  const [exames, setExames] = useState<Exame[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const carregarHistorico = async () => {
+  useEffect(() => getExames(setExames), []);
+
+  const carregarHistorico = useCallback(async () => {
     if (!paciente.id) return;
     
     setLoading(true);
@@ -52,13 +58,13 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [paciente.id, enfermeiroId, toast]);
 
   useEffect(() => {
     if (isOpen) {
       carregarHistorico();
     }
-  }, [isOpen]);
+  }, [isOpen, carregarHistorico]);
 
   const gerarTextoResumo = (processo: ProcessoEnfermagem) => {
     const linhas: string[] = [];
@@ -70,21 +76,41 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     linhas.push('');
 
     // Avaliação
-    if (processo.avaliacao.coletaDeDadosSubjetivos) {
+    if (processo.avaliacao?.coletaDeDadosSubjetivos) {
       linhas.push('AVALIAÇÃO DE ENFERMAGEM:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
     // Exame Físico
-    const exameFisico = processo.avaliacao.exameFisico || {};
-    if (Object.keys(exameFisico).length > 0) {
+    const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
+    const parametros = registrosExameFisico.filter((registro) => registro.tipo === 'parametro');
+    const achados = registrosExameFisico.filter((registro) => registro.tipo === 'achado');
+    if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      Object.entries(exameFisico).forEach(([parametro, valor]) => {
-        if (valor !== null && valor !== undefined && valor !== '') {
-          linhas.push(`${parametro}: ${valor}`);
-        }
+      const componentes = new Map(exames.flatMap((exame) =>
+        exame.componentes.map((componente) => [componente.componenteAnalisado, { exame, componente }] as const)
+      ));
+      parametros.forEach(({ exame, valor }) => {
+        const cadastro = componentes.get(exame);
+        linhas.push(formatarLinhaResultadoExame({
+          tipoExame: cadastro?.exame.tipoExame,
+          nomeExame: cadastro?.exame.nomeExame,
+          componente: exame,
+          valor,
+          resultadosConfigurados: cadastro?.componente.resultados,
+          valorTexto: processo.avaliacao?.examesValoresTexto?.[exame],
+        }));
       });
+      if (achados.length > 0) {
+        linhas.push('[REVISÃO DE SISTEMAS]');
+        const achadosPorExame = new Map<string, string[]>();
+        achados.forEach(({ exame, valor, descricao }) => {
+          if (!achadosPorExame.has(exame)) achadosPorExame.set(exame, []);
+          achadosPorExame.get(exame)!.push(descricao ? `${valor}: ${descricao}` : String(valor));
+        });
+        achadosPorExame.forEach((valores, exame) => linhas.push(`${exame}: ${valores.join(', ')}`));
+      }
       linhas.push('');
     }
 

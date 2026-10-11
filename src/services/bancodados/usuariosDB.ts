@@ -1,6 +1,6 @@
 // src/services/bancodados/usuariosDB.ts
 
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp, type Firestore } from "firebase/firestore";
 import { db } from "@/services/firebase";
 
 interface DadosPessoais {
@@ -41,11 +41,20 @@ export interface UsuarioData {
   statusAcesso?: "Aguardando" | "Liberado" | "Recusado";
 }
 
-export async function cadastrarUsuario(usuario: UsuarioData): Promise<void> {
-  const ref = doc(collection(db, "usuarios"), usuario.uid);
-  await setDoc(ref, {
-    ...usuario,
-    statusAcesso: "Aguardando",
-    dataCadastro: serverTimestamp(),
+export async function cadastrarUsuario(usuario: UsuarioData, firestore: Firestore = db): Promise<void> {
+  const ref = doc(firestore, "usuarios", usuario.uid);
+  await runTransaction(firestore, async (transaction) => {
+    const existingProfile = await transaction.get(ref);
+    if (existingProfile.exists()) {
+      throw Object.assign(new Error("Já existe um perfil para esta conta."), {
+        code: "firestore/already-exists",
+      });
+    }
+
+    transaction.set(ref, {
+      ...usuario,
+      statusAcesso: "Aguardando",
+      dataCadastro: serverTimestamp(),
+    });
   });
 }
