@@ -8,7 +8,6 @@ import {
   doc, 
   addDoc,
   updateDoc, 
-  deleteDoc,
   onSnapshot,
   Timestamp,
   serverTimestamp
@@ -129,14 +128,8 @@ export const updateSistema = async (id: string, sistema: Partial<SistemaCorporal
   }
 };
 
-export const deleteSistema = async (id: string): Promise<void> => {
-  try {
-    const docRef = doc(db, 'RevisaoSistemas', id);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error('Erro ao excluir sistema:', error);
-    throw error;
-  }
+export const deleteSistema = async (_id: string): Promise<void> => {
+  throw new Error('Para preservar as revisões de sistemas dos prontuários históricos, a exclusão está indisponível até existir arquivamento versionado.');
 };
 
 export const escutarSistemas = (callback: (sistemas: SistemaCorporal[]) => void) => {
