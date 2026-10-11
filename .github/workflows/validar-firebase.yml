@@ -45,5 +45,7 @@ jobs:
           bash -n scripts/publicar-csae-cloudshell.sh
           python3 -m py_compile scripts/publicacao_csae_firestore.py
           python3 -m py_compile scripts/diagnosticar-perfis-legados.py
+          bash -n scripts/regularizar-e-publicar-csae.sh
+          python3 -m py_compile scripts/migrar-perfis-legados.py
       - name: Verificar alterações
         run: git diff --check
