@@ -29,7 +29,7 @@ const Dashboard = () => {
   const { sessionData } = useAuth();
   const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number } | null>(null);
+  const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number; totalTempoProcessosMinutos: number } | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [changelogs, setChangelogs] = useState<Changelog[]>([]);
   const [changelogLoading, setChangelogLoading] = useState(true);
