@@ -77,6 +77,11 @@ async function validarUnicidadeVital(nome: string, editingId?: string) {
   if (conflito) throw new Error(
     'Já existe este parâmetro, ou um cadastro de PAS/PAD equivalente. ' +
     'Edite suas faixas por idade, sexo e contexto no registro existente.');
+  const laboratorios = await getDocs(collection(db, 'ExamesLabImagem'));
+  if (laboratorios.docs.some(d => (d.data().componentes || []).some(
+    (c: { componenteAnalisado: string }) => normalizarNomeClinico(c.componenteAnalisado || '') === alvo))) {
+    throw new Error('Este nome já identifica um componente laboratorial. Use um identificador distinto para evitar sobrescrever avaliações.');
+  }
 }
 
 export const addSinalVital = async (sinal: SinalVitalInput) => {
