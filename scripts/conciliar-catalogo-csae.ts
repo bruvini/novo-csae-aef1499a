@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import ExcelJS from 'exceljs';
 import { conciliarCatalogoClinico, type AbaOrigem, type FontesPlanilha, type InventarioClinico } from '../src/utils/conciliacaoCatalogo';
+import { validarLimiteNumericoFonte } from '../src/utils/formatoNumericoClinico';
 
 const NOMES_ABAS: AbaOrigem[] = ['SinaisVitais', 'RevisaoSistemas', 'ExamesLabImagem'];
 const CABECALHOS: Record<AbaOrigem, Array<[number, string]>> = {
@@ -47,9 +48,17 @@ async function executar() {
     }
     const linhas: FontesPlanilha[AbaOrigem] = [];
     const ultimaColuna = nome === 'SinaisVitais' ? 12 : nome === 'ExamesLabImagem' ? 14 : 11;
+    const colunasClinicas = nome === 'SinaisVitais' ? [3, 4, 8, 9]
+      : nome === 'RevisaoSistemas' ? [4, 5] : [5, 6, 9, 10];
     for (let n = 2; n <= sheet.rowCount; n += 1) {
       const celulas = Array.from({ length: ultimaColuna }, (_, col) => lerTexto(sheet, n, col));
-      if (celulas.some(c => c)) linhas.push({ linha: n, celulas });
+      if (!celulas.some(c => c)) continue;
+      for (const col of colunasClinicas) {
+        const celula = sheet.getRow(n).getCell(col + 1);
+        validarLimiteNumericoFonte(
+          celula.value, celula.numFmt || '', nome + '!' + celula.address);
+      }
+      linhas.push({ linha: n, celulas });
     }
     fontes[nome] = linhas;
   }
