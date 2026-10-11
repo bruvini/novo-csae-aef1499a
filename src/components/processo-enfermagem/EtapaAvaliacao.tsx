@@ -338,7 +338,9 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     parametro: string,
     referencias: readonly (ValorReferenciaVital | ResultadoExame)[],
   ) => {
-    const contexts = contextosDoParametro(referencias);
+    const contexts = contextosDoParametro(referencias.filter(ref =>
+      idadeCompativel(ref, paciente.dataNascimento.toDate())
+      && sexoCompativel(ref, paciente.sexo)));
     if (contexts.length <= 1 && contexts[0] === 'geral') return null;
     const atual = processo.avaliacao?.contextosParametros?.[parametro] || '';
     const opcoes = [...new Set(['geral', ...contexts])];
