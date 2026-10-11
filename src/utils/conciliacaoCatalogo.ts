@@ -200,8 +200,9 @@ export function conciliarCatalogoClinico(
     'reutilizar', 'conferir-referencias', 'complementar-candidato',
     'novo-candidato', 'revisao-obrigatoria',
   ];
-  const totais = Object.fromEntries(acoes.map(a => [a, propostas.filter(p => p.acao === a).length]))
-    as Record<AcaoConciliacao, number>;
+  const totais = Object.fromEntries(
+    acoes.map(acao => [acao, propostas.filter(p => p.acao === acao).length])
+  ) as Record<AcaoConciliacao, number>;
   return {
     projeto: inventario.projeto,
     versaoFonte: inventario.geradoEmUTC || 'inventario-sem-data',
