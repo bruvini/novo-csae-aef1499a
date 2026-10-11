@@ -36,7 +36,9 @@ import {
   Pill,
   Building2,
   SlidersHorizontal,
-  AlertTriangle,
+  Medal,
+  X,
+  Download,
 } from 'lucide-react';
 import {
   PieChart,
@@ -58,10 +60,16 @@ import { obterEstatisticasUsuariosBI, EstatisticasBI, EvolucaoEntry } from '@/se
 import { timestampToDate } from '@/utils/registrationData';
 import {
   obterEstatisticasProcessoEnfermagem,
+  obterRegistrosProducaoCache,
   EstatisticasProcessoEnfermagem,
   UsuarioRanking,
-  ItemTemporal
+  ItemTemporal,
+  agregarRegistrosProducao,
 } from '@/services/bancodados/biProcessosEnfermagemDB';
+import { filtrarRegistrosProducao, formatarVariacao } from '@/utils/painelEstatistico';
+import { exportacaoPainelHabilitada, resolverEstadoProducao } from '@/utils/painelEstatisticoCache';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -79,7 +87,6 @@ const STATUS_COLORS: Record<string, string> = {
   Liberado: '#059669',
   Aguardando: '#f59e0b',
   Recusado: '#e11d48',
-  'Status não identificado': '#64748b',
 };
 
 // ── Paleta da Seção 2 (Produção Clínica) ─────────────────────────────────
@@ -138,14 +145,18 @@ const ProducaoTooltip = ({
   payload?: Array<{
     dataKey: string;
     value: number;
-    payload: { variacaoPercentual?: number };
+    payload: ItemTemporal;
   }>;
   label?: string;
 }) => {
   if (!active || !payload || !payload.length) return null;
   const valor = (payload.find((p) => p.dataKey === 'value') || payload.find((p) => p.dataKey === 'novos'))?.value ?? 0;
-  const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value ?? 0;
-  const variacao: number = payload[0]?.payload?.variacaoPercentual ?? 0;
+  const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value;
+  const item = payload[0]?.payload;
+  const variacao = item?.variacaoPercentual;
+  const variacaoClasse = item?.variacaoTipo === 'percentual' && (variacao ?? 0) > 0
+    ? 'text-emerald-600'
+    : item?.variacaoTipo === 'percentual' && (variacao ?? 0) < 0 ? 'text-rose-600' : 'text-indigo-500';
 
   return (
     <div className="bg-white shadow-xl rounded-xl p-3 border border-indigo-100 text-sm min-w-[160px]">
@@ -153,17 +164,14 @@ const ProducaoTooltip = ({
       <p className="text-indigo-600">
         <span className="font-bold">No Período:</span> {valor}
       </p>
-      {acumulado > 0 && (
+      {acumulado !== undefined && (
         <p className="text-indigo-400">
           <span className="font-bold">Acumulado:</span> {acumulado}
         </p>
       )}
-      {variacao !== 0 && (
-        <p className={variacao > 0 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'}>
-          Variação: {variacao > 0 ? '+' : ''}
-          {variacao}%
-        </p>
-      )}
+      <p className={`${variacaoClasse} font-bold`}>
+        Variação em relação ao período anterior: {item ? formatarVariacao(item) : 'Sem base de comparação'}
+      </p>
     </div>
   );
 };
@@ -180,6 +188,7 @@ const VIEW_LABELS: Record<ViewMode, string> = {
 
 // ── Componente Principal ───────────────────────────────────────────────────
 const PainelEstatistico = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<EstatisticasBI | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('mensal');
@@ -187,10 +196,16 @@ const PainelEstatistico = () => {
   const [lotacoesOpen, setLotacoesOpen] = useState(false);
   const [dataProcessos, setDataProcessos] = useState<EstatisticasProcessoEnfermagem | null>(null);
   const [loadingProcessos, setLoadingProcessos] = useState(true);
+  const [erroProcessos, setErroProcessos] = useState<string | null>(null);
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UsuarioRanking | null>(null);
   const [raioXOpen, setRaioXOpen] = useState(false);
   const [temporalView, setTemporalView] = useState<'hora' | 'diario' | 'diaSemana' | 'mensal' | 'anual'>('mensal');
   const [filtroLotacao, setFiltroLotacao] = useState<string>('__todas__');
+  const [filtroUsuario, setFiltroUsuario] = useState<string>('__todos__');
+  const [periodoInicial, setPeriodoInicial] = useState('');
+  const [periodoFinal, setPeriodoFinal] = useState('');
+  const [exportando, setExportando] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -206,19 +221,35 @@ const PainelEstatistico = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchProcessos = async () => {
-      try {
-        const stats = await obterEstatisticasProcessoEnfermagem();
-        setDataProcessos(stats);
-      } catch (error) {
-        console.error('Erro ao carregar dados de produção:', error);
-      } finally {
-        setLoadingProcessos(false);
+  const fetchProcessos = useCallback(async () => {
+    setLoadingProcessos(true);
+    setErroProcessos(null);
+    try {
+      const stats = await obterEstatisticasProcessoEnfermagem();
+      if (!stats) throw new Error('O serviço de produção não retornou dados.');
+      setDataProcessos(stats);
+      setLoadingProcessos(false);
+      if (stats.totalProcessos > 0 && stats.registrosProducao.length === 0 && stats.registroChunks > 0) {
+        setCarregandoDetalhes(true);
+        try {
+          const registros = await obterRegistrosProducaoCache(stats.registroChunks);
+          setDataProcessos((atual) => atual ? { ...atual, registrosProducao: registros } : atual);
+        } catch (error) {
+          console.warn('Indicadores carregados, mas os filtros avançados ficaram indisponíveis:', error);
+        } finally {
+          setCarregandoDetalhes(false);
+        }
       }
-    };
-    fetchProcessos();
+    } catch (error) {
+      console.error('Erro ao carregar dados de produção:', error);
+      setDataProcessos(null);
+      setErroProcessos('Não foi possível carregar os indicadores de produção.');
+    } finally {
+      setLoadingProcessos(false);
+    }
   }, []);
+
+  useEffect(() => { void fetchProcessos(); }, [fetchProcessos]);
 
   const evolucaoAtiva = useCallback((): EvolucaoEntry[] => {
     if (!data) return [];
@@ -243,83 +274,71 @@ const PainelEstatistico = () => {
   }, [data, viewModeAcessos]);
 
   const top10Lotacoes = (data?.todasLotacoes || []).slice(0, 10);
+  const estadoProducao = resolverEstadoProducao(loadingProcessos, erroProcessos, dataProcessos?.totalProcessos);
 
-  // ── Filtro de Lotação (client-side) ────────────────────────────────────────
-  // Recomputa KPIs e rankings da Seção 2 com base nos usuários da lotação selecionada.
-  // A série temporal permanece global (não há breakdown por usuário no cache).
+  // Usa o agregado exato do cache para a lotação simples; filtros adicionais reutilizam os mesmos registros carregados.
   const dadosFiltrados = useMemo(() => {
     if (!dataProcessos) return null;
-    if (filtroLotacao === '__todas__') return dataProcessos;
-
-    const usuariosFiltrados = dataProcessos.rankingUsuarios.filter(
-      u => u.lotacao === filtroLotacao
-    );
-
-    // KPIs recalculados
-    const totalConcluidos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosConcluidos, 0);
-    const totalAtivos = usuariosFiltrados.reduce((s, u) => s + u.raioX.processosAtivos, 0);
-    const totalProcessos = totalConcluidos + totalAtivos;
-    const totalPacientes = usuariosFiltrados.reduce((s, u) => s + u.raioX.totalPacientes, 0);
-    const tempos = usuariosFiltrados.map(u => u.raioX.tempoMedioHoras).filter(t => t > 0);
-    const tempoMedio = tempos.length > 0 ? parseFloat((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0;
-    const taxaConclusao = totalProcessos > 0 ? Math.round((totalConcluidos / totalProcessos) * 100) : 0;
-
-    // Rankings aproximados: acumular top-5 de cada usuário filtrado
-    const diagsAcc: Record<string, number> = {};
-    const nhbsAcc: Record<string, number> = {};
-    const intervsAcc: Record<string, number> = {};
-    const execsAcc: Record<string, number> = {};
-
-    usuariosFiltrados.forEach(u => {
-      u.raioX.topDiagnosticos.forEach((d, i) => {
-        diagsAcc[d] = (diagsAcc[d] || 0) + (5 - i); // Peso decrescente
-      });
-      u.raioX.topNHBs.forEach((n, i) => {
-        nhbsAcc[n] = (nhbsAcc[n] || 0) + (5 - i);
-      });
-      u.raioX.topIntervencoes.forEach((iv, i) => {
-        intervsAcc[iv] = (intervsAcc[iv] || 0) + (5 - i);
-      });
-      if (u.raioX.executorMaisFrequente && u.raioX.executorMaisFrequente !== 'N/A') {
-        execsAcc[u.raioX.executorMaisFrequente] = (execsAcc[u.raioX.executorMaisFrequente] || 0) + 1;
-      }
+    if (filtroUsuario === '__todos__' && !periodoInicial && !periodoFinal) {
+      return filtroLotacao === '__todas__' ? dataProcessos : dataProcessos.porLotacao[filtroLotacao] || agregarRegistrosProducao([]);
+    }
+    const inicio = periodoInicial ? new Date(`${periodoInicial}T00:00:00`) : null;
+    const fim = periodoFinal ? new Date(`${periodoFinal}T23:59:59.999`) : null;
+    if (dataProcessos.registrosProducao.length === 0) return null;
+    const registros = filtrarRegistrosProducao(dataProcessos.registrosProducao, {
+      lotacao: filtroLotacao === '__todas__' ? undefined : filtroLotacao,
+      usuarioId: filtroUsuario === '__todos__' ? undefined : filtroUsuario,
+      inicio,
+      fim,
     });
-
-    const toRanking = (map: Record<string, number>, limit = 10) =>
-      Object.entries(map)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, limit);
-
-    return {
-      ...dataProcessos,
-      totalProcessos,
-      totalProcessosConcluidos: totalConcluidos,
-      totalProcessosEmAndamento: totalAtivos,
-      totalPacientesAtendidos: totalPacientes,
-      taxaConclusao,
-      tempoMedioProcessoHoras: tempoMedio,
-      rankingUsuarios: usuariosFiltrados,
-      rankingLotacoes: [{ name: filtroLotacao, value: totalConcluidos }],
-      etapasPE: {
-        ...dataProcessos.etapasPE,
-        diagnostico: { ...dataProcessos.etapasPE.diagnostico, top: toRanking(diagsAcc) },
-        avaliacao: { ...dataProcessos.etapasPE.avaliacao, nhbs: toRanking(nhbsAcc) },
-        planejamento: { ...dataProcessos.etapasPE.planejamento, prescribed: toRanking(intervsAcc) },
-        implementacao: { ...dataProcessos.etapasPE.implementacao, executors: toRanking(execsAcc) },
-        evolucao: { nurseApplied: toRanking(intervsAcc) },
-      },
-      distribuicaoStatus: [
-        { name: 'Concluídos', value: totalConcluidos },
-        { name: 'Em Andamento', value: totalAtivos },
-      ],
-      perfilPacientes: dataProcessos.perfilPacientes,
-    };
-  }, [dataProcessos, filtroLotacao]);
+    return agregarRegistrosProducao(registros);
+  }, [dataProcessos, filtroLotacao, filtroUsuario, periodoInicial, periodoFinal]);
 
   const lotacoesDisponiveis = useMemo(() => {
     return dataProcessos?.lotacoesUnicas || [];
   }, [dataProcessos]);
+
+  const usuariosDisponiveis = useMemo(() => {
+    const usuarios = new Map<string, string>();
+    (dataProcessos?.registrosProducao || [])
+      .filter((registro) => filtroLotacao === '__todas__' || registro.lotacao === filtroLotacao)
+      .forEach((registro) => usuarios.set(registro.usuarioId, registro.usuarioNome));
+    return [...usuarios.entries()].map(([id, nome]) => ({ id, nome })).sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [dataProcessos, filtroLotacao]);
+
+  const limparFiltros = () => {
+    setFiltroLotacao('__todas__');
+    setFiltroUsuario('__todos__');
+    setPeriodoInicial('');
+    setPeriodoFinal('');
+  };
+
+  const handleExportar = async () => {
+    if (!data || !dataProcessos || !dadosFiltrados || exportando) return;
+    setExportando(true);
+    try {
+      const { exportarPainelEstatisticoXlsx } = await import('@/utils/painelEstatisticoXlsx');
+      const filtro = filtroLotacao === '__todas__' ? 'Todas as unidades' : filtroLotacao;
+      const nome = await exportarPainelEstatisticoXlsx({
+        usuarios: data,
+        producao: dadosFiltrados,
+        ultimaAtualizacao: dataProcessos.ultimaAtualizacao || data.ultimaAtualizacao,
+        filtroProducao: filtro,
+        visaoCadastros: VIEW_LABELS[viewMode],
+        visaoAcessos: VIEW_LABELS[viewModeAcessos],
+        visaoProducao: { hora: 'Hora', diario: 'Dia', diaSemana: 'Dia da Semana', mensal: 'Mês', anual: 'Ano' }[temporalView],
+        evolucaoCadastros: evolucaoAtiva(),
+        evolucaoAcessos: evolucaoAcessosAtiva(),
+        serieProducao: dadosFiltrados.temporalAvancado[temporalView],
+      });
+      toast({ title: 'Excel gerado com sucesso', description: `${nome} foi baixado com os filtros atuais.` });
+    } catch (error) {
+      console.error('Erro ao exportar painel:', error);
+      toast({ title: 'Não foi possível gerar o Excel', description: 'Tente novamente em alguns instantes.', variant: 'destructive' });
+    } finally {
+      setExportando(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -336,20 +355,31 @@ const PainelEstatistico = () => {
     <AuthenticatedLayout>
       <div className="space-y-10 pb-20 max-w-7xl mx-auto">
         {/* ── Cabeçalho ── */}
-        <div className="flex flex-col gap-2">
-          <h1 className="text-4xl font-black text-csae-green-900 tracking-tight flex items-center gap-3">
-            <BarChartIcon className="w-10 h-10 text-csae-green-600" />
-            Painel Estatístico <span className="text-csae-green-500/50">BI</span>
-          </h1>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-4xl font-black text-csae-green-900 tracking-tight flex items-center gap-3">
+              <BarChartIcon className="w-10 h-10 text-csae-green-600" />
+              Painel Estatístico <span className="text-csae-green-500/50">BI</span>
+            </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
             <span>Visão global de métricas e indicadores de produção da rede municipal de Florianópolis.</span>
             {data?.ultimaAtualizacao && (
               <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
                 Atualizado:{' '}
-                {timestampToDate(data.ultimaAtualizacao)?.toLocaleDateString('pt-BR') || 'Não informado'}
+                {timestampToDate(data.ultimaAtualizacao)?.toLocaleDateString('pt-BR') ?? 'Agora'}
               </span>
             )}
           </div>
+          </div>
+          <Button
+            type="button"
+            onClick={handleExportar}
+            disabled={!exportacaoPainelHabilitada(loading, estadoProducao, Boolean(data), Boolean(dadosFiltrados), exportando)}
+            className="gap-2 bg-csae-green-700 hover:bg-csae-green-800"
+          >
+            <Download className={`h-4 w-4 ${exportando ? 'animate-bounce' : ''}`} />
+            {exportando ? 'Gerando XLSX...' : 'Exportar XLSX'}
+          </Button>
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════ */}
@@ -361,12 +391,12 @@ const PainelEstatistico = () => {
               Quem são nossos usuários?
             </h2>
             <p className="text-gray-500 text-sm">
-              Indicadores calculados a partir dos perfis salvos. Tentativas que falharam antes de salvar não entram nestas contagens.
+              Perfil demográfico e comportamento dos profissionais conectados ao portal.
             </p>
           </div>
 
-          {/* ── LINHA 1: INDICADORES DE PERFIL ── */}
-          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6">
+          {/* ── LINHA 1: BIG NUMBERS (5 CARDS) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             
             {/* Card Cadastros */}
             <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
@@ -375,7 +405,7 @@ const PainelEstatistico = () => {
               </div>
               <CardHeader className="pb-2">
                 <CardDescription className="uppercase text-[9px] font-black tracking-widest text-csae-green-600">
-                  Perfis cadastrados
+                  Solicitações de Cadastro
                 </CardDescription>
                 <CardTitle className="text-3xl font-black text-csae-green-900">
                   {data?.totalCadastrados || 0}
@@ -386,24 +416,6 @@ const PainelEstatistico = () => {
                   <ArrowRight className="w-3 h-3 mr-1" />
                   Sendo <span className="font-black mx-1 text-csae-green-900">{data?.totalAprovados || 0}</span> liberados
                 </div>
-                <p className="mt-2 text-[10px] text-gray-500">Perfis salvos no sistema; tentativas que não chegaram ao envio não entram nesta contagem.</p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-lg bg-white overflow-hidden relative group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <AlertTriangle className="w-16 h-16 text-amber-900" />
-              </div>
-              <CardHeader className="pb-2">
-                <CardDescription className="uppercase text-[9px] font-black tracking-widest text-amber-700">
-                  Perfis incompletos
-                </CardDescription>
-                <CardTitle className="text-3xl font-black text-amber-900">
-                  {data?.totalIncompletos || 0}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-[10px] font-semibold text-amber-800">Campos básicos ou status ausentes</div>
               </CardContent>
             </Card>
 
@@ -831,46 +843,82 @@ const PainelEstatistico = () => {
             </p>
           </div>
 
-          {loadingProcessos ? (
+          {estadoProducao === 'loading' ? (
             <div className="flex flex-col items-center justify-center h-64 space-y-4">
               <HeartPulse className="w-10 h-10 text-indigo-500 animate-pulse" />
               <p className="text-gray-400 font-medium text-sm animate-pulse">
                 Consolidando inteligência de produção...
               </p>
             </div>
-          ) : !dataProcessos || dataProcessos.totalProcessos === 0 ? (
+          ) : estadoProducao === 'error' ? (
+            <div className="p-10 border-2 border-dashed rounded-3xl text-center space-y-4 bg-rose-50/30 border-rose-200">
+              <HeartPulse className="w-12 h-12 text-rose-300 mx-auto" />
+              <div>
+                <p className="text-rose-900 font-bold">Não foi possível carregar os indicadores de produção</p>
+                <p className="text-sm text-rose-700 mt-1">Os dados permanecem preservados. Tente atualizar o painel novamente.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={() => void fetchProcessos()} className="border-rose-300 text-rose-800">
+                Tentar novamente
+              </Button>
+            </div>
+          ) : estadoProducao === 'empty' ? (
             <div className="p-10 border-2 border-dashed rounded-3xl text-center space-y-4 bg-indigo-50/20 border-indigo-200">
                <ClipboardList className="w-12 h-12 text-indigo-300 mx-auto" />
                <p className="text-indigo-900 font-bold">Nenhum dado clínico processado ainda.</p>
             </div>
           ) : (
             <div className="space-y-12">
-              {/* ── Seletor de Lotação ── */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100">
-                <div className="flex items-center gap-2 text-indigo-700 shrink-0">
+              {/* ── Filtros da produção ── */}
+              <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-indigo-700">
                   <SlidersHorizontal className="w-4 h-4" />
-                  <span className="text-xs font-black uppercase tracking-widest">Filtrar por unidade:</span>
+                    <span className="text-xs font-black uppercase tracking-widest">Filtros de produção</span>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={limparFiltros} className="gap-2 border-indigo-200 text-indigo-700">
+                    <X className="w-3.5 h-3.5" /> Limpar filtros
+                  </Button>
                 </div>
-                <select
-                  id="filtro-lotacao"
-                  value={filtroLotacao}
-                  onChange={(e) => setFiltroLotacao(e.target.value)}
-                  className="flex-1 text-sm font-semibold border border-indigo-200 rounded-xl px-3 py-2 bg-white text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm"
-                  aria-label="Filtrar produção por unidade de lotação"
-                >
-                  <option value="__todas__">Todas as unidades</option>
-                  {lotacoesDisponiveis.map(lot => (
-                    <option key={lot} value={lot}>{lot}</option>
-                  ))}
-                </select>
-                <span className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                  filtroLotacao === '__todas__'
-                    ? 'bg-indigo-100 text-indigo-700'
-                    : 'bg-indigo-600 text-white shadow-md'
-                }`}>
-                  <Building2 className="w-3 h-3" />
-                  {filtroLotacao === '__todas__' ? 'Todas as unidades' : filtroLotacao}
-                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> Unidade</span>
+                    <select
+                      id="filtro-lotacao"
+                      value={filtroLotacao}
+                      onChange={(event) => { setFiltroLotacao(event.target.value); setFiltroUsuario('__todos__'); }}
+                      className="w-full h-10 text-sm font-semibold border border-indigo-200 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="__todas__">Todas as unidades com produção</option>
+                      {lotacoesDisponiveis.map((lotacao) => <option key={lotacao} value={lotacao}>{lotacao}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Usuário</span>
+                    <select
+                      id="filtro-usuario"
+                      value={filtroUsuario}
+                      disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0}
+                      onChange={(event) => setFiltroUsuario(event.target.value)}
+                      className="w-full h-10 text-sm font-semibold border border-indigo-200 rounded-xl px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    >
+                      <option value="__todos__">Todos os usuários com produção</option>
+                      {usuariosDisponiveis.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.nome}</option>)}
+                    </select>
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span>Período inicial</span>
+                    <Input type="date" disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0} value={periodoInicial} max={periodoFinal || undefined} onChange={(event) => setPeriodoInicial(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                  </label>
+                  <label className="space-y-1 text-[11px] font-bold text-indigo-900">
+                    <span>Período final</span>
+                    <Input type="date" disabled={carregandoDetalhes || (dataProcessos?.registrosProducao.length ?? 0) === 0} value={periodoFinal} min={periodoInicial || undefined} onChange={(event) => setPeriodoFinal(event.target.value)} className="bg-white border-indigo-200 rounded-xl" />
+                  </label>
+                </div>
+                <p className="text-[11px] text-indigo-600 font-semibold">
+                  {carregandoDetalhes
+                    ? 'Carregando filtros avançados em segundo plano...'
+                    : `${dadosFiltrados?.totalProcessos ?? 0} registro(s) encontrado(s) com os filtros atuais.`}
+                </p>
               </div>
 
               {/* ── Bloco 0: KPIs e Gráfico Temporal Unificado ── */}
@@ -880,10 +928,9 @@ const PainelEstatistico = () => {
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardDescription className="text-indigo-100 text-[10px] font-bold uppercase tracking-wider">Total de Processos</CardDescription>
-                        {dataProcessos.temporalAvancado.mensal.length > 0 && (
+                        {(dadosFiltrados?.temporalAvancado.mensal.length ?? 0) > 0 && (
                           <div className="bg-white/20 px-2 py-0.5 rounded-full text-[9px] font-black">
-                            {dataProcessos.temporalAvancado.mensal[dataProcessos.temporalAvancado.mensal.length-1].variacaoPercentual > 0 ? '+' : ''}
-                            {dataProcessos.temporalAvancado.mensal[dataProcessos.temporalAvancado.mensal.length-1].variacaoPercentual}%
+                            {formatarVariacao(dadosFiltrados!.temporalAvancado.mensal[dadosFiltrados!.temporalAvancado.mensal.length - 1])}
                           </div>
                         )}
                       </div>
@@ -944,7 +991,7 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="p-6 h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={dataProcessos.temporalAvancado[temporalView]} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <ComposedChart data={dadosFiltrados?.temporalAvancado[temporalView] ?? []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
@@ -971,13 +1018,13 @@ const PainelEstatistico = () => {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie 
-                            data={dataProcessos.perfilPacientes.sexo} 
+                            data={dadosFiltrados?.perfilPacientes.sexo ?? []}
                             cx="50%" cy="50%" 
                             innerRadius={60} outerRadius={100} 
                             paddingAngle={8} dataKey="value"
                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           >
-                            {dataProcessos.perfilPacientes.sexo.map((_, i) => (
+                            {(dadosFiltrados?.perfilPacientes.sexo ?? []).map((_, i) => (
                               <Cell key={`sex-${i}`} fill={i === 0 ? '#6366f1' : i === 1 ? '#f43f5e' : '#94a3b8'} />
                             ))}
                           </Pie>
@@ -994,7 +1041,7 @@ const PainelEstatistico = () => {
                     </CardHeader>
                     <CardContent className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dataProcessos.perfilPacientes.faixasEtarias} layout="vertical">
+                        <BarChart data={dadosFiltrados?.perfilPacientes.faixasEtarias ?? []} layout="vertical">
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 12, fontWeight: 700 }} />
                           <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} />
@@ -1134,21 +1181,16 @@ const PainelEstatistico = () => {
                   </Card>
                   <Card className="border-none shadow-xl h-[450px]">
                     <CardHeader><CardTitle className="text-sm font-bold">Distribuição de Executor</CardTitle></CardHeader>
-                    <CardContent className="h-[350px] flex items-center justify-center">
+                    <CardContent className="h-[350px] pt-2">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie 
-                            data={dadosFiltrados?.etapasPE.implementacao.executors ?? []} 
-                            cx="50%" cy="50%" 
-                            innerRadius={30} outerRadius={55} 
-                            dataKey="value" 
-                            label={({ name }) => name}
-                          >
-                            <Cell fill="#0891b2" />
-                            <Cell fill="#22d3ee" />
-                          </Pie>
-                          <RechartsTooltip />
-                        </PieChart>
+                        <BarChart data={dadosFiltrados?.etapasPE.implementacao.executors ?? []} layout="vertical" margin={{ left: 8, right: 30, top: 5, bottom: 5 }}>
+                          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+                          <YAxis dataKey="name" type="category" width={145} tick={{ fontSize: 9, fontWeight: 600 }} />
+                          <Bar dataKey="value" name="Execuções" fill="#0891b2" radius={[0, 5, 5, 0]}>
+                            <LabelList dataKey="value" position="right" style={{ fontWeight: 700, fontSize: 10 }} />
+                          </Bar>
+                          <RechartsTooltip formatter={(value: number) => [value, 'Execuções']} cursor={{ fill: '#ecfeff' }} />
+                        </BarChart>
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
@@ -1208,7 +1250,15 @@ const PainelEstatistico = () => {
                               <TableRow key={user.id || idx} className="hover:bg-indigo-50/30 transition-colors border-indigo-50 h-16">
                                 <TableCell className="font-bold text-gray-800 pl-6">
                                   <div className="flex flex-col">
-                                    <span>{user.name}</span>
+                                    <span className="flex items-center gap-2">
+                                      {idx < 3 && (
+                                        <Medal
+                                          className={`w-5 h-5 shrink-0 ${idx === 0 ? 'text-amber-500' : idx === 1 ? 'text-slate-400' : 'text-amber-700'}`}
+                                          aria-label={`${idx + 1}º lugar`}
+                                        />
+                                      )}
+                                      {user.name}
+                                    </span>
                                     <span className="text-[10px] text-gray-400 font-normal uppercase">{user.lotacao}</span>
                                   </div>
                                 </TableCell>

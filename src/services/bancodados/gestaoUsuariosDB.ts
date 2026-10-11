@@ -13,6 +13,7 @@ import {
   count
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { calcularTempoAtivoSegundos, type ProcessoComTempo } from '@/utils/tempoProcesso';
 import { Usuario } from '@/types/usuario';
 import { agruparStatusCadastro, ordenarPerfisPorDataCadastro } from '@/utils/registrationData';
 
@@ -167,12 +168,14 @@ export async function buscarEstatisticasGlobais(): Promise<{
   processosAndamento: number;
   processosConcluidos: number;
   totalAcessosPlataforma: number;
+  totalTempoProcessosMinutos: number;
 }> {
   try {
     let aprovados = 0;
     let totalAcessosPlataforma = 0;
     let andamento = 0;
     let concluidos = 0;
+    let tempoTotalSegundos = 0;
 
     // 1. Contar profissionais aprovados e somar acessos via Iteração Client-side (visto flutuação na base)
     try {
@@ -200,6 +203,7 @@ export async function buscarEstatisticasGlobais(): Promise<{
         const processos: unknown[] = Array.isArray(data.processosEnfermagem) ? data.processosEnfermagem : [];
         processos.forEach((processo) => {
           if (typeof processo !== 'object' || processo === null || !('status' in processo)) return;
+          tempoTotalSegundos += calcularTempoAtivoSegundos(processo as ProcessoComTempo);
           if (processo.status === 'concluido') {
             concluidos++;
           } else if (processo.status === 'em_andamento') {
@@ -215,7 +219,8 @@ export async function buscarEstatisticasGlobais(): Promise<{
       profissionaisAprovados: aprovados,
       processosAndamento: andamento,
       processosConcluidos: concluidos,
-      totalAcessosPlataforma
+      totalAcessosPlataforma,
+      totalTempoProcessosMinutos: Math.round(tempoTotalSegundos / 60)
     };
   } catch (error) {
     console.error("Erro critico ao buscar estatísticas globais:", error);
@@ -223,7 +228,8 @@ export async function buscarEstatisticasGlobais(): Promise<{
       profissionaisAprovados: 0,
       processosAndamento: 0,
       processosConcluidos: 0,
-      totalAcessosPlataforma: 0
+      totalAcessosPlataforma: 0,
+      totalTempoProcessosMinutos: 0
     };
   }
 }

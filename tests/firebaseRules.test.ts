@@ -251,3 +251,22 @@ test('metadados de perfis legados permanecem íntegros sem conceder novas págin
   assert.equal(updated.data()?.versaoPermissoes, 1);
   assert.deepEqual(updated.data()?.paginasPermitidas, ['ProcessoEnfermagem', 'Dashboard', 'CentralAjuda']);
 });
+
+
+test('cache segmentado de produção: administrador pode ler e salvar, profissional não pode', async () => {
+  await seedProfile('gestor-bi', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('profissional', 'Liberado');
+  const adminDb = environment.authenticatedContext('gestor-bi').firestore();
+  const nurseDb = environment.authenticatedContext('profissional').firestore();
+  const chunksRef = doc(adminDb, 'estatisticas/painel_processos/registros/chunk-0000');
+  const unitRef = doc(adminDb, 'estatisticas/painel_processos/lotacoes/centro');
+  await assertSucceeds(setDoc(chunksRef, { schemaVersion: 9, index: 0, registros: [{ usuarioId: 'uid-exemplo' }] }));
+  await assertSucceeds(setDoc(unitRef, { schemaVersion: 9, lotacao: 'Centro', agregado: { totalProcessos: 1 } }));
+  await assertSucceeds(getDoc(chunksRef));
+  await assertSucceeds(getDoc(unitRef));
+  await assertFails(getDoc(doc(nurseDb, chunksRef.path)));
+  await assertFails(getDoc(doc(nurseDb, unitRef.path)));
+  await assertFails(setDoc(doc(nurseDb, chunksRef.path), { schemaVersion: 9, index: 0, registros: [] }));
+  await assertFails(getDoc(doc(environment.unauthenticatedContext().firestore(), chunksRef.path)));
+});
+
