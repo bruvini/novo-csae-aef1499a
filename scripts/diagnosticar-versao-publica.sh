@@ -4,6 +4,7 @@
 set -Eeuo pipefail
 python3 - <<'PY'
 from html.parser import HTMLParser
+import sys
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 class Assets(HTMLParser):
@@ -25,6 +26,11 @@ for domain in ('https://csae.com.br/', 'https://csaefloripa.web.app/'):
             print(domain, '\n  status:',r.status,'\n  scripts:',parser.scripts,'\n  estilos:',parser.styles)
     except (OSError, URLError) as e:
         print(domain,'\n  Não foi possível consultar:',str(e)[:160])
-if len(results)==2:
-    print('\nMESMO BUNDLE:', 'SIM' if len(set(results.values()))==1 else 'NÃO — confira configuração do domínio csae.com.br')
+if len(results)!=2:
+    print('ATENÇÃO: não foi possível comparar ambos os endereços.')
+    sys.exit(2)
+mesmo=len(set(results.values()))==1
+print('\nMESMO BUNDLE:', 'SIM' if mesmo else 'NÃO — confira configuração do domínio csae.com.br')
+if not mesmo:
+    sys.exit(3)
 PY
