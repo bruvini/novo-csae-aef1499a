@@ -219,3 +219,29 @@ test('Storage exige aprovação para leitura e papel de conteúdo para gravaçã
   await assertSucceeds(uploadBytes(ref(managerStorage, 'protocolos/capa.png'), file, { contentType: 'image/png' }));
   await assertSucceeds(deleteObject(ref(managerStorage, 'protocolos/capa.png')));
 });
+
+
+test('metadados de perfis legados permanecem íntegros sem conceder novas páginas', async () => {
+  await seedProfile('admin-legado', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('enfermeiro-legado', 'Liberado', {
+    paginasPermitidas: ['ProcessoEnfermagem', 'Dashboard', 'CentralAjuda'],
+    versaoPermissoes: 1,
+    historicoRevisoes: [],
+    analisadoPor: 'Comissão CSAE',
+    analisadoPorUid: 'admin-legado',
+    dataAtualizacaoDadosPessoais: new Date('2026-08-20T00:00:00Z'),
+  });
+  const dbAdmin = environment.authenticatedContext('admin-legado').firestore();
+  const dbOwner = environment.authenticatedContext('enfermeiro-legado').firestore();
+  await assertSucceeds(updateDoc(doc(dbAdmin, 'usuarios', 'enfermeiro-legado'), {
+    statusAcesso: 'Revogado',
+    dataRevogacao: serverTimestamp(),
+    revogadoPorUid: 'admin-legado',
+  }));
+  const updated = await getDoc(doc(dbAdmin, 'usuarios', 'enfermeiro-legado'));
+  assert.equal(updated.data()?.versaoPermissoes, 1);
+  assert.deepEqual(updated.data()?.paginasPermitidas, ['ProcessoEnfermagem', 'Dashboard', 'CentralAjuda']);
+  await assertFails(updateDoc(doc(dbOwner, 'usuarios', 'enfermeiro-legado'), {
+    paginasPermitidas: ['GestaoSuporte'],
+  }));
+});
