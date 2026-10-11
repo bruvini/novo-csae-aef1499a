@@ -105,3 +105,14 @@ test('novo achado deve ser revisado sem tocar nos IDs dos exames antigos', () =>
   assert.deepEqual(sistema?.linhasOrigem, [4, 10]);
   assert.deepEqual(sistema?.documentosFirestore, ['s1']);
 });
+
+test('exame com nome parcial do legado não vira cadastro novo automaticamente', () => {
+  const inventario = base();
+  inventario.colecoes.ExamesLabImagem[0].nome =
+    'Sorologia para Sífilis — Teste Treponêmico (TR) + VDRL';
+  const relatorio = conciliarCatalogoClinico(inventario, origem());
+  const exame = relatorio.propostas.find(p => p.aba === 'ExamesLabImagem');
+  assert.equal(exame?.acao, 'revisao-obrigatoria');
+  assert.deepEqual(exame?.documentosFirestore, ['e1']);
+  assert.match(exame?.justificativa || '', /parcialmente/);
+});
