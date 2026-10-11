@@ -22,7 +22,7 @@ test('gestação não é inferida pelo sexo e requer contexto explícito', () =>
     { ...base, valorMinimo: 100, valorMaximo: 139, criterioSexo: 'Feminino', criterioCondicao: 'Gestante normal', nomeAlteracao: 'Normal (Gestante)' }];
   assert.equal(classificarReferenciaNumerica(125, r, pessoa).status, 'neutro');
   assert.equal(classificarReferenciaNumerica(125, r, pessoa, 'geral').status, 'alterado');
-  assert.equal(classificarReferenciaNumerica(125, r, pessoa, 'gestante').status, 'normal');
+  assert.equal(classificarReferenciaNumerica(125, r, pessoa, 'gestante').status, 'neutro'); // conflito: limítrofe geral × meta gestante
 });
 test('jejum e pós-prandial são contextos diferentes', () => {
   const r = [
@@ -54,4 +54,13 @@ test('não permite aliases de PA, FC ou FR como outro parâmetro', () => {
   assert.equal(identidadeParametroVital('Frequência Cardíaca'), identidadeParametroVital('Frequência Cardíaca (FC)'));
   assert.equal(identidadeParametroVital('FR'), identidadeParametroVital('Frequência Respiratória'));
   assert.equal(identidadeParametroVital('Pressão Arterial'), 'pressao-arterial-composta');
+});
+
+test('não confunde exceto gestantes com gestação e não mascara hipoglicemia', () => {
+  const r = [
+    { valorMinimo: 0, valorMaximo: 91, criterioCondicao: 'Gestante — jejum', nomeAlteracao: 'Normal' },
+    { valorMinimo: 0, valorMaximo: 59, criterioCondicao: 'Gestante — hipoglicemia', nomeAlteracao: 'Hipoglicemia', subconjuntoNHBVinculado: 'Regulação neurológica' },
+  ];
+  assert.equal(contextoDaReferencia({criterioCondicao: 'Jejum (≥8h) — pessoas com DM, exceto gestantes'}), 'diabetes_jejum');
+  assert.equal(classificarReferenciaNumerica(50, r, pessoa, 'gestante_jejum').status, 'neutro');
 });
