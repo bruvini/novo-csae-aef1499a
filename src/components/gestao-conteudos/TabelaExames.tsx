@@ -655,7 +655,7 @@ const TabelaExames = () => {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
+                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0" disabled title="Exclusão permanente bloqueada para preservar os prontuários históricos">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
