@@ -233,6 +233,9 @@ test('metadados de perfis legados permanecem íntegros sem conceder novas págin
   });
   const dbAdmin = environment.authenticatedContext('admin-legado').firestore();
   const dbOwner = environment.authenticatedContext('enfermeiro-legado').firestore();
+  await assertFails(updateDoc(doc(dbOwner, 'usuarios', 'enfermeiro-legado'), {
+    paginasPermitidas: ['GestaoSuporte'],
+  }));
   await assertSucceeds(updateDoc(doc(dbAdmin, 'usuarios', 'enfermeiro-legado'), {
     statusAcesso: 'Revogado',
     dataRevogacao: serverTimestamp(),
@@ -241,7 +244,4 @@ test('metadados de perfis legados permanecem íntegros sem conceder novas págin
   const updated = await getDoc(doc(dbAdmin, 'usuarios', 'enfermeiro-legado'));
   assert.equal(updated.data()?.versaoPermissoes, 1);
   assert.deepEqual(updated.data()?.paginasPermitidas, ['ProcessoEnfermagem', 'Dashboard', 'CentralAjuda']);
-  await assertFails(updateDoc(doc(dbOwner, 'usuarios', 'enfermeiro-legado'), {
-    paginasPermitidas: ['GestaoSuporte'],
-  }));
 });
