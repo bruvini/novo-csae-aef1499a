@@ -13,6 +13,7 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
 
 export interface ResultadoExame {
   // Campos para exames laboratoriais
@@ -20,6 +21,9 @@ export interface ResultadoExame {
   idadeMaxima?: number | null;
   idadeUnidade?: 'dias' | 'meses' | 'anos' | '';
   criterioSexo?: 'Masculino' | 'Feminino' | 'Ambos';
+  criterioCondicao?: string;
+  contextoClinico?: string;
+  interpretacaoClinica?: 'normal' | 'alterado' | 'indeterminado';
   valorMinimo?: number | null;
   valorMaximo?: number | null;
   // Campo para exames de imagem
@@ -77,7 +81,39 @@ export const getExames = (callback: (exames: Exame[]) => void) => {
   });
 };
 
+
+async function validarUnicidadeExame(exame: ExameInput, editingId?: string) {
+  const componentes = exame.componentes.map(c => normalizarNomeClinico(c.componenteAnalisado));
+  if (componentes.some(n => !n) || new Set(componentes).size !== componentes.length) {
+    throw new Error('Componentes sem nome ou duplicados no mesmo exame.');
+  }
+  const snapshot = await getDocs(collection(db, COLLECTION_NAME));
+  const vigente = editingId ? snapshot.docs.find(d => d.id === editingId)?.data() : undefined;
+  const novoNome = normalizarNomeClinico(exame.nomeExame);
+  const nomeJaExistia = vigente && normalizarNomeClinico(vigente.nomeExame || '') === novoNome;
+  const conflito = snapshot.docs.some(d => {
+    if (d.id === editingId) return false;
+    const data = d.data();
+    if (!nomeJaExistia && normalizarNomeClinico(data.nomeExame || '') === novoNome) return true;
+    const outros = Array.isArray(data.componentes) ? data.componentes : [];
+    const antigos = new Set((vigente?.componentes || []).map(
+      (c: { componenteAnalisado: string }) => normalizarNomeClinico(c.componenteAnalisado)));
+    return componentes.some(nome => !antigos.has(nome) &&
+      outros.some((c: { componenteAnalisado: string }) =>
+        normalizarNomeClinico(c.componenteAnalisado || '') === nome));
+  });
+  if (conflito) throw new Error(
+    'Existe um exame com este nome ou componente já cadastrado. ' +
+    'Complemente o exame existente para preservar resultados históricos.');
+  const sinais = await getDocs(collection(db, 'SinaisVitais'));
+  if (componentes.some(nome => sinais.docs.some(d =>
+    normalizarNomeClinico(d.data().sinalVitalNome || '') === nome))) {
+    throw new Error('Um dos componentes já existe nos sinais vitais. Use o cadastro atual para evitar sobrescrever o mesmo campo.');
+  }
+}
+
 export const addExame = async (exame: ExameInput) => {
+  await validarUnicidadeExame(exame);
   const docRef = await addDoc(collection(db, COLLECTION_NAME), {
     ...exame,
     dataCadastro: Timestamp.now()
@@ -86,6 +122,7 @@ export const addExame = async (exame: ExameInput) => {
 };
 
 export const updateExame = async (id: string, exame: ExameInput) => {
+  await validarUnicidadeExame(exame, id);
   const docRef = doc(db, COLLECTION_NAME, id);
   await updateDoc(docRef, exame);
 };
