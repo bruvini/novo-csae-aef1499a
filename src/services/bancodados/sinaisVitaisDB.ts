@@ -7,12 +7,14 @@ import {
   updateDoc, 
   deleteDoc, 
   onSnapshot,
+  getDoc,
   query,
   orderBy,
   Timestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { familiaPressaoArterial, identidadeParametroVital, normalizarNomeClinico } from '@/utils/referenciasClinicas';
+import { validarAtualizacaoVital } from '@/utils/protecaoCatalogoHistorico';
 
 export interface ValorReferenciaVital {
   idadeMinima: number | null;
@@ -94,8 +96,11 @@ export const addSinalVital = async (sinal: SinalVitalInput) => {
 };
 
 export const updateSinalVital = async (id: string, sinal: SinalVitalInput) => {
-  await validarUnicidadeVital(sinal.sinalVitalNome, id);
   const docRef = doc(db, COLLECTION_NAME, id);
+  const anterior = await getDoc(docRef);
+  if (!anterior.exists()) throw new Error('Sinal vital não encontrado.');
+  validarAtualizacaoVital(anterior.data() as SinalVital, sinal);
+  await validarUnicidadeVital(sinal.sinalVitalNome, id);
   await updateDoc(docRef, sinal);
 };
 
