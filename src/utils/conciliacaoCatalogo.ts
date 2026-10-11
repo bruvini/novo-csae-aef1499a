@@ -143,8 +143,15 @@ export function conciliarCatalogoClinico(
       continue;
     }
     if (!candidatos.length) {
+      const relacionados = inventario.colecoes.ExamesLabImagem.filter(e => {
+        const nome = norm(e.nome);
+        return key.length >= 8 && nome.length >= 8 && (nome.includes(key) || key.includes(nome));
+      });
       propostas.push(proposta('ExamesLabImagem', texto(entries[0], 0),
-        'novo-candidato', entries, [], 'Exame não encontrado pelo nome; conferir sinônimos e componentes já existentes.'));
+        relacionados.length ? 'revisao-obrigatoria' : 'novo-candidato', entries, ids(relacionados),
+        relacionados.length
+          ? 'Existem exames de denominação parcialmente coincidente. Confirmar equivalência antes de duplicar.'
+          : 'Exame não encontrado pelo nome; conferir sinônimos e componentes já existentes.'));
       continue;
     }
     const existente = candidatos[0];
