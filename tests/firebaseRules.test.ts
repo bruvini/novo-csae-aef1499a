@@ -15,6 +15,7 @@ import {
   getDocs,
   increment,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -165,6 +166,68 @@ test('somente gestor de conteúdo aprovado grava catálogo clínico', async () =
   };
   await assertSucceeds(setDoc(doc(gestorDb, 'SinaisVitais', 'pressao'), sinalVital));
   await assertFails(setDoc(doc(comumDb, 'SinaisVitais', 'nao-autorizado'), sinalVital));
+});
+
+test('reserva de identidades é atômica, privada e não pode ser adulterada', async () => {
+  await seedProfile('gestorA', 'Liberado', {
+    gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'],
+  });
+  await seedProfile('gestorB', 'Liberado', {
+    gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'],
+  });
+  await seedProfile('comum');
+  const a = environment.authenticatedContext('gestorA').firestore();
+  const b = environment.authenticatedContext('gestorB').firestore();
+  const comum = environment.authenticatedContext('comum').firestore();
+  const chave = 'parametro--pressao-arterial-pas';
+  const bloqueio = doc(a, 'identidadesCatalogoClinico', chave);
+  const valores = {
+    sinalVitalNome: 'Pressão Arterial Sistólica (PAS)',
+    sinalVitalDescricao: 'Teste de concorrência.',
+    unidadeMedida: 'mmHg',
+    valoresDeReferencia: [],
+  };
+  const registrar = async (dbGestor: typeof a, id: string) => runTransaction(dbGestor, async transacao => {
+    const keyRef = doc(dbGestor, 'identidadesCatalogoClinico', chave);
+    const reserva = await transacao.get(keyRef);
+    if (reserva.exists()) throw new Error('Identidade reservada');
+    transacao.set(keyRef, {
+      chave, colecaoOrigem: 'SinaisVitais', documentoId: id, criadoEm: serverTimestamp(),
+    });
+    transacao.set(doc(dbGestor, 'SinaisVitais', id), valores);
+  });
+  const resultados = await Promise.allSettled([
+    registrar(a, 'clinico-a'),
+    registrar(b, 'clinico-b'),
+  ]);
+  assert.equal(resultados.filter(r => r.status === 'fulfilled').length, 1);
+  assert.equal((await getDocs(collection(a, 'SinaisVitais'))).size, 1);
+  await assertSucceeds(getDoc(bloqueio));
+  await assertFails(getDoc(doc(comum, bloqueio.path)));
+  await assertFails(setDoc(doc(comum, 'identidadesCatalogoClinico', 'parametro--fraude'), {
+    chave: 'parametro--fraude', colecaoOrigem: 'SinaisVitais',
+    documentoId: 'qualquer', criadoEm: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(bloqueio, { documentoId: 'modificado' }));
+  await assertFails(deleteDoc(bloqueio));
+  await assertFails(getDocs(collection(a, 'identidadesCatalogoClinico')));
+  await assertFails(deleteDoc(doc(a, 'SinaisVitais', 'clinico-a')));
+  await assertFails(deleteDoc(doc(a, 'SinaisVitais', 'clinico-b')));
+});
+
+test('Firestore não permite excluir catálogos com chaves históricas, mesmo ao gestor', async () => {
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const dbGestor = environment.authenticatedContext('gestor').firestore();
+  await assertSucceeds(getDocs(collection(dbGestor, 'ExamesLabImagem')));
+  await assertSucceeds(setDoc(doc(dbGestor, 'ExamesLabImagem', 'laboratorio'), {
+    nomeExame: 'Teste de laboratório', descricaoExame: 'Exemplo.',
+    tipoExame: 'Laboratorial', componentes: [],
+  }));
+  await assertFails(deleteDoc(doc(dbGestor, 'ExamesLabImagem', 'laboratorio')));
+  await assertSucceeds(setDoc(doc(dbGestor, 'RevisaoSistemas', 'sistema'), {
+    nomeSistema: 'Sistema de teste', descricaoSistema: 'Exemplo.', exames: [],
+  }));
+  await assertFails(deleteDoc(doc(dbGestor, 'RevisaoSistemas', 'sistema')));
 });
 
 test('tickets e sugestões ficam limitados ao autor; suporte lê e responde sem alterar o autor', async () => {

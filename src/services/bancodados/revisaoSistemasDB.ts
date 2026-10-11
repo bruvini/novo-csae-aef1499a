@@ -4,10 +4,9 @@ import {
   query, 
   orderBy, 
   getDocs,
-  getDoc, 
+  getDoc,
+  runTransaction,
   doc, 
-  addDoc,
-  updateDoc, 
   onSnapshot,
   Timestamp,
   serverTimestamp
@@ -15,6 +14,12 @@ import {
 import { db } from '@/services/firebase';
 import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
 import { validarAtualizacaoSistema } from '@/utils/protecaoCatalogoHistorico';
+import { chaveCatalogo, chavesNovas, reservarIdentidades } from './identidadesCatalogoDB';
+
+const chavesDoSistema = (sistema: Pick<SistemaCorporal, 'nomeSistema' | 'exames'>) => [
+  chaveCatalogo('sistema', sistema.nomeSistema),
+  ...sistema.exames.map(exame => chaveCatalogo('exame-fisico', exame.nomeExame)),
+];
 
 export interface OpcaoAchado {
   textoOpcao: string;
@@ -100,15 +105,11 @@ async function validarUnicidadeSistema(nome: string, exames: ExamePropedeutico[]
 
 export const addSistema = async (sistema: Omit<SistemaCorporal, 'id' | 'dataCadastro'>): Promise<void> => {
   await validarUnicidadeSistema(sistema.nomeSistema, sistema.exames);
-  try {
-    await addDoc(collection(db, 'RevisaoSistemas'), {
-      ...sistema,
-      dataCadastro: serverTimestamp()
-    });
-  } catch (error) {
-    console.error('Erro ao adicionar sistema:', error);
-    throw error;
-  }
+  const docRef = doc(collection(db, 'RevisaoSistemas'));
+  await runTransaction(db, async transaction => {
+    await reservarIdentidades(transaction, chavesDoSistema(sistema), 'RevisaoSistemas', docRef.id);
+    transaction.set(docRef, { ...sistema, dataCadastro: serverTimestamp() });
+  });
 };
 
 export const updateSistema = async (id: string, sistema: Partial<SistemaCorporal>): Promise<void> => {
@@ -118,14 +119,18 @@ export const updateSistema = async (id: string, sistema: Partial<SistemaCorporal
   const original = anterior.data() as SistemaCorporal;
   const proximo = { ...original, ...sistema };
   validarAtualizacaoSistema(original, proximo);
-  if (proximo.nomeSistema && proximo.exames) await validarUnicidadeSistema(proximo.nomeSistema, proximo.exames, id);
-  try {
-    const { dataCadastro, ...dadosParaAtualizar } = sistema;
-    await updateDoc(docRef, dadosParaAtualizar);
-  } catch (error) {
-    console.error('Erro ao atualizar sistema:', error);
-    throw error;
-  }
+  await validarUnicidadeSistema(proximo.nomeSistema, proximo.exames, id);
+  const { dataCadastro: _dataCadastro, ...dadosParaAtualizar } = sistema;
+  await runTransaction(db, async transaction => {
+    const atual = await transaction.get(docRef);
+    if (!atual.exists()) throw new Error('Sistema excluído durante a edição.');
+    const anteriorTransacao = atual.data() as SistemaCorporal;
+    const completo = { ...anteriorTransacao, ...sistema };
+    validarAtualizacaoSistema(anteriorTransacao, completo);
+    const novas = chavesNovas(chavesDoSistema(anteriorTransacao), chavesDoSistema(completo));
+    await reservarIdentidades(transaction, novas, 'RevisaoSistemas', docRef.id);
+    transaction.update(docRef, dadosParaAtualizar);
+  });
 };
 
 export const deleteSistema = async (_id: string): Promise<void> => {

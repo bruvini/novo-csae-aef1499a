@@ -1,13 +1,13 @@
 
 import { 
   collection, 
-  addDoc, 
   getDocs, 
   doc, 
   updateDoc, 
 
   onSnapshot,
   getDoc,
+  runTransaction,
   query,
   orderBy,
   Timestamp 
@@ -15,6 +15,7 @@ import {
 import { db } from '../firebase';
 import { familiaPressaoArterial, identidadeParametroVital, normalizarNomeClinico } from '@/utils/referenciasClinicas';
 import { validarAtualizacaoVital } from '@/utils/protecaoCatalogoHistorico';
+import { chaveCatalogo, reservarIdentidades } from './identidadesCatalogoDB';
 
 export interface ValorReferenciaVital {
   idadeMinima: number | null;
@@ -88,9 +89,11 @@ async function validarUnicidadeVital(nome: string, editingId?: string) {
 
 export const addSinalVital = async (sinal: SinalVitalInput) => {
   await validarUnicidadeVital(sinal.sinalVitalNome);
-  const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-    ...sinal,
-    dataCadastro: Timestamp.now()
+  const docRef = doc(collection(db, COLLECTION_NAME));
+  await runTransaction(db, async transaction => {
+    await reservarIdentidades(
+      transaction, [chaveCatalogo('parametro', sinal.sinalVitalNome)], 'SinaisVitais', docRef.id);
+    transaction.set(docRef, { ...sinal, dataCadastro: Timestamp.now() });
   });
   return docRef.id;
 };

@@ -301,9 +301,26 @@ service cloud.firestore {
       allow delete: if ownPatient();
     }
 
+    // Reservas imutáveis para novos nomes; transações gravam a reserva e o
+    // documento clínico juntos. Conteúdos preexistentes seguem o preflight.
+    match /identidadesCatalogoClinico/{chave} {
+      allow get: if canManageContent();
+      allow list: if false;
+      allow create: if canManageContent()
+        && request.resource.data.keys().hasAll(['chave', 'colecaoOrigem', 'documentoId', 'criadoEm'])
+        && request.resource.data.keys().hasOnly(['chave', 'colecaoOrigem', 'documentoId', 'criadoEm'])
+        && request.resource.data.chave == chave
+        && boundedString(chave, 1400)
+        && request.resource.data.colecaoOrigem in ['SinaisVitais', 'ExamesLabImagem', 'RevisaoSistemas']
+        && boundedString(request.resource.data.documentoId, 128)
+        && request.resource.data.documentoId.size() > 0
+        && request.resource.data.criadoEm == request.time;
+      allow update, delete: if false;
+    }
+
     match /{catalog}/{documentId} {
       allow read: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
-        && hasPage('ProcessoEnfermagem');
+        && (hasPage('ProcessoEnfermagem') || canManageContent());
       allow create: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
         && canManageContent()
         && validCatalogDocument(catalog)
@@ -313,7 +330,10 @@ service cloud.firestore {
         && validCatalogDocument(catalog)
         && (('dataCadastro' in resource.data && request.resource.data.dataCadastro == resource.data.dataCadastro)
           || (!('dataCadastro' in resource.data) && !('dataCadastro' in request.resource.data)));
-      allow delete: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+      // Conteúdos clínicos utilizados como chaves de prontuários não podem
+      // ser excluídos diretamente (nem por SDK); migração/arquivamento exige
+      // fluxo versionado e revisão institucional.
+      allow delete: if catalog in ['rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
         && canManageContent();
     }
 
