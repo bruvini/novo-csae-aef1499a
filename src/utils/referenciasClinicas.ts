@@ -47,6 +47,20 @@ export function normalizarNomeClinico(nome: string): string {
     .toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/** Chaves apenas para prevenir novos aliases; não renomeiam dados clínicos já salvos. */
+export function identidadeParametroVital(nome: string): string {
+  const n = normalizarNomeClinico(nome);
+  const familia = familiaPressaoArterial(nome);
+  if (familia) return 'pressao-arterial-' + familia;
+  if (/\bpressao arterial\b/.test(n) || n === 'pa') return 'pressao-arterial-composta';
+  if (/^frequencia cardiaca\b/.test(n) || n === 'fc') return 'frequencia-cardiaca';
+  if (/^frequencia respiratoria\b/.test(n) || n === 'fr') return 'frequencia-respiratoria';
+  if (/^saturacao de oxigenio\b/.test(n) || n === 'spo2') return 'saturacao-oxigenio';
+  if (/^temperatura corporal\b/.test(n)) return 'temperatura-corporal';
+  if (/^glicemia capilar\b/.test(n) || n === 'hgt') return 'glicemia-capilar';
+  return n;
+}
+
 export function familiaPressaoArterial(nome: string): 'pas' | 'pad' | null {
   const n = normalizarNomeClinico(nome);
   if (/\b(queda|diferencial|convergencia|postural|media|pam)\b/.test(n)) return null;
