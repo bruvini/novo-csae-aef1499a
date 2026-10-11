@@ -126,6 +126,9 @@ service cloud.firestore {
       return signedIn()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
+        // Campos históricos são aceitos para preservar perfis antigos, mas não podem
+        // ser forjados por quem está criando um cadastro novo.
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas'])
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.ehAdmin == false
         && request.resource.data.gestorConteudos == false
