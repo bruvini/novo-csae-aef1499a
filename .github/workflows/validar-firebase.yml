@@ -36,6 +36,8 @@ jobs:
         run: npm run test:rules
       - name: Rodar testes da aplicação
         run: npm test
+      - name: Testar filtros, exportação e tempo do PE
+        run: npx tsx --test src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/tempoProcesso.test.ts
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
