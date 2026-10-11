@@ -51,5 +51,12 @@ jobs:
           bash -n scripts/diagnosticar-versao-publica.sh
           python3 -m py_compile scripts/migrar-perfis-legados.py
           python3 -m py_compile scripts/conferir-changelogs-csae.py
+      - name: Verificar proteção contra alterações locais no Cloud Shell
+        run: |
+          pattern='^ M \.firebase/hosting\.[[:alnum:]]+\.cache        run: git diff --check
+
+          [[ -z "$(printf ' M .firebase/hosting.ZGlzdA.cache\n' | grep -Ev "$pattern" || true)" ]]
+          [[ -n "$(printf ' M src/pages/Dashboard.tsx\n' | grep -Ev "$pattern" || true)" ]]
+          [[ -n "$(printf '?? scripts/nova-alteracao.sh\n' | grep -Ev "$pattern" || true)" ]]
       - name: Verificar alterações
         run: git diff --check
