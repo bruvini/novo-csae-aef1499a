@@ -9,13 +9,17 @@ import {
   Copy, Search, FileText, Target, Play, TrendingUp, BadgeCheck,
   Stethoscope, Heart, AlertTriangle, CheckCircle2
 } from 'lucide-react';
-import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
+import {
+  IntervencaoImplementada,
+  ProcessoEnfermagem,
+  EvolucaoEnfermagem,
+} from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
-import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames } from '@/services/bancodados/examesDB';
-import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
+import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisDB';
+import { getExames, Exame } from '@/services/bancodados/examesDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -30,27 +34,24 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 }) => {
   const [textoEvolucao, setTextoEvolucao] = useState(processo.evolucao?.resumoGerado || '');
   const { toast } = useToast();
-  const [sinaisVitais, setSinaisVitais] = useState<any[]>([]);
-  const [exames, setExames] = useState<any[]>([]);
-  const [sistemas, setSistemas] = useState<any[]>([]);
+  const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
+  const [exames, setExames] = useState<Exame[]>([]);
   const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
 
 
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [sv, ex, sist] = await Promise.all([
-          new Promise<any[]>((resolve) => {
+        const [sv, ex] = await Promise.all([
+          new Promise<SinalVital[]>((resolve) => {
             const unsubscribe = getSinaisVitais((data) => { resolve(data); unsubscribe(); });
           }),
-          new Promise<any[]>((resolve) => {
+          new Promise<Exame[]>((resolve) => {
             const unsubscribe = getExames((data) => { resolve(data); unsubscribe(); });
-          }),
-          getSistemas()
+          })
         ]);
         setSinaisVitais(sv);
         setExames(ex);
-        setSistemas(sist);
       } catch (err) {
         console.error('Erro ao carregar catálogos:', err);
       }
@@ -142,22 +143,28 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
     // ── Exame Físico ──────────────────────────────────────────────────────────
     const exameFisicoData = processo.avaliacao?.exameFisico || {};
-    if (Object.keys(exameFisicoData).length > 0) {
+    const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
+    if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
+      const parametrosRenderizados = new Set<string>();
 
-      const svAtivos = sinaisVitais.filter(s => exameFisicoData[s.sinalVitalNome]);
+      const svAtivos = sinaisVitais.filter(s => isValorAvaliacaoValido(exameFisicoData[s.sinalVitalNome]));
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`));
+        svAtivos.forEach(s => {
+          parametrosRenderizados.add(s.sinalVitalNome);
+          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`);
+        });
       }
 
       const exMap = new Map<string, string[]>();
       exames.forEach(ex => {
-        ex.componentes.forEach((c: any) => {
-          if (exameFisicoData[c.componenteAnalisado]) {
-            const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
+        ex.componentes.forEach((c) => {
+          if (isValorAvaliacaoValido(exameFisicoData[c.componenteAnalisado])) {
+            const grp = `${ex.tipoExame} - ${ex.nomeExame}`;
             if (!exMap.has(grp)) exMap.set(grp, []);
             exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
+            parametrosRenderizados.add(c.componenteAnalisado);
           }
         });
       });
@@ -168,32 +175,40 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
       // Peso e Altura (campos auxiliares do cálculo de IMC)
       const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
-      const temIMCAux = camposIMCAux.some(k => exameFisicoData[k]);
+      const temIMCAux = camposIMCAux.some(k => isValorAvaliacaoValido(exameFisicoData[k]));
       if (temIMCAux) {
         if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
         camposIMCAux.forEach((chave) => {
           const val = exameFisicoData[chave];
-          if (val !== undefined && val !== '') linhas.push(`  • ${chave}: ${val}`);
+          if (isValorAvaliacaoValido(val)) {
+            parametrosRenderizados.add(chave);
+            linhas.push(`  • ${chave}: ${val}`);
+          }
         });
       }
 
-      const rsEncontrados: string[] = [];
-      const exameFisicoMultiData = processo.avaliacao?.exameFisicoMulti || {};
-      const exameFisicoDescricoesData = processo.avaliacao?.exameFisicoDescricoes || {};
-      sistemas.forEach(s => {
-        s.exames.forEach((e: any) => {
-          const multiVals: string[] = exameFisicoMultiData[e.nomeExame] || [];
-          const legacyVal = exameFisicoData[e.nomeExame];
-          const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
-          if (values.length > 0) {
-            const withDesc = values.map((v: string) => {
-              const desc = exameFisicoDescricoesData[`${e.nomeExame}|||${v}`];
-              return desc ? `${v}: ${desc}` : v;
-            });
-            rsEncontrados.push(`${e.nomeExame}: ${withDesc.join(', ')}`);
-          }
+      const parametrosNaoClassificados = registrosExameFisico.filter(
+        (registro) => registro.tipo === 'parametro' && !parametrosRenderizados.has(registro.exame)
+      );
+      if (parametrosNaoClassificados.length > 0) {
+        linhas.push('  [OUTROS PARÂMETROS REGISTRADOS]');
+        parametrosNaoClassificados.forEach((registro) => {
+          parametrosRenderizados.add(registro.exame);
+          linhas.push(`  • ${registro.exame}: ${registro.valor}`);
         });
-      });
+      }
+
+      const achadosPorExame = new Map<string, string[]>();
+      registrosExameFisico
+        .filter((registro) => registro.tipo === 'achado')
+        .forEach((registro) => {
+          if (!achadosPorExame.has(registro.exame)) achadosPorExame.set(registro.exame, []);
+          achadosPorExame.get(registro.exame)!.push(
+            registro.descricao ? `${registro.valor}: ${registro.descricao}` : String(registro.valor)
+          );
+        });
+      const rsEncontrados = [...achadosPorExame.entries()]
+        .map(([exame, valores]) => `${exame}: ${valores.join(', ')}`);
       if (rsEncontrados.length > 0) {
         linhas.push('  [REVISÃO DE SISTEMAS]');
         rsEncontrados.forEach(item => linhas.push(`  • ${item}`));
@@ -209,14 +224,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     if (diagnosticosPlanejados.length > 0) {
       linhas.push('PLANEJAMENTO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
-      diagnosticosPlanejados.forEach((diag: any) => {
+      diagnosticosPlanejados.forEach((diag) => {
         linhas.push(`[${diag.tituloDiagnostico}]`);
         if (diag.resultadoEsperadoSelecionado) {
           linhas.push(`Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
         }
         linhas.push('');
         if (diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0) {
-          diag.intervencoesSelecionadas.forEach((int: any) => {
+          diag.intervencoesSelecionadas.forEach((int) => {
             linhas.push(`• ${int.acaoPrescrita};`);
           });
         }
@@ -228,19 +243,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     // Lista apenas intervenções marcadas como implementadas, com executor.
     // Sem agrupamento por diagnóstico.
     const implementacao = processo.implementacao || {};
-    const implementadas: any[] = [];
-    Object.values(implementacao).forEach((dados: any) => {
-      if (dados.intervencoes) {
-        dados.intervencoes.forEach((i: any) => {
-          if (i.implementadoNestaConsulta) implementadas.push(i);
-        });
-      }
-    });
+    const implementadas: IntervencaoImplementada[] = Object.values(implementacao)
+      .flatMap((dados) => dados.intervencoes.filter((intervencao) => intervencao.implementadoNestaConsulta));
 
     if (implementadas.length > 0) {
       linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
-      implementadas.forEach((int: any) => {
+      implementadas.forEach((int) => {
         const executor = int.quemExecuta ? ` (Executor: ${int.quemExecuta})` : '';
         linhas.push(`• ${int.acaoPrescrita}${executor}`);
       });
@@ -253,11 +262,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
     const acoesEnfermeiro: string[] = [];
 
-    Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]: any) => {
+    Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]) => {
       if (!acoesMarcadas || acoesMarcadas.length === 0) return;
       acoesMarcadas.forEach((acaoPresc: string) => {
         const dxImpl = processo.implementacao?.[tituloDiag];
-        const intv = dxImpl?.intervencoes.find((i: any) => i.acaoPrescrita === acaoPresc);
+        const intv = dxImpl?.intervencoes.find((i) => i.acaoPrescrita === acaoPresc);
         const textoBase = intv?.acaoEnfermeiro || acaoPresc;
         acoesEnfermeiro.push(conjugarVerbo(textoBase));
       });
@@ -299,11 +308,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   );
 
   /** Diagnóstico → Resultado → Intervenções */
-  const DiagnosticoBlock = ({ titulo, resultado, intervencoes, renderIntervencao }: {
+  const DiagnosticoBlock = <T,>({ titulo, resultado, intervencoes, renderIntervencao }: {
     titulo: string;
     resultado?: string;
-    intervencoes: any[];
-    renderIntervencao: (int: any, idx: number) => React.ReactNode;
+    intervencoes: T[];
+    renderIntervencao: (int: T, idx: number) => React.ReactNode;
   }) => (
     <InfoCard>
       <p className="font-bold text-sm text-gray-900 mb-1">{titulo}</p>
@@ -321,13 +330,12 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   // ─── Dados derivados ──────────────────────────────────────────────────────────
   const exameFisico = processo.avaliacao?.exameFisico || {};
   // nhbsAfetadas pode ter objetos { parametro, nhb } ou strings legadas
-  const nhbsAfetadas: any[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
-    ? processo.avaliacao.nhbsAfetadas
-    : [];
+  const nhbsAfetadas: Array<{ parametro?: string; nhb?: string } | string> =
+    Array.isArray(processo.avaliacao?.nhbsAfetadas) ? processo.avaliacao.nhbsAfetadas : [];
 
   // Diagnósticos agrupados por subconjunto via cruzamento com o Rol de Enfermagem
   const diagnosticosPorSubconjunto: Record<string, string[]> = {};
-  (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d: any) => {
+  (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d) => {
     // Busca o documento completo no Rol para extrair os subconjuntos reais
     const docRol = diagnosticosRol.find((r) => r.id === d.id || r.tituloDiagnostico === d.tituloDiagnostico);
     const subconjuntos = docRol?.subconjuntos;
@@ -341,7 +349,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   });
 
   const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
-  const temExecutada = Object.values(intervencoesExecutadas).some((l: any) => l.length > 0);
+  const temExecutada = Object.values(intervencoesExecutadas).some((lista) => lista.length > 0);
 
   return (
     <div className="space-y-8">
@@ -374,7 +382,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Exame Físico / Parâmetros Registrados" />
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
-                    {Object.entries(exameFisico).map(([chave, valor]: any) => (
+                    {Object.entries(exameFisico).map(([chave, valor]) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
                         <span className="text-gray-600">{valor}</span>
@@ -389,7 +397,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Necessidades Humanas Básicas Afetadas" />
                   <ul className="space-y-1">
-                    {nhbsAfetadas.map((item: any, i: number) => {
+                    {nhbsAfetadas.map((item, i) => {
                       // Suporta objetos { parametro, nhb } e strings legadas
                       if (item && typeof item === 'object') {
                         return (
@@ -448,7 +456,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag: any, index: number) => (
+              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag, index) => (
                 <DiagnosticoBlock
                   key={index}
                   titulo={diag.tituloDiagnostico}
@@ -473,11 +481,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {Object.entries(processo.implementacao || {}).map(([titulo, dados]: any, i: number) => {
+              {Object.entries(processo.implementacao || {}).map(([titulo, dados], i) => {
                 const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
-                  (p: any) => p.tituloDiagnostico === titulo
+                  (p) => p.tituloDiagnostico === titulo
                 );
-                const implementadas = dados.intervencoes.filter((iv: any) => iv.implementadoNestaConsulta);
+                const implementadas = dados.intervencoes.filter((iv) => iv.implementadoNestaConsulta);
                 if (implementadas.length === 0) return null;
                 return (
                   <DiagnosticoBlock
@@ -520,10 +528,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   </AlertDescription>
                 </Alert>
               ) : (
-                Object.entries(intervencoesExecutadas).map(([titulo, lista]: any, i) => {
+                Object.entries(intervencoesExecutadas).map(([titulo, lista], i) => {
                   if (lista.length === 0) return null;
                   const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
-                    (d: any) => d.tituloDiagnostico === titulo
+                    (d) => d.tituloDiagnostico === titulo
                   );
                   const resultadoExp = planejadoDiag?.resultadoEsperadoSelecionado;
                   return (
@@ -534,7 +542,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                       intervencoes={lista}
                       renderIntervencao={(acaoPresc: string, idx: number) => {
                         const dxImpl = processo.implementacao?.[titulo];
-                        const intv = dxImpl?.intervencoes.find((inv: any) => inv.acaoPrescrita === acaoPresc);
+                        const intv = dxImpl?.intervencoes.find((inv) => inv.acaoPrescrita === acaoPresc);
                         const textoPresente = intv?.acaoEnfermeiro || acaoPresc;
                         return (
                           <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">

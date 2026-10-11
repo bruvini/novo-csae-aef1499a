@@ -17,6 +17,7 @@ import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnfermagemDB';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { obterRegistrosExameFisico } from '@/utils/processoUtils';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
@@ -70,21 +71,28 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     linhas.push('');
 
     // Avaliação
-    if (processo.avaliacao.coletaDeDadosSubjetivos) {
+    if (processo.avaliacao?.coletaDeDadosSubjetivos) {
       linhas.push('AVALIAÇÃO DE ENFERMAGEM:');
       linhas.push(processo.avaliacao.coletaDeDadosSubjetivos);
       linhas.push('');
     }
 
     // Exame Físico
-    const exameFisico = processo.avaliacao.exameFisico || {};
-    if (Object.keys(exameFisico).length > 0) {
+    const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
+    const parametros = registrosExameFisico.filter((registro) => registro.tipo === 'parametro');
+    const achados = registrosExameFisico.filter((registro) => registro.tipo === 'achado');
+    if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      Object.entries(exameFisico).forEach(([parametro, valor]) => {
-        if (valor !== null && valor !== undefined && valor !== '') {
-          linhas.push(`${parametro}: ${valor}`);
-        }
-      });
+      parametros.forEach(({ exame, valor }) => linhas.push(`${exame}: ${valor}`));
+      if (achados.length > 0) {
+        linhas.push('[REVISÃO DE SISTEMAS]');
+        const achadosPorExame = new Map<string, string[]>();
+        achados.forEach(({ exame, valor, descricao }) => {
+          if (!achadosPorExame.has(exame)) achadosPorExame.set(exame, []);
+          achadosPorExame.get(exame)!.push(descricao ? `${valor}: ${descricao}` : String(valor));
+        });
+        achadosPorExame.forEach((valores, exame) => linhas.push(`${exame}: ${valores.join(', ')}`));
+      }
       linhas.push('');
     }
 
