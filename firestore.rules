@@ -1,0 +1,395 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Portal data model (Standard Firestore):
+    // usuarios/{authUid}: profile and approval/permission state.
+    // pacientesProcessoEnfermagem/{id}: patient identifiers and clinical process history, owner in uidUsuario.
+    // Catalogs: ExamesLabImagem, RevisaoSistemas, SinaisVitais, rolEnfermagem,
+    // diagnosticosEnfermagem and subconjuntosEnfermagem.
+    // Support: tickets_suporte and sugestoes_melhoria, owner in usuarioId; pesquisas_nps, owner in usuarioId.
+    // Administrative: estatisticas and changelogs. interventions: intervencoesAutorais, author in autorId.
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profilePath() {
+      return /databases/$(database)/documents/usuarios/$(request.auth.uid);
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(profilePath());
+    }
+
+    function profile() {
+      return get(profilePath()).data;
+    }
+
+    function isApproved() {
+      return hasProfile()
+        && profile().statusAcesso in ['Aprovado', 'Liberado'];
+    }
+
+    function isActiveAdmin() {
+      return hasProfile()
+        && profile().statusAcesso in ['Aprovado', 'Liberado']
+        && profile().ehAdmin == true;
+    }
+
+    function hasPage(pageId) {
+      return isActiveAdmin()
+        || (isApproved()
+          && ((('paginasPermitidas' in profile())
+                && profile().paginasPermitidas is list
+                && pageId in profile().paginasPermitidas)
+            || (pageId == 'ProcessoEnfermagem'
+              && (!('paginasPermitidas' in profile())
+                || (profile().paginasPermitidas is list && profile().paginasPermitidas.size() == 0)))));
+    }
+
+    function canManageContent() {
+      return isActiveAdmin()
+        || (isApproved() && profile().gestorConteudos == true
+          && 'paginasPermitidas' in profile()
+          && profile().paginasPermitidas is list
+          && 'GestaoConteudos' in profile().paginasPermitidas);
+    }
+
+    function canManageSupport() {
+      return hasPage('GestaoSuporte');
+    }
+
+    function canViewBI() {
+      return isActiveAdmin();
+    }
+
+    function boundedString(value, maxLength) {
+      return value is string && value.size() <= maxLength;
+    }
+
+    function validPersonalData(value) {
+      return value is map
+        && value.keys().hasAll(['nomeCompleto', 'rg', 'cpf', 'rua', 'numero', 'bairro', 'cidade', 'uf', 'cep'])
+        && value.keys().hasOnly(['nomeCompleto', 'rg', 'cpf', 'rua', 'numero', 'bairro', 'cidade', 'uf', 'cep'])
+        && boundedString(value.nomeCompleto, 160)
+        && boundedString(value.rg, 32)
+        && boundedString(value.cpf, 20)
+        && boundedString(value.rua, 160)
+        && boundedString(value.numero, 24)
+        && boundedString(value.bairro, 100)
+        && boundedString(value.cidade, 100)
+        && boundedString(value.uf, 2)
+        && boundedString(value.cep, 12);
+    }
+
+    function validProfessionalData(value) {
+      return value is map
+        && value.keys().hasAll(['formacao', 'atuaSMS'])
+        && value.keys().hasOnly(['formacao', 'numeroCoren', 'ufCoren', 'dataInicioResidencia', 'iesEnfermagem', 'atuaSMS', 'lotacao', 'matricula', 'cidadeTrabalho', 'localCargo'])
+        && boundedString(value.formacao, 120)
+        && value.atuaSMS is bool
+        && (!('numeroCoren' in value) || boundedString(value.numeroCoren, 40))
+        && (!('ufCoren' in value) || boundedString(value.ufCoren, 2))
+        && (!('dataInicioResidencia' in value) || boundedString(value.dataInicioResidencia, 40))
+        && (!('iesEnfermagem' in value) || boundedString(value.iesEnfermagem, 180))
+        && (!('lotacao' in value) || boundedString(value.lotacao, 140))
+        && (!('matricula' in value) || boundedString(value.matricula, 40))
+        && (!('cidadeTrabalho' in value) || boundedString(value.cidadeTrabalho, 100))
+        && (!('localCargo' in value) || boundedString(value.localCargo, 140));
+    }
+
+    function validProfileDocument(data) {
+      return data is map
+        && data.keys().hasAll(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro'])
+        && data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
+        && data.uid is string
+        && boundedString(data.email, 254)
+        && validPersonalData(data.dadosPessoais)
+        && validProfessionalData(data.dadosProfissionais)
+        && data.termoResponsabilidadeAceito is bool
+        && data.termoResponsabilidadeData is timestamp
+        && data.ehAdmin is bool
+        && data.gestorConteudos is bool
+        && data.tipoUsuario in ['Comum', 'Admin', 'Administrador']
+        && data.statusAcesso in ['Aguardando', 'Liberado', 'Aprovado', 'Recusado', 'Rejeitado', 'Revogado', 'AguardandoRevisaoCadastro']
+        && (!('paginasPermitidas' in data) || (data.paginasPermitidas is list
+          && data.paginasPermitidas.size() <= 12
+          && data.paginasPermitidas.hasOnly(['ProcessoEnfermagem', 'GestaoConteudos', 'GestaoUsuarios', 'PainelEstatistico', 'GestaoSuporte'])))
+        && (!('totalAcessos' in data) || (data.totalAcessos is int && data.totalAcessos >= 0))
+        && (!('ultimoAcesso' in data) || data.ultimoAcesso is timestamp)
+        && (!('historicoAcesso' in data) || (data.historicoAcesso is list && data.historicoAcesso.size() <= 200))
+        && (!('motivoRecusa' in data) || boundedString(data.motivoRecusa, 2000));
+    }
+
+    function isPendingSelfRegistration(uid) {
+      return signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.ehAdmin == false
+        && request.resource.data.gestorConteudos == false
+        && request.resource.data.tipoUsuario == 'Comum'
+        && request.resource.data.statusAcesso == 'Aguardando'
+        && request.resource.data.termoResponsabilidadeAceito == true
+        && request.resource.data.termoResponsabilidadeData == request.time
+        && request.resource.data.dataCadastro == request.time
+        && (!('paginasPermitidas' in request.resource.data) || request.resource.data.paginasPermitidas.size() == 0)
+        && validProfileDocument(request.resource.data);
+    }
+
+    function adminProfileUpdateIsSafe() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let privilegedFields = ['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'statusAcesso'];
+      return validProfileDocument(request.resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && changed.hasOnly(['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'statusAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
+        && (!(changed.hasAny(privilegedFields)) || resource.data.uid != request.auth.uid)
+        && (!(request.resource.data.statusAcesso in ['Liberado', 'Aprovado']) || request.resource.data.ehAdmin is bool)
+        && (!changed.hasAny(['dataAprovacao']) || request.resource.data.dataAprovacao == request.time)
+        && (!changed.hasAny(['dataRecusa']) || request.resource.data.dataRecusa == request.time)
+        && (!changed.hasAny(['dataRecusaAcesso']) || request.resource.data.dataRecusaAcesso == request.time)
+        && (!changed.hasAny(['dataRevogacao']) || request.resource.data.dataRevogacao == request.time)
+        && (!changed.hasAny(['dataRestauracao']) || request.resource.data.dataRestauracao == request.time)
+        && (!changed.hasAny(['dataAtualizacaoPrivilegios']) || request.resource.data.dataAtualizacaoPrivilegios == request.time)
+        && (!('revogadoPorUid' in request.resource.data) || request.resource.data.revogadoPorUid == request.auth.uid || request.resource.data.revogadoPorUid == resource.data.revogadoPorUid);
+    }
+
+    function ownerProfileUpdateIsSafe() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return isApproved()
+        && resource.data.uid == request.auth.uid
+        && validProfileDocument(request.resource.data)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.ehAdmin == resource.data.ehAdmin
+        && request.resource.data.gestorConteudos == resource.data.gestorConteudos
+        && request.resource.data.tipoUsuario == resource.data.tipoUsuario
+        && request.resource.data.statusAcesso == resource.data.statusAcesso
+        && changed.hasOnly(['dadosPessoais', 'dadosProfissionais', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
+        && (!changed.hasAny(['dadosPessoais']) || validPersonalData(request.resource.data.dadosPessoais))
+        && (!changed.hasAny(['dadosProfissionais']) || validProfessionalData(request.resource.data.dadosProfissionais))
+        && (!changed.hasAny(['totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
+          || (request.resource.data.totalAcessos == (('totalAcessos' in resource.data) ? resource.data.totalAcessos : 0) + 1
+            && request.resource.data.ultimoAcesso == request.time));
+    }
+
+    function ownPatient() {
+      return isApproved() && hasPage('ProcessoEnfermagem') && resource.data.uidUsuario == request.auth.uid;
+    }
+
+    function validNewPatient() {
+      return request.resource.data.keys().hasAll(['nomeCompleto', 'dataNascimento', 'sexo', 'dataCadastro', 'uidUsuario', 'processosEnfermagem'])
+        && request.resource.data.keys().hasOnly(['nomeCompleto', 'dataNascimento', 'sexo', 'dataCadastro', 'uidUsuario', 'idUsuario', 'processosEnfermagem'])
+        && boundedString(request.resource.data.nomeCompleto, 160)
+        && request.resource.data.dataNascimento is timestamp
+        && request.resource.data.sexo in ['Feminino', 'Masculino']
+        && request.resource.data.dataCadastro == request.time
+        && request.resource.data.uidUsuario == request.auth.uid
+        && request.resource.data.processosEnfermagem is list
+        && request.resource.data.processosEnfermagem.size() == 0
+        && (!('idUsuario' in request.resource.data) || boundedString(request.resource.data.idUsuario, 128));
+    }
+
+    function validTicketCreate() {
+      return request.resource.data.keys().hasAll(['usuarioId', 'nomeUsuario', 'moduloAferido', 'descricao', 'status', 'visualizadoPeloSuporte', 'dataCriacao'])
+        && request.resource.data.keys().hasOnly(['usuarioId', 'nomeUsuario', 'moduloAferido', 'descricao', 'status', 'visualizadoPeloSuporte', 'dataCriacao'])
+        && request.resource.data.usuarioId == request.auth.uid
+        && boundedString(request.resource.data.nomeUsuario, 160)
+        && boundedString(request.resource.data.moduloAferido, 100)
+        && boundedString(request.resource.data.descricao, 10000)
+        && request.resource.data.status == 'Aberto'
+        && request.resource.data.visualizadoPeloSuporte == false
+        && request.resource.data.dataCriacao == request.time;
+    }
+
+    function validSuggestionCreate() {
+      return request.resource.data.keys().hasAll(['usuarioId', 'nomeUsuario', 'categoria', 'descricao', 'visualizadoPeloSuporte', 'dataCriacao'])
+        && request.resource.data.keys().hasOnly(['usuarioId', 'nomeUsuario', 'categoria', 'descricao', 'visualizadoPeloSuporte', 'dataCriacao'])
+        && request.resource.data.usuarioId == request.auth.uid
+        && boundedString(request.resource.data.nomeUsuario, 160)
+        && boundedString(request.resource.data.categoria, 100)
+        && boundedString(request.resource.data.descricao, 10000)
+        && request.resource.data.visualizadoPeloSuporte == false
+        && request.resource.data.dataCriacao == request.time;
+    }
+
+    function validNpsCreate() {
+      return request.resource.data.keys().hasAll(['usuarioId', 'nomeUsuario', 'notaGeral', 'notaUsabilidade', 'notaPerformance', 'dataCriacao'])
+        && request.resource.data.keys().hasOnly(['usuarioId', 'nomeUsuario', 'notaGeral', 'notaUsabilidade', 'notaPerformance', 'comentario', 'dataCriacao'])
+        && request.resource.data.usuarioId == request.auth.uid
+        && boundedString(request.resource.data.nomeUsuario, 160)
+        && request.resource.data.notaGeral is int && request.resource.data.notaGeral >= 1 && request.resource.data.notaGeral <= 10
+        && request.resource.data.notaUsabilidade is int && request.resource.data.notaUsabilidade >= 1 && request.resource.data.notaUsabilidade <= 10
+        && request.resource.data.notaPerformance is int && request.resource.data.notaPerformance >= 1 && request.resource.data.notaPerformance <= 10
+        && (!('comentario' in request.resource.data) || boundedString(request.resource.data.comentario, 5000))
+        && (request.resource.data.notaGeral > 6
+          || ('comentario' in request.resource.data && request.resource.data.comentario is string && request.resource.data.comentario.size() > 0))
+        && request.resource.data.dataCriacao == request.time;
+    }
+
+    function validCatalogDocument(catalog) {
+      let data = request.resource.data;
+      return data is map && data.keys().size() <= 32
+        && ((catalog == 'ExamesLabImagem'
+          && data.keys().hasAll(['nomeExame', 'descricaoExame', 'tipoExame', 'componentes'])
+          && data.keys().hasOnly(['nomeExame', 'descricaoExame', 'tipoExame', 'componentes', 'dataCadastro'])
+          && boundedString(data.nomeExame, 180)
+          && boundedString(data.descricaoExame, 2000)
+          && data.tipoExame in ['Laboratorial', 'Imagem']
+          && data.componentes is list && data.componentes.size() <= 100)
+        || (catalog == 'SinaisVitais'
+          && data.keys().hasAll(['sinalVitalNome', 'sinalVitalDescricao', 'unidadeMedida', 'valoresDeReferencia'])
+          && data.keys().hasOnly(['sinalVitalNome', 'sinalVitalDescricao', 'unidadeMedida', 'valoresDeReferencia', 'dataCadastro'])
+          && boundedString(data.sinalVitalNome, 180)
+          && boundedString(data.sinalVitalDescricao, 2000)
+          && boundedString(data.unidadeMedida, 100)
+          && data.valoresDeReferencia is list && data.valoresDeReferencia.size() <= 200)
+        || (catalog == 'RevisaoSistemas'
+          && data.keys().hasAll(['nomeSistema', 'descricaoSistema', 'exames'])
+          && data.keys().hasOnly(['nomeSistema', 'descricaoSistema', 'exames', 'dataCadastro'])
+          && boundedString(data.nomeSistema, 180)
+          && boundedString(data.descricaoSistema, 2000)
+          && data.exames is list && data.exames.size() <= 100)
+        || (catalog == 'rolEnfermagem'
+          && data.keys().hasAll(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados'])
+          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados', 'dataCadastro'])
+          && boundedString(data.tituloDiagnostico, 300)
+          && boundedString(data.descricaoDiagnostico, 5000)
+          && data.subconjuntos is list && data.subconjuntos.size() <= 100
+          && data.resultadosEsperados is list && data.resultadosEsperados.size() <= 100)
+        || (catalog == 'diagnosticosEnfermagem'
+          && data.keys().hasAll(['tituloDiagnostico', 'subconjuntosVinculados', 'resultadosEsperados'])
+          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntosVinculados', 'resultadosEsperados', 'dataCadastro'])
+          && boundedString(data.tituloDiagnostico, 300)
+          && (!('descricaoDiagnostico' in data) || boundedString(data.descricaoDiagnostico, 5000))
+          && data.subconjuntosVinculados is list && data.subconjuntosVinculados.size() <= 100
+          && data.resultadosEsperados is list && data.resultadosEsperados.size() <= 100)
+        || (catalog == 'subconjuntosEnfermagem'
+          && data.keys().hasAll(['tipoSubconjunto', 'tituloSubconjunto'])
+          && data.keys().hasOnly(['tipoSubconjunto', 'tituloSubconjunto', 'descricaoSubconjunto', 'volumeProtocolo', 'versaoProtocolo', 'dataPublicacaoProtocolo', 'dataAtualizacaoProtocolo', 'urlProtocolo', 'imagemCapaProtocolo', 'dataCadastro'])
+          && boundedString(data.tipoSubconjunto, 100)
+          && boundedString(data.tituloSubconjunto, 300)
+          && (!('descricaoSubconjunto' in data) || boundedString(data.descricaoSubconjunto, 10000))
+          && (!('urlProtocolo' in data) || boundedString(data.urlProtocolo, 2048))
+          && (!('imagemCapaProtocolo' in data) || boundedString(data.imagemCapaProtocolo, 2048))));
+    }
+
+    match /usuarios/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
+      allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isPendingSelfRegistration(uid);
+      allow update: if (isActiveAdmin() && adminProfileUpdateIsSafe()) || (signedIn() && ownerProfileUpdateIsSafe());
+      allow delete: if false;
+    }
+
+    match /pacientesProcessoEnfermagem/{patientId} {
+      allow read: if ownPatient() || (isActiveAdmin() && canViewBI());
+      allow create: if isApproved() && hasPage('ProcessoEnfermagem') && validNewPatient();
+      allow update: if ownPatient()
+        && request.resource.data.uidUsuario == resource.data.uidUsuario
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nomeCompleto', 'dataNascimento', 'sexo', 'processosEnfermagem'])
+        && boundedString(request.resource.data.nomeCompleto, 160)
+        && request.resource.data.dataNascimento is timestamp
+        && request.resource.data.sexo in ['Feminino', 'Masculino']
+        && request.resource.data.processosEnfermagem is list
+        && request.resource.data.processosEnfermagem.size() <= 50;
+      allow delete: if ownPatient();
+    }
+
+    match /{catalog}/{documentId} {
+      allow read: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+        && hasPage('ProcessoEnfermagem');
+      allow create: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+        && canManageContent()
+        && validCatalogDocument(catalog)
+        && (!('dataCadastro' in request.resource.data) || request.resource.data.dataCadastro is timestamp);
+      allow update: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+        && canManageContent()
+        && validCatalogDocument(catalog)
+        && (('dataCadastro' in resource.data && request.resource.data.dataCadastro == resource.data.dataCadastro)
+          || (!('dataCadastro' in resource.data) && !('dataCadastro' in request.resource.data)));
+      allow delete: if catalog in ['ExamesLabImagem', 'RevisaoSistemas', 'SinaisVitais', 'rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+        && canManageContent();
+    }
+
+    match /estatisticas/{reportId} {
+      allow read: if canViewBI() && reportId in ['painel_usuarios', 'painel_processos'];
+      allow create, update: if canViewBI() && reportId in ['painel_usuarios', 'painel_processos']
+        && request.resource.data is map
+        && request.resource.data.keys().size() <= 64;
+      allow delete: if canViewBI() && reportId in ['painel_usuarios', 'painel_processos'];
+    }
+
+    match /changelogs/{entryId} {
+      allow read: if isApproved() || isActiveAdmin();
+      allow create: if isActiveAdmin()
+        && request.resource.data.keys().hasAll(['titulo', 'descricao', 'dataHora'])
+        && request.resource.data.keys().hasOnly(['titulo', 'descricao', 'dataHora'])
+        && boundedString(request.resource.data.titulo, 180)
+        && boundedString(request.resource.data.descricao, 5000)
+        && request.resource.data.dataHora is timestamp;
+      allow update, delete: if false;
+    }
+
+    match /tickets_suporte/{ticketId} {
+      allow get, list: if canManageSupport() || (isApproved() && resource.data.usuarioId == request.auth.uid);
+      allow create: if isApproved() && validTicketCreate();
+      allow update: if canManageSupport()
+        ? (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respostaAdmin', 'visualizadoPeloSuporte', 'dataVisualizacaoSuporte', 'respostaVisualizadaPeloUsuario', 'dataRespostaAdmin', 'dataResolucao'])
+          && (!('respostaAdmin' in request.resource.data) || boundedString(request.resource.data.respostaAdmin, 5000))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+            || (resource.data.status == 'Aberto' && request.resource.data.status == 'Resolvido'))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataRespostaAdmin']) || request.resource.data.dataRespostaAdmin == request.time)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataResolucao']) || request.resource.data.dataResolucao == request.time)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataVisualizacaoSuporte']) || request.resource.data.dataVisualizacaoSuporte == request.time)
+          && request.resource.data.status in ['Aberto', 'Resolvido'])
+        : (isApproved() && resource.data.usuarioId == request.auth.uid
+          && resource.data.respostaAdmin is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respostaVisualizadaPeloUsuario', 'dataVisualizacaoResposta'])
+          && request.resource.data.respostaVisualizadaPeloUsuario == true
+          && request.resource.data.dataVisualizacaoResposta == request.time);
+      allow delete: if false;
+    }
+
+    match /sugestoes_melhoria/{suggestionId} {
+      allow get, list: if canManageSupport() || (isApproved() && resource.data.usuarioId == request.auth.uid);
+      allow create: if isApproved() && validSuggestionCreate();
+      allow update: if canManageSupport()
+        ? (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respostaAdmin', 'visualizadoPeloSuporte', 'dataVisualizacaoSuporte', 'respostaVisualizadaPeloUsuario', 'dataRespostaAdmin', 'dataVisualizacaoResposta'])
+          && (!('respostaAdmin' in request.resource.data) || boundedString(request.resource.data.respostaAdmin, 5000))
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataRespostaAdmin']) || request.resource.data.dataRespostaAdmin == request.time)
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['dataVisualizacaoSuporte']) || request.resource.data.dataVisualizacaoSuporte == request.time))
+        : (isApproved() && resource.data.usuarioId == request.auth.uid
+          && resource.data.respostaAdmin is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['respostaVisualizadaPeloUsuario', 'dataVisualizacaoResposta'])
+          && request.resource.data.respostaVisualizadaPeloUsuario == true
+          && request.resource.data.dataVisualizacaoResposta == request.time);
+      allow delete: if false;
+    }
+
+    match /pesquisas_nps/{surveyId} {
+      allow get, list: if canManageSupport() || (isApproved() && resource.data.usuarioId == request.auth.uid);
+      allow create: if isApproved() && validNpsCreate();
+      allow update, delete: if false;
+    }
+
+    match /intervencoesAutorais/{interventionId} {
+      allow get, list: if isApproved() && resource.data.autorId == request.auth.uid;
+      allow create: if hasPage('ProcessoEnfermagem')
+        && request.resource.data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
+        && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
+        && request.resource.data.autorId == request.auth.uid
+        && boundedString(request.resource.data.textoIntervencao, 2000)
+        && boundedString(request.resource.data.tituloResultadoVinculado, 500)
+        && boundedString(request.resource.data.autorNome, 160)
+        && request.resource.data.dataCriacao is timestamp;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

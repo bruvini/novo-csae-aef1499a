@@ -213,14 +213,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Usuário comum sem páginas definidas - definir páginas padrão
         paginasPermitidas = ['ProcessoEnfermagem'];
         
-        // Atualizar no Firestore
-        try {
-          const updateRef = doc(db, 'usuarios', userDoc.id);
-          await updateDoc(updateRef, { paginasPermitidas });
-          console.log('Páginas padrão definidas para usuário comum');
-        } catch (error) {
-          console.error('Erro ao definir páginas padrão:', error);
-        }
       }
       
       // Criar objeto de sessão
@@ -382,21 +374,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const updateRef = doc(db, 'usuarios', userDoc.id);
         
-        // 1. Atualizar contador e data do último acesso (Operação Segura)
+        // Registrar contador, último acesso e histórico em uma única operação.
         await updateDoc(updateRef, {
           totalAcessos: increment(1),
-          ultimoAcesso: serverTimestamp()
-        });
-        console.log(`[Auth] Contador de acessos incrementado para UID: ${user.uid}`);
-
-        // 2. Adicionar ao array de histórico (Operação separada para evitar erros de serverTimestamp no arrayUnion)
-        await updateDoc(updateRef, {
+          ultimoAcesso: serverTimestamp(),
           historicoAcesso: arrayUnion({
-            dataHora: Timestamp.now(), // Usando Timestamp do cliente para permitir gravação no array
+            dataHora: Timestamp.now(),
             ip: 'N/A',
-          })
+          }),
         });
-        console.log(`[Auth] Histórico de acesso registrado para UID: ${user.uid}`);
+        console.log(`[Auth] Acesso registrado para UID: ${user.uid}`);
       } catch (error) {
         console.error('[Auth] Erro crítico ao atualizar metadados de acesso no Firestore:', error);
         // Não impedimos o fluxo de login se apenas as estatísticas falharem
@@ -423,14 +410,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!userDoc.ehAdmin && (!paginasPermitidas || paginasPermitidas.length === 0)) {
         paginasPermitidas = ['ProcessoEnfermagem'];
         
-        // Atualizar no Firestore
-        try {
-          const updateRef = doc(db, 'usuarios', userDoc.id);
-          await updateDoc(updateRef, { paginasPermitidas });
-          console.log('Páginas padrão definidas para usuário comum');
-        } catch (error) {
-          console.error('Erro ao definir páginas padrão:', error);
-        }
       }
 
       // Criar sessão
