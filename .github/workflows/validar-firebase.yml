@@ -31,7 +31,7 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Instalar dependências
-        run: npm ci
+        run: npm ci --legacy-peer-deps # compatibilidade temporária: firebase@11 + rules-unit-testing@5; alinhar versões após validação
       - name: Verificar regras Firestore e Storage no Emulator
         run: npm run test:rules
       - name: Rodar testes da aplicação
