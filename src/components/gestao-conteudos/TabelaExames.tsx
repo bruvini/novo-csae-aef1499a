@@ -522,7 +522,7 @@ const TabelaExames = () => {
                           )}
 
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {!classificatorio && (
+                            {!componenteEhClassificatorio(tipoExame, componente) && (
                               <div>
                                 <label className="block text-xs font-medium mb-1">Contexto clínico da referência</label>
                                 <Select value={resultado.contextoClinico || 'legado'} onValueChange={v =>
@@ -549,7 +549,7 @@ const TabelaExames = () => {
                               </Select>
                             </div>
                           </div>
-                          {!classificatorio && (
+                          {!componenteEhClassificatorio(tipoExame, componente) && (
                             <div className="mt-2">
                               <label className="block text-xs font-medium mb-1">Condição ou técnica de coleta</label>
                               <Input className="h-8" value={resultado.criterioCondicao || ''} onChange={e =>
