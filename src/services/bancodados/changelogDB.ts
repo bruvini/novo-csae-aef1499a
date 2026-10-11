@@ -8,6 +8,7 @@ import {
   where,
   Timestamp,
   serverTimestamp,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
@@ -29,6 +30,18 @@ export async function buscarChangelogsRecentes(): Promise<Changelog[]> {
     id: doc.id,
     ...doc.data(),
   })) as Changelog[];
+}
+
+// Recebe novas publicações sem depender de recarregar o Dashboard.
+export function assinarChangelogsRecentes(
+  onData: (changes: Changelog[]) => void,
+  onError: (error: Error) => void,
+): () => void {
+  const ref = collection(db, 'changelogs');
+  const q = query(ref, orderBy('dataHora', 'desc'), limit(10));
+  return onSnapshot(q, (snapshot) => {
+    onData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as Changelog[]);
+  }, onError);
 }
 
 // ─── Buscar TODOS os changelogs (para modal de histórico) ──────────────────
