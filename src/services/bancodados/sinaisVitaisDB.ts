@@ -5,7 +5,7 @@ import {
   getDocs, 
   doc, 
   updateDoc, 
-  deleteDoc, 
+
   onSnapshot,
   getDoc,
   query,
@@ -104,9 +104,8 @@ export const updateSinalVital = async (id: string, sinal: SinalVitalInput) => {
   await updateDoc(docRef, sinal);
 };
 
-export const deleteSinalVital = async (id: string) => {
-  const docRef = doc(db, COLLECTION_NAME, id);
-  await deleteDoc(docRef);
+export const deleteSinalVital = async (_id: string): Promise<void> => {
+  throw new Error('Exclusão permanente de conteúdo clínico bloqueada: este campo pode estar vinculado a processos antigos. Aguarde o recurso de arquivamento versionado.');
 };
 
 export const getSinaisVitaisCount = async (): Promise<number> => {
