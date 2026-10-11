@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, familiaPressaoArterial, identidadeParametroVital, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, familiaPressaoArterial, contextoRegistradoParaTexto, identidadeParametroVital, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
 
 const pessoa = { dataNascimento: new Date(1995, 3, 10), sexo: 'Feminino', dataAvaliacao: new Date(2026, 9, 11) };
 const base = { idadeUnidade: 'anos' as const, criterioSexo: 'Ambos', nomeAlteracao: 'Normal', valorMinimo: 60, valorMaximo: 100 };
@@ -63,4 +63,10 @@ test('não confunde exceto gestantes com gestação e não mascara hipoglicemia'
   ];
   assert.equal(contextoDaReferencia({criterioCondicao: 'Jejum (≥8h) — pessoas com DM, exceto gestantes'}), 'diabetes_jejum');
   assert.equal(classificarReferenciaNumerica(50, r, pessoa, 'gestante_jejum').status, 'neutro');
+});
+
+test('contextos explícitos aparecem no resumo sem inventar contexto para dados legados', () => {
+  assert.equal(contextoRegistradoParaTexto(undefined, 'Glicemia Capilar'), '');
+  assert.match(contextoRegistradoParaTexto({ 'Glicemia Capilar': 'gestante_jejum' }, 'Glicemia Capilar'), /Gestação — jejum/);
+  assert.match(contextoRegistradoParaTexto({ 'PAS': 'situacao-antiga' }, 'PAS'), /situacao-antiga/);
 });

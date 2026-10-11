@@ -17,6 +17,15 @@ export const CONTEXTOS_CLINICOS = [
   { id: 'atleta', titulo: 'Atleta em repouso' },
 ] as const;
 
+export function contextoRegistradoParaTexto(contextos: Record<string, string> | undefined, parametro: string): string {
+  const codigo = contextos?.[parametro]?.trim();
+  if (!codigo) return '';
+  const reconhecido = CONTEXTOS_CLINICOS.find(c => c.id === codigo);
+  // Contextos antigos desconhecidos ainda são preservados na reprodução do registro.
+  const rotulo = reconhecido?.titulo || codigo;
+  return ' [Contexto clínico informado: ' + rotulo + ']';
+}
+
 export interface RegraReferenciaClinica {
   idadeMinima?: number | null;
   idadeMaxima?: number | null;
