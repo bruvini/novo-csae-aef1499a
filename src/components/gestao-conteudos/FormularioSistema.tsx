@@ -130,8 +130,8 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
       }
       onSuccess();
       onOpenChange(false);
-    } catch {
-      toast.error('Erro ao salvar sistema');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar sistema');
     } finally {
       setLoading(false);
     }
