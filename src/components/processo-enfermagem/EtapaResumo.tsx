@@ -20,6 +20,7 @@ import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisD
 import { getExames, Exame } from '@/services/bancodados/examesDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
+import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -149,6 +150,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       const parametrosRenderizados = new Set<string>();
 
       const svAtivos = sinaisVitais.filter(s => isValorAvaliacaoValido(exameFisicoData[s.sinalVitalNome]));
+      const parametrosRenderizados = new Set<string>();
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
         svAtivos.forEach(s => {
@@ -157,24 +159,31 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         });
       }
 
-      const exMap = new Map<string, string[]>();
-      exames.forEach(ex => {
-        ex.componentes.forEach((c) => {
-          if (isValorAvaliacaoValido(exameFisicoData[c.componenteAnalisado])) {
-            const grp = `${ex.tipoExame} - ${ex.nomeExame}`;
-            if (!exMap.has(grp)) exMap.set(grp, []);
-            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
-            parametrosRenderizados.add(c.componenteAnalisado);
-          }
-        });
+      const resultadosExame: string[] = [];
+      const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
+      const parametrosVitais = new Set(sinaisVitais.map((sinal) => sinal.sinalVitalNome));
+      const registrosParametro = registrosExameFisico.filter((registro) => registro.tipo === 'parametro');
+      registrosParametro.forEach((registro) => {
+        if (parametrosVitais.has(registro.exame) || camposIMCAux.includes(registro.exame)) return;
+        const cadastro = exames.flatMap((exame) => exame.componentes
+          .filter((componente) => componente.componenteAnalisado === registro.exame)
+          .map((componente) => ({ exame, componente })))[0];
+        resultadosExame.push(formatarLinhaResultadoExame({
+          tipoExame: cadastro?.exame.tipoExame,
+          nomeExame: cadastro?.exame.nomeExame,
+          componente: registro.exame,
+          valor: registro.valor,
+          resultadosConfigurados: cadastro?.componente.resultados,
+          valorTexto: processo.avaliacao?.examesValoresTexto?.[registro.exame],
+        }));
+        parametrosRenderizados.add(registro.exame);
       });
-      if (exMap.size > 0) {
+      if (resultadosExame.length > 0) {
         linhas.push('  [EXAMES DIAGNÓSTICOS]');
-        exMap.forEach((vals, titulo) => linhas.push(`  • ${titulo}: ${vals.join(', ')}`));
+        resultadosExame.forEach((resultado) => linhas.push(`  • ${resultado}`));
       }
 
       // Peso e Altura (campos auxiliares do cálculo de IMC)
-      const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
       const temIMCAux = camposIMCAux.some(k => isValorAvaliacaoValido(exameFisicoData[k]));
       if (temIMCAux) {
         if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
@@ -330,8 +339,9 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   // ─── Dados derivados ──────────────────────────────────────────────────────────
   const exameFisico = processo.avaliacao?.exameFisico || {};
   // nhbsAfetadas pode ter objetos { parametro, nhb } ou strings legadas
-  const nhbsAfetadas: Array<{ parametro?: string; nhb?: string } | string> =
-    Array.isArray(processo.avaliacao?.nhbsAfetadas) ? processo.avaliacao.nhbsAfetadas : [];
+  const nhbsAfetadas: unknown[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
+    ? processo.avaliacao.nhbsAfetadas
+    : [];
 
   // Diagnósticos agrupados por subconjunto via cruzamento com o Rol de Enfermagem
   const diagnosticosPorSubconjunto: Record<string, string[]> = {};
@@ -400,13 +410,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                     {nhbsAfetadas.map((item, i) => {
                       // Suporta objetos { parametro, nhb } e strings legadas
                       if (item && typeof item === 'object') {
+                        const nhbItem = item as Record<string, unknown>;
                         return (
                           <li key={i} className="flex items-baseline gap-1 text-sm">
                             <Heart className="w-3 h-3 text-rose-400 flex-shrink-0 mt-0.5" />
-                            {item.parametro && (
-                              <span className="font-semibold text-gray-700">{item.parametro}:</span>
+                            {nhbItem.parametro && (
+                              <span className="font-semibold text-gray-700">{String(nhbItem.parametro)}:</span>
                             )}
-                            <span className="text-gray-600">{item.nhb ?? String(item)}</span>
+                            <span className="text-gray-600">{String(nhbItem.nhb ?? item)}</span>
                           </li>
                         );
                       }
@@ -465,7 +476,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   renderIntervencao={(int, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                       <span className="text-csae-green-500 font-bold mt-0.5">•</span>
-                      {int.acaoPrescrita}
+                      {typeof int === 'string' ? int : int.acaoPrescrita}
                     </li>
                   )}
                 />
@@ -494,17 +505,23 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                     resultado={planejadoDiag?.resultadoEsperadoSelecionado}
                     intervencoes={implementadas}
                     renderIntervencao={(iv, idx) => (
+                      (() => {
+                        const acao = typeof iv === 'string' ? iv : iv.acaoPrescrita;
+                        const executor = typeof iv !== 'string' && 'quemExecuta' in iv ? iv.quemExecuta : undefined;
+                        return (
                       <li key={idx} className="flex items-start justify-between gap-2">
                         <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                          {iv.acaoPrescrita}
+                          {acao}
                         </span>
-                        {iv.quemExecuta && (
+                        {executor && (
                           <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
-                            Executor: {iv.quemExecuta}
+                            Executor: {executor}
                           </Badge>
                         )}
                       </li>
+                        );
+                      })()
                     )}
                   />
                 );
@@ -540,10 +557,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                       titulo={titulo}
                       resultado={resultadoExp}
                       intervencoes={lista}
-                      renderIntervencao={(acaoPresc: string, idx: number) => {
+                      renderIntervencao={(acaoPresc, idx: number) => {
+                        const textoAcaoPrescrita = typeof acaoPresc === 'string' ? acaoPresc : acaoPresc.acaoPrescrita;
                         const dxImpl = processo.implementacao?.[titulo];
-                        const intv = dxImpl?.intervencoes.find((inv) => inv.acaoPrescrita === acaoPresc);
-                        const textoPresente = intv?.acaoEnfermeiro || acaoPresc;
+                        const intv = dxImpl?.intervencoes.find((inv) => inv.acaoPrescrita === textoAcaoPrescrita);
+                        const textoPresente = intv?.acaoEnfermeiro || textoAcaoPrescrita;
                         return (
                           <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                             <CheckCircle2 className="w-4 h-4 text-csae-green-500 mt-0.5 flex-shrink-0" />

@@ -335,11 +335,11 @@ const TabelaExames = () => {
                   <Select value={tipoExame} onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Laboratorial">Laboratorial — valores numéricos com faixas de referência</SelectItem>
-                      <SelectItem value="Imagem">Imagem — resultado classificatório (Normal, Alterado etc.)</SelectItem>
+                      <SelectItem value="Laboratorial">Laboratorial — exame em amostra clínica (resultado quantitativo ou qualitativo)</SelectItem>
+                      <SelectItem value="Imagem">Imagem — exame de imagem com classificação ou laudo</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">Laboratorial = inserção de valores numéricos pelo enfermeiro. Imagem = seleção de resultado classificatório.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Este campo define a natureza do exame. A forma de registrar o resultado é definida por cada componente: exames laboratoriais também podem ter resultados qualitativos; exames de imagem podem usar classificações.</p>
                 </div>
               </div>
 
@@ -442,7 +442,12 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Unidade Idade</label>
                                   <Select
                                     value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                                    onValueChange={(value) => atualizarResultado(
+                                      componenteIndex,
+                                      resultadoIndex,
+                                      'idadeUnidade',
+                                      value === 'not-specified' ? '' : value as NonNullable<ResultadoExame['idadeUnidade']>
+                                    )}
                                   >
                                     <SelectTrigger className="h-8">
                                       <SelectValue />
@@ -462,7 +467,12 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Critério Sexo</label>
                                   <Select
                                     value={resultado.criterioSexo}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
+                                    onValueChange={(value) => atualizarResultado(
+                                      componenteIndex,
+                                      resultadoIndex,
+                                      'criterioSexo',
+                                      value as NonNullable<ResultadoExame['criterioSexo']>
+                                    )}
                                   >
                                     <SelectTrigger className="h-8">
                                       <SelectValue />
@@ -501,7 +511,7 @@ const TabelaExames = () => {
                                 className="h-8"
                                 value={resultado.resultadoClassificatorio || ''}
                                 onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
-                                placeholder="Ex: Normal"
+                                placeholder={tipoExame === 'Laboratorial' ? 'Ex: Reagente, Não reagente' : 'Ex: Normal, Alterado'}
                               />
                             </div>
                           )}

@@ -252,13 +252,18 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
     onUpdateAvaliacao({
       ...processo.avaliacao,
-      examesValoresTexto: {
-        ...(processo.avaliacao?.examesValoresTexto || {}),
-        [parametro]: {
-          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
-          valorTexto,
-        },
-      },
+      examesValoresTexto: valorTexto.trim()
+        ? {
+            ...(processo.avaliacao?.examesValoresTexto || {}),
+            [parametro]: {
+              resultadoClassificatorio: resultado.resultadoClassificatorio || '',
+              valorTexto,
+            },
+          }
+        : Object.fromEntries(
+            Object.entries(processo.avaliacao?.examesValoresTexto || {})
+              .filter(([nomeComponente]) => nomeComponente !== parametro)
+          ),
     });
   };
 

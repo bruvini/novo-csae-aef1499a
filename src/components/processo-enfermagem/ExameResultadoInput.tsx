@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ComponenteExame, ResultadoExame, componenteEhClassificatorio, Exame } from '@/services/bancodados/examesDB';
+import { obterOpcoesValorComplementar } from '@/utils/resultadoExameUtils';
 
 interface ExameResultadoInputProps {
   tipoExame: Exame['tipoExame'];
@@ -46,6 +47,9 @@ export function ExameResultadoInput({
   const resultadoSelecionado = resultadosComRotulo.find(
     (resultado) => resultado.resultadoClassificatorio === String(valor)
   );
+  const opcoesValorTexto = resultadoSelecionado
+    ? obterOpcoesValorComplementar(resultadoSelecionado)
+    : [];
 
   return (
     <div className="space-y-2">
@@ -68,14 +72,31 @@ export function ExameResultadoInput({
             {resultadoSelecionado.rotuloValorTexto || 'Informação complementar'}
             {resultadoSelecionado.valorTextoObrigatorio && <span className="text-red-600"> *</span>}
           </label>
-          <Input
-            type="text"
-            value={valorTexto}
-            required={resultadoSelecionado.valorTextoObrigatorio}
-            aria-required={resultadoSelecionado.valorTextoObrigatorio}
-            placeholder={resultadoSelecionado.rotuloValorTexto || 'Informe o valor'}
-            onChange={(event) => onValorTextoChange(resultadoSelecionado, event.target.value)}
-          />
+          {opcoesValorTexto.length > 0 ? (
+            <Select
+              value={valorTexto || undefined}
+              onValueChange={(value) => onValorTextoChange(resultadoSelecionado, value)}
+              required={resultadoSelecionado.valorTextoObrigatorio}
+            >
+              <SelectTrigger aria-required={resultadoSelecionado.valorTextoObrigatorio}>
+                <SelectValue placeholder={resultadoSelecionado.rotuloValorTexto || 'Selecione uma opção'} />
+              </SelectTrigger>
+              <SelectContent>
+                {opcoesValorTexto.map((opcao) => (
+                  <SelectItem key={opcao} value={opcao}>{opcao}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              type="text"
+              value={valorTexto}
+              required={resultadoSelecionado.valorTextoObrigatorio}
+              aria-required={resultadoSelecionado.valorTextoObrigatorio}
+              placeholder={resultadoSelecionado.rotuloValorTexto || 'Informe o valor'}
+              onChange={(event) => onValorTextoChange(resultadoSelecionado, event.target.value)}
+            />
+          )}
         </div>
       )}
     </div>

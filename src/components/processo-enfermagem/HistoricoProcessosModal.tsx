@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,8 @@ import { buscarProcessosConcluidos } from '@/services/bancodados/processosEnferm
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { obterRegistrosExameFisico } from '@/utils/processoUtils';
+import { Exame, getExames } from '@/services/bancodados/examesDB';
+import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 
 interface HistoricoProcessosModalProps {
   isOpen: boolean;
@@ -33,10 +35,13 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
   enfermeiroId
 }) => {
   const [processos, setProcessos] = useState<ProcessoEnfermagem[]>([]);
+  const [exames, setExames] = useState<Exame[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const carregarHistorico = async () => {
+  useEffect(() => getExames(setExames), []);
+
+  const carregarHistorico = useCallback(async () => {
     if (!paciente.id) return;
     
     setLoading(true);
@@ -53,13 +58,13 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [paciente.id, enfermeiroId, toast]);
 
   useEffect(() => {
     if (isOpen) {
       carregarHistorico();
     }
-  }, [isOpen]);
+  }, [isOpen, carregarHistorico]);
 
   const gerarTextoResumo = (processo: ProcessoEnfermagem) => {
     const linhas: string[] = [];
@@ -83,7 +88,20 @@ const HistoricoProcessosModal: React.FC<HistoricoProcessosModalProps> = ({
     const achados = registrosExameFisico.filter((registro) => registro.tipo === 'achado');
     if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      parametros.forEach(({ exame, valor }) => linhas.push(`${exame}: ${valor}`));
+      const componentes = new Map(exames.flatMap((exame) =>
+        exame.componentes.map((componente) => [componente.componenteAnalisado, { exame, componente }] as const)
+      ));
+      parametros.forEach(({ exame, valor }) => {
+        const cadastro = componentes.get(exame);
+        linhas.push(formatarLinhaResultadoExame({
+          tipoExame: cadastro?.exame.tipoExame,
+          nomeExame: cadastro?.exame.nomeExame,
+          componente: exame,
+          valor,
+          resultadosConfigurados: cadastro?.componente.resultados,
+          valorTexto: processo.avaliacao?.examesValoresTexto?.[exame],
+        }));
+      });
       if (achados.length > 0) {
         linhas.push('[REVISÃO DE SISTEMAS]');
         const achadosPorExame = new Map<string, string[]>();
