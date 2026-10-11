@@ -42,6 +42,8 @@ jobs:
         run: npx tsx --test src/utils/referenciasClinicas.test.ts
       - name: Testar proteção das chaves clínicas legadas
         run: npx tsx --test src/utils/protecaoCatalogoHistorico.test.ts
+      - name: Testar conciliação clínica somente leitura
+        run: npx tsx --test src/utils/conciliacaoCatalogo.test.ts
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
