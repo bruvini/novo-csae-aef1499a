@@ -325,6 +325,32 @@ service cloud.firestore {
       allow delete: if canViewBI() && reportId in ['painel_usuarios', 'painel_processos'];
     }
 
+    // Cache segmentado do BI: somente administradores podem consultar e atualizar.
+    // Os registros de produção não ficam acessíveis a profissionais comuns.
+    match /estatisticas/painel_processos/lotacoes/{lotacaoId} {
+      allow get, list: if canViewBI();
+      allow create, update: if canViewBI()
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'lotacao', 'agregado'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'lotacao', 'agregado'])
+        && request.resource.data.schemaVersion is int
+        && boundedString(request.resource.data.lotacao, 160)
+        && request.resource.data.agregado is map;
+      allow delete: if false;
+    }
+
+    match /estatisticas/painel_processos/registros/{chunkId} {
+      allow get, list: if canViewBI();
+      allow create, update: if canViewBI()
+        && chunkId.matches('chunk-[0-9]{4}')
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'index', 'registros'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'index', 'registros'])
+        && request.resource.data.schemaVersion is int
+        && request.resource.data.index is int
+        && request.resource.data.registros is list
+        && request.resource.data.registros.size() <= 600;
+      allow delete: if false;
+    }
+
     match /changelogs/{entryId} {
       allow read: if isApproved() || isActiveAdmin();
       allow create: if isActiveAdmin()
