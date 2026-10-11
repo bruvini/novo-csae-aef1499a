@@ -21,7 +21,7 @@ import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } 
 import { Timestamp } from 'firebase/firestore';
 import { ExameResultadoInput } from './ExameResultadoInput';
 import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
-import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, contextoDaReferencia, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
@@ -819,6 +819,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     )}
                                   </label>
                                   <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[pasV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(pasV.sinalVitalNome, v, getNumericValidation(pasV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(pasV.sinalVitalNome)} />
+                                  {renderContexto(pasV.sinalVitalNome, pasV.valoresDeReferencia)}
                                   {renderValidationMessage(pasV.sinalVitalNome)}
                                 </div>
                               )}
@@ -831,6 +832,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     )}
                                   </label>
                                   <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[padV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(padV.sinalVitalNome, v, getNumericValidation(padV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(padV.sinalVitalNome)} />
+                                  {renderContexto(padV.sinalVitalNome, padV.valoresDeReferencia)}
                                   {renderValidationMessage(padV.sinalVitalNome)}
                                 </div>
                               )}
@@ -875,7 +877,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                               )}
                             </label>
                             <Input type="number" min="0" placeholder="00.0" value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(sinal.sinalVitalNome, v, getNumericValidation(sinal.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(sinal.sinalVitalNome)} />
-                            {renderValidationMessage(sinal.sinalVitalNome)}
+                            {renderContexto(sinal.sinalVitalNome, sinal.valoresDeReferencia)}
+                              {renderValidationMessage(sinal.sinalVitalNome)}
                           </div>
                         ))}
                       </div>
@@ -939,6 +942,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   onValorTextoChange={(resultado, valor) => updateValorTextoExame(parametro, resultado, valor)}
                                   className={"w-full " + getInputClassName(parametro)}
                                 />
+                                {!componenteEhClassificatorio(exame.tipoExame, componente)
+                                  && renderContexto(parametro, componente.resultados)}
                                 {renderValidationMessage(parametro)}
                               </div>
                             );
