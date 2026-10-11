@@ -52,6 +52,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CONTEXTOS_CLINICOS } from '@/utils/referenciasClinicas';
 
 const TabelaSinaisVitais = () => {
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
@@ -127,6 +128,8 @@ const TabelaSinaisVitais = () => {
       idadeUnidade: 'not-specified',
       criterioSexo: 'Ambos',
       criterioCondicao: '',
+      contextoClinico: 'geral',
+      interpretacaoClinica: 'indeterminado',
       valorMinimo: null,
       valorMaximo: null,
       nomeAlteracao: '',
@@ -177,7 +180,7 @@ const TabelaSinaisVitais = () => {
       setSheetOpen(false);
       limparFormulario();
     } catch (error) {
-      toast.error('Erro ao salvar sinal vital');
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar sinal vital');
       console.error(error);
     } finally {
       setSalvandoSinalVital(false);
@@ -245,7 +248,7 @@ const TabelaSinaisVitais = () => {
                     placeholder="Ex: Pressão Arterial Sistólica"
                     spellCheck
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Nome completo e específico. Crie um sinal vital separado para cada parâmetro medido (ex: PA sistólica e PA diastólica separadas).</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">PAS e PAD são componentes do mesmo bloco de pressão arterial. Não crie novos cadastros por doença, idade ou sexo: acrescente as faixas ao cadastro já existente.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Descrição</label>
@@ -298,7 +301,7 @@ const TabelaSinaisVitais = () => {
                         <label className="block text-sm font-medium mb-2">Idade Mínima</label>
                         <Input
                           type="number"
-                          value={valor.idadeMinima || ''}
+                          value={valor.idadeMinima ?? ''}
                           onChange={(e) => atualizarValorReferencia(index, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
@@ -306,7 +309,7 @@ const TabelaSinaisVitais = () => {
                         <label className="block text-sm font-medium mb-2">Idade Máxima</label>
                         <Input
                           type="number"
-                          value={valor.idadeMaxima || ''}
+                          value={valor.idadeMaxima ?? ''}
                           onChange={(e) => atualizarValorReferencia(index, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
@@ -348,14 +351,46 @@ const TabelaSinaisVitais = () => {
                       </div>
                     </div>
 
-                    {/* Campo "Condição" removido — use o campo Descrição do Sinal Vital para orientações de coleta */}
+                    {/* A condição livre descreve como medir; a chave estruturada determina a faixa aplicável. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Contexto clínico da referência</label>
+                  <Select value={valor.contextoClinico || 'legado'} onValueChange={v =>
+                    atualizarValorReferencia(index, 'contextoClinico', v === 'legado' ? '' : v)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione o contexto" /></SelectTrigger>
+                    <SelectContent>
+                      {!valor.contextoClinico && <SelectItem value="legado">Legado — conferir antes de alterar</SelectItem>}
+                      {CONTEXTOS_CLINICOS.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Interpretação explícita</label>
+                  <Select value={valor.interpretacaoClinica || 'legado'} onValueChange={v =>
+                    atualizarValorReferencia(index, 'interpretacaoClinica', v === 'legado' ? undefined : v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {!valor.interpretacaoClinica && <SelectItem value="legado">Legado — depende do texto antigo</SelectItem>}
+                      <SelectItem value="normal">Dentro da referência</SelectItem>
+                      <SelectItem value="alterado">Alterado — avaliar NHB</SelectItem>
+                      <SelectItem value="indeterminado">Indeterminado — não gerar alerta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Condição e técnica (texto orientativo)</label>
+                <Input value={valor.criterioCondicao || ''} onChange={e =>
+                  atualizarValorReferencia(index, 'criterioCondicao', e.target.value)}
+                  placeholder="Ex.: jejum ≥ 8h, repouso, gestação — não substitui o contexto estruturado" />
+              </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
                         <Input
                           type="number"
-                          value={valor.valorMinimo || ''}
+                          value={valor.valorMinimo ?? ''}
                           onChange={(e) => atualizarValorReferencia(index, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
@@ -363,7 +398,7 @@ const TabelaSinaisVitais = () => {
                         <label className="block text-sm font-medium mb-2">Valor Máximo</label>
                         <Input
                           type="number"
-                          value={valor.valorMaximo || ''}
+                          value={valor.valorMaximo ?? ''}
                           onChange={(e) => atualizarValorReferencia(index, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
                         />
                       </div>
@@ -377,7 +412,7 @@ const TabelaSinaisVitais = () => {
                         placeholder="Ex: Normal, Hipertensão Grau 1, Bradicardia"
                         spellCheck
                       />
-                      <p className="text-[11px] text-muted-foreground mt-1">Nome clínico que aparecerá como alerta no processo de enfermagem. Valores normais: escreva "Normal".</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Descrição que acompanha a classificação. A normalidade é definida pelo campo Interpretação, não por palavras no texto.</p>
                     </div>
 
                     <div>
