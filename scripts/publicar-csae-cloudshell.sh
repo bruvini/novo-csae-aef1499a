@@ -4,6 +4,9 @@ set -Eeuo pipefail
 
 PROJECT="csaefloripa"
 TESTED="8477807de356491549b05ba3255b8fbd5f8aac5c"
+# Hashes de conteúdo dos arquivos de segurança aprovados no CI.
+EXPECTED_FIRESTORE_BLOB="931c04afa140710e425ddb0596d97b4822cee9f4"
+EXPECTED_RULES_TEST_BLOB="226112b627041c35e6273289adfba46b9b328194"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
@@ -16,8 +19,12 @@ done
 header "Conferência do repositório e da versão testada"
 [[ "$(git branch --show-current)" == "main" ]] || die "Execute a versão da branch main."
 git merge-base --is-ancestor "$TESTED" HEAD || die "O commit validado não está no histórico da main."
-git diff --quiet "$TESTED" HEAD -- src tests package.json package-lock.json firebase.json firestore.rules storage.rules \
-  || die "Código ou regras foram modificados depois da validação. Necessária nova revisão."
+git diff --quiet "$TESTED" HEAD -- src package.json package-lock.json firebase.json storage.rules \
+  || die "Código ou configuração foram modificados após a integração aprovada. Necessária nova revisão."
+[[ "$(git hash-object firestore.rules)" == "$EXPECTED_FIRESTORE_BLOB" ]] \
+  || die "As regras Firestore não são a versão aprovada. Cancelando."
+[[ "$(git hash-object tests/firebaseRules.test.ts)" == "$EXPECTED_RULES_TEST_BLOB" ]] \
+  || die "Os testes de segurança não são a versão aprovada. Cancelando."
 [[ -z "$(git status --porcelain)" ]] || die "Há alterações locais. Use um clone limpo do repositório."
 grep -Eq '^VITE_FIREBASE_PROJECT_ID=csaefloripa[[:space:]]*$' .env \
   || die "A configuração .env não aponta para csaefloripa."

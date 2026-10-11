@@ -21,7 +21,8 @@ OPTIONAL_PROFILE = {
     "motivoRecusa", "dataRevogacao", "revogadoPorUid", "dataRestauracao",
     "dataAtualizacaoPrivilegios", "alteracaoCadastralPendente",
     "dataAlteracaoCadastral", "dadosProfissionaisAnteriores",
-    "justificativaRecusaAlteracao",
+    "justificativaRecusaAlteracao", "versaoPermissoes", "historicoRevisoes",
+    "analisadoPor", "analisadoPorUid", "dataAtualizacaoDadosPessoais",
 }
 REQUIRED_PERSONAL = {
     "nomeCompleto", "rg", "cpf", "rua", "numero", "bairro",
@@ -37,7 +38,7 @@ ALLOWED_STATUS = {
 }
 ALLOWED_PAGES = {
     "ProcessoEnfermagem", "GestaoConteudos", "GestaoUsuarios",
-    "PainelEstatistico", "GestaoSuporte",
+    "PainelEstatistico", "GestaoSuporte", "Dashboard", "CentralAjuda",
 }
 
 UPDATES = (
