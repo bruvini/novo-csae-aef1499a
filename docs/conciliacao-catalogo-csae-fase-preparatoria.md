@@ -24,6 +24,14 @@ Os arquivos "Diagnósticos de Enfermagem e Resultados Esperados", "Intervençõe
 
    O caminho de saída deve ser novo (o comando não sobrescreve relatórios existentes). O arquivo é gerado com permissão 0600. Evitar versionar o inventário de produção no GitHub; manter os dados no ambiente institucional autorizado.
 
+## Alerta técnico sobre a planilha de origem (11/10/2026)
+
+A leitura **tipada** das células pelo Google Sheets revelou **24 células de limites numéricos armazenadas como datas** (4 em SinaisVitais e 20 em ExamesLabImagem). A visualização engana: \`ExamesLabImagem!J2\` exibe \`6.5\`, mas o valor interno é número serial de data \`45783\`; há outros exemplos em \`K3\` (\`5.6\`), \`J4\` (\`5.7\`), \`K4\` (\`6.4\`), e \`SinaisVitais!J62\` (\`18.4\`).
+
+**Não importá-las nem confiar apenas na exportação XLSX.** O CLI agora **cancela a comparação** ao encontrar data/fórmula em coluna de faixa clínica. A comissão deve validar os valores pretendidos segundo a fonte normativa e digitá-los novamente como números reais nas células corretas. Apenas mudar a apresentação/formato de data para número pode revelar o serial 45783, e **não** recuperar automaticamente o valor clínico 6.5.
+
+O arquivo original do Drive **não foi alterado** por esta auditoria. Após saneamento controlado pela CSAE, exportar novamente o XLSX e executar a conciliação com novo inventário.
+
 ## O que o relatório significa
 
 Cada proposta registra a aba, nome do item, números das linhas na planilha e **IDs existentes** no Firestore, com uma ação preliminar:
