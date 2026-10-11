@@ -6,14 +6,13 @@ import {
   where, 
   doc,
   updateDoc,
-  deleteDoc,
+  getDoc,
   serverTimestamp,
   getAggregateFromServer,
   sum,
   count
 } from 'firebase/firestore';
-import { deleteUser } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
 import { Usuario } from '@/types/usuario';
 import { agruparStatusCadastro, ordenarPerfisPorDataCadastro } from '@/utils/registrationData';
 
@@ -21,15 +20,20 @@ export interface UsuariosGestao {
   aguardando: Usuario[];
   aprovados: Usuario[];
   recusados: Usuario[];
+  revogados: Usuario[];
 }
 
 export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
   try {
     const querySnapshot = await getDocs(collection(db, 'usuarios'));
-    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [] };
+    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [], revogados: [] };
 
     querySnapshot.forEach((doc) => {
       const data = { ...doc.data(), id: doc.id } as Usuario;
+      if ((data.statusAcesso || '').toLowerCase() === 'revogado') {
+        usuarios.revogados.push(data);
+        return;
+      }
       const status = agruparStatusCadastro(data.statusAcesso);
       // Status ausentes/desconhecidos ficam visíveis para revisão manual;
       // isso não altera o status nem libera acesso automaticamente.
@@ -42,6 +46,7 @@ export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
       aguardando: ordenarPerfisPorDataCadastro(usuarios.aguardando),
       aprovados: ordenarPerfisPorDataCadastro(usuarios.aprovados),
       recusados: ordenarPerfisPorDataCadastro(usuarios.recusados),
+      revogados: ordenarPerfisPorDataCadastro(usuarios.revogados),
     };
   } catch (error) {
     console.error("Falha na leitura dos perfis da Gestão de Usuários.");
@@ -134,12 +139,25 @@ export async function restaurarUsuarioParaAguardando(userId: string): Promise<vo
   }
 }
 
-export async function excluirUsuario(userId: string, uid: string): Promise<void> {
+export async function revogarAcessoUsuario(userId: string, revogadoPorUid: string): Promise<void> {
+  if (!revogadoPorUid || userId === revogadoPorUid) {
+    throw new Error('Não é permitido revogar a própria conta.');
+  }
+
   try {
     const userRef = doc(db, 'usuarios', userId);
-    await deleteDoc(userRef);
+    const target = await getDoc(userRef);
+    if (!target.exists()) throw new Error('Perfil não encontrado para revogação.');
+    if (target.data().ehAdmin === true) {
+      throw new Error('A revogação de uma conta administradora exige revisão assistida.');
+    }
+    await updateDoc(userRef, {
+      statusAcesso: 'Revogado',
+      dataRevogacao: serverTimestamp(),
+      revogadoPorUid,
+    });
   } catch (error) {
-    console.error("Erro ao excluir usuário:", error);
+    console.error("Falha ao revogar acesso do usuário.");
     throw error;
   }
 }

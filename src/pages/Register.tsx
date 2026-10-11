@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, UserPlus, ArrowRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { cadastrarUsuario } from "@/services/bancodados/usuariosDB";
-import { serverTimestamp } from "firebase/firestore";
-import { createUserWithEmailAndPassword, inMemoryPersistence, setPersistence, signOut } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, where } from "firebase/firestore";
+import { createUserWithEmailAndPassword, inMemoryPersistence, setPersistence, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { registrationAuth, registrationDb } from "@/services/firebase";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
 import {
@@ -20,7 +20,7 @@ import PersonalInfoForm from "@/components/register/PersonalInfoForm";
 import ProfessionalInfoForm from "@/components/register/ProfessionalInfoForm";
 import AccessInfoForm from "@/components/register/AccessInfoForm";
 import { v4 as uuidv4 } from "uuid";
-import { completeRegistration, RegistrationFlowError } from "@/services/registrationFlow";
+import { completeRegistration, criarOuRecuperarConta, RegistrationFlowError } from "@/services/registrationFlow";
 import { registrarEventoCadastro } from "@/services/registrationTelemetry";
 import type { UsuarioData } from "@/services/bancodados/usuariosDB";
 
@@ -200,8 +200,26 @@ const Register = () => {
             if (registrationAuth.currentUser) await signOut(registrationAuth);
           },
           createAccount: async (email, password) => {
-            const credential = await createUserWithEmailAndPassword(registrationAuth, email, password);
-            return { uid: credential.user.uid };
+            return criarOuRecuperarConta(email, password, {
+              criarContaNova: async (address, secret) => {
+                const credential = await createUserWithEmailAndPassword(registrationAuth, address, secret);
+                return { uid: credential.user.uid };
+              },
+              autenticarContaExistente: async (address, secret) => {
+                const credential = await signInWithEmailAndPassword(registrationAuth, address, secret);
+                return { uid: credential.user.uid };
+              },
+              possuiPerfil: async (uid) => {
+                const profileRef = doc(registrationDb, "usuarios", uid);
+                const directProfile = await getDoc(profileRef);
+                if (directProfile.exists()) return true;
+                const legacyProfiles = await getDocs(query(
+                  collection(registrationDb, "usuarios"),
+                  where("uid", "==", uid),
+                ));
+                return !legacyProfiles.empty;
+              },
+            });
           },
           saveProfile: async (uid, userProfile) => {
             await cadastrarUsuario({ uid, ...userProfile }, registrationDb);
@@ -226,10 +244,16 @@ const Register = () => {
 
       if (errorCode === "auth/email-already-in-use") {
         description = `Já existe uma conta associada a este e-mail. Não tente contornar usando outro endereço. Tente entrar ou recuperar a senha; se o cadastro anterior não aparecer para análise, fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa e informe o código ${correlationId}.`;
+      } else if (errorCode === "auth/profile-already-exists") {
+        description = "Esta conta já possui um perfil no Portal. Acesse a opção de entrar ou redefina sua senha; o perfil existente não foi alterado.";
+      } else if (errorCode === "auth/invalid-credential" || errorCode === "auth/wrong-password" || errorCode === "auth/user-not-found") {
+        description = "Este e-mail já possui uma conta. Informe a senha já cadastrada ou use a recuperação de senha; não é necessário criar outra conta.";
       } else if (errorCode === "auth/weak-password") {
         description = "A senha não atende aos requisitos. Escolha uma senha mais segura e tente novamente.";
       } else if (flowError?.stage === "profile") {
-        description = `A conta foi criada, mas o perfil não foi confirmado no sistema. Não faça outro cadastro nem use outro e-mail. Fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa e informe o código ${correlationId}.`;
+        description = flowError.accountCreated
+          ? `A conta foi criada, mas o perfil não foi confirmado no sistema. Não faça outro cadastro nem use outro e-mail. Fale com gerenf.sms.pmf@gmail.com ou @portalcsaefloripa e informe o código ${correlationId}.`
+          : `A conta existente foi preservada, mas não foi possível salvar o perfil para análise. Tente novamente mais tarde ou informe o código ${correlationId} ao suporte.`;
       } else if (errorCode === "auth/network-request-failed" || errorCode === "unavailable") {
         description = `A conexão falhou antes da confirmação do cadastro. Verifique a internet e informe o código ${correlationId} ao suporte antes de repetir a tentativa.`;
       }

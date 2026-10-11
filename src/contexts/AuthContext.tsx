@@ -189,6 +189,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       navigate('/login');
       return;
     }
+
+    if (status === 'revogado') {
+      toast({
+        title: "Acesso revogado",
+        description: "Seu acesso ao Portal foi revogado. Entre em contato com a equipe responsável para solicitar uma revisão.",
+        variant: "destructive",
+      });
+      await signOut(auth);
+      setUser(null);
+      setSessionData(null);
+      localStorage.removeItem('csae_session');
+      navigate('/login');
+      return;
+    }
     
     if (status === 'aprovado' || status === 'liberado') {
       console.log('Status: aprovado/liberado - acesso permitido');
@@ -339,6 +353,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         toast({
           title: "Acesso negado",
           description: "Seu acesso foi negado. Entre em contato pelo nosso Instagram @portalcsaefloripa",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (status === 'revogado') {
+        await signOut(auth);
+        toast({
+          title: "Acesso revogado",
+          description: "Seu acesso ao Portal foi revogado. Entre em contato com a equipe responsável para solicitar uma revisão.",
           variant: "destructive",
         });
         return;

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import {
   IntervencaoImplementada,
+  IntervencaoSelecionada,
   ProcessoEnfermagem,
   EvolucaoEnfermagem,
 } from '@/types/processoEnfermagem';
@@ -147,8 +148,6 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
     if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      const parametrosRenderizados = new Set<string>();
-
       const svAtivos = sinaisVitais.filter(s => isValorAvaliacaoValido(exameFisicoData[s.sinalVitalNome]));
       const parametrosRenderizados = new Set<string>();
       if (svAtivos.length > 0) {
@@ -317,11 +316,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   );
 
   /** Diagnóstico → Resultado → Intervenções */
-  const DiagnosticoBlock = <T,>({ titulo, resultado, intervencoes, renderIntervencao }: {
+  const DiagnosticoBlock = ({ titulo, resultado, intervencoes, renderIntervencao }: {
     titulo: string;
     resultado?: string;
-    intervencoes: T[];
-    renderIntervencao: (int: T, idx: number) => React.ReactNode;
+    intervencoes: Array<IntervencaoSelecionada | IntervencaoImplementada | string>;
+    renderIntervencao: (int: IntervencaoSelecionada | IntervencaoImplementada | string, idx: number) => React.ReactNode;
   }) => (
     <InfoCard>
       <p className="font-bold text-sm text-gray-900 mb-1">{titulo}</p>

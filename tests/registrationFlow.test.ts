@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   completeRegistration,
+  criarOuRecuperarConta,
   RegistrationFlowError,
   type RegistrationEvent,
   type RegistrationFlowDependencies,
@@ -66,6 +67,50 @@ test("e-mail já utilizado não tenta gravar perfil e encerra a sessão isolada"
   assert.equal(calls.save, 0);
   assert.equal(calls.cleanup, 1);
   assert.equal(events.at(-1)?.stage, "registration_failed");
+});
+
+test("recupera uma conta Auth sem perfil somente após autenticação da própria pessoa", async () => {
+  const calls = { create: 0, authenticate: 0, profileCheck: 0 };
+  const account = await criarOuRecuperarConta("x", "password", {
+    criarContaNova: async () => { calls.create++; throw { code: "auth/email-already-in-use" }; },
+    autenticarContaExistente: async () => { calls.authenticate++; return { uid: "existing-uid" }; },
+    possuiPerfil: async () => { calls.profileCheck++; return false; },
+  });
+
+  assert.deepEqual(account, { uid: "existing-uid", created: false });
+  assert.deepEqual(calls, { create: 1, authenticate: 1, profileCheck: 1 });
+});
+
+test("não sobrescreve perfil existente nem tenta recuperar com senha inválida", async () => {
+  const profileExists = await criarOuRecuperarConta("x", "password", {
+    criarContaNova: async () => { throw { code: "auth/email-already-in-use" }; },
+    autenticarContaExistente: async () => ({ uid: "existing-uid" }),
+    possuiPerfil: async () => true,
+  }).catch((error: unknown) => error);
+  assert.equal((profileExists as { code?: string }).code, "auth/profile-already-exists");
+
+  let profileChecks = 0;
+  const invalidCredential = await criarOuRecuperarConta("x", "wrong", {
+    criarContaNova: async () => { throw { code: "auth/email-already-in-use" }; },
+    autenticarContaExistente: async () => { throw { code: "auth/invalid-credential" }; },
+    possuiPerfil: async () => { profileChecks++; return false; },
+  }).catch((error: unknown) => error);
+  assert.equal((invalidCredential as { code?: string }).code, "auth/invalid-credential");
+  assert.equal(profileChecks, 0);
+});
+
+test("conta recuperada é registrada como reutilizada e recebe o perfil enviado", async () => {
+  const { dependencies, events } = createDependencies({
+    createAccount: async () => ({ uid: "existing-uid", created: false }),
+  });
+  const result = await completeRegistration({
+    email: "x", password: "x", profile: { name: "x" }, correlationId: "recovery", dependencies,
+  });
+
+  assert.equal(result.uid, "existing-uid");
+  assert.deepEqual(events.map((event) => event.stage), [
+    "registration_started", "account_reused", "profile_saved", "registration_completed",
+  ]);
 });
 
 test("falha de perfil preserva a conta e não executa rollback destrutivo", async () => {

@@ -4,6 +4,7 @@ export type RegistrationStage =
   | "terms_accepted"
   | "registration_started"
   | "account_created"
+  | "account_reused"
   | "profile_saved"
   | "registration_completed"
   | "registration_failed"
@@ -17,7 +18,7 @@ export interface RegistrationEvent {
 
 export interface RegistrationFlowDependencies<TProfile> {
   prepare(): Promise<void>;
-  createAccount(email: string, password: string): Promise<{ uid: string }>;
+  createAccount(email: string, password: string): Promise<{ uid: string; created?: boolean }>;
   saveProfile(uid: string, profile: TProfile): Promise<void>;
   cleanup(): Promise<void>;
   track(event: RegistrationEvent): void;
@@ -47,6 +48,30 @@ function safeErrorCode(error: unknown): string {
     ) return code;
   }
   return "unknown-error";
+}
+
+export async function criarOuRecuperarConta(
+  email: string,
+  password: string,
+  dependencies: {
+    criarContaNova(email: string, password: string): Promise<{ uid: string }>;
+    autenticarContaExistente(email: string, password: string): Promise<{ uid: string }>;
+    possuiPerfil(uid: string): Promise<boolean>;
+  },
+): Promise<{ uid: string; created: boolean }> {
+  try {
+    const account = await dependencies.criarContaNova(email, password);
+    return { uid: account.uid, created: true };
+  } catch (error) {
+    if (safeErrorCode(error) !== "auth/email-already-in-use") throw error;
+  }
+
+  const account = await dependencies.autenticarContaExistente(email, password);
+  if (!account.uid) throw Object.assign(new Error("Conta sem UID autenticado."), { code: "auth/invalid-credential" });
+  if (await dependencies.possuiPerfil(account.uid)) {
+    throw Object.assign(new Error("A conta já possui um perfil."), { code: "auth/profile-already-exists" });
+  }
+  return { uid: account.uid, created: false };
 }
 
 export async function completeRegistration<TProfile>(args: {
@@ -87,10 +112,10 @@ export async function completeRegistration<TProfile>(args: {
     let uid: string;
     try {
       const account = await dependencies.createAccount(email, password);
-      accountCreated = true;
+      accountCreated = account.created !== false;
       uid = account.uid;
       if (!uid) throw new Error("missing-uid");
-      track({ correlationId, stage: "account_created" });
+      track({ correlationId, stage: accountCreated ? "account_created" : "account_reused" });
     } catch (error) {
       const errorCode = safeErrorCode(error);
       const failure = new RegistrationFlowError(
@@ -110,7 +135,9 @@ export async function completeRegistration<TProfile>(args: {
     } catch (error) {
       const errorCode = safeErrorCode(error);
       const failure = new RegistrationFlowError(
-        "A conta foi criada, mas não foi possível salvar o cadastro.",
+        accountCreated
+          ? "A conta foi criada, mas não foi possível salvar o cadastro."
+          : "A conta existente foi autenticada, mas não foi possível salvar o cadastro.",
         "profile",
         errorCode,
         correlationId,

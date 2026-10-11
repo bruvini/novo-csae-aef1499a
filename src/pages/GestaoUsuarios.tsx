@@ -20,7 +20,7 @@ import {
   editarPrivilegiosUsuario,
   recusarUsuario,
   restaurarUsuarioParaAguardando,
-  excluirUsuario
+  revogarAcessoUsuario
 } from '@/services/bancodados';
 import { Usuario } from '@/types/usuario';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +32,7 @@ const GestaoUsuarios = () => {
   const [usuariosAguardando, setUsuariosAguardando] = useState<Usuario[]>([]);
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [usuariosRecusados, setUsuariosRecusados] = useState<Usuario[]>([]);
+  const [usuariosRevogados, setUsuariosRevogados] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState(false);
   
@@ -53,6 +54,7 @@ const GestaoUsuarios = () => {
       setUsuariosAguardando(usuarios.aguardando);
       setUsuariosAprovados(usuarios.aprovados);
       setUsuariosRecusados(usuarios.recusados);
+      setUsuariosRevogados(usuarios.revogados);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       setErroCarregamento(true);
@@ -92,12 +94,13 @@ const GestaoUsuarios = () => {
   const aguardandoFiltrados = useMemo(() => filtrarUsuarios(usuariosAguardando), [usuariosAguardando, filtrarUsuarios]);
   const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, filtrarUsuarios]);
   const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, filtrarUsuarios]);
+  const revogadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRevogados), [usuariosRevogados, filtrarUsuarios]);
 
   const handleDetalhes = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalDetalhesAberto(true); };
   const handleAprovar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalAprovacaoAberto(true); };
   const handleEditarPrivilegios = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalEdicaoPrivilegiosAberto(true); };
   const handleRecusar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalRecusaAberto(true); };
-  const handleExcluir = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalExclusaoAberto(true); };
+  const handleRevogar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalExclusaoAberto(true); };
   
   const handleRestaurar = async (usuario: Usuario) => {
     if (!usuario.id) return;
@@ -156,17 +159,17 @@ const GestaoUsuarios = () => {
     }
   };
 
-  const confirmarExclusao = async () => {
-    if (!usuarioSelecionado?.id || !usuarioSelecionado?.uid) return;
+  const confirmarRevogacao = async () => {
+    if (!usuarioSelecionado?.id || !sessionData?.uid) return;
     try {
-      await excluirUsuario(usuarioSelecionado.id, usuarioSelecionado.uid);
-      toast({ title: 'Usuário excluído', description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi excluído.` });
+      await revogarAcessoUsuario(usuarioSelecionado.id, sessionData.uid);
+      toast({ title: 'Acesso revogado', description: 'O cadastro e o histórico foram preservados.' });
       setModalExclusaoAberto(false);
       setUsuarioSelecionado(null);
       carregarUsuarios();
     } catch (error) {
-      console.error('Erro ao excluir usuário:', error);
-      toast({ title: 'Erro', description: 'Não foi possível excluir o usuário.', variant: 'destructive' });
+      console.error('Falha ao revogar acesso do usuário.');
+      toast({ title: 'Erro', description: 'Não foi possível revogar o acesso. O cadastro foi preservado.', variant: 'destructive' });
     }
   };
 
@@ -229,7 +232,7 @@ const GestaoUsuarios = () => {
             </Card>
 
             <Tabs defaultValue="aguardando" className="space-y-6">
-              <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-2xl grid grid-cols-3 h-12">
+              <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-4xl grid grid-cols-4 h-12">
                 <TabsTrigger value="aguardando" className="rounded-md flex items-center gap-2 font-semibold">
                   <UserMinus className="w-4 h-4" />
                   Aguardando
@@ -251,6 +254,13 @@ const GestaoUsuarios = () => {
                     {usuariosRecusados.length}
                   </span>
                 </TabsTrigger>
+                <TabsTrigger value="revogados" className="rounded-md flex items-center gap-2 font-semibold">
+                  <UserX className="w-4 h-4" />
+                  Revogados
+                  <span className="bg-slate-200 text-slate-700 text-[10px] px-2 py-0.5 rounded-full border border-slate-300">
+                    {usuariosRevogados.length}
+                  </span>
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="aguardando" className="anim-fade-in">
@@ -260,7 +270,6 @@ const GestaoUsuarios = () => {
                   onDetalhes={handleDetalhes} 
                   onAprovar={handleAprovar} 
                   onRecusar={handleRecusar} 
-                  onExcluir={handleExcluir} 
                 />
               </TabsContent>
               <TabsContent value="aprovados" className="anim-fade-in">
@@ -268,7 +277,7 @@ const GestaoUsuarios = () => {
                   usuarios={aprovadosFiltrados} 
                   tipo="aprovados" 
                   onDetalhes={handleDetalhes} 
-                  onExcluir={isAdmin ? handleExcluir : undefined} 
+                  onRevogar={isAdmin ? handleRevogar : undefined}
                   onEditarPrivilegios={isAdmin ? handleEditarPrivilegios : undefined} 
                 />
               </TabsContent>
@@ -277,7 +286,14 @@ const GestaoUsuarios = () => {
                   usuarios={recusadosFiltrados} 
                   tipo="recusados" 
                   onDetalhes={handleDetalhes} 
-                  onExcluir={handleExcluir} 
+                  onRestaurar={handleRestaurar}
+                />
+              </TabsContent>
+              <TabsContent value="revogados" className="anim-fade-in">
+                <TabelaUsuarios
+                  usuarios={revogadosFiltrados}
+                  tipo="revogados"
+                  onDetalhes={handleDetalhes}
                   onRestaurar={handleRestaurar}
                 />
               </TabsContent>
@@ -308,7 +324,7 @@ const GestaoUsuarios = () => {
         <ModalConfirmacaoExclusao 
           isOpen={modalExclusaoAberto} 
           onClose={() => { setModalExclusaoAberto(false); setUsuarioSelecionado(null); }} 
-          onConfirm={confirmarExclusao} 
+          onConfirm={confirmarRevogacao}
           nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''} 
         />
         
