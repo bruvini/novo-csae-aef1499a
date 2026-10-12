@@ -41,7 +41,13 @@ export function protegerVinculosDoRol(anterior: IdentidadesRol, proximo: Identid
     return c;
   };
   const antigosContados = contagem(antes);
-  for (const [nome, quantidade] of contagem(resultadosAtuais)) {
+  const novosContados = contagem(resultadosAtuais);
+  for (const [nome, totalAnterior] of antigosContados) {
+    if ((novosContados.get(nome) || 0) < totalAnterior) {
+      throw new Error('Não é permitido eliminar resultados antigos, inclusive legados repetidos: ' + nome);
+    }
+  }
+  for (const [nome, quantidade] of novosContados) {
     if (quantidade > 1 && quantidade > (antigosContados.get(nome) || 0)) {
       throw new Error('Resultado esperado duplicado no mesmo diagnóstico: ' + nome);
     }
