@@ -7,7 +7,7 @@ import { identidadeParametroVital, normalizarNomeClinico } from '@/utils/referen
  * catálogo não são migradas nem reservadas em lote por este mecanismo.
  * Para o legado, as verificações por coleção continuam obrigatórias.
  */
-export type TipoIdentidadeCatalogo = 'parametro' | 'exame' | 'sistema' | 'exame-fisico';
+export type TipoIdentidadeCatalogo = 'parametro' | 'exame' | 'sistema' | 'exame-fisico' | 'diagnostico';
 
 export function chaveCatalogo(tipo: TipoIdentidadeCatalogo, nome: string): string {
   const normalizado = tipo === 'parametro'
@@ -27,7 +27,7 @@ export function chavesNovas(chavesAtuais: string[], chavesPropostas: string[]): 
 export async function reservarIdentidades(
   transaction: Transaction,
   chaves: string[],
-  origem: 'SinaisVitais' | 'ExamesLabImagem' | 'RevisaoSistemas',
+  origem: 'SinaisVitais' | 'ExamesLabImagem' | 'RevisaoSistemas' | 'rolEnfermagem',
   documentoId: string,
 ): Promise<void> {
   const unicas = [...new Set(chaves)];
@@ -36,7 +36,7 @@ export async function reservarIdentidades(
   const existentes = await Promise.all(referencias.map(referencia => transaction.get(referencia)));
   const indice = existentes.findIndex(snapshot => snapshot.exists());
   if (indice !== -1) {
-    throw new Error('Este parâmetro ou exame foi reservado por outra operação: ' +
+    throw new Error('Este item clínico foi reservado por outra operação: ' +
       unicas[indice] + '. Atualize a página e utilize o cadastro existente.');
   }
   referencias.forEach((referencia, index) => {
