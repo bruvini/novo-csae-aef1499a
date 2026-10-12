@@ -40,6 +40,10 @@ function validarOpcoes(achado: Achado, validos?: ReadonlySet<string>): void {
     opcao.subconjuntoNHBVinculado, validos,
   ));
 }
+export function validarAchadoNovo(achado: Achado, nhbsDisponiveis?: readonly string[]): void {
+  validarAchado(achado, nhbsDisponiveis ? new Set(nhbsDisponiveis.map(norm)) : undefined);
+}
+
 function validarAchado(achado: Achado, validos?: ReadonlySet<string>): void {
   const nome = achado.descricaoAchado?.trim();
   if (!nome) erro('Exame físico possui achado sem descrição.');
