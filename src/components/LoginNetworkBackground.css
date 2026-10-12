@@ -23,7 +23,9 @@
   width: 100%;
   height: 100%;
   color: #059669;
-  opacity: 0.23;
+  /* Suaviza somente os traços e nós. O formulário, logos e tipografia não recebem blur. */
+  opacity: 0.20;
+  filter: blur(2.6px);
 }
 
 .csae-login-network__signal {
@@ -71,7 +73,7 @@
 }
 
 @media (max-width: 640px) {
-  .csae-login-background__network { opacity: 0.15; }
+  .csae-login-background__network { opacity: 0.13; filter: blur(2px); }
   .csae-login-background__glow { animation: none; will-change: auto; }
   .csae-login-network__signal { animation: none; opacity: 0; }
 }
