@@ -37,6 +37,8 @@ jobs:
         run: npm run test:rules
       - name: Rodar testes da aplicação
         run: npm test
+      - name: Validar apresentação e acessibilidade do login
+        run: npx tsx --test tests/loginPresentation.test.ts
       - name: Testar filtros, exportação e tempo do PE
         run: npx tsx --test src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/tempoProcesso.test.ts
       - name: Testar motor clínico por idade e contexto
@@ -78,6 +80,7 @@ jobs:
           python3 -m py_compile scripts/conferir-changelogs-csae.py
           python3 -m py_compile scripts/registrar-changelog-layout-pe.py
           bash -n scripts/publicar-layout-pe-cloudshell.sh
+          bash -n scripts/publicar-login-animado-cloudshell.sh
           python3 -m py_compile scripts/auditar-catalogo-clinico.py
       - name: Verificar proteção contra alterações locais no Cloud Shell
         run: |
