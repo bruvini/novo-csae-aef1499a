@@ -217,8 +217,8 @@
     },
     {
       "nomeExame": "Bilirrubinas Totais e Frações",
-      "fonteClinica": "https://medlineplus.gov/ency/article/003479.htm",
-      "justificativa": "Adultos; bilirrubina direta <0,3 e total 0,1–1,2 mg/dL; indireta preferível calcular por total menos direta. Para recém-nascidos, exigir avaliação por idade em horas (fora deste lote).",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003479.htm; https://www.cedars-sinai.org/health-topics/indirect-bilirubin",
+      "justificativa": "Adultos; bilirrubina direta <0,3 e total 0,1–1,2 mg/dL; indireta preferível calcular por total menos direta. Para recém-nascidos, exigir avaliação por idade em horas (fora deste lote). Referência adicional para indireta: Cedars-Sinai, adultos 0,2–0,8 mg/dL.",
       "componentes": [
         {
           "componenteAnalisado": "Bilirrubina Total",
@@ -302,25 +302,43 @@
           "unidadeMedida": "mg/dL",
           "resultados": [
             {
-              "resultadoClassificatorio": "Dentro da referência do laboratório",
-              "interpretacaoClinica": "normal",
-              "nomeAlteracao": "Bilirrubina indireta dentro da referência; valor calculado = total − direta",
-              "subconjuntoNHBVinculado": "",
-              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
-            },
-            {
-              "resultadoClassificatorio": "Acima da referência do laboratório",
-              "interpretacaoClinica": "alterado",
-              "nomeAlteracao": "Bilirrubina indireta elevada; correlacionar com hemólise, hepatopatias e método",
-              "subconjuntoNHBVinculado": "Eliminações",
-              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
-            },
-            {
-              "resultadoClassificatorio": "Abaixo da referência do laboratório",
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; bilirrubina indireta = total − direta; intervalo 0,2–0,8 mg/dL do Cedars-Sinai; conferir método/laboratório. Fonte: https://www.cedars-sinai.org/health-topics/indirect-bilirubin",
+              "valorMinimo": 0,
+              "valorMaximo": 0.19,
               "interpretacaoClinica": "informativo",
-              "nomeAlteracao": "Bilirrubina indireta abaixo do intervalo; avaliar relevância clínica",
-              "subconjuntoNHBVinculado": "",
-              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
+              "nomeAlteracao": "Bilirrubina indireta abaixo da faixa usual; significado clínico depende do contexto",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; bilirrubina indireta = total − direta; intervalo 0,2–0,8 mg/dL do Cedars-Sinai; conferir método/laboratório. Fonte: https://www.cedars-sinai.org/health-topics/indirect-bilirubin",
+              "valorMinimo": 0.2,
+              "valorMaximo": 0.8,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Bilirrubina indireta dentro da referência adulta",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; bilirrubina indireta = total − direta; intervalo 0,2–0,8 mg/dL do Cedars-Sinai; conferir método/laboratório. Fonte: https://www.cedars-sinai.org/health-topics/indirect-bilirubin",
+              "valorMinimo": 0.81,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Bilirrubina indireta elevada — avaliar hemólise e metabolismo hepático",
+              "subconjuntoNHBVinculado": "Eliminações"
             }
           ]
         }
