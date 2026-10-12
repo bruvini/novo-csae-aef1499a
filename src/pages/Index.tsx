@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, LogIn, ArrowRight, KeyRound, Eye, EyeOff } from "lucide-react";
 import { auth } from "@/services/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
+import LoginNetworkBackground from "@/components/LoginNetworkBackground";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -81,10 +82,11 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 overflow-x-hidden">
-      {/* Hero-like Section with Login */}
-      <main className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center">
-        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
+    <div className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-csae-green-50">
+      <LoginNetworkBackground />
+      {/* Conteúdo acima da malha decorativa, sem sobreposição nos campos. */}
+      <main className="relative z-10 container mx-auto flex flex-1 flex-col items-center justify-center px-4 py-10 sm:py-12">
+        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-10 lg:gap-20 items-center">
           
           <div className="text-left space-y-8 animate-fade-in order-2 md:order-1">
             <div className="flex items-center gap-6 mb-8">
@@ -112,7 +114,7 @@ const Index = () => {
           </div>
 
           <div className="flex justify-center order-1 md:order-2">
-            <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-csae-green-600 transition-all duration-300">
+            <Card className="w-full max-w-md bg-white border border-emerald-100 shadow-xl shadow-emerald-950/10 border-t-8 border-t-csae-green-600 transition-shadow duration-300">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
                   <LogIn className="w-6 h-6 text-csae-green-600" />
@@ -202,8 +204,30 @@ const Index = () => {
         </div>
       </main>
 
-      <footer className="py-8 bg-white border-t text-gray-500 text-sm text-center mt-auto">
-        <p>© {new Date().getFullYear()} Portal CSAE Floripa 2.0. Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) e Enf. Bruno Vinícius - Todos os direitos reservados</p>
+      <footer className="relative z-10 mt-auto border-t border-emerald-100 bg-white/80 px-4 py-6 text-center text-xs leading-relaxed text-gray-600 sm:text-sm">
+        <p>
+          © {new Date().getFullYear()} Portal CSAE Floripa 2.0.{" "}
+          <a
+            href="https://www.pmf.sc.gov.br/entidades/saude/index.php?cms=csae+++apresentacao&menu=10&submenuid=1478"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-csae-green-800 underline-offset-4 transition-colors hover:text-csae-green-600 hover:underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600"
+            aria-label="Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE), abre em nova aba"
+          >
+            Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE)
+          </a>{" "}
+          e{" "}
+          <a
+            href="https://www.linkedin.com/in/enfbrunovinicius/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-csae-green-800 underline-offset-4 transition-colors hover:text-csae-green-600 hover:underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600"
+            aria-label="LinkedIn do Enf. Bruno Vinícius, abre em nova aba"
+          >
+            Enf. Bruno Vinícius
+          </a>
+          {" "}— Todos os direitos reservados.
+        </p>
       </footer>
     </div>
   );
