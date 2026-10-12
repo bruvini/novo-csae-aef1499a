@@ -24,7 +24,7 @@ export interface ResultadoExame {
   criterioSexo?: 'Masculino' | 'Feminino' | 'Ambos';
   criterioCondicao?: string;
   contextoClinico?: string;
-  interpretacaoClinica?: 'normal' | 'alterado' | 'indeterminado';
+  interpretacaoClinica?: 'normal' | 'alterado' | 'indeterminado' | 'informativo';
   valorMinimo?: number | null;
   valorMaximo?: number | null;
   // Campo para exames de imagem
