@@ -201,6 +201,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
       'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
   },
   {
+    titulo: 'Processo de Enfermagem com Layout Mais Amplo e Responsivo',
+    descricao:
+      'Aproveitamos melhor o espaço da tela do Processo de Enfermagem. Em computadores, a explicação das etapas agora aparece ao lado do Dashboard e da lista de pacientes, facilitando o acompanhamento das informações. Em tablets e celulares, a organização se adapta automaticamente à largura disponível, mantendo os botões e a tabela acessíveis. A melhoria é visual e não altera os dados nem os registros dos pacientes.',
+  },
+  {
     titulo: 'Dashboard mais limpo e organizado',
     descricao:
       'Aprimoramos a organização visual do Dashboard, deixando as ferramentas mais limpas e o bloco de atualizações mais compacto e agradável de consultar.',
