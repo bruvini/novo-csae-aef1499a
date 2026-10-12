@@ -7,6 +7,7 @@ import {
   getDocs, 
   doc, 
   updateDoc, 
+  deleteDoc,
   onSnapshot,
   QueryConstraint,
   Timestamp
@@ -98,8 +99,14 @@ export const atualizarSubconjunto = async (
   }
 };
 
-export const excluirSubconjunto = async (_id: string): Promise<void> => {
-  throw new Error('Exclusão de NHB/protocolo bloqueada: o subconjunto pode estar vinculado a diagnósticos existentes. Utilize arquivamento versionado.');
+export const excluirSubconjunto = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, 'subconjuntosEnfermagem', id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Erro ao excluir subconjunto:', error);
+    throw error;
+  }
 };
 
 export const escutarSubconjuntos = (
