@@ -1,0 +1,441 @@
+{
+  "_fonte": "Protocolo de Enfermagem volume 6, seção 2.2.2, PDF pp.19-21",
+  "RevisaoSistemas": [
+    {
+      "nomeSistema": "Sistema Tegumentar — Avaliação de Feridas",
+      "descricaoSistema": "Observação do leito, exsudato, tecido, pele perilesional, odor e bordas; complementar localização e mensuração em registro narrativo.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção do Leito e Tecido da Ferida",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Tecido necrótico observado",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Tecido necrótico observado",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Esfacelo observado",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Esfacelo observado",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Exposição de estruturas profundas",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Exposição de estruturas profundas",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação do Exsudato da Ferida",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Exsudato abundante",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente ou escasso",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Abundante",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Exsudato abundante",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Exsudato purulento",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Exsudato purulento",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Exsudato sanguinolento",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Exsudato sanguinolento",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção da Pele e Região Perilesional",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Maceração da pele perilesional",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Maceração da pele perilesional",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Eritema perilesional",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Eritema perilesional",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Edema perilesional",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema perilesional",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Lesão cutânea perilesional",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Lesão cutânea perilesional",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação de Odor e Sinais Locais da Ferida",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Odor perceptível na ferida",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Odor perceptível na ferida",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Secreção purulenta na ferida",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Secreção purulenta na ferida",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Calor local associado à ferida",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Calor local associado à ferida",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção das Bordas e Túneis da Ferida",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Tunelização observada",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Tunelização observada",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Solapamento observado",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Solapamento observado",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Maceração das bordas da ferida",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Maceração das bordas da ferida",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
