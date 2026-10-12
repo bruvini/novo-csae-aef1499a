@@ -1,0 +1,1012 @@
+{
+  "meta": {
+    "versao": "csae-clinico-8v-v3",
+    "projeto": "csaefloripa",
+    "origem": "Protocolos de Enfermagem Florianópolis 1–8 + fontes públicas por item",
+    "aplicar": "Atualização de resultados com arquivamento das regras legadas, sem alterar prontuários",
+    "status": "proposta técnica fundamentada; cortes sujeitos a confirmação dos laboratórios locais e comissão CSAE"
+  },
+  "itens": [
+    {
+      "nomeExame": "Transaminase Oxalacética — TGO (AST)",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003472.htm",
+      "justificativa": "Adultos; AST pode subir também por lesão muscular; não diagnosticar hepatopatia só pelo teste.",
+      "componentes": [
+        {
+          "componenteAnalisado": "AST (TGO) — resultado do laboratório",
+          "unidadeMedida": "U/L",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003472.htm",
+              "valorMinimo": null,
+              "valorMaximo": 7.99,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Abaixo do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003472.htm",
+              "valorMinimo": 8,
+              "valorMaximo": 33,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003472.htm",
+              "valorMinimo": 33.01,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Acima do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Transaminase Pirúvica — TGP (ALT)",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003473.htm",
+      "justificativa": "Adultos; limites mudam pelo método/laboratório e contexto clínico.",
+      "componentes": [
+        {
+          "componenteAnalisado": "ALT (TGP) — resultado do laboratório",
+          "unidadeMedida": "U/L",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003473.htm",
+              "valorMinimo": null,
+              "valorMaximo": 3.99,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Abaixo do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003473.htm",
+              "valorMinimo": 4,
+              "valorMaximo": 36,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003473.htm",
+              "valorMinimo": 36.01,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Acima do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Fosfatase Alcalina (FA)",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003468.htm",
+      "justificativa": "Faixa somente adulta; crianças e gestantes necessitam referência específica, não aplicar cortes adultos.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Fosfatase Alcalina — resultado do laboratório",
+          "unidadeMedida": "U/L",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003468.htm",
+              "valorMinimo": null,
+              "valorMaximo": 19.99,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Abaixo do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003468.htm",
+              "valorMinimo": 20,
+              "valorMaximo": 130,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003468.htm",
+              "valorMinimo": 130.01,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Acima do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Gama Glutamiltransferase (GGT)",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003458.htm",
+      "justificativa": "Aumento pode ter etiologia hepática, biliar ou relacionada a medicações e álcool.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Gama GT — resultado do laboratório",
+          "unidadeMedida": "U/L",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003458.htm",
+              "valorMinimo": null,
+              "valorMaximo": 4.99,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Abaixo do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003458.htm",
+              "valorMinimo": 5,
+              "valorMaximo": 40,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003458.htm",
+              "valorMinimo": 40.01,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Acima do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Bilirrubinas Totais e Frações",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003479.htm",
+      "justificativa": "Adultos; bilirrubina direta <0,3 e total 0,1–1,2 mg/dL; indireta preferível calcular por total menos direta. Para recém-nascidos, exigir avaliação por idade em horas (fora deste lote).",
+      "componentes": [
+        {
+          "componenteAnalisado": "Bilirrubina Total",
+          "unidadeMedida": "mg/dL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003479.htm",
+              "valorMinimo": null,
+              "valorMaximo": 0.09000000000000001,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Abaixo do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003479.htm",
+              "valorMinimo": 0.1,
+              "valorMaximo": 1.2,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003479.htm",
+              "valorMinimo": 1.21,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Acima do intervalo de referência — avaliar contexto",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Bilirrubina Direta",
+          "unidadeMedida": "mg/dL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003479.htm",
+              "valorMinimo": 0,
+              "valorMaximo": 0.29,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Direta dentro da referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/ency/article/003479.htm",
+              "valorMinimo": 0.3,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Bilirrubina direta elevada",
+              "subconjuntoNHBVinculado": "Eliminações"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Bilirrubina Indireta",
+          "unidadeMedida": "mg/dL",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Dentro da referência do laboratório",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Bilirrubina indireta dentro da referência; valor calculado = total − direta",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
+            },
+            {
+              "resultadoClassificatorio": "Acima da referência do laboratório",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Bilirrubina indireta elevada; correlacionar com hemólise, hepatopatias e método",
+              "subconjuntoNHBVinculado": "Eliminações",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
+            },
+            {
+              "resultadoClassificatorio": "Abaixo da referência do laboratório",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Bilirrubina indireta abaixo do intervalo; avaliar relevância clínica",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://medlineplus.gov/ency/article/003479.htm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Urocultura com Antibiograma",
+      "fonteClinica": "https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+      "justificativa": "Resultado de crescimento e contagem devem ser vinculados a sintomas, técnica de coleta, gestação e antibiograma; não diagnosticar ITU automaticamente.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Crescimento na Urocultura",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Sem crescimento bacteriano",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Urocultura negativa",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/"
+            },
+            {
+              "resultadoClassificatorio": "Crescimento bacteriano significativo",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Crescimento bacteriano — avaliar bacteriúria/ITU e contexto clínico",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/"
+            },
+            {
+              "resultadoClassificatorio": "Crescimento misto / possível contaminação",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Amostra possivelmente contaminada; avaliar repetição",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/"
+            },
+            {
+              "resultadoClassificatorio": "Resultado preliminar",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Resultado preliminar, não concluir interpretação",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Contagem de Colônias",
+          "unidadeMedida": "UFC/mL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "gestante",
+              "criterioCondicao": "Gestante; limiar de bacteriúria assintomática para contagem ≥100.000; infecção sintomática pode ocorrer com menos. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "valorMinimo": 0,
+              "valorMaximo": 99999,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Abaixo de 100.000 UFC/mL — correlacionar com sintomas",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "gestante",
+              "criterioCondicao": "Gestante com bacteriúria; avaliar se amostra válida e crescimento de uropatógeno. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "valorMinimo": 100000,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Bacteriúria significativa na gestação — avaliação e tratamento segundo antibiograma",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Bactéria identificada",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Uropatógeno identificado",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Organismo identificado — avaliar contagem e quadro",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Espécie e observações do laudo",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "Sem identificação de uropatógeno",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Sem identificação de uropatógeno",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Antibiograma — perfil de sensibilidade",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Sensível (S)",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Sensível (S) — informar antibiótico avaliado",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Antimicrobiano e CIM",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "Sensível, aumento de exposição (I)",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Categoria I — informar antimicrobiano",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Antimicrobiano e CIM",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "Resistente (R)",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Resistente (R) — revisar terapia conforme contexto e prescritor",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://linhasdecuidado.saude.gov.br/portal/pre-natal-baixo-risco/unidade-de-atencao-primaria/planejamento-terapeutico/",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Antimicrobiano e CIM",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Beta-hCG — Teste de Gravidez",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003510.htm",
+      "justificativa": "Presença de hCG não é patologia. Referência não gestante e interpretação por contexto, sem uso da faixa na evolução normal da gravidez.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Beta-hCG Quantitativo",
+          "unidadeMedida": "mUI/mL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "nao_gestante",
+              "criterioCondicao": "Pessoa não gestante; mulheres: <5 mUI/mL; considerar idade e método. Fonte: https://medlineplus.gov/ency/article/003510.htm",
+              "valorMinimo": 0,
+              "valorMaximo": 4.99,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "hCG abaixo de 5 mUI/mL — compatível com ausência de gestação",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "nao_gestante",
+              "criterioCondicao": "Resultado de transição: não confirma localização nem viabilidade gestacional. Confirmar com laboratório. Fonte: https://medlineplus.gov/ency/article/003510.htm",
+              "valorMinimo": 5,
+              "valorMaximo": 24.99,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "hCG entre 5 e 24,99 mUI/mL — repetir / acompanhar evolução",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "nao_gestante",
+              "criterioCondicao": "Não diagnosticar automaticamente gestação por medida isolada, nem associar NHB anormal. Fonte: https://medlineplus.gov/ency/article/003510.htm",
+              "valorMinimo": 25,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "hCG detectável — gestação possível; correlacionar com evolução",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Pesquisa Molecular de DNA-HPV Oncogênico",
+      "fonteClinica": "https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view",
+      "justificativa": "DNA-HPV oncogênico detectado não equivale a diagnóstico de câncer. Genotipagem 16/18 orienta triagem específica em diretriz MS 2025.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Genótipos ou observações",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Não detectado",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Nenhum genótipo oncogênico detectado",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view"
+            },
+            {
+              "resultadoClassificatorio": "HPV 16 detectado",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HPV 16 detectado — seguir fluxograma de rastreamento",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view"
+            },
+            {
+              "resultadoClassificatorio": "HPV 18 detectado",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HPV 18 detectado — seguir fluxograma de rastreamento",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view"
+            },
+            {
+              "resultadoClassificatorio": "HPV 16 e 18 detectados",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HPV 16 e 18 detectados — seguir fluxograma de rastreamento",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view"
+            },
+            {
+              "resultadoClassificatorio": "Outros HPV oncogênicos detectados",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HPV oncogênico não 16/18 — avaliar citologia reflexa",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Genótipo, se informado",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "Resultado inválido / repetir amostra",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Resultado inválido — coletar nova amostra",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.gov.br/saude/pt-br/assuntos/pcdt/r/rastreamento-cancer-do-colo-do-utero/view"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Contagem de Linfócitos T CD4+",
+      "fonteClinica": "https://medlineplus.gov/lab-tests/cd4-lymphocyte-count/",
+      "justificativa": "Contagem isolada não define imunodeficiência e varia com idade, doença e tratamento. Adultos: referência 500–1.200/mm³ conforme MedlinePlus.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Linfócitos T CD4+",
+          "unidadeMedida": "células/mm³",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/lab-tests/cd4-lymphocyte-count/",
+              "valorMinimo": 0,
+              "valorMaximo": 199,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "CD4 <200 — imunossupressão importante; avaliação médica",
+              "subconjuntoNHBVinculado": "Regulação - crescimento celular e desenvolvimento funcional"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/lab-tests/cd4-lymphocyte-count/",
+              "valorMinimo": 200,
+              "valorMaximo": 499,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "CD4 reduzido — avaliar tendência e contexto",
+              "subconjuntoNHBVinculado": "Regulação - crescimento celular e desenvolvimento funcional"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/lab-tests/cd4-lymphocyte-count/",
+              "valorMinimo": 500,
+              "valorMaximo": 1200,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "CD4 na faixa de referência adulta",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "criterioCondicao": "Adultos; interpretar com método e intervalo do laboratório. Fonte: https://medlineplus.gov/lab-tests/cd4-lymphocyte-count/",
+              "valorMinimo": 1201,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "CD4 acima da faixa de referência — correlacionar com avaliação",
+              "subconjuntoNHBVinculado": "Regulação - crescimento celular e desenvolvimento funcional"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Carga Viral do HIV — RNA HIV",
+      "fonteClinica": "https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring",
+      "justificativa": "Interpretar exclusivamente no acompanhamento da pessoa vivendo com HIV; <200 cópias/mL não equivale necessariamente a indetectável pelo método; falha exige persistência e avaliação.",
+      "componentes": [
+        {
+          "componenteAnalisado": "RNA HIV (cópias/mL)",
+          "unidadeMedida": "cópias/mL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hiv_monitoramento",
+              "criterioCondicao": "Em TARV; apenas resultado QUANTIFICADO. Se laudo 'não detectado', usar opção qualitativa. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring",
+              "valorMinimo": 0,
+              "valorMaximo": 19,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Abaixo de 20 cópias/mL — interpretar limite de detecção do método",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hiv_monitoramento",
+              "criterioCondicao": "Em TARV; RNA de baixo nível não define falha virológica por um exame isolado. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring",
+              "valorMinimo": 20,
+              "valorMaximo": 199,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Viremia de baixo nível — avaliar tendência, possível blip",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hiv_monitoramento",
+              "criterioCondicao": "Em TARV; confirmar persistência e adesão; limiar de investigação, não diagnóstico automático de falha. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring",
+              "valorMinimo": 200,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "RNA-HIV ≥200 — investigar falha virológica persistente",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "RNA HIV Qualitativo",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Não detectado (conforme limite do método)",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "RNA-HIV não detectado segundo ensaio",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring"
+            },
+            {
+              "resultadoClassificatorio": "Detectado abaixo do limite de quantificação",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Detectado não quantificável — acompanhar",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring"
+            },
+            {
+              "resultadoClassificatorio": "Detectado / quantificável",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Detectado — interpretar valor quantitativo, tendência e TARV",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://clinicalinfo.hiv.gov/en/guidelines/hiv-clinical-guidelines-adult-and-adolescent-arv/plasma-hiv-1-rna-cd4-monitoring"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "HBV-DNA — Carga Viral da Hepatite B",
+      "fonteClinica": "https://www.ncbi.nlm.nih.gov/books/NBK442261/",
+      "justificativa": "Não classificar abaixo de 2.000 UI/mL como 'saudável'. Decisão terapêutica depende ALT, fibrose, comorbidades e coinfecção, não apenas carga viral.",
+      "componentes": [
+        {
+          "componenteAnalisado": "HBV-DNA Quantitativo",
+          "unidadeMedida": "UI/mL",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hbv_monitoramento",
+              "criterioCondicao": "Usar apenas se laudo realmente reporta zero; normalmente 'não detectado' é qualitativo. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/",
+              "valorMinimo": 0,
+              "valorMaximo": 0,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "HBV-DNA não quantificado (valor 0 informado pelo laboratório)",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hbv_monitoramento",
+              "criterioCondicao": "Carga viral quantificável baixa NÃO equivale a ausência de replicação. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/",
+              "valorMinimo": 0.01,
+              "valorMaximo": 1999.99,
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "HBV-DNA quantificável <2.000 UI/mL — avaliar contexto",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "hbv_monitoramento",
+              "criterioCondicao": "Limiar de avaliação de tratamento em hepatite B crônica; não é critério isolado de tratamento. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/",
+              "valorMinimo": 2000,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HBV-DNA ≥2.000 UI/mL — avaliar elegibilidade com ALT/fibrose",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "HBV-DNA Qualitativo",
+          "unidadeMedida": "Qualitativo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Não detectado (limite do ensaio)",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "HBV-DNA não detectado segundo método",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/"
+            },
+            {
+              "resultadoClassificatorio": "Detectado abaixo do limite de quantificação",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Detectado, não quantificável — acompanhar",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/"
+            },
+            {
+              "resultadoClassificatorio": "Detectado",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "HBV-DNA detectado — correlacionar com HBsAg, ALT e fibrose",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.ncbi.nlm.nih.gov/books/NBK442261/"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Coagulograma — TAP/INR",
+      "fonteClinica": "https://medlineplus.gov/ency/article/003652.htm",
+      "justificativa": "Faixas de TAP/INR sem anticoagulantes. Em warfarina, alvo tipicamente 2–3 e deve ser selecionado outro contexto; não usar faixas gerais.",
+      "componentes": [
+        {
+          "componenteAnalisado": "INR",
+          "unidadeMedida": "Razão",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem warfarina/anticoagulante; intervalo 0,8–1,1; interpretar com laboratório Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 0,
+              "valorMaximo": 0.79,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "INR abaixo do intervalo — avaliar contexto",
+              "subconjuntoNHBVinculado": "Regulação vascular"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem uso de anticoagulantes Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 0.8,
+              "valorMaximo": 1.1,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "INR dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem anticoagulantes; considerar hepatopatia/deficiência de fatores/medicamentos Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 1.11,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "INR prolongado — avaliação clínica",
+              "subconjuntoNHBVinculado": "Regulação vascular"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "Tempo de Protrombina",
+          "unidadeMedida": "segundos",
+          "resultados": [
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem anticoagulantes; reagente e método podem alterar intervalo Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 0,
+              "valorMaximo": 10.99,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "TP abaixo do intervalo de referência",
+              "subconjuntoNHBVinculado": "Regulação vascular"
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem anticoagulantes; intervalo do método Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 11,
+              "valorMaximo": 13.5,
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "TP dentro do intervalo de referência",
+              "subconjuntoNHBVinculado": ""
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "sem_anticoagulante",
+              "criterioCondicao": "Sem anticoagulantes; observar laboratório e método Fonte: https://medlineplus.gov/ency/article/003652.htm",
+              "valorMinimo": 13.51,
+              "valorMaximo": null,
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "TP prolongado — investigar contexto",
+              "subconjuntoNHBVinculado": "Regulação vascular"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Ultrassonografia das Mamas",
+      "fonteClinica": "https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+      "justificativa": "Classificação BI-RADS aplicada a ultrassonografia mamária; categorias 0–6 não equivalem automaticamente a doença; classificar necessidade de avaliação.",
+      "componentes": [
+        {
+          "componenteAnalisado": "Laudo da Ultrassonografia das Mamas",
+          "unidadeMedida": "BI-RADS",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "BI-RADS 0 — incompleto",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Avaliação incompleta — complementar imagem",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição e recomendações do laudo",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 1 — negativo",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Sem achados suspeitos",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 2 — benigno",
+              "interpretacaoClinica": "normal",
+              "nomeAlteracao": "Achado benigno",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 3 — provavelmente benigno",
+              "interpretacaoClinica": "informativo",
+              "nomeAlteracao": "Provavelmente benigno — acompanhar conforme laudo",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Conduta do laudo",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 4A — baixa suspeita",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Achado suspeito categoria 4A — encaminhar avaliação",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição da lesão",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 4B — suspeita moderada",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Achado suspeito categoria 4B — encaminhar avaliação",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição da lesão",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 4C — suspeita alta",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Achado suspeito categoria 4C — encaminhar avaliação",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição da lesão",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 4 — suspeito (não subcategorizado)",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Achado suspeito categoria 4 — encaminhar avaliação",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição da lesão",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 5 — altamente sugestivo",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Alta suspeita de malignidade — encaminhamento prioritário",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição da lesão",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            },
+            {
+              "resultadoClassificatorio": "BI-RADS 6 — malignidade comprovada por biópsia",
+              "interpretacaoClinica": "alterado",
+              "nomeAlteracao": "Malignidade previamente comprovada por biópsia — seguimento oncológico",
+              "subconjuntoNHBVinculado": "Terapêutica e de Prevenção",
+              "criterioCondicao": "Interpretar segundo o contexto clínico e laudo. Fonte: https://www.acr.org/Clinical-Resources/Clinical-Tools-and-Reference/Reporting-and-Data-Systems/BI-RADS",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Descrição e contexto",
+              "valorTextoObrigatorio": false,
+              "tipoValorTexto": "livre"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
