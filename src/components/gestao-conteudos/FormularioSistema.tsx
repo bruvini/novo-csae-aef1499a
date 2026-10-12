@@ -21,6 +21,8 @@ import {
   updateSistema,
 } from '@/services/bancodados/revisaoSistemasDB';
 import { getSubconjuntosNhb } from '@/services/bancodados/subconjuntosDB';
+import { validarAchadoNovo, validarConteudoExameFisico } from '@/utils/validacaoCadastroExameFisico';
+import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
 
 interface FormularioSistemaProps {
   sistema: SistemaCorporal | null;
@@ -119,6 +121,13 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
       toast.error('Nome do sistema é obrigatório');
       return;
     }
+    try {
+      validarConteudoExameFisico(formData, sistema || undefined,
+        nhbOptions.map(op => op.tituloSubconjunto));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Cadastro clínico incompleto.');
+      return;
+    }
     setLoading(true);
     try {
       if (sistema) {
@@ -152,6 +161,12 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
     if (!editingExame) return;
     if (!editingExame.exame.nomeExame.trim()) { toast.error('Nome do exame é obrigatório'); return; }
     if (!editingExame.exame.propedeutica) { toast.error('Selecione a propedêutica'); return; }
+    if (formData.exames.some((outro, idx) =>
+      idx !== editingExame.index
+      && normalizarNomeClinico(outro.nomeExame) === normalizarNomeClinico(editingExame.exame.nomeExame))) {
+      toast.error('Este exame físico já está cadastrado no sistema. Edite o exame existente.');
+      return;
+    }
     const newExames = [...formData.exames];
     if (editingExame.index === -1) newExames.push(editingExame.exame);
     else newExames[editingExame.index] = editingExame.exame;
@@ -229,6 +244,20 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
       }
     } else if (!achado.opcoes?.length) {
       toast.error('Adicione ao menos uma opção ao achado');
+      return;
+    }
+
+    try {
+      validarAchadoNovo(achado, nhbOptions.map(op => op.tituloSubconjunto));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Achado incompleto.');
+      return;
+    }
+    const exameAtual = formData.exames[achadoEditState.exameIndex];
+    if (exameAtual.achados.some((outro, i) =>
+      (achadoEditState.mode !== 'editing' || i !== achadoEditState.achadoIndex)
+      && normalizarNomeClinico(outro.descricaoAchado) === normalizarNomeClinico(achado.descricaoAchado))) {
+      toast.error('Este achado já existe no exame físico. Edite-o em vez de criar outro.');
       return;
     }
 
