@@ -46,3 +46,11 @@ test('não introduz resultados duplicados que disputariam a seleção no planeja
   a.resultadosEsperados.push({ tituloResultado: 'DOR CONTROLADA', intervencoes: [] });
   assert.throws(() => protegerVinculosDoRol(anterior(), a), /duplicado/);
 });
+
+test('legado com resultados repetidos não perde nenhum registro ao editar', () => {
+  const velho = anterior();
+  velho.resultadosEsperados.push({ ...velho.resultadosEsperados[0] });
+  const novo = anterior();
+  assert.throws(() => protegerVinculosDoRol(velho, novo), /resultados antigos/);
+  assert.doesNotThrow(() => protegerVinculosDoRol(velho, velho));
+});
