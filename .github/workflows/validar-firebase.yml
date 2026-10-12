@@ -44,6 +44,8 @@ jobs:
         run: npx tsx --test src/utils/protecaoCatalogoHistorico.test.ts
       - name: Testar conciliação do rol, resultados e intervenções
         run: npx tsx --test src/utils/conciliacaoRolEnfermagem.test.ts
+      - name: Testar integridade histórica do rol diagnóstico
+        run: npx tsx --test src/utils/protecaoRolHistorico.test.ts
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal

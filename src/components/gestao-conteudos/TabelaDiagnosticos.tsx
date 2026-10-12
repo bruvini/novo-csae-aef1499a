@@ -3,7 +3,6 @@ import {
   getDiagnosticos, 
   addDiagnostico, 
   updateDiagnostico, 
-  deleteDiagnostico,
   type Diagnostico,
   type Subconjunto,
   type ResultadoEsperado,
@@ -29,17 +28,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import {
   Accordion,
   AccordionContent,
@@ -238,22 +226,13 @@ const TabelaDiagnosticos = () => {
       setSheetOpen(false);
       limparFormulario();
     } catch (error) {
-      toast.error('Erro ao salvar diagnóstico');
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar diagnóstico');
       console.error(error);
     } finally {
       setSalvandoDiagnostico(false);
     }
   };
 
-  const excluirDiagnostico = async (diagnostico: Diagnostico) => {
-    try {
-      await deleteDiagnostico(diagnostico.id);
-      toast.success('Diagnóstico excluído com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao excluir diagnóstico');
-      console.error(error);
-    }
-  };
 
   if (loading) {
     return (
@@ -309,6 +288,8 @@ const TabelaDiagnosticos = () => {
                   </label>
                   <Input
                     value={tituloDiagnostico}
+                    disabled={Boolean(editandoDiagnostico)}
+                    title={editandoDiagnostico ? 'Título preservado para manter os processos históricos' : undefined}
                     onChange={(e) => setTituloDiagnostico(e.target.value)}
                     placeholder="Ex: Risco de Infecção"
                   />
@@ -341,6 +322,10 @@ const TabelaDiagnosticos = () => {
                         variant="ghost"
                         className="h-4 w-4 p-0"
                         onClick={() => removerSubconjunto(index)}
+                        disabled={Boolean(editandoDiagnostico?.subconjuntos?.some(v =>
+                          v.tituloSubconjunto === subconjunto.tituloSubconjunto
+                          && v.tipoSubconjunto === subconjunto.tipoSubconjunto))}
+                        title="Vínculos originais são preservados para manter o histórico"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -388,6 +373,9 @@ const TabelaDiagnosticos = () => {
                             variant="destructive"
                             size="sm"
                             onClick={() => removerResultado(resultadoIndex)}
+                            disabled={Boolean(editandoDiagnostico?.resultadosEsperados?.some(r =>
+                              r.tituloResultado === resultado.tituloResultado))}
+                            title="Resultados antigos exigem migração versionada antes de remoção"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Excluir Resultado
@@ -398,6 +386,8 @@ const TabelaDiagnosticos = () => {
                           <label className="block text-sm font-medium mb-2">Título do Resultado</label>
                           <Input
                             value={resultado.tituloResultado}
+                            disabled={Boolean(editandoDiagnostico?.resultadosEsperados?.some(r =>
+                              r.tituloResultado === resultado.tituloResultado))}
                             onChange={(e) => atualizarResultado(resultadoIndex, 'tituloResultado', e.target.value)}
                             placeholder="Ex: Ausência de sinais de infecção"
                           />
@@ -435,6 +425,10 @@ const TabelaDiagnosticos = () => {
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => removerIntervencao(resultadoIndex, intervencaoIndex)}
+                                  disabled={Boolean(editandoDiagnostico?.resultadosEsperados?.some(r =>
+                                    r.tituloResultado === resultado.tituloResultado
+                                    && r.intervencoes.some(i => i.acaoPrescrita === intervencao.acaoPrescrita)))}
+                                  title="Intervenção antiga exige migração versionada antes de remoção"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -444,6 +438,9 @@ const TabelaDiagnosticos = () => {
                                 <label className="block text-sm font-medium mb-1">Ação do Enfermeiro</label>
                                 <Textarea
                                   value={intervencao.acaoEnfermeiro}
+                                  disabled={Boolean(editandoDiagnostico?.resultadosEsperados?.some(r =>
+                                    r.tituloResultado === resultado.tituloResultado
+                                    && r.intervencoes.some(i => i.acaoPrescrita === intervencao.acaoPrescrita)))}
                                   onChange={(e) => atualizarIntervencao(resultadoIndex, intervencaoIndex, 'acaoEnfermeiro', e.target.value)}
                                   placeholder="Ex: Avalio sinais inflamatórios diariamente"
                                   rows={2}
@@ -454,6 +451,9 @@ const TabelaDiagnosticos = () => {
                                 <label className="block text-sm font-medium mb-1">Ação Prescrita</label>
                                 <Textarea
                                   value={intervencao.acaoPrescrita}
+                                  disabled={Boolean(editandoDiagnostico?.resultadosEsperados?.some(r =>
+                                    r.tituloResultado === resultado.tituloResultado
+                                    && r.intervencoes.some(i => i.acaoPrescrita === intervencao.acaoPrescrita)))}
                                   onChange={(e) => atualizarIntervencao(resultadoIndex, intervencaoIndex, 'acaoPrescrita', e.target.value)}
                                   placeholder="Ex: Avaliar sinais inflamatórios diariamente"
                                   rows={2}
@@ -577,31 +577,10 @@ const TabelaDiagnosticos = () => {
                         <Pencil className="h-4 w-4" />
                       </Button>
                       
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja excluir o diagnóstico "{diagnostico.tituloDiagnostico}"? 
-                              Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => excluirDiagnostico(diagnostico)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Excluir
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <Button variant="destructive" size="sm" className="h-8 w-8 p-0"
+                        disabled title="Exclusão indisponível: preserve os planejamentos clínicos históricos">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
