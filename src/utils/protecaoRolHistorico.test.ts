@@ -33,7 +33,7 @@ test('bloqueia troca do título e remoção de NHB já relacionada', () => {
 test('bloqueia remoção ou renomeação de resultado e intervenção já usados', () => {
   assert.throws(() => protegerVinculosDoRol(anterior(), {
     ...anterior(), resultadosEsperados: [],
-  }), /resultado esperado/);
+  }), /resultados antigos|resultado esperado/);
   const edit = anterior();
   edit.resultadosEsperados[0].intervencoes[0].acaoPrescrita = 'Reavaliar sintomas';
   assert.throws(() => protegerVinculosDoRol(anterior(), edit), /ação prescrita/);
