@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, differenceInMonths, differenceInYears } from 'date-fns';
 
-export type InterpretacaoClinica = 'normal' | 'alterado' | 'indeterminado';
+export type InterpretacaoClinica = 'normal' | 'alterado' | 'indeterminado' | 'informativo';
 export const CONTEXTOS_CLINICOS = [
   { id: 'geral', titulo: 'Avaliação geral' },
   { id: 'gestante', titulo: 'Gestação' },
@@ -15,6 +15,10 @@ export const CONTEXTOS_CLINICOS = [
   { id: 'aleatoria', titulo: 'Aferição aleatória' },
   { id: 'dengue', titulo: 'Investigação de dengue' },
   { id: 'atleta', titulo: 'Atleta em repouso' },
+  { id: 'sem_anticoagulante', titulo: 'Coagulação — sem anticoagulante' },
+  { id: 'hiv_monitoramento', titulo: 'HIV — acompanhamento de TARV' },
+  { id: 'hbv_monitoramento', titulo: 'Hepatite B — acompanhamento' },
+  { id: 'nao_gestante', titulo: 'Sem gestação informada — beta-hCG' },
 ] as const;
 
 export function contextoRegistradoParaTexto(contextos: Record<string, string> | undefined, parametro: string): string {
@@ -177,8 +181,8 @@ export function classificarReferenciaNumerica(
     !selecionadas.includes(r) && interpretarRegra(r) === 'alterado')) {
     return { status: 'neutro', motivo: 'Há uma faixa de alerta também aplicável. A classificação exige revisão clínica.' };
   }
-  if (escolhido.interpretacao === 'indeterminado') {
-    return { status: 'neutro', motivo: 'Interpretação não definida na Gestão de Conteúdos.' };
+  if (escolhido.interpretacao === 'indeterminado' || escolhido.interpretacao === 'informativo') {
+    return { status: 'neutro', motivo: escolhido.interpretacao === 'informativo' ? 'Resultado informativo: acompanhar a evolução e o contexto clínico, sem inferir diagnóstico.' : 'Interpretação não definida na Gestão de Conteúdos.' };
   }
   if (escolhido.interpretacao === 'normal') return { status: 'normal' };
   return { status: 'alterado', nomeAlteracao: escolhido.regra.nomeAlteracao || 'Alteração',
@@ -196,5 +200,5 @@ export function classificarReferenciaQualitativa(
   const r = correspondentes[0], status = interpretarRegra(r);
   return status === 'normal' ? { status: 'normal' }
     : status === 'alterado' ? { status: 'alterado', nomeAlteracao: r.nomeAlteracao || 'Alteração', nhb: r.subconjuntoNHBVinculado || undefined }
-    : { status: 'neutro', motivo: 'Interpretação não definida.' };
+    : { status: 'neutro', motivo: status === 'informativo' ? 'Resultado informativo, sem diagnóstico automático.' : 'Interpretação não definida.' };
 }
