@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "import:clinical": "tsx scripts/import-clinical-parameters.ts",
-    "conciliar:clinical": "tsx scripts/conciliar-catalogo-csae.ts",
+    "conciliar:rol": "tsx scripts/conciliar-rol-enfermagem.ts",
     "lint": "eslint .",
     "test": "tsx --test tests/registrationData.test.ts tests/registrationFlow.test.ts",
     "test:rules": "npx --yes firebase-tools emulators:exec --project demo-csaefloripa --only firestore,storage \"tsx --test tests/firebaseRules.test.ts\"",
