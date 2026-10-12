@@ -61,6 +61,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_aplicar_catalogo_clinico_8v_lote2.py'
       - name: Testar correções clínicas V3 (13 exames)
         run: python3 -m unittest discover -s scripts/tests -p 'test_corrigir_parametros_exames_csae_8v_v3.py'
+      - name: Validar mudança de NHB nos exames hepatobiliares (V4)
+        run: python3 -m unittest discover -s scripts/tests -p 'test_atualizar_nhb_hepatobiliar_v4.py'
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
