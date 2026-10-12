@@ -20,18 +20,17 @@ const ProcessoEnfermagem = () => {
 
   return (
     <AuthenticatedLayout fullWidth>
-      {/* Desktop: coluna educativa 40% e área operacional 60%.
-          Tablets e celulares empilham as seções, sem largura máxima artificial. */}
-      <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] 2xl:gap-8">
-        <aside className="min-w-0" aria-label="Sobre o Processo de Enfermagem">
+      {/* Coluna única em todas as telas: explicação compacta acima da área operacional. */}
+      <div className="flex w-full min-w-0 flex-col gap-6 2xl:gap-7">
+        <aside className="w-full min-w-0" aria-label="Sobre o Processo de Enfermagem">
           <ProcessoEnfermagemExplicacao />
         </aside>
 
-        <section className="min-w-0" aria-label="Painel e pacientes">
+        <section className="w-full min-w-0" aria-label="Painel e pacientes">
         {/* Dashboard Expandido */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="mb-4 text-xl font-bold text-csae-green-800 sm:text-2xl">Dashboard</h2>
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3 2xl:gap-4">
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 2xl:gap-4">
             <Card className="bg-gradient-to-r from-csae-green-50 to-csae-green-100 border-csae-green-200">
               <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
