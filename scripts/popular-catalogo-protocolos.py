@@ -14,7 +14,7 @@ Publicação explícita, após revisar relatório:
 - NÃO toca no rol de diagnósticos/intervenções.
 - Se uma chave já existe, pula a inclusão; se houver colisão não equivalente,
   bloqueia a carga antes de gravar.
-- Registra backup privado dos documentos de destino e auditoria de inclusão.
+- Registra relatório privado do plano e das inclusões. Não faz modificações em documentos antigos.
 """
 import argparse
 import hashlib
@@ -165,7 +165,7 @@ def escrever_privado(data, name):
 
 def snapshot_catalogo(client):
     data={}
-    for colecao in (*COLLECTIONS,NHB_COLLECTION):
+    for colecao in (*COLLECTIONS,NHB_COLLECTION,IDENTITIES):
         data[colecao]=[{"id":s.id,"data":s.to_dict()} for s in client.collection(colecao).stream()]
     return data
 
@@ -181,6 +181,10 @@ def planejar(manifest,snapshot):
             existentes[(colecao,key)]=row["id"]
             for ident in chaves_identidade(colecao,data):
                 keys.setdefault(ident,[]).append((colecao,titulo))
+    # Verifica também reservas já existentes (não basta checar só títulos).
+    for reserva in snapshot.get(IDENTITIES,[]):
+        keys.setdefault(reserva["id"],[]).append(
+            (IDENTITIES, reserva["data"].get("colecaoOrigem", "índice")))
     to_create=[]; skips=[]; conflicts=[]
     for colecao in COLLECTIONS:
         for item in manifest[colecao]:
