@@ -27,6 +27,7 @@ export function ExameResultadoInput({
       <Input
         type="number"
         min="0"
+        step="any"
         placeholder="Resultado"
         value={valor}
         onChange={(event) => {
