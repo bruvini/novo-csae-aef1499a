@@ -3,7 +3,7 @@
 ## Escopo
 
 Somente **SinaisVitais**, **ExamesLabImagem** e **RevisaoSistemas**, com leitura das
-NHBs já cadastradas em \`subconjuntosEnfermagem\`. Diagnósticos, intervenções,
+NHBs já cadastradas em `subconjuntosEnfermagem`. Diagnósticos, intervenções,
 resultados esperados, pacientes, prontuários e usuários ficam fora do escopo.
 
 Os 8 PDFs de protocolos enviados são as fontes para **identificar** os itens.
@@ -15,25 +15,25 @@ faixa universal de normalidade, uma indicação de solicitação, ou um achado a
 - 19 documentos de sinais vitais, 41 de exames laboratoriais/imagem, 23 de
   revisão de sistemas.
 - Lote clínico inicial de 15 documentos: nenhum faltante, nenhum conflito;
-  comparação interna com o manifesto \`catalogo-protocolos-csae-v1.json\`
+  comparação interna com o manifesto `catalogo-protocolos-csae-v1.json`
   considerada compatível. **Isto não valida a atualidade científica do lote.**
 - Índice exploratório: 80 conceitos; 51 correspondências nominais e 29 sem
   correspondência nominal. Zero alertas nas regras estreitas da auditoria.
-- Frequência Cardíaca (FC): documento \`frequencia-cardiaca-fc-09c0fe7869\`,
+- Frequência Cardíaca (FC): documento `frequencia-cardiaca-fc-09c0fe7869`,
   2 regras, **nenhuma faixa pediátrica reconhecida** no inventário exploratório.
 - Frequência Respiratória (FR): documento com cinco faixas pediátricas
   reconhecidas; **não comprova cobertura clínica completa**.
 
 ## Falhas conhecidas da busca exploratória
 
-- \`Hemoglobina\` também encontra hemoglobina glicada ou eletroforese:
+- `Hemoglobina` também encontra hemoglobina glicada ou eletroforese:
   a correspondência textual **não comprova equivalência de componente**.
-- \`TFGe\` foi relacionada ao clearance de Cockcroft–Gault por sinônimo
+- `TFGe` foi relacionada ao clearance de Cockcroft–Gault por sinônimo
   expansivo. **Não são a mesma medição**; requer conferência específica.
-- \`Teste para sífilis\` pode parecer ausente apesar de existir
-  \`Sorologia para Sífilis — Teste Treponêmico (TR) + VDRL\`:
+- `Teste para sífilis` pode parecer ausente apesar de existir
+  `Sorologia para Sífilis — Teste Treponêmico (TR) + VDRL`:
   nomes de testes e componentes exigem conciliação semântica.
-- \`Exsudato\` pode ser ferida ou orofaringe: distinguir por sistema,
+- `Exsudato` pode ser ferida ou orofaringe: distinguir por sistema,
   exame físico pai e achado; não consolidar apenas pela palavra.
 - Parte dos 29 itens sem match pode ser um achado ou componente aninhado,
   não um documento ausente.
@@ -62,8 +62,8 @@ Quadro 2.3: FC apresentada por idades **pontuais**, não intervalos contínuos:
 | 10 anos | 70–110 |
 
 **NÃO converter automaticamente esses pontos em intervalos etários**:
-o motor \`idadeCompativel\` usa \`differenceInYears\` para faixas em anos.
-\`idadeMinima=0, idadeMaxima=0, idadeUnidade=anos\` abrange todo o primeiro ano
+o motor `idadeCompativel` usa `differenceInYears` para faixas em anos.
+`idadeMinima=0, idadeMaxima=0, idadeUnidade=anos` abrange todo o primeiro ano
 de vida; **não corresponde especificamente ao recém-nascido**. Definir faixas
 contínuas exige fonte adicional e validação clínica. Preservar o documento FC.
 
@@ -72,7 +72,7 @@ contínuas exige fonte adicional e validação clínica. Preservar o documento F
 Contém critérios de alteração para **acolhimento e classificação de risco**:
 FC, FR, temperatura, oximetria, PA e glicemia, inclusive pediátricos.
 Esses limiares podem diferir das faixas usuais; devem levar contexto
-\`classificacao_risco\` ou mecanismo equivalente aprovado, nunca simplesmente
+`classificacao_risco` ou mecanismo equivalente aprovado, nunca simplesmente
 sobrescrever regra geral de normalidade.
 
 **Atenção para possível inconsistência no texto do Quadro 8.1**:
@@ -84,22 +84,22 @@ fonte (pode ser erro tipográfico). Não transformar em corte automático.
 
 No Cloud Shell autenticado, a partir da main atualizada:
 
-\`\`\`bash
+```bash
 git pull --ff-only origin main
 .venv-csae-release/bin/python -m unittest discover -s scripts/tests -p 'test_exportar_inventario_clinico_8v.py'
 .venv-csae-release/bin/python scripts/exportar-inventario-clinico-8v.py
-\`\`\`
+```
 
 Exportação permitida **somente** para documentos clínicos e NHBs; campos são
 restritos a listas autorizadas. O relatório privado em
-\`~/csae-auditoria-clinica/inventario_clinico_completo_8v_*.json\` fornece
+`~/csae-auditoria-clinica/inventario_clinico_completo_8v_*.json` fornece
 dados internos de faixas, unidades, contextos, resultados, propedêutica, achados,
 opções e NHBs. **Nenhuma escrita Firestore**.
 
 A partir dele, classificar cada candidato e os demais dados dos PDFs como:
-\`PRESERVAR\`, \`COMPLEMENTAR_DOCUMENTO\`, \`COMPLEMENTAR_COMPONENTE\`,
-\`NOVO_DOCUMENTO\`, \`AMBIGUO\`, \`CRITERIO_DE_TRIAGEM\`,
-\`PENDENTE_FONTE\` ou \`PENDENTE_NHB\`.
+`PRESERVAR`, `COMPLEMENTAR_DOCUMENTO`, `COMPLEMENTAR_COMPONENTE`,
+`NOVO_DOCUMENTO`, `AMBIGUO`, `CRITERIO_DE_TRIAGEM`,
+`PENDENTE_FONTE` ou `PENDENTE_NHB`.
 Exigir sempre origem (volume/página ou referência externa), interpretação,
 idade/sexo, unidade, contexto e NHB proposta para alterações.
 
@@ -112,12 +112,12 @@ idade/sexo, unidade, contexto e NHB proposta para alterações.
    opções que já aparecem em registros históricos.
 4. Atualizar listas aninhadas sem apagar nenhum elemento legado; comparar
    estado remoto dentro de transação, com relatório e reversibilidade planejada.
-5. Nenhuma faixa alterada \`interpretacaoClinica=alterado\` e nenhum achado
-   \`ehAlteracao=true\` pode iniciar uso clínico sem NHB válida ou decisão de
+5. Nenhuma faixa alterada `interpretacaoClinica=alterado` e nenhum achado
+   `ehAlteracao=true` pode iniciar uso clínico sem NHB válida ou decisão de
    interpretação indeterminada fundamentada. Vínculo NHB não define diagnóstico.
 6. Exigir revisão institucional dos critérios clínicos e teste com pacientes
    **fictícios**, inclusive recém-nascido, lactente e gestante.
-7. Não executar \`--apply\` em scripts antigos como substituto da reconciliação.
+7. Não executar `--apply` em scripts antigos como substituto da reconciliação.
 
 ## Estado
 
