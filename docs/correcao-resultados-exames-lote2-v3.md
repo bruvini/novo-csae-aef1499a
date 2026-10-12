@@ -72,6 +72,9 @@ isso ainda não substitui homologação institucional de cada associação.
 cd ~/novo-csae-aef1499a &&
 git pull --ff-only origin main &&
 .venv-csae-release/bin/python -m unittest discover -s scripts/tests -p 'test_corrigir_parametros_exames_csae_8v_v3.py' &&
+npx tsc -b &&
+npm run build &&
+npx --yes firebase-tools deploy --project csaefloripa --only hosting --non-interactive &&
 .venv-csae-release/bin/python scripts/corrigir-parametros-exames-csae-8v-v3.py --apply --confirm-project csaefloripa
 ```
 
@@ -79,12 +82,12 @@ O terminal deve informar **13 exames corrigidos**, relatório de backup,
 relatório final e pós-verificação. A atualização é idempotente: uma segunda
 execução deve indicar 0 documentos a atualizar.
 
-**Importante:** alterações de TypeScript/UI publicadas no GitHub
-ainda exigem o pipeline de deploy habitual para o Hosting;
-a transação Firestore não publica a interface. Enquanto o Hosting mantiver
-o código anterior, a UI ainda pode exibir o rótulo antigo de status para
-algumas regras, embora os novos valores quantitativos/classificatórios
-já apareçam pela assinatura das coleções.
+**Importante:** o comando acima publica o Hosting antes de aplicar a migração.
+É necessário estar autenticado no Firebase CLI (se não estiver, executar
+`npx --yes firebase-tools login --no-localhost`). O deploy do Hosting não publica
+nem altera regras de acesso. Se a etapa Firestore falhar após o deploy,
+a nova interface continuará funcionando com o catálogo anterior e o log
+informará a causa da não atualização.
 
 ## Fora do escopo
 
