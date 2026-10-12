@@ -1,0 +1,2819 @@
+{
+  "_meta": {
+    "versao": "1.0.0",
+    "projeto": "csaefloripa",
+    "fonte": "Protocolos de Enfermagem da SMS Florianópolis, volumes 1 a 8",
+    "inventarioBase": "inventario_clinico_20261011_221018.json",
+    "modo": "SOMENTE_ADITIVO",
+    "escopo": "Adicionar sinal FR, exames diagnósticos faltantes e novos sistemas de exame físico. Sem mexer em diagnósticos ou existentes.",
+    "nota": "Marcação de NHB é gatilho de avaliação e não gera diagnóstico automático. Critérios numéricos laboratoriais não homologados não classificam normal/alterado. Opções inespecíficas (p.ex. tristeza, contato visual, exsudato seroso) não geram NHB automaticamente; são dados de observação clínica."
+  },
+  "SinaisVitais": [
+    {
+      "sinalVitalNome": "Frequência Respiratória (FR)",
+      "sinalVitalDescricao": "Aferir incursões respiratórias por minuto. Volume 5, quadro 2.2, p. 11 do PDF. As faixas cadastradas são SOMENTE limites superiores para taquipneia; resultados abaixo desses limites permanecem sem classificação automática (não implicam normalidade). Não substitui avaliação de apneia/bradipneia.",
+      "unidadeMedida": "irpm",
+      "valoresDeReferencia": [
+        {
+          "idadeMinima": 0,
+          "idadeMaxima": 1,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "Taquipneia — limite superior de frequência respiratória do Protocolo 5 (Menor que 2 meses)",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 61,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência Respiratória Aumentada",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 2,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "Taquipneia — limite superior de frequência respiratória do Protocolo 5 (2 a 11 meses)",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 51,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência Respiratória Aumentada",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 12,
+          "idadeMaxima": 71,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "Taquipneia — limite superior de frequência respiratória do Protocolo 5 (12 meses a 5 anos)",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 41,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência Respiratória Aumentada",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 6,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "Taquipneia — limite superior de frequência respiratória do Protocolo 5 (6 a 8 anos)",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 31,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência Respiratória Aumentada",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 9,
+          "idadeMaxima": null,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "Taquipneia — limite superior de frequência respiratória do Protocolo 5 (Acima de 8 anos)",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 21,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência Respiratória Aumentada",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        }
+      ]
+    }
+  ],
+  "ExamesLabImagem": [
+    {
+      "nomeExame": "Albumina Sérica",
+      "descricaoExame": "Registro numérico conforme Protocolo de Enfermagem de Florianópolis, volume 6, p. 24 (Quadro 2.2). Não há classificação automática até homologação de faixas para idade, sexo e contexto.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "Albumina Sérica",
+          "unidadeMedida": "g/dL",
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "valorMaximo": null,
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Resultado quantitativo: avaliar conforme contexto clínico",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Vitamina B12",
+      "descricaoExame": "Registro numérico conforme Protocolo de Enfermagem de Florianópolis, volume 6, p. 24 (Quadro 2.2). Não há classificação automática até homologação de faixas para idade, sexo e contexto.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "Vitamina B12",
+          "unidadeMedida": "pg/mL",
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "valorMaximo": null,
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Resultado quantitativo: avaliar conforme contexto clínico",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Vitamina D — 25-hidroxivitamina D",
+      "descricaoExame": "Registro numérico conforme Protocolo de Enfermagem de Florianópolis, volume 6, p. 24 (Quadro 2.2). Não há classificação automática até homologação de faixas para idade, sexo e contexto.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "25-OH Vitamina D",
+          "unidadeMedida": "ng/mL",
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "valorMaximo": null,
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Resultado quantitativo: avaliar conforme contexto clínico",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Zinco Sérico",
+      "descricaoExame": "Registro numérico conforme Protocolo de Enfermagem de Florianópolis, volume 6, p. 24 (Quadro 2.2). Não há classificação automática até homologação de faixas para idade, sexo e contexto.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "Zinco Sérico",
+          "unidadeMedida": "µg/dL",
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "valorMaximo": null,
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Resultado quantitativo: avaliar conforme contexto clínico",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Cultura Microbiológica de Ferida (Swab)",
+      "descricaoExame": "Registro descritivo do laboratorial, Protocolo de Enfermagem de Florianópolis, volume 6, pp. 23–24. Sem diagnóstico ou NHB automáticos.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "Resultado da Cultura de Ferida",
+          "unidadeMedida": "Descritivo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Descritivo",
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Interpretação clínica pendente",
+              "subconjuntoNHBVinculado": "",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Laudo ou descrição",
+              "valorTextoObrigatorio": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Ultrassonografia Transvaginal",
+      "descricaoExame": "Registro descritivo do imagem, Protocolo de Enfermagem de Florianópolis, volume 3, p. 67. Sem diagnóstico ou NHB automáticos.",
+      "tipoExame": "Imagem",
+      "componentes": [
+        {
+          "componenteAnalisado": "Laudo de Ultrassonografia Transvaginal",
+          "unidadeMedida": "Descritivo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Descritivo",
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Interpretação clínica pendente",
+              "subconjuntoNHBVinculado": "",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Laudo ou descrição",
+              "valorTextoObrigatorio": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeExame": "Ultrassonografia Obstétrica",
+      "descricaoExame": "Registro descritivo do imagem, Protocolo de Enfermagem de Florianópolis, volume 3, seção de assistência pré-natal. Sem diagnóstico ou NHB automáticos.",
+      "tipoExame": "Imagem",
+      "componentes": [
+        {
+          "componenteAnalisado": "Laudo de Ultrassonografia Obstétrica",
+          "unidadeMedida": "Descritivo",
+          "resultados": [
+            {
+              "resultadoClassificatorio": "Descritivo",
+              "interpretacaoClinica": "indeterminado",
+              "nomeAlteracao": "Interpretação clínica pendente",
+              "subconjuntoNHBVinculado": "",
+              "permiteValorTexto": true,
+              "rotuloValorTexto": "Laudo ou descrição",
+              "valorTextoObrigatorio": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "RevisaoSistemas": [
+    {
+      "nomeSistema": "Sistema Auditivo — Otalgia e Otoscopia",
+      "descricaoSistema": "Avaliação estruturada de conduto, membrana timpânica e orelha externa. Sem diagnóstico automático. Fonte: Protocolo de Enfermagem de Florianópolis, volume 4, páginas PDF 16–18.",
+      "exames": [
+        {
+          "nomeExame": "Otoscopia — Conduto Auditivo Externo",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto do conduto auditivo",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alterações visíveis",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Edema",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Hiperemia",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Edema e hiperemia",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema e hiperemia",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Presença de secreção no conduto auditivo",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto da secreção otológica",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "Registrar lateralidade e observações na descrição complementar.",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Não se aplica",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Purulenta",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Purulenta",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Serosa",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Serosa",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Sanguinolenta",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Sanguinolenta",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Presença de rolha de cerúmen",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Otoscopia — Membrana Timpânica",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Integridade da membrana timpânica",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Íntegra",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Perfuração observável",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Perfuração observável",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Não foi possível visualizar",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto da membrana timpânica",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Aspecto preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Opacificação",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Opacificação",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Hiperemia",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Abaulamento",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Abaulamento",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Palpação do Trago e Pavilhão Auricular",
+          "propedeutica": "Palpação",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Dor à palpação do trago",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Dor à mobilização do pavilhão auricular",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Edema retroauricular",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Sistema Orofaringeano — Oroscopia",
+      "descricaoSistema": "Inspeção de faringe, tonsilas e sinais associados às queixas de garganta. Fonte: Protocolo de Enfermagem de Florianópolis, volume 4, páginas PDF 30–31.",
+      "exames": [
+        {
+          "nomeExame": "Oroscopia — Faringe e Tonsilas",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto da mucosa orofaríngea",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alterações observáveis",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Hiperemia",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Vesículas",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Vesículas",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Ulcerações",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Ulcerações",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Presença de exsudato amigdaliano",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Presença de placas esbranquiçadas na orofaringe",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aumento de volume das tonsilas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Edema em região cervical",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Palpação Cervical — Linfonodos",
+          "propedeutica": "Palpação",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Linfonodos submandibulares palpáveis e aumentados",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Dor à palpação cervical",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Avaliação do Estado Mental — Saúde Mental",
+      "descricaoSistema": "Campos de exame do estado mental. Achado alterado indica NHB a avaliar, nunca estabelece diagnóstico. Fonte: Protocolo de Enfermagem de Florianópolis, volume 8, páginas PDF 19–22.",
+      "exames": [
+        {
+          "nomeExame": "Exame do Estado Mental — Aparência e Postura",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Apresentação e autocuidado observados",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Autocuidado preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Autocuidado comprometido",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Autocuidado comprometido",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Aspecto que requer investigação",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Aspecto que requer investigação",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Contato visual durante a entrevista",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Contato visual habitual",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Contato visual reduzido",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Contato visual muito intenso",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Postura e marcha observadas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Postura e marcha sem alteração observada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Alteração de postura",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Alteração de postura",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Alteração de marcha",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Alteração de marcha",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Exame do Estado Mental — Psicomotricidade",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Atividade psicomotora",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alteração observada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Agitação psicomotora",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Agitação psicomotora",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Lentificação psicomotora",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Lentificação psicomotora",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Movimentos repetitivos ou estereotipados",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Movimentos repetitivos ou estereotipados",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Inquietação com dificuldade de permanecer parado",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Tiques observáveis",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Exame do Estado Mental — Consciência e Orientação",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Estado de consciência",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Desperto",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Sonolência",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Sonolência",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Oscilação do nível de consciência",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Oscilação do nível de consciência",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Orientação autopsíquica",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Desorientação autopsíquica",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Desorientação autopsíquica",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Não foi possível avaliar",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Orientação temporal e espacial",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Desorientação temporal",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Desorientação temporal",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Desorientação espacial",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Desorientação espacial",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Desorientação temporal e espacial",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Desorientação temporal e espacial",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Não foi possível avaliar",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Exame do Estado Mental — Atenção e Sensopercepção",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Atenção e foco durante a entrevista",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Atenção preservada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Desatenção ou distração intensa",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Desatenção ou distração intensa",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Hipervigilância",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hipervigilância",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Hipovigilância",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hipovigilância",
+                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Alteração perceptiva relatada",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Não relatada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Alteração da percepção auditiva",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Alteração da percepção auditiva",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Alteração da percepção visual",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Alteração da percepção visual",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Alteração da percepção tátil",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Alteração da percepção tátil",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Exame do Estado Mental — Linguagem e Pensamento",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Coerência da comunicação verbal",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Comunicação coerente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Discurso desorganizado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Discurso desorganizado",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Discurso tangencial ou circunstancial",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Discurso tangencial ou circunstancial",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Comunicação muito reduzida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Comunicação muito reduzida",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Ritmo da verbalização",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Habitual",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Verbalização acelerada",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Verbalização acelerada",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Verbalização lentificada",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Verbalização lentificada",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Fala hesitante",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Fala hesitante",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Ecolalia observada",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Comunicação",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Exame do Estado Mental — Humor e Afetividade",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Humor referido pela pessoa",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem sofrimento emocional referido",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Tristeza referida",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Irritabilidade referida",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Ansiedade referida",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Euforia intensa referida",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Modulação do afeto observada",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Afeto congruente e modulável",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Afeto restrito",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Afeto restrito",
+                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Embotamento afetivo",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Embotamento afetivo",
+                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Labilidade afetiva",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Labilidade afetiva",
+                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Incongruência entre afeto e conteúdo referido",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Avaliação Respiratória e Circulatória — Pediatria",
+      "descricaoSistema": "Sinais clínicos do exame respiratório e circulação pediátrica; FC/FR/SpO2 e TEC numéricos permanecem nos sinais vitais, sem duplicação. Fonte: Protocolo de Enfermagem de Florianópolis, volume 7, páginas PDF 36–40.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção Respiratória — Esforço em Crianças",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Batimento de asas nasais",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Tiragem intercostal ou subcostal",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Uso de musculatura acessória para respirar",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Gemência respiratória",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Estridor em repouso",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Cianose visível",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção Respiratória — Movimento Torácico",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Expansão torácica",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Simétrica e preservada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Expansão reduzida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Expansão reduzida",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Expansão assimétrica",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Expansão assimétrica",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Padrão respiratório observado",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alteração clínica observável",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Pausa respiratória observada",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Pausa respiratória observada",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Esforço respiratório aumentado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Esforço respiratório aumentado",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção Circulatória — Perfusão Pediátrica",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Coloração de pele e mucosas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alteração observada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Palidez",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Palidez",
+                  "subconjuntoNHBVinculado": "Regulação vascular",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Cianose",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Cianose",
+                  "subconjuntoNHBVinculado": "Oxigenação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Moteamento cutâneo",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Moteamento cutâneo",
+                  "subconjuntoNHBVinculado": "Regulação vascular",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Temperatura das extremidades ao toque",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Aquecidas",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Extremidades frias",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Extremidades frias",
+                  "subconjuntoNHBVinculado": "Regulação vascular",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Hemorragia cutânea ou sangramento visível",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Avaliação de Hidratação — Criança",
+      "descricaoSistema": "Avaliação dos sinais físicos de hidratação, sem criar novos campos para pressão arterial ou tempo de enchimento capilar. Fonte: Protocolo de Enfermagem de Florianópolis, volume 7, páginas PDF 24–25.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção de Mucosas e Olhos — Hidratação",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Umidade das mucosas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Úmidas",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Secas",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Secas",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Muito secas",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Muito secas",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto dos olhos e lágrimas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Olhos brilhantes, lágrimas presentes",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Olhos encovados",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Olhos encovados",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Olhos muito encovados, lágrimas ausentes",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Olhos muito encovados, lágrimas ausentes",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto da fontanela, se aplicável",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Normotensa",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Deprimida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Deprimida",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Muito deprimida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Muito deprimida",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Não se aplica ou não avaliável",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Palpação do Turgor Cutâneo — Hidratação",
+          "propedeutica": "Palpação",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Turgor cutâneo",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Pouco diminuído",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Pouco diminuído",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Muito diminuído",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Muito diminuído",
+                  "subconjuntoNHBVinculado": "Hidratação",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Pulso periférico na hidratação",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Cheio",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Diminuído",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Diminuído",
+                  "subconjuntoNHBVinculado": "Regulação vascular",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Débil ou ausente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Débil ou ausente",
+                  "subconjuntoNHBVinculado": "Regulação vascular",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Avaliação de Feridas — Leito, Exsudato e Pele Perilesional",
+      "descricaoSistema": "Avaliação estruturada da lesão e região ao redor; medidas e localização devem ser registradas também em descrição clínica detalhada. Fonte: Protocolo de Enfermagem de Florianópolis, volume 6, páginas PDF 19–23.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção da Ferida — Leito e Tecido",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Predomínio de tecido no leito",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Granulação vermelha",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Esfacelo amarelado ou esbranquiçado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Esfacelo amarelado ou esbranquiçado",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Necrose escurecida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Necrose escurecida",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Tecido misto",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto das bordas da ferida",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Sem alteração importante",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Bordas maceradas",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Bordas maceradas",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Bordas irregulares",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Bordas irregulares",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Bordas descoladas",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Bordas descoladas",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Presença de túnel ou solapamento",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Sinais locais de inflamação observados",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção da Ferida — Exsudato e Odor",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Quantidade de exsudato",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "Quantidade isolada não define infecção.",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Seco ou escasso",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Pouco",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Moderado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Abundante",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Abundante",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Aspecto do exsudato",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Não se aplica",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Seroso",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Serossanguinolento",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Sanguinolento",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Espesso ou purulento",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Espesso ou purulento",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Odor da ferida",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Discreto",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Acentuado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Acentuado",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção da Pele Perilesional",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Maceração perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Hiperqueratose perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Dermatite ou descamação perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Edema ou rubor perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Palpação Perilesional",
+          "propedeutica": "Palpação",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Calor local",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Enduração de região perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Dor à palpação perilesional",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "nomeSistema": "Avaliação Tegumentar Pediátrica — Lesões de Pele",
+      "descricaoSistema": "Observação morfológica de lesões pediátricas. Não converte características em diagnóstico dermatológico automático. Fonte: Protocolo de Enfermagem de Florianópolis, volume 5, páginas PDF 23–24.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção de Pele — Morfologia Pediátrica",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Pápulas cutâneas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Vesículas cutâneas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Crostas cutâneas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Lesões escoriadas",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Hiperemia perineal",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Inspeção de Couro Cabeludo — Lesões Pediátricas",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Lêndeas ou ectoparasitas visíveis",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "descricaoAchado": "Escoriações do couro cabeludo",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "dicaAchado": "",
+              "exigeDescricao": false,
+              "tipoAchado": "opcoes",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
+                  "exigeDescricao": false
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Presente",
+                  "subconjuntoNHBVinculado": "Integridade física",
+                  "exigeDescricao": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

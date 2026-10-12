@@ -44,6 +44,10 @@ jobs:
         run: npx tsx --test src/utils/protecaoCatalogoHistorico.test.ts
       - name: Testar qualidade do cadastro de exame fisico e vinculos NHB
         run: npx tsx --test src/utils/validacaoCadastroExameFisico.test.ts
+      - name: Verificar carga aditiva dos protocolos sem Firebase remoto
+        run: |
+          python3 -m py_compile scripts/popular-catalogo-protocolos.py
+          python3 -m unittest discover -s scripts/tests -p 'test_popular_catalogo_protocolos.py'
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
