@@ -8,14 +8,14 @@ from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
 PROJECT = "csaefloripa"
-DOC_ID = "pe-layout-responsivo-20261012"
-TITLE = "Processo de Enfermagem com Layout Mais Amplo e Responsivo"
+DOC_ID = "pe-coluna-unica-introducao-compacta-20261012"
+TITLE = "Mais Espaço para Indicadores e Pacientes no Processo de Enfermagem"
 DESCRIPTION = (
-    "Aproveitamos melhor o espaço da tela do Processo de Enfermagem. Em computadores, "
-    "a explicação das etapas agora aparece ao lado do Dashboard e da lista de pacientes, "
-    "facilitando o acompanhamento das informações. Em tablets e celulares, a organização "
-    "se adapta automaticamente à largura disponível, mantendo os botões e a tabela "
-    "acessíveis. A melhoria é visual e não altera os dados nem os registros dos pacientes."
+    "A tela do Processo de Enfermagem ficou mais prática: as orientações iniciais foram "
+    "reorganizadas em um painel compacto, sem perder os fundamentos e as cinco etapas. "
+    "O Dashboard e a lista de pacientes voltaram a ocupar toda a largura disponível. "
+    "A visualização se adapta automaticamente a computadores, tablets e celulares, "
+    "sem alterar dados ou registros assistenciais."
 )
 
 def main() -> None:
