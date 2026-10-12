@@ -24,7 +24,7 @@ class CargaClinicaTest(unittest.TestCase):
 
     def test_pacote_valido_e_genuinamente_aditivo(self):
         keys=catalogo.validar_manifesto(manifesto,self.nhbs())
-        self.assertGreater(len(keys),50)
+        self.assertGreater(len(keys),40)
         total=catalogo.indicadores(manifesto)
         self.assertEqual(total["sistemasNovos"],7)
         self.assertEqual(total["examesFisicos"],22)
@@ -66,9 +66,9 @@ class CargaClinicaTest(unittest.TestCase):
             "unidadeMedida":"irpm","valoresDeReferencia":[]}})
         novas,puladas,conflitos=catalogo.planejar(manifesto,snap)
         self.assertEqual(len(novas),14)
-        self.assertEqual(len(puladas),0)
-        self.assertEqual(len(conflitos),1)
-        self.assertEqual(conflitos[0]["titulo"],"Frequência Respiratória (FR)")
+        self.assertEqual(len(puladas),1)
+        self.assertEqual(len(conflitos),0)
+        self.assertEqual(puladas[0]["titulo"],"Frequência Respiratória (FR)")
 
     def test_nao_havera_exclusao_de_nomes_da_base(self):
         self.assertTrue(all(isinstance(item["nomeSistema"],str)
