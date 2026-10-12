@@ -48,6 +48,8 @@ jobs:
         run: |
           python3 -m py_compile scripts/popular-catalogo-protocolos.py
           python3 -m unittest discover -s scripts/tests -p 'test_popular_catalogo_protocolos.py'
+      - name: Testar conciliação nominal dos oito protocolos (sem Firebase remoto)
+        run: python3 -m unittest discover -s scripts/tests -p 'test_auditar_cobertura_oito_protocolos.py'
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
