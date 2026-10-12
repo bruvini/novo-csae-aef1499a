@@ -26,6 +26,11 @@
   opacity: 0.23;
 }
 
+.csae-login-network__signal {
+  opacity: 0.65;
+  animation: csae-login-signal 35s linear infinite;
+}
+
 .csae-login-network__web {
   transform-box: fill-box;
   transform-origin: center;
@@ -46,6 +51,10 @@
   background: radial-gradient(ellipse 56% 65% at 52% 51%, rgba(255, 255, 255, 0.57), transparent 92%);
 }
 
+@keyframes csae-login-signal {
+  to { stroke-dashoffset: -136; }
+}
+
 @keyframes csae-login-glow {
   from { transform: translate3d(-1.5%, 1%, 0); }
   to { transform: translate3d(2.5%, -2%, 0); }
@@ -64,11 +73,13 @@
 @media (max-width: 640px) {
   .csae-login-background__network { opacity: 0.15; }
   .csae-login-background__glow { animation: none; will-change: auto; }
+  .csae-login-network__signal { animation: none; opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .csae-login-background__glow,
-  .csae-login-network__web {
+  .csae-login-network__web,
+  .csae-login-network__signal {
     animation: none !important;
     will-change: auto;
   }
