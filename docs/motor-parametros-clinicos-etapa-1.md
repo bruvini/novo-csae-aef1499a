@@ -3,7 +3,7 @@
 
 ## Fontes examinadas
 - Inventário do Firebase de 11/10/2026: 18 sinais, 16 sistemas, 34 exames, 635 diagnósticos em rolEnfermagem, 36 subconjuntos; um diagnóstico nominal duplicado. O cadastro atual inclui PAS/PAD gerais e PAS/PAD para dengue e medidas derivadas.
-- Drive da CSAE (pasta 1z_BIFM20QV-YmqzrXgcxWSak2z2KXfHp): **somente o rol de diagnósticos, seus resultados esperados, intervenções e materiais de apoio**. Outros arquivos do Drive, inclusive planilhas de exames físicos, NÃO são referências clínicas autorizadas para parametrização de sinais vitais ou exames. Ver `docs/governanca-fontes-e-rol-diagnosticos.md`.
+- Drive da CSAE: consultar somente como referência à terminologia das Necessidades Humanas Básicas (NHBs) para vincular achados clínicos alterados. O Drive NÃO autoriza editar diagnósticos, resultados ou intervenções, nem serve de referência para faixas vitais ou exames físicos. Para estes últimos, estudar os protocolos de enfermagem e comparar ao catálogo real existente.
 - Protocolos de Enfermagem 1–8: valores por idade, cuidado pediátrico, diabetes, gestação, classificação de risco, feridas etc. Esses documentos não são importados automaticamente.
 
 ## Mudanças desta etapa
