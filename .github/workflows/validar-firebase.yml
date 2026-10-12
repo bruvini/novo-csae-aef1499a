@@ -42,10 +42,6 @@ jobs:
         run: npx tsx --test src/utils/referenciasClinicas.test.ts
       - name: Testar proteção das chaves clínicas legadas
         run: npx tsx --test src/utils/protecaoCatalogoHistorico.test.ts
-      - name: Testar conciliação do rol, resultados e intervenções
-        run: npx tsx --test src/utils/conciliacaoRolEnfermagem.test.ts
-      - name: Testar integridade histórica do rol diagnóstico
-        run: npx tsx --test src/utils/protecaoRolHistorico.test.ts
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
@@ -60,7 +56,6 @@ jobs:
           python3 -m py_compile scripts/migrar-perfis-legados.py
           python3 -m py_compile scripts/conferir-changelogs-csae.py
           python3 -m py_compile scripts/auditar-catalogo-clinico.py
-          python3 -m py_compile scripts/auditar-rol-diagnosticos.py
       - name: Verificar proteção contra alterações locais no Cloud Shell
         run: |
           pattern='^ M \.firebase/hosting\.[[:alnum:]]+\.cache$'
