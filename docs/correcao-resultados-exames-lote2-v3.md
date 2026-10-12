@@ -53,14 +53,18 @@ isso ainda não substitui homologação institucional de cada associação.
 - Os componentes existentes mantêm **nome/id lógico**; alterações são nas
   regras internas. Quando necessário, 3 componentes novos são inseridos
   (contagem de colônias, HIV RNA qualitativo, HBV DNA qualitativo).
-- As regras originais são arquivadas por componente no campo
-  `historicoResultadosClinicos` do próprio documento, além de backup JSON
+- As regras originais são arquivadas por componente na coleção privada
+  `auditoriaCatalogoClinicoV3` (um documento por exame), além de backup JSON
   local `~/csae-auditoria-clinica/backup_correcao_clinica_v3_*.json`.
 - Não reescreve processos de enfermagem antigos, laudos nem prontuários.
 - O script exige que o estado anterior corresponda ao lote 2. Se houve
   edição concorrente, **aborta tudo** e exige reconciliação.
-- A transação aplica os 13 documentos e as novas reservas de identidade
-  como uma única operação atômica.
+- A transação aplica os 13 documentos, as reservas de identidade e os 13
+  registros de auditoria como uma única operação atômica.
+- O documento clínico conserva somente os campos permitidos em
+  `validCatalogDocument()` pelas regras Firebase publicadas, garantindo
+  que a edição na Gestão de Conteúdos continue funcionando sem abrir
+  permissões novas para campos administrativos.
 
 ## Comando ÚNICO de publicação (faz a gravação)
 
