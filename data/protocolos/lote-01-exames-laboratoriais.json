@@ -1,0 +1,30 @@
+{
+  "_fonte": "Protocolo de Enfermagem vol. 8, quadro 4.3, PDF página 20",
+  "ExamesLabImagem": [
+    {
+      "nomeExame": "Vitamina B12",
+      "descricaoExame": "Dosagem sérica de vitamina B12. Faixa citada no protocolo de saúde mental; valores fora do intervalo não recebem classificação automática até validação.",
+      "tipoExame": "Laboratorial",
+      "componentes": [
+        {
+          "componenteAnalisado": "Vitamina B12",
+          "unidadeMedida": "pg/mL",
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "interpretacaoClinica": "normal",
+              "valorMinimo": 300,
+              "valorMaximo": 900,
+              "nomeAlteracao": "Faixa de referência",
+              "subconjuntoNHBVinculado": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
