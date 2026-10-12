@@ -22,6 +22,14 @@ test("malha visual não bloqueia o login e não re-renderiza por quadro", () => 
   assert.equal(/requestAnimationFrame|setInterval|canvas|getContext\(/.test(mesh), false);
 });
 
+test("blur é restrito à malha decorativa e mantém os campos nítidos", () => {
+  const networkRule = styles.match(/\.csae-login-background__network\s*\{([^}]+)\}/)?.[1] || "";
+  assert.match(networkRule, /filter:\s*blur\(2\.6px\)/);
+  assert.ok(index.includes("<LoginNetworkBackground />"));
+  assert.ok(index.includes('<main className="relative z-10'));
+  assert.ok(!/\.csae-login-background\s*\{[^}]*filter\s*:/.test(styles));
+});
+
 test("acessibilidade e responsividade das animações", () => {
   assert.ok(styles.includes("prefers-reduced-motion: reduce"));
   assert.ok(styles.includes("max-width: 640px"));
