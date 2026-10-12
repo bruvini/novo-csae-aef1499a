@@ -56,6 +56,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_complementar_fc_pediatrica.py'
       - name: Testar correção de contexto clínico do hemograma
         run: python3 -m unittest discover -s scripts/tests -p 'test_contextualizar_hemograma.py'
+      - name: Testar carga clínica transacional dos oito volumes
+        run: python3 -m unittest discover -s scripts/tests -p 'test_aplicar_catalogo_clinico_8v_lote2.py'
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
