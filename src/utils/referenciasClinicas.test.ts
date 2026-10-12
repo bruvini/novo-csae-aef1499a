@@ -70,3 +70,12 @@ test('contextos explícitos aparecem no resumo sem inventar contexto para dados 
   assert.match(contextoRegistradoParaTexto({ 'Glicemia Capilar': 'gestante_jejum' }, 'Glicemia Capilar'), /Gestação — jejum/);
   assert.match(contextoRegistradoParaTexto({ 'PAS': 'situacao-antiga' }, 'PAS'), /situacao-antiga/);
 });
+
+test('resultado informativo e valor limítrofe não geram alerta nem NHB automática', () => {
+  const info = { ...base, valorMinimo: 5, valorMaximo: 24.99, interpretacaoClinica: 'informativo' as const, nomeAlteracao: 'Beta-hCG faixa limítrofe', subconjuntoNHBVinculado: '' };
+  assert.equal(classificarReferenciaNumerica(14, [info], pessoa, 'geral').status, 'neutro');
+  const categoria = { resultadoClassificatorio: 'BI-RADS 3 — provavelmente benigno', interpretacaoClinica: 'informativo' as const, nomeAlteracao: 'Seguimento orientado pelo laudo', subconjuntoNHBVinculado: '' };
+  assert.equal(classificarReferenciaQualitativa('BI-RADS 3 — provavelmente benigno', [categoria]).status, 'neutro');
+  const suspeito = { resultadoClassificatorio: 'BI-RADS 4 — suspeito', interpretacaoClinica: 'alterado' as const, nomeAlteracao: 'Achado suspeito — encaminhar', subconjuntoNHBVinculado: 'Terapêutica e de Prevenção' };
+  assert.equal(classificarReferenciaQualitativa('BI-RADS 4 — suspeito', [suspeito]).nhb, 'Terapêutica e de Prevenção');
+});
