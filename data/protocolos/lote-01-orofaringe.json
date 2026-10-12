@@ -1,0 +1,148 @@
+{
+  "_fonte": "Protocolos de Enfermagem volume 4 pp.30-31 e volume 5 pp.10-12",
+  "RevisaoSistemas": [
+    {
+      "nomeSistema": "Sistema Orofaringe — Oroscopia e Deglutição",
+      "descricaoSistema": "Avaliação da orofaringe, tonsilas, abertura bucal e deglutição nos protocolos de demanda espontânea.",
+      "exames": [
+        {
+          "nomeExame": "Oroscopia da Orofaringe e Tonsilas",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Placas em tonsilas",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Placas em tonsilas",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Hiperemia da orofaringe",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia da orofaringe",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Abscesso aparente em região tonsilar",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Abscesso aparente em região tonsilar",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Observação da Abertura Bucal e Deglutição",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Trismo (limitação de abertura bucal)",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Trismo (limitação de abertura bucal)",
+                  "subconjuntoNHBVinculado": "Sensopercepção"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Dificuldade de deglutição",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Dificuldade de deglutição",
+                  "subconjuntoNHBVinculado": "Nutrição"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
