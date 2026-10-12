@@ -2,6 +2,9 @@
 import importlib.util
 import json
 import unittest
+import sys
+from types import ModuleType
+from unittest.mock import patch
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -69,6 +72,93 @@ class CargaClinicaTest(unittest.TestCase):
         self.assertEqual(len(puladas),1)
         self.assertEqual(len(conflitos),0)
         self.assertEqual(puladas[0]["titulo"],"Frequência Respiratória (FR)")
+
+    def test_transacao_cria_documento_e_reservas_em_uma_operacao(self):
+        """SDK Python devolve DocumentSnapshot via doc.get(transaction=tx).
+        Evita regressao para tx.get(doc) que pode ser um generator.
+        """
+        class FakeSnapshot:
+            def __init__(self, exists):
+                self.exists = exists
+
+        class FakeTransaction:
+            def __init__(self):
+                self.pending = []
+                self.reads = []
+                self.has_written = False
+
+            def get(self, _reference):
+                raise AssertionError("Nao use tx.get(ref): retorna generator neste SDK.")
+
+            def create(self, reference, value):
+                self.has_written = True
+                self.pending.append((reference.path, value))
+
+        class FakeDocument:
+            def __init__(self, path, store):
+                self.path = path
+                self.id = path.rsplit("/", 1)[-1]
+                self.store = store
+
+            def get(self, transaction=None):
+                if transaction is None:
+                    raise AssertionError("Faltou transaction=tx.")
+                if transaction.has_written:
+                    raise AssertionError("Leitura apos escrita na transacao.")
+                transaction.reads.append(self.path)
+                return FakeSnapshot(self.path in self.store)
+
+        class FakeCollection:
+            def __init__(self, name, store):
+                self.name = name
+                self.store = store
+
+            def document(self, document_id):
+                return FakeDocument(self.name + "/" + document_id, self.store)
+
+        class FakeClient:
+            def __init__(self, store=None):
+                self.store = store if store is not None else {}
+                self.tx = FakeTransaction()
+
+            def collection(self, name):
+                return FakeCollection(name, self.store)
+
+            def transaction(self):
+                return self.tx
+
+        mock_firestore = ModuleType("google.cloud.firestore")
+        mock_firestore.SERVER_TIMESTAMP = object()
+        mock_firestore.transactional = lambda fn: fn
+        mock_cloud = ModuleType("google.cloud")
+        mock_cloud.firestore = mock_firestore
+        mock_google = ModuleType("google")
+        mock_google.cloud = mock_cloud
+        modules = {
+            "google": mock_google, "google.cloud": mock_cloud,
+            "google.cloud.firestore": mock_firestore,
+        }
+        item = {
+            "colecao": "SinaisVitais", "id": "teste-fr",
+            "titulo": "Frequencia Respiratoria (FR)",
+            "data": {"sinalVitalNome": "Frequencia Respiratoria (FR)"},
+            "chaves": ["parametro--frequencia-respiratoria"],
+        }
+        with patch.dict(sys.modules, modules):
+            client = FakeClient()
+            catalogo.gravar_documento(client, item)
+            self.assertEqual(len(client.tx.reads), 2)
+            self.assertEqual(len(client.tx.pending), 2)
+            paths = {path for path, _ in client.tx.pending}
+            self.assertEqual(paths, {
+                "SinaisVitais/teste-fr",
+                "identidadesCatalogoClinico/parametro--frequencia-respiratoria",
+            })
+            for ocupado in paths:
+                blocked = FakeClient({ocupado: {"jaExiste": True}})
+                with self.assertRaisesRegex(RuntimeError, "ocupado|reservada"):
+                    catalogo.gravar_documento(blocked, item)
+                self.assertEqual(blocked.tx.pending, [])
 
     def test_nao_havera_exclusao_de_nomes_da_base(self):
         self.assertTrue(all(isinstance(item["nomeSistema"],str)

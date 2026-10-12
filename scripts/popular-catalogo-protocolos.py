@@ -212,8 +212,11 @@ def gravar_documento(client,registro):
     @firestore.transactional
     def cadastrar(tx):
         # Todas as leituras antes de qualquer gravação.
-        check=tx.get(target)
-        busy=[(ref,tx.get(ref)) for ref in reservations]
+        # DocumentReference.get(transaction=tx) retorna DocumentSnapshot.
+        # Transaction.get(ref) pode retornar um iterador/generator nesta versao
+        # do SDK Python, o que quebrava a consulta a .exists.
+        check=target.get(transaction=tx)
+        busy=[(ref,ref.get(transaction=tx)) for ref in reservations]
         if check.exists:
             raise RuntimeError("ID de documento já ocupado: "+target.path)
         if any(snap.exists for _,snap in busy):
