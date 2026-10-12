@@ -76,6 +76,8 @@ jobs:
           bash -n scripts/diagnosticar-versao-publica.sh
           python3 -m py_compile scripts/migrar-perfis-legados.py
           python3 -m py_compile scripts/conferir-changelogs-csae.py
+          python3 -m py_compile scripts/registrar-changelog-layout-pe.py
+          bash -n scripts/publicar-layout-pe-cloudshell.sh
           python3 -m py_compile scripts/auditar-catalogo-clinico.py
       - name: Verificar proteção contra alterações locais no Cloud Shell
         run: |
