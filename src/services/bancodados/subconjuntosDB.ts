@@ -7,7 +7,6 @@ import {
   getDocs, 
   doc, 
   updateDoc, 
-  deleteDoc,
   onSnapshot,
   QueryConstraint,
   Timestamp
