@@ -15,6 +15,7 @@ import { db } from '@/services/firebase';
 import { normalizarNomeClinico } from '@/utils/referenciasClinicas';
 import { validarAtualizacaoSistema } from '@/utils/protecaoCatalogoHistorico';
 import { chaveCatalogo, chavesNovas, reservarIdentidades } from './identidadesCatalogoDB';
+import { validarConteudoExameFisico } from '@/utils/validacaoCadastroExameFisico';
 
 const chavesDoSistema = (sistema: Pick<SistemaCorporal, 'nomeSistema' | 'exames'>) => [
   chaveCatalogo('sistema', sistema.nomeSistema),
@@ -103,7 +104,18 @@ async function validarUnicidadeSistema(nome: string, exames: ExamePropedeutico[]
   }
 }
 
+async function validarNHBsEAchados(candidato: Pick<SistemaCorporal, 'nomeSistema' | 'exames'>,
+  anterior?: Pick<SistemaCorporal, 'nomeSistema' | 'exames'>): Promise<void> {
+  const snap = await getDocs(collection(db, 'subconjuntosEnfermagem'));
+  const validas = snap.docs.map(d => d.data())
+    .filter(item => String(item.tipoSubconjunto || '').toLowerCase() === 'nhb')
+    .map(item => String(item.tituloSubconjunto || ''));
+  if (!validas.length) throw new Error('Não foi possível confirmar as NHBs do catálogo institucional. Tente novamente.');
+  validarConteudoExameFisico(candidato, anterior, validas);
+}
+
 export const addSistema = async (sistema: Omit<SistemaCorporal, 'id' | 'dataCadastro'>): Promise<void> => {
+  await validarNHBsEAchados(sistema);
   await validarUnicidadeSistema(sistema.nomeSistema, sistema.exames);
   const docRef = doc(collection(db, 'RevisaoSistemas'));
   await runTransaction(db, async transaction => {
@@ -119,6 +131,7 @@ export const updateSistema = async (id: string, sistema: Partial<SistemaCorporal
   const original = anterior.data() as SistemaCorporal;
   const proximo = { ...original, ...sistema };
   validarAtualizacaoSistema(original, proximo);
+  await validarNHBsEAchados(proximo, original);
   await validarUnicidadeSistema(proximo.nomeSistema, proximo.exames, id);
   const { dataCadastro: _dataCadastro, ...dadosParaAtualizar } = sistema;
   await runTransaction(db, async transaction => {
