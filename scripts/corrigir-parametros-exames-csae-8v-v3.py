@@ -5,7 +5,7 @@ Executar: python scripts/corrigir-parametros-exames-csae-8v-v3.py --apply --conf
 
 Atualiza valores de referência e classificações no lugar certo, sem recriar documentos
 ou modificar prontuários, pacientes, diagnósticos ou intervenções.
-Preserva os resultados substituídos em historicoResultadosClinicos e backup JSON 0600.
+Preserva os resultados substituídos em auditoriaCatalogoClinicoV3 e backup JSON 0600.
 Dry-run por padrão; --apply grava os 13 documentos em UMA transação idempotente.
 Valida não haver intervenções concorrentes nem nomes de componentes repetidos.
 """
@@ -29,6 +29,7 @@ BASE = ROOT / "scripts/data/catalogo-clinico-csae-8v-lote2.json"
 IDENTITIES = "identidadesCatalogoClinico"
 NHBS = "subconjuntosEnfermagem"
 VERSION = "csae-clinico-8v-v3"
+AUDIT = "auditoriaCatalogoClinicoV3"
 
 def norm(value):
     text=unicodedata.normalize("NFD",str(value or "").casefold())
@@ -136,36 +137,35 @@ def build_plan(patch,base,current_docs,nhbs,all_names,all_reserved):
                 incoming.add(identity)
                 additions.append(identity)
                 desired.append(copy.deepcopy(proposal))
-        if desired==before and current.get("versaoCatalogoClinico")==VERSION:
-            skips.append(name)
-            continue
         if desired==before:
-            # Evita alterações sem conteúdo novo.
+            # A versão já foi aplicada ou este componente não precisava mudar.
             skips.append(name)
             continue
-        if current.get("versaoCatalogoClinico") and current.get("versaoCatalogoClinico")!=VERSION:
-            raise ValueError("Documento recebeu outra migração; revisar manualmente: "+name)
+        if " [Atualização clínica V3:" in current.get("descricaoExame",""):
+            raise ValueError("Documento com atualização V3 parcial ou alterada: "+name)
         source=entry["fonteClinica"]
         olddesc=current.get("descricaoExame","")
         desc=olddesc.split(" [Atualização clínica V3:")[0].strip()+" [Atualização clínica V3: "+source+"]"
-        hist=list(current.get("historicoResultadosClinicos",[]))
-        hist.append({"versaoAnterior":"csae8v-lote2","versaoNova":VERSION,
-            "data":"2026-10-12","fonte":source,
-            "componentesSubstituidos":changed})
         edits.append({"id":docid,"nome":name,"antes":copy.deepcopy(before),"depois":desired,
             "hashAntes":digest(before),"descricaoAntes":olddesc,
-            "descricaoDepois":desc,"historico":hist,"chavesNovas":additions})
+            "descricaoDepois":desc,"historico":{"versaoAnterior":"csae8v-lote2",
+                "versaoNova":VERSION,"fonte":source,"componentesSubstituidos":changed},
+            "chavesNovas":additions})
     return {"edits":edits,"skips":skips,"reservas":sorted(incoming)}
 
 def apply(db,planned):
     from google.cloud import firestore
     docs={x["id"]:db.collection(COL).document(x["id"]) for x in planned["edits"]}
     reservation_refs={key:db.collection(IDENTITIES).document(key) for key in planned["reservas"]}
+    audit_refs={x["id"]:db.collection(AUDIT).document(x["id"]) for x in planned["edits"]}
     @firestore.transactional
     def run(tx):
         # Ler TUDO antes de escrever. A transação falha sem alterações se algo mudar.
         snapshots={i:ref.get(transaction=tx) for i,ref in docs.items()}
         booked={key:ref.get(transaction=tx) for key,ref in reservation_refs.items()}
+        audit_snapshots={key:ref.get(transaction=tx) for key,ref in audit_refs.items()}
+        if any(x.exists for x in audit_snapshots.values()):
+            raise RuntimeError("Já existe auditoria de atualização V3 para este documento.")
         if any(x.exists for x in booked.values()):
             raise RuntimeError("Uma identidade foi reservada por outra operação.")
         for row in planned["edits"]:
@@ -175,15 +175,23 @@ def apply(db,planned):
             current=snap.to_dict() or {}
             if digest(current.get("componentes",[]))!=row["hashAntes"] or current.get("descricaoExame","")!=row["descricaoAntes"]:
                 raise RuntimeError("Mudança concorrente detectada: "+row["nome"])
-            if current.get("versaoCatalogoClinico")==VERSION:
-                raise RuntimeError("Migração já executada em outra operação: "+row["nome"])
+            if " [Atualização clínica V3:" in current.get("descricaoExame",""):
+                raise RuntimeError("Atualização V3 já foi executada em outra operação: "+row["nome"])
         for row in planned["edits"]:
             tx.update(docs[row["id"]],{
+                # Mantém SOMENTE os campos admitidos por validCatalogDocument:
+                # os usuários conseguem continuar editando pelo portal.
                 "componentes":row["depois"],
                 "descricaoExame":row["descricaoDepois"],
-                "historicoResultadosClinicos":row["historico"],
-                "versaoCatalogoClinico":VERSION,
-                "dataAtualizacaoClinica":firestore.SERVER_TIMESTAMP,
+            })
+            tx.create(audit_refs[row["id"]],{
+                **row["historico"],
+                "exameId":row["id"],"nomeExame":row["nome"],
+                "componentesAntes":row["antes"],
+                "componentesDepois":row["depois"],
+                "descricaoAntes":row["descricaoAntes"],
+                "descricaoDepois":row["descricaoDepois"],
+                "dataAuditoria":firestore.SERVER_TIMESTAMP,
             })
         for row in planned["edits"]:
             for key in row["chavesNovas"]:
@@ -237,7 +245,7 @@ def main():
     for row in plan["edits"]:
         snap=db.collection(COL).document(row["id"]).get()
         latest=snap.to_dict() or {}
-        if latest.get("versaoCatalogoClinico")!=VERSION or latest.get("componentes")!=row["depois"]:
+        if latest.get("componentes")!=row["depois"] or latest.get("descricaoExame")!=row["descricaoDepois"]:
             raise RuntimeError("PÓS-VALIDAÇÃO FALHOU: "+row["nome"])
     result=private({"versao":VERSION,"projeto":PROJECT,"aplicadoEmUTC":
         datetime.now(timezone.utc).isoformat(),
