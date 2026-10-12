@@ -6,7 +6,7 @@
     "inventarioBase": "inventario_clinico_20261011_221018.json",
     "modo": "SOMENTE_ADITIVO",
     "escopo": "Adicionar sinal FR, exames diagnósticos faltantes e novos sistemas de exame físico. Sem mexer em diagnósticos ou existentes.",
-    "nota": "Marcação de NHB é gatilho de avaliação e não gera diagnóstico automático. Critérios numéricos laboratoriais não homologados não classificam normal/alterado."
+    "nota": "Marcação de NHB é gatilho de avaliação e não gera diagnóstico automático. Critérios numéricos laboratoriais não homologados não classificam normal/alterado. Opções inespecíficas (p.ex. tristeza, contato visual, exsudato seroso) não geram NHB automaticamente; são dados de observação clínica."
   },
   "SinaisVitais": [
     {
@@ -434,9 +434,9 @@
                 },
                 {
                   "textoOpcao": "Não foi possível visualizar",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Não foi possível visualizar",
-                  "subconjuntoNHBVinculado": "Sensopercepção",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -882,16 +882,16 @@
                 },
                 {
                   "textoOpcao": "Contato visual reduzido",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Contato visual reduzido",
-                  "subconjuntoNHBVinculado": "Comunicação",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Contato visual muito intenso",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Contato visual muito intenso",
-                  "subconjuntoNHBVinculado": "Comunicação",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -1110,9 +1110,9 @@
                 },
                 {
                   "textoOpcao": "Não foi possível avaliar",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Não foi possível avaliar",
-                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -1160,9 +1160,9 @@
                 },
                 {
                   "textoOpcao": "Não foi possível avaliar",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Não foi possível avaliar",
-                  "subconjuntoNHBVinculado": "Regulação neurológica",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -1408,30 +1408,30 @@
                 },
                 {
                   "textoOpcao": "Tristeza referida",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Tristeza referida",
-                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Irritabilidade referida",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Irritabilidade referida",
-                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Ansiedade referida",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Ansiedade referida",
-                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Euforia intensa referida",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Euforia intensa referida",
-                  "subconjuntoNHBVinculado": "Segurança emocional",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -1999,9 +1999,9 @@
                 },
                 {
                   "textoOpcao": "Não se aplica ou não avaliável",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Não se aplica ou não avaliável",
-                  "subconjuntoNHBVinculado": "Hidratação",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -2132,9 +2132,9 @@
                 },
                 {
                   "textoOpcao": "Tecido misto",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Tecido misto",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 }
               ]
@@ -2268,16 +2268,16 @@
                 },
                 {
                   "textoOpcao": "Pouco",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Pouco",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Moderado",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Moderado",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
@@ -2311,23 +2311,23 @@
                 },
                 {
                   "textoOpcao": "Seroso",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Seroso",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Serossanguinolento",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Serossanguinolento",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
                   "textoOpcao": "Sanguinolento",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Sanguinolento",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
@@ -2361,9 +2361,9 @@
                 },
                 {
                   "textoOpcao": "Discreto",
-                  "ehAlteracao": true,
-                  "nomeAlteracao": "Discreto",
-                  "subconjuntoNHBVinculado": "Integridade física",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "",
+                  "subconjuntoNHBVinculado": "",
                   "exigeDescricao": false
                 },
                 {
