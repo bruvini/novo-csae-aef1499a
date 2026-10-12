@@ -311,7 +311,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['chave', 'colecaoOrigem', 'documentoId', 'criadoEm'])
         && request.resource.data.chave == chave
         && boundedString(chave, 1400)
-        && request.resource.data.colecaoOrigem in ['SinaisVitais', 'ExamesLabImagem', 'RevisaoSistemas', 'rolEnfermagem']
+        && request.resource.data.colecaoOrigem in ['SinaisVitais', 'ExamesLabImagem', 'RevisaoSistemas']
         && boundedString(request.resource.data.documentoId, 128)
         && request.resource.data.documentoId.size() > 0
         && request.resource.data.criadoEm == request.time;
@@ -329,16 +329,12 @@ service cloud.firestore {
         && canManageContent()
         && validCatalogDocument(catalog)
         && (('dataCadastro' in resource.data && request.resource.data.dataCadastro == resource.data.dataCadastro)
-          || (!('dataCadastro' in resource.data) && !('dataCadastro' in request.resource.data)))
-        // Nomes são usados como chaves em processos e ligações de diagnóstico.
-        && (catalog != 'rolEnfermagem'
-          || request.resource.data.tituloDiagnostico == resource.data.tituloDiagnostico)
-        && (catalog != 'subconjuntosEnfermagem'
-          || (request.resource.data.tituloSubconjunto == resource.data.tituloSubconjunto
-            && request.resource.data.tipoSubconjunto == resource.data.tipoSubconjunto));
-      // Excluir conteúdo clínico só pode ocorrer em uma migração ou política
-      // de arquivamento versionada, nunca por operação comum do cliente.
-      allow delete: if false;
+          || (!('dataCadastro' in resource.data) && !('dataCadastro' in request.resource.data)));
+      // Conteúdos clínicos utilizados como chaves de prontuários não podem
+      // ser excluídos diretamente (nem por SDK); migração/arquivamento exige
+      // fluxo versionado e revisão institucional.
+      allow delete: if catalog in ['rolEnfermagem', 'diagnosticosEnfermagem', 'subconjuntosEnfermagem']
+        && canManageContent();
     }
 
     match /estatisticas/{reportId} {
