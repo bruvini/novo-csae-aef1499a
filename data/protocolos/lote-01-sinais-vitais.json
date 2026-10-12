@@ -1,0 +1,116 @@
+{
+  "_fonte": "Protocolo de Enfermagem vol. 5, quadro 2.2, página PDF 11",
+  "SinaisVitais": [
+    {
+      "sinalVitalNome": "Frequência Respiratória (FR)",
+      "sinalVitalDescricao": "Movimentos respiratórios por minuto. Valores superiores por faixa etária segundo o protocolo. Limites inferiores não especificados; sem classificação automática de bradipneia.",
+      "unidadeMedida": "irpm",
+      "valoresDeReferencia": [
+        {
+          "idadeMinima": 0,
+          "idadeMaxima": 1,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "menor que 2 meses",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal",
+          "valorMinimo": 0,
+          "valorMaximo": 60,
+          "nomeAlteracao": "Referência conforme idade",
+          "subconjuntoNHBVinculado": ""
+        },
+        {
+          "idadeMinima": 0,
+          "idadeMaxima": 1,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "menor que 2 meses",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 61,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência respiratória elevada para idade",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 2,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "2 a 11 meses",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal",
+          "valorMinimo": 0,
+          "valorMaximo": 50,
+          "nomeAlteracao": "Referência conforme idade",
+          "subconjuntoNHBVinculado": ""
+        },
+        {
+          "idadeMinima": 2,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "2 a 11 meses",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 51,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência respiratória elevada para idade",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 1,
+          "idadeMaxima": 5,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "12 meses a 5 anos",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal",
+          "valorMinimo": 0,
+          "valorMaximo": 40,
+          "nomeAlteracao": "Referência conforme idade",
+          "subconjuntoNHBVinculado": ""
+        },
+        {
+          "idadeMinima": 1,
+          "idadeMaxima": 5,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "12 meses a 5 anos",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 41,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência respiratória elevada para idade",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        },
+        {
+          "idadeMinima": 6,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "6 a 8 anos",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal",
+          "valorMinimo": 0,
+          "valorMaximo": 30,
+          "nomeAlteracao": "Referência conforme idade",
+          "subconjuntoNHBVinculado": ""
+        },
+        {
+          "idadeMinima": 6,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "criterioCondicao": "6 a 8 anos",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado",
+          "valorMinimo": 31,
+          "valorMaximo": null,
+          "nomeAlteracao": "Frequência respiratória elevada para idade",
+          "subconjuntoNHBVinculado": "Oxigenação"
+        }
+      ]
+    }
+  ]
+}
