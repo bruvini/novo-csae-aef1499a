@@ -15,7 +15,7 @@ import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 
 const GestaoConteudos = () => {
   return (
-    <AuthenticatedLayout>
+    <AuthenticatedLayout fullWidth>
       <div className="space-y-6">
         {/* Header da Página */}
         <div className="space-y-1">
