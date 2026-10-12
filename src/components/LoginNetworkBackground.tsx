@@ -56,6 +56,7 @@ const Mesh: React.FC<{
 }> = ({ mesh, className }) => (
   <g className={className}>
     <path d={mesh.path} fill="none" stroke="currentColor" strokeWidth="1.15" />
+    <path className="csae-login-network__signal" d={mesh.path} fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="2 32" />
     {mesh.nodes.filter((_, index) => index % 3 === 0).map((point, index) => (
       <circle key={index} cx={point.x} cy={point.y} r={index % 4 === 0 ? 3.5 : 2.1} fill="currentColor" />
     ))}
