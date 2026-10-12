@@ -90,9 +90,9 @@ const IndicadoresConteudo = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
         {[...Array(7)].map((_, i) => (
-          <Card key={i}>
+          <Card key={i} className="min-w-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-4 w-4" />
@@ -109,7 +109,7 @@ const IndicadoresConteudo = () => {
 
   if (!indicadores) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
         <Card>
           <CardContent className="p-6">
             <p className="text-center text-muted-foreground">
@@ -174,11 +174,11 @@ const IndicadoresConteudo = () => {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (
-          <Card key={index}>
+          <Card key={index} className="min-w-0 h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <IconComponent className={`h-4 w-4 ${card.color}`} />
