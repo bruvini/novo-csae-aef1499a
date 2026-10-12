@@ -175,14 +175,14 @@ const TabelaExames = () => {
       valorMinimo: null,
       valorMaximo: null,
       nomeAlteracao: '',
-      interpretacaoClinica: 'indeterminado',
+      interpretacaoClinica: 'informativo',
       contextoClinico: 'geral',
       criterioCondicao: '',
       subconjuntoNHBVinculado: ''
     } : {
       resultadoClassificatorio: '',
       nomeAlteracao: '',
-      interpretacaoClinica: 'indeterminado',
+      interpretacaoClinica: 'informativo',
       subconjuntoNHBVinculado: ''
     };
     
@@ -543,13 +543,14 @@ const TabelaExames = () => {
                             <div>
                               <label className="block text-xs font-medium mb-1">Interpretação do resultado</label>
                               <Select value={resultado.interpretacaoClinica || 'legado'} onValueChange={v =>
-                                atualizarResultado(componenteIndex, resultadoIndex, 'interpretacaoClinica', v === 'legado' ? undefined : v as 'normal' | 'alterado' | 'indeterminado')}>
+                                atualizarResultado(componenteIndex, resultadoIndex, 'interpretacaoClinica', v === 'legado' ? undefined : v as NonNullable<ResultadoExame['interpretacaoClinica']>)}>
                                 <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   {!resultado.interpretacaoClinica && <SelectItem value="legado">Legado — sem regra explícita</SelectItem>}
                                   <SelectItem value="normal">Normal / dentro da meta</SelectItem>
                                   <SelectItem value="alterado">Alterado — avaliar NHB</SelectItem>
-                                  <SelectItem value="indeterminado">Indeterminado — sem alerta</SelectItem>
+                                  <SelectItem value="informativo">Informativo — registro sem inferência de diagnóstico</SelectItem>
+                                  <SelectItem value="indeterminado">Pendente — referência não cadastrada (legado)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
