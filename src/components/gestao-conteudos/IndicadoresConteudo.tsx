@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, FileText, Target, Zap, Heart, TestTube } from 'lucide-react';
+import { Activity, FileText, Target, Zap, Heart, TestTube, ClipboardCheck } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
@@ -16,6 +16,8 @@ interface IndicadoresData {
   totalIntervencoes: number;
   totalSinaisVitais: number;
   totalExames: number;
+  totalSistemas: number;
+  totalExamesFisicos: number;
 }
 
 const IndicadoresConteudo = () => {
@@ -41,6 +43,14 @@ const IndicadoresConteudo = () => {
         // Buscar total de exames
         const totalExames = await getExamesCount();
 
+        // Sistemas e exames físicos estruturados para revisão por sistema
+        const sistemasSnapshot = await getDocs(collection(db, 'RevisaoSistemas'));
+        const totalSistemas = sistemasSnapshot.size;
+        const totalExamesFisicos = sistemasSnapshot.docs.reduce((quantidade, sistema) => {
+          const exames = sistema.data().exames;
+          return quantidade + (Array.isArray(exames) ? exames.length : 0);
+        }, 0);
+
         // Calcular total de resultados esperados e intervenções
         let totalResultados = 0;
         let totalIntervencoes = 0;
@@ -64,7 +74,9 @@ const IndicadoresConteudo = () => {
           totalResultados,
           totalIntervencoes,
           totalSinaisVitais,
-          totalExames
+          totalExames,
+          totalSistemas,
+          totalExamesFisicos
         });
       } catch (error) {
         console.error('Erro ao carregar indicadores:', error);
@@ -78,8 +90,8 @@ const IndicadoresConteudo = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        {[...Array(6)].map((_, i) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-6">
+        {[...Array(7)].map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -151,6 +163,13 @@ const IndicadoresConteudo = () => {
       description: "Exames cadastrados",
       icon: TestTube,
       color: "text-cyan-600"
+    },
+    {
+      title: "Revisão de Sistemas",
+      value: indicadores.totalSistemas,
+      description: `${indicadores.totalExamesFisicos} exames físicos estruturados`,
+      icon: ClipboardCheck,
+      color: "text-teal-600"
     }
   ];
 
