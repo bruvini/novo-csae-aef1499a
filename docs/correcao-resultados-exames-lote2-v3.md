@@ -72,6 +72,7 @@ isso ainda não substitui homologação institucional de cada associação.
 cd ~/novo-csae-aef1499a &&
 git pull --ff-only origin main &&
 .venv-csae-release/bin/python -m unittest discover -s scripts/tests -p 'test_corrigir_parametros_exames_csae_8v_v3.py' &&
+npm ci --legacy-peer-deps &&
 npx tsc -b &&
 npm run build &&
 npx --yes firebase-tools deploy --project csaefloripa --only hosting --non-interactive &&
