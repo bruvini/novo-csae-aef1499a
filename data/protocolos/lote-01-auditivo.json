@@ -1,0 +1,385 @@
+{
+  "_fonte": "Protocolos de Enfermagem vol. 4 PDF pp.16-17 e vol. 5 pp.10,12",
+  "RevisaoSistemas": [
+    {
+      "nomeSistema": "Sistema Auditivo — Otalgia e Otoscopia",
+      "descricaoSistema": "Inspeção, palpação e otoscopia em queixas otológicas; seguir condutas e critérios de gravidade dos protocolos 4 e 5.",
+      "exames": [
+        {
+          "nomeExame": "Inspeção da Orelha Externa e Região Retroauricular",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Edema auricular",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema auricular",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Hiperemia da orelha externa",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia da orelha externa",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Edema doloroso retroauricular",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema doloroso retroauricular",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Sangramento no conduto auditivo externo",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Sangramento no conduto auditivo externo",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Palpação do Trago e Mobilização do Pavilhão Auricular",
+          "propedeutica": "Palpação",
+          "achados": [
+            {
+              "descricaoAchado": "Dor à palpação do trago",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Dor à palpação do trago",
+                  "subconjuntoNHBVinculado": "Sensopercepção"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Dor à mobilização do pavilhão auricular",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Dor à mobilização do pavilhão auricular",
+                  "subconjuntoNHBVinculado": "Sensopercepção"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Otoscopia do Conduto Auditivo Externo",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Edema do conduto auditivo",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Edema do conduto auditivo",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Hiperemia do conduto auditivo",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia do conduto auditivo",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Secreção purulenta no conduto auditivo",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Secreção purulenta no conduto auditivo",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Corpo estranho no conduto auditivo",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Corpo estranho no conduto auditivo",
+                  "subconjuntoNHBVinculado": "Segurança física e meio ambiente"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Otoscopia da Membrana Timpânica",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Perfuração da membrana timpânica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Perfuração da membrana timpânica",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Hiperemia da membrana timpânica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Hiperemia da membrana timpânica",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Opacidade da membrana timpânica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Opacidade da membrana timpânica",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Abaulamento da membrana timpânica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Abaulamento da membrana timpânica",
+                  "subconjuntoNHBVinculado": "Integridade física"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
