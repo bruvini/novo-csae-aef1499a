@@ -19,18 +19,21 @@ const ProcessoEnfermagem = () => {
   };
 
   return (
-    <AuthenticatedLayout>
-      {/* Seção Explicativa */}
-      <ProcessoEnfermagemExplicacao />
+    <AuthenticatedLayout fullWidth>
+      {/* Desktop: coluna educativa 40% e área operacional 60%.
+          Tablets e celulares empilham as seções, sem largura máxima artificial. */}
+      <div className="grid w-full min-w-0 grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] 2xl:gap-8">
+        <aside className="min-w-0" aria-label="Sobre o Processo de Enfermagem">
+          <ProcessoEnfermagemExplicacao />
+        </aside>
 
-      {/* Dashboard e Área Funcional */}
-      <section className="py-8">
+        <section className="min-w-0" aria-label="Painel e pacientes">
         {/* Dashboard Expandido */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-csae-green-800 mb-6">Dashboard</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+          <h2 className="mb-4 text-xl font-bold text-csae-green-800 sm:text-2xl">Dashboard</h2>
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3 2xl:gap-4">
             <Card className="bg-gradient-to-r from-csae-green-50 to-csae-green-100 border-csae-green-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-csae-green-600">Total de Pacientes</p>
@@ -44,7 +47,7 @@ const ProcessoEnfermagem = () => {
             </Card>
 
             <Card className="bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-blue-600">Processos Ativos</p>
@@ -58,7 +61,7 @@ const ProcessoEnfermagem = () => {
             </Card>
 
             <Card className="bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-600">Processos Concluídos</p>
@@ -72,7 +75,7 @@ const ProcessoEnfermagem = () => {
             </Card>
 
             <Card className="bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-orange-600">Média por Paciente</p>
@@ -86,7 +89,7 @@ const ProcessoEnfermagem = () => {
             </Card>
 
             <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 border-emerald-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-emerald-600">Taxa de Conclusão</p>
@@ -106,7 +109,7 @@ const ProcessoEnfermagem = () => {
             </Card>
 
             <Card className="bg-gradient-to-r from-rose-50 to-rose-100 border-rose-200">
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-5">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-rose-600">Tempo Médio</p>
@@ -122,10 +125,10 @@ const ProcessoEnfermagem = () => {
         </div>
 
         {/* Área Principal - Unificada */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-2xl font-bold text-csae-green-800">Meus Pacientes</h2>
-            <div className="flex gap-4">
+        <div className="min-w-0 rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
+            <h2 className="text-xl font-bold text-csae-green-800 sm:text-2xl">Meus Pacientes</h2>
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
               <Button 
                 variant="outline"
                 className="border-emerald-600 text-emerald-700 hover:bg-emerald-50" 
@@ -147,7 +150,8 @@ const ProcessoEnfermagem = () => {
           {/* Lista de Pacientes */}
           <ListaPacientes />
         </div>
-      </section>
+        </section>
+      </div>
 
       {/* Modal de Cadastro */}
       <ModalCadastroPaciente
