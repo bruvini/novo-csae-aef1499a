@@ -33,7 +33,14 @@ O script recusa NHB inexistente, duplicidades por chaves, campos vazios, idade i
 
 ## Como executar com segurança — Cloud Shell
 
-Após integrar o PR, no repositório atualizado:
+Após integrar o PR, **publique primeiro frontend e regras de segurança** pela nova rotina de publicação (ela não altera o catálogo):
+
+```bash
+git pull --ff-only origin main
+bash scripts/publicar-atualizacao-clinica-cloudshell.sh
+```
+
+Depois de conferir a Gestão de Conteúdos em csae.com.br, execute o dry-run do catálogo:
 
 \`\`\`bash
 git pull --ff-only origin main
