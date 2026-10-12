@@ -1,0 +1,192 @@
+{
+  "_fonte": "Protocolo volume 5 página 10; protocolo volume 7 páginas 36-38",
+  "complementar": [
+    {
+      "id": "sistema-respiratorio-tuberculose-dengue-e1bf8900e1",
+      "nomeSistema": "Sistema Respiratório — Tuberculose/Dengue",
+      "exames": [
+        {
+          "nomeExame": "Inspeção dos Sinais de Esforço Respiratório",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Tiragem intercostal",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Tiragem intercostal",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Tiragem subcostal",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Tiragem subcostal",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Batimento de asa nasal",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Batimento de asa nasal",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Gemência expiratória",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Gemência expiratória",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Estridor em repouso",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Estridor em repouso",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Cianose observada",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Cianose observada",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Expansão torácica reduzida ou assimétrica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Expansão torácica reduzida ou assimétrica",
+                  "subconjuntoNHBVinculado": "Oxigenação"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
