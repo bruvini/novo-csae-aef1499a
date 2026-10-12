@@ -230,6 +230,57 @@ test('Firestore não permite excluir catálogos com chaves históricas, mesmo ao
   await assertFails(deleteDoc(doc(dbGestor, 'RevisaoSistemas', 'sistema')));
 });
 
+test('gestor preserva títulos e não exclui diagnóstico, NHB ou protocolo', async () => {
+  await seedProfile('gestor', 'Liberado', {
+    gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'],
+  });
+  const db = environment.authenticatedContext('gestor').firestore();
+  const d = doc(db, 'rolEnfermagem', 'diag-exemplo');
+  const s = doc(db, 'subconjuntosEnfermagem', 'nhb-exemplo');
+  await assertSucceeds(setDoc(d, {
+    tituloDiagnostico: 'Dor aguda', descricaoDiagnostico: 'Exemplo',
+    subconjuntos: [{ tipoSubconjunto: 'nhb', tituloSubconjunto: 'Conforto' }],
+    resultadosEsperados: [{
+      tituloResultado: 'Dor controlada', descricaoResultado: '',
+      intervencoes: [{ acaoPrescrita: 'Avaliar dor', acaoEnfermeiro: 'Avalio dor', materiaisDeApoio: [] }],
+    }],
+  }));
+  await assertSucceeds(setDoc(s, {
+    tipoSubconjunto: 'nhb', tituloSubconjunto: 'Conforto',
+    descricaoSubconjunto: 'Exemplo de necessidade',
+  }));
+  await assertSucceeds(updateDoc(d, { descricaoDiagnostico: 'Descrição revisada' }));
+  await assertFails(updateDoc(d, { tituloDiagnostico: 'Dor diferente' }));
+  await assertFails(deleteDoc(d));
+  await assertSucceeds(updateDoc(s, { descricaoSubconjunto: 'Descrição revista' }));
+  await assertFails(updateDoc(s, { tituloSubconjunto: 'Nome alterado' }));
+  await assertFails(updateDoc(s, { tipoSubconjunto: 'protocolo' }));
+  await assertFails(deleteDoc(s));
+});
+
+test('novo diagnóstico pode reservar identidade de forma atômica com seus dados', async () => {
+  await seedProfile('gestor', 'Liberado', {
+    gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'],
+  });
+  const db = environment.authenticatedContext('gestor').firestore();
+  const key = 'diagnostico--dor_aguda';
+  await assertSucceeds(runTransaction(db, async tx => {
+    const refIndex = doc(db, 'identidadesCatalogoClinico', key);
+    const actual = await tx.get(refIndex);
+    if (actual.exists()) throw new Error('Existente');
+    tx.set(refIndex, {
+      chave: key, colecaoOrigem: 'rolEnfermagem',
+      documentoId: 'diag-atomic', criadoEm: serverTimestamp(),
+    });
+    tx.set(doc(db, 'rolEnfermagem', 'diag-atomic'), {
+      tituloDiagnostico: 'Dor aguda', descricaoDiagnostico: 'Exemplo',
+      subconjuntos: [], resultadosEsperados: [],
+    });
+  }));
+  await assertFails(updateDoc(doc(db, 'identidadesCatalogoClinico', key), {
+    documentoId: 'fraude',
+  }));
+});
 test('tickets e sugestões ficam limitados ao autor; suporte lê e responde sem alterar o autor', async () => {
   await seedProfile('autor');
   await seedProfile('outro');
