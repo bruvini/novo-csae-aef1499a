@@ -526,7 +526,38 @@ const TabelaExames = () => {
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          
+                           {componenteEhClassificatorio(tipoExame, componente) && (
+                             <div className="rounded-md border bg-white p-3 space-y-2">
+                               <label className="flex items-center gap-2 text-xs font-medium">
+                                 <input
+                                   type="checkbox"
+                                   checked={resultado.permiteValorTexto === true}
+                                   onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'permiteValorTexto', event.target.checked)}
+                                 />
+                                 Permitir informação complementar (genótipo, laudo, microrganismo, antibiograma)
+                               </label>
+                               {resultado.permiteValorTexto && (
+                                 <div className="space-y-2">
+                                   <Input
+                                     className="h-8"
+                                     value={resultado.rotuloValorTexto || ''}
+                                     onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'rotuloValorTexto', event.target.value)}
+                                     placeholder="Rótulo: ex. Genótipos identificados"
+                                   />
+                                   <label className="flex items-center gap-2 text-xs">
+                                     <input
+                                       type="checkbox"
+                                       checked={resultado.valorTextoObrigatorio === true}
+                                       onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'valorTextoObrigatorio', event.target.checked)}
+                                     />
+                                     Texto complementar obrigatório
+                                   </label>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {!componenteEhClassificatorio(tipoExame, componente) && (
                               <div>
                                 <label className="block text-xs font-medium mb-1">Contexto clínico da referência</label>
