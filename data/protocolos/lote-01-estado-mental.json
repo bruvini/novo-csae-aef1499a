@@ -1,0 +1,516 @@
+{
+  "_fonte": "Protocolo de Enfermagem volume 8, quadros 4.4 e 4.5, PDF pp.21-22",
+  "RevisaoSistemas": [
+    {
+      "nomeSistema": "Avaliação do Estado Mental — Saúde Mental",
+      "descricaoSistema": "Exame mental por observação e entrevista, com registro de achados; NHBs indicam necessidade possivelmente afetada, não diagnóstico automático.",
+      "exames": [
+        {
+          "nomeExame": "Observação da Aparência e Atividade Psicomotora",
+          "propedeutica": "Inspeção",
+          "achados": [
+            {
+              "descricaoAchado": "Agitação psicomotora",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Agitação psicomotora",
+                  "subconjuntoNHBVinculado": "Segurança emocional"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Lentificação psicomotora",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Lentificação psicomotora",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Movimentos estereotipados ou ecopraxia",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausentes",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presentes",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Movimentos estereotipados ou ecopraxia",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Contato visual durante a entrevista",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Habitual",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Reduzido ou ausente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Contato visual durante a entrevista",
+                  "subconjuntoNHBVinculado": "Comunicação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Higiene pessoal observada",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservada",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Comprometida",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Higiene pessoal observada",
+                  "subconjuntoNHBVinculado": "Cuidado corporal e ambiental"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação da Orientação e Atenção",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "descricaoAchado": "Orientação autopsíquica",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Orientação autopsíquica",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Orientação temporal",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Orientação temporal",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Orientação espacial",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Orientação espacial",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Atenção e foco aos estímulos",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Atenção e foco aos estímulos",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação da Consciência, Memória e Sensopercepção",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "descricaoAchado": "Estado de consciência",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Desperto e responsivo",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Estado de consciência",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Memória avaliada na entrevista",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Memória avaliada na entrevista",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Percepção sensorial relatada",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Percepção sensorial relatada",
+                  "subconjuntoNHBVinculado": "Sensopercepção"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação da Comunicação e Linguagem",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "descricaoAchado": "Coerência e organização da fala",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Coerência e organização da fala",
+                  "subconjuntoNHBVinculado": "Comunicação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Velocidade e fluência da fala",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Velocidade e fluência da fala",
+                  "subconjuntoNHBVinculado": "Comunicação"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Ecolalia",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Ausente",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Presente",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Ecolalia",
+                  "subconjuntoNHBVinculado": "Comunicação"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "nomeExame": "Avaliação de Humor, Afeto e Juízo Crítico",
+          "propedeutica": "Entrevista clínica",
+          "achados": [
+            {
+              "descricaoAchado": "Humor e afeto observados ou relatados",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Humor e afeto observados ou relatados",
+                  "subconjuntoNHBVinculado": "Segurança emocional"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Congruência do afeto",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Congruência do afeto",
+                  "subconjuntoNHBVinculado": "Segurança emocional"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Curso do pensamento",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Curso do pensamento",
+                  "subconjuntoNHBVinculado": "Regulação neurológica"
+                }
+              ]
+            },
+            {
+              "descricaoAchado": "Juízo crítico na situação avaliada",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "tipoAchado": "opcoes",
+              "ehAlteracao": false,
+              "nomeAlteracao": "",
+              "subconjuntoNHBVinculado": "",
+              "opcoes": [
+                {
+                  "textoOpcao": "Preservado",
+                  "ehAlteracao": false,
+                  "nomeAlteracao": "Normal",
+                  "subconjuntoNHBVinculado": ""
+                },
+                {
+                  "textoOpcao": "Alterado",
+                  "ehAlteracao": true,
+                  "nomeAlteracao": "Juízo crítico na situação avaliada",
+                  "subconjuntoNHBVinculado": "Segurança física e meio ambiente"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
