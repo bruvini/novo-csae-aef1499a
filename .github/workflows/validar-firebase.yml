@@ -54,6 +54,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_exportar_inventario_clinico_8v.py'
       - name: Testar plano de FC pediátrica sem credenciais Firestore
         run: python3 -m unittest discover -s scripts/tests -p 'test_complementar_fc_pediatrica.py'
+      - name: Testar correção de contexto clínico do hemograma
+        run: python3 -m unittest discover -s scripts/tests -p 'test_contextualizar_hemograma.py'
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
