@@ -810,11 +810,12 @@ const FormularioSistema: React.FC<FormularioSistemaProps> = ({
                       <SelectItem value="Palpação">Palpação — avaliação pelo toque</SelectItem>
                       <SelectItem value="Percussão">Percussão — avaliação por percussão</SelectItem>
                       <SelectItem value="Ausculta">Ausculta — avaliação por sons</SelectItem>
+                      <SelectItem value="Entrevista clínica">Entrevista clínica — orientação, linguagem e funções psíquicas</SelectItem>
                     </SelectContent>
                   </Select>
                   <HelperText>
                     Escolha corretamente: achados visuais = Inspeção; toque = Palpação; sons com estetoscópio = Ausculta.
-                    Não misture propedêuticas — crie exames separados.
+                    Para o exame do estado mental, use Entrevista clínica quando o achado depender das respostas da pessoa. Não misture propedêuticas — crie exames separados.
                   </HelperText>
                 </div>
               </div>
