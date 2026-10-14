@@ -1,4 +1,4 @@
-import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, AvaliacaoEnfermagem, DiagnosticoPlanejado, DiagnosticoEnfermagem } from '@/types/processoEnfermagem';
 
 export interface RequisitoDescricaoAvaliacao {
   exame: string;
@@ -113,6 +113,28 @@ export function validarAvaliacao(
 }
 
 /**
+ * Planejamento deve cobrir TODOS os diagnósticos atualmente selecionados.
+ * Registros legados ou diagnósticos retirados não podem liberar uma etapa,
+ * tampouco podem apagar as escolhas de outro diagnóstico.
+ */
+export function obterPendenciasPlanejamento(
+  diagnostico: DiagnosticoEnfermagem | undefined,
+  planejados: DiagnosticoPlanejado[] = [],
+): string[] {
+  const selecionados = diagnostico?.diagnosticosSelecionados ?? [];
+  return selecionados.flatMap((selecionado) => {
+    const plano = planejados.find((item) => item.diagnosticoId === selecionado.id);
+    const nome = selecionado.tituloDiagnostico;
+    if (!plano) return [`${nome}: planejamento ainda não iniciado`];
+    if (plano.isPositivo === true) return [];
+    const pendencias: string[] = [];
+    if (!plano.resultadoEsperadoSelecionado?.trim()) pendencias.push('resultado esperado');
+    if (!(plano.intervencoesSelecionadas?.length > 0)) pendencias.push('intervenção');
+    return pendencias.length ? [`${nome}: falta ${pendencias.join(' e ')}`] : [];
+  });
+}
+
+/**
  * Calcula quais etapas do processo de enfermagem estão concluídas.
  * Fonte única de verdade para validação de progresso.
  */
@@ -130,17 +152,13 @@ export function calcularEtapasCompletadas(
     && (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0
   ) concluidas.push(2);
 
-  // Etapa 3 — Planejamento: todos os diagnósticos não-positivos têm resultado E intervenção
+  // Etapa 3: verificar os diagnósticos selecionados, não apenas os registros já
+  // criados em planejamento (que podem estar incompletos ou ser legados).
   const diagnosticosPlanejados = processo.planejamento?.diagnosticosPlanejados ?? [];
   const planejamentoOk =
     concluidas.includes(2) &&
     diagnosticosPlanejados.length > 0 &&
-    diagnosticosPlanejados.every((diag) => {
-      if (diag.isPositivo) return true;
-      const temIntervencoes = (diag.intervencoesSelecionadas?.length ?? 0) > 0;
-      const temResultado = !!(diag.resultadoEsperadoSelecionado?.trim());
-      return temIntervencoes && temResultado;
-    });
+    obterPendenciasPlanejamento(processo.diagnostico, diagnosticosPlanejados).length === 0;
   if (planejamentoOk) concluidas.push(3);
 
   // Etapa 4 — Implementação: pelo menos 1 intervenção implementada nesta consulta e todas têm executor
@@ -179,36 +197,26 @@ export function calcularEtapasCompletadas(
 export function isEtapaAcessivel(
   numeroEtapa: number,
   etapaAtual: number,
-  etapasCompletadas: number[],
+  _etapasCompletadas: number[],
   processo: ProcessoEnfermagem,
   requisitosDescricao: RequisitoDescricaoAvaliacao[] = []
 ): boolean {
   // A etapa atual e as anteriores seguem acessíveis para edição/revisão.
   if (numeroEtapa <= etapaAtual) return true;
 
-  // Uma conclusão anterior não pode liberar a etapa seguinte após a avaliação
-  // local ter sido esvaziada ou perder uma descrição obrigatória.
-  if (numeroEtapa === 2 && !validarAvaliacao(processo, requisitosDescricao).completa) return false;
-  if (etapasCompletadas.includes(numeroEtapa)) return true;
+  // Recalcular a conclusão com os dados atuais. O array recebido pode
+  // representar o último salvamento, anterior ao último clique do enfermeiro.
+  const atuais = calcularEtapasCompletadas(processo, requisitosDescricao);
+  if (numeroEtapa === 2 && !atuais.includes(1)) return false;
+  if (atuais.includes(numeroEtapa)) return true;
 
   switch (numeroEtapa) {
     case 2:
       return validarAvaliacao(processo, requisitosDescricao).completa;
     case 3:
-      return etapasCompletadas.includes(2)
-        && validarAvaliacao(processo, requisitosDescricao).completa
-        && (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0;
-    case 4: {
-      const diags = processo.planejamento?.diagnosticosPlanejados ?? [];
-      if (!etapasCompletadas.includes(3) || diags.length === 0) return false;
-      return diags.every((diag) => {
-        if (diag.isPositivo) return true;
-        return (
-          (diag.intervencoesSelecionadas?.length ?? 0) > 0 &&
-          !!(diag.resultadoEsperadoSelecionado?.trim())
-        );
-      });
-    }
+      return atuais.includes(2);
+    case 4:
+      return atuais.includes(3);
     case 5:
     case 6: {
       const implementacao = processo.implementacao || {};
@@ -257,10 +265,19 @@ export function getMotivoBloqueio(
       }
       return `Para avançar ao Diagnóstico, ${pendencias.join(' e ')}.`;
     }
-    case 3:
-      return 'Para liberar esta etapa, conclua a avaliação e selecione pelo menos um diagnóstico de enfermagem na etapa anterior.';
-    case 4:
-      return 'Para liberar esta etapa, todos os diagnósticos precisam ter um resultado esperado e pelo menos uma intervenção definida no planejamento.';
+    case 3: {
+      if (!validarAvaliacao(processo, requisitosDescricao).completa) {
+        return 'Para avançar, revise as informações obrigatórias da Avaliação de Enfermagem.';
+      }
+      return 'Selecione pelo menos um diagnóstico de enfermagem na etapa anterior.';
+    }
+    case 4: {
+      const pendencias = obterPendenciasPlanejamento(processo.diagnostico, processo.planejamento?.diagnosticosPlanejados ?? []);
+      if (pendencias.length) {
+        return `Revise o planejamento: ${pendencias.join('; ')}.`;
+      }
+      return 'Revise a avaliação e os diagnósticos selecionados antes de avançar.';
+    }
     case 5:
     case 6: {
       const implementacao = processo.implementacao || {};
