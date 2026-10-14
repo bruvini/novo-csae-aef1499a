@@ -81,6 +81,8 @@ jobs:
           python3 -m py_compile scripts/registrar-changelog-layout-pe.py
           bash -n scripts/publicar-layout-pe-cloudshell.sh
           bash -n scripts/publicar-login-animado-cloudshell.sh
+          bash -n scripts/publicar-correcao-etapas-pe-cloudshell.sh
+          python3 -m py_compile scripts/registrar-changelog-correcao-pe-20261014.py
           python3 -m py_compile scripts/auditar-catalogo-clinico.py
       - name: Verificar proteção contra alterações locais no Cloud Shell
         run: |
