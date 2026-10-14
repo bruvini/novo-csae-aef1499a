@@ -176,3 +176,76 @@ test('dados multi-select e descrições permanecem disponíveis para reabertura 
   ]);
   assert.equal(processo.avaliacao.nhbsAfetadas[0]?.nhb, 'Eliminações');
 });
+
+
+test('ticket Renata 2: quatro diagnósticos escolhidos liberam planejamento mesmo com stepper defasado', () => {
+  const processo = criarProcesso({
+    coletaDeDadosSubjetivos: 'Consulta de pré-natal: entrevista concluída.',
+    exameFisico: { 'Pressão Arterial': '110/70' },
+  });
+  processo.diagnostico.diagnosticosSelecionados = Array.from({ length: 4 }, (_, index) => ({
+    id: `diag-${index + 1}`,
+    tituloDiagnostico: `Diagnóstico ${index + 1}`,
+  }));
+  assert.deepEqual(calcularEtapasCompletadas(processo), [1, 2]);
+  // Na versão anterior, o array [1] deixava a Etapa 3 bloqueada.
+  assert.equal(isEtapaAcessivel(3, 2, [1], processo), true);
+  assert.equal(getMotivoBloqueio(3, 2, [1], processo), null);
+});
+
+test('ticket Renata 1: resultados e intervenções liberam implementação mesmo com progresso anterior', () => {
+  const processo = criarProcesso({
+    coletaDeDadosSubjetivos: 'Avaliação registrada.',
+    exameFisico: { 'Sinal vital': 80 },
+  });
+  processo.diagnostico.diagnosticosSelecionados = [
+    { id: 'a', tituloDiagnostico: 'Diagnóstico A' },
+    { id: 'b', tituloDiagnostico: 'Diagnóstico B' },
+  ];
+  processo.planejamento.diagnosticosPlanejados = [
+    { diagnosticoId: 'a', tituloDiagnostico: 'Diagnóstico A', ordemPrioridade: 1,
+      resultadoEsperadoSelecionado: 'Resultado A', intervencoesSelecionadas: [{ acaoPrescrita: 'Orientar', tipo: 'padrao' }] },
+    { diagnosticoId: 'b', tituloDiagnostico: 'Diagnóstico B', ordemPrioridade: 2,
+      resultadoEsperadoSelecionado: 'Resultado B', intervencoesSelecionadas: [{ acaoPrescrita: 'Acompanhar', tipo: 'padrao' }] },
+  ];
+  assert.deepEqual(calcularEtapasCompletadas(processo), [1, 2, 3]);
+  assert.equal(isEtapaAcessivel(4, 3, [1, 2], processo), true);
+  assert.equal(getMotivoBloqueio(4, 3, [1, 2], processo), null);
+});
+
+test('planejamento incompleto informa diagnóstico exato e bloqueia sem apagar os completos', () => {
+  const processo = criarProcesso({
+    coletaDeDadosSubjetivos: 'Entrevista feita',
+    exameFisico: { Temperatura: 36 },
+  });
+  processo.diagnostico.diagnosticosSelecionados = [
+    { id: '1', tituloDiagnostico: 'Risco de infecção' },
+    { id: '2', tituloDiagnostico: 'Dor aguda' },
+  ];
+  processo.planejamento.diagnosticosPlanejados = [
+    { diagnosticoId: '1', tituloDiagnostico: 'Risco de infecção', ordemPrioridade: 1,
+      resultadoEsperadoSelecionado: 'Resultado esperado', intervencoesSelecionadas: [{ acaoPrescrita: 'Avaliar', tipo: 'padrao' }] },
+  ];
+  assert.equal(isEtapaAcessivel(4, 3, [1, 2, 3], processo), false);
+  assert.match(getMotivoBloqueio(4, 3, [1, 2, 3], processo) || '', /Dor aguda: planejamento ainda não iniciado/);
+
+  processo.planejamento.diagnosticosPlanejados.push({
+    diagnosticoId: '2', tituloDiagnostico: 'Dor aguda', ordemPrioridade: 2,
+    resultadoEsperadoSelecionado: 'Resultado', intervencoesSelecionadas: [],
+  });
+  assert.match(getMotivoBloqueio(4, 3, [], processo) || '', /Dor aguda: falta intervenção/);
+  assert.equal(isEtapaAcessivel(4, 3, [1, 2, 3], processo), false);
+});
+
+test('diagnóstico positivo dispensa resultado e intervenção mas não dispensa planejamento vinculado', () => {
+  const processo = criarProcesso({
+    coletaDeDadosSubjetivos: 'Entrevista feita',
+    exameFisico: { Temperatura: 36 },
+  });
+  processo.diagnostico.diagnosticosSelecionados = [{ id: 'positive', tituloDiagnostico: 'Disposição para melhorar' }];
+  processo.planejamento.diagnosticosPlanejados = [{
+    diagnosticoId: 'positive', tituloDiagnostico: 'Disposição para melhorar', ordemPrioridade: 1,
+    isPositivo: true, intervencoesSelecionadas: [],
+  }];
+  assert.equal(isEtapaAcessivel(4, 3, [], processo), true);
+});
