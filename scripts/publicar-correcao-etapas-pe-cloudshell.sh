@@ -14,7 +14,13 @@ step() { printf '\n=== %s ===\n' "$*"; }
 # O Firebase CLI atualiza esse cache gerado após cada deploy.
 # Não impedir o pull por causa dele; outras alterações locais continuam protegidas.
 changes="$(git status --porcelain)"
-unexpected="$(printf '%s\\n' "$changes" | sed '/^$/d' | grep -Ev '^ M \\.firebase/hosting\\.[[:alnum:]_-]+\\.cache
+while IFS= read -r change; do
+  case "$change" in
+    "") ;;
+    " M .firebase/hosting."*".cache") ;;
+    *) fail "Alteração local precisa ser preservada antes do pull: $change" ;;
+  esac
+done <<< "$changes"
 step "Atualizar o código da branch main"
 git pull --ff-only origin main
 
