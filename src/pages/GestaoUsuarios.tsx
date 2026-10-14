@@ -5,7 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, RotateCcw, UserMinus, UserCheck, UserX } from 'lucide-react';
+import { Search, RotateCcw, UserMinus, UserCheck, UserX, Users, Clock3, Activity } from 'lucide-react';
+import { IndicadoresResumo } from '@/components/IndicadoresResumo';
+import { calcularIndicadoresUsuarios, formatarDuracaoHoras } from '@/utils/indicadoresAdministrativos';
 import { Link } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
@@ -95,6 +97,13 @@ const GestaoUsuarios = () => {
   const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, filtrarUsuarios]);
   const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, filtrarUsuarios]);
   const revogadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRevogados), [usuariosRevogados, filtrarUsuarios]);
+
+  const metricasUsuarios = useMemo(() => calcularIndicadoresUsuarios({
+    aguardando: usuariosAguardando,
+    aprovados: usuariosAprovados,
+    recusados: usuariosRecusados,
+    revogados: usuariosRevogados,
+  }), [usuariosAguardando, usuariosAprovados, usuariosRecusados, usuariosRevogados]);
 
   const handleDetalhes = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalDetalhesAberto(true); };
   const handleAprovar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalAprovacaoAberto(true); };
@@ -202,6 +211,13 @@ const GestaoUsuarios = () => {
           </Card>
         ) : (
           <>
+            <IndicadoresResumo itens={[
+              { titulo: 'Perfis cadastrados', valor: metricasUsuarios.total, icone: <Users className="h-4 w-4" /> },
+              { titulo: 'Aguardando análise', valor: metricasUsuarios.aguardando, icone: <UserMinus className="h-4 w-4" /> },
+              { titulo: 'Aprovados', valor: metricasUsuarios.aprovados, icone: <UserCheck className="h-4 w-4" /> },
+              { titulo: 'Tempo médio de aprovação', valor: formatarDuracaoHoras(metricasUsuarios.tempoAprovacao), descricao: 'Apenas perfis com datas disponíveis', icone: <Clock3 className="h-4 w-4" /> },
+              { titulo: 'Acessos contabilizados', valor: metricasUsuarios.totalAcessos ?? '—', descricao: 'Perfis aprovados com registro', icone: <Activity className="h-4 w-4" /> },
+            ]} />
             <Card className="border-none shadow-sm h-fit">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
