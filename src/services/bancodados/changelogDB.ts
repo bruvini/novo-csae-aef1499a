@@ -201,6 +201,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
       'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
   },
   {
+    titulo: 'Indicadores Administrativos e Sugestões Clínicas Mais Organizadas',
+    descricao:
+      'As telas de Gestão de Suporte e Gestão de Usuários agora apresentam painéis com quantitativos e tempos médios calculados a partir dos registros disponíveis. Quando uma data necessária não está registrada, o tempo aparece como não disponível. Também ampliamos a aba Sugerir Melhoria: agora você pode propor diagnósticos, resultados esperados, intervenções e parâmetros de exame físico. Todas as propostas clínicas serão avaliadas pela CSAE conforme os protocolos municipais e as atribuições profissionais.',
+  },
+  {
     titulo: 'Aprimoramento da Navegação entre Diagnóstico e Planejamento',
     descricao:
       'Aprimoramos a passagem entre as etapas do Processo de Enfermagem. Agora o Portal reconhece imediatamente os diagnósticos, resultados esperados e intervenções selecionados, evitando bloqueios indevidos. Também ajustamos o planejamento para preservar as escolhas e indicar com mais clareza quando ainda há algum campo obrigatório pendente. A atualização não altera os registros clínicos já salvos.',
