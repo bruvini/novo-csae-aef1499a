@@ -39,6 +39,8 @@ jobs:
         run: npm test
       - name: Validar apresentação e acessibilidade do login
         run: npx tsx --test tests/loginPresentation.test.ts
+      - name: Validar indicadores administrativos com datas parciais
+        run: npx tsx --test src/utils/indicadoresAdministrativos.test.ts
       - name: Testar filtros, exportação e tempo do PE
         run: npx tsx --test src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/tempoProcesso.test.ts
       - name: Testar motor clínico por idade e contexto
@@ -83,6 +85,7 @@ jobs:
           bash -n scripts/publicar-login-animado-cloudshell.sh
           bash -n scripts/publicar-correcao-etapas-pe-cloudshell.sh
           python3 -m py_compile scripts/registrar-changelog-correcao-pe-20261014.py
+          python3 -m py_compile scripts/registrar-changelog-indicadores-suporte.py
           python3 -m py_compile scripts/auditar-catalogo-clinico.py
       - name: Verificar proteção contra alterações locais no Cloud Shell
         run: |
