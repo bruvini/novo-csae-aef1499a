@@ -54,6 +54,7 @@ if ! .venv-csae-release/bin/python -c "import google.cloud.firestore" >/dev/null
   .venv-csae-release/bin/python -m pip install google-cloud-firestore
 fi
 .venv-csae-release/bin/python scripts/registrar-changelog-correcao-pe-20261014.py
+.venv-csae-release/bin/python scripts/registrar-changelog-indicadores-suporte.py
 
 step "Concluído"
 printf 'Commit: %s\n' "$(git rev-parse HEAD)"
