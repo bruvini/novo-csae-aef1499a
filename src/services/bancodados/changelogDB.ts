@@ -201,6 +201,11 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
       'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
   },
   {
+    titulo: 'Aprimoramento da Navegação entre Diagnóstico e Planejamento',
+    descricao:
+      'Aprimoramos a passagem entre as etapas do Processo de Enfermagem. Agora o Portal reconhece imediatamente os diagnósticos, resultados esperados e intervenções selecionados, evitando bloqueios indevidos. Também ajustamos o planejamento para preservar as escolhas e indicar com mais clareza quando ainda há algum campo obrigatório pendente. A atualização não altera os registros clínicos já salvos.',
+  },
+  {
     titulo: 'Mais Espaço para Indicadores e Pacientes no Processo de Enfermagem',
     descricao:
       'A tela do Processo de Enfermagem ficou mais prática: as orientações iniciais foram reorganizadas em um painel compacto, sem perder os fundamentos e as cinco etapas. O Dashboard e a lista de pacientes voltaram a ocupar toda a largura disponível. A visualização se adapta automaticamente a computadores, tablets e celulares, sem alterar dados ou registros assistenciais.',
