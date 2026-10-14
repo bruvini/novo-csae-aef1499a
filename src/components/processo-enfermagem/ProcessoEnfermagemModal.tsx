@@ -38,7 +38,6 @@ import {
   isEtapaAcessivel,
   getMotivoBloqueio,
   executarAvancoAposSalvar,
-  validarAvaliacao,
   RequisitoDescricaoAvaliacao,
 } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
