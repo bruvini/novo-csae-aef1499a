@@ -84,48 +84,47 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-csae-green-50 via-white to-emerald-50/70">
       {/* Hero-like Section with Login */}
-      <main className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center">
-        <div className="max-w-6xl w-full grid md:grid-cols-2 gap-12 lg:gap-24 items-center">
+      <main className="flex flex-1 items-center justify-center px-5 py-10 sm:px-8 lg:px-12 2xl:px-16">
+        <div className="grid w-full max-w-[1480px] items-center gap-10 sm:gap-14 md:grid-cols-2 lg:gap-20 2xl:gap-28">
           
-          <div className="text-left space-y-8 animate-fade-in order-2 md:order-1">
-            <div className="flex items-center gap-6 mb-8">
+          <div className="order-2 space-y-7 text-left animate-fade-in md:order-1 lg:space-y-9">
+            <div className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-5 lg:gap-x-12">
               <img 
                 src="/logo_csae.png" 
                 alt="Logo CSAE Floripa" 
-                className="h-24 w-auto object-contain" 
+                className="h-20 w-auto object-contain sm:h-24 lg:h-28"
               />
               <img 
                 src="/logo_enfermagem_floripa.jpg" 
                 alt="Logo Enfermagem Floripa" 
-                className="h-24 w-auto object-contain mix-blend-multiply" 
-                style={{ filter: "contrast(1.1) brightness(1.05)" }}
+                className="h-20 w-auto max-w-[min(100%,20rem)] object-contain mix-blend-multiply sm:h-24 lg:h-28"
               />
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
-              Gestão inteligente do <br />
+            <h1 className="text-4xl font-extrabold leading-[1.08] text-gray-900 sm:text-5xl lg:text-6xl 2xl:text-7xl">
+              Gestão inteligente do{" "}
               <span className="text-csae-green-600">Processo de Enfermagem.</span>
             </h1>
             
-            <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+            <p className="max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl 2xl:text-2xl">
               Padronização, segurança de dados e agilidade na assistência à saúde da rede municipal. O Portal CSAE simplifica o registro e a consulta clínica.
             </p>
           </div>
 
-          <div className="flex justify-center order-1 md:order-2">
-            <Card className="w-full max-w-md shadow-2xl border-t-8 border-t-csae-green-600 transition-all duration-300">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                  <LogIn className="w-6 h-6 text-csae-green-600" />
+          <div className="order-1 flex justify-center md:order-2 md:justify-end">
+            <Card className="w-full max-w-[540px] border-t-8 border-t-csae-green-600 shadow-2xl transition-all duration-300 2xl:max-w-[600px]">
+              <CardHeader className="space-y-2 p-7 text-center sm:p-9">
+                <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold sm:text-3xl">
+                  <LogIn className="h-6 w-6 text-csae-green-600 sm:h-7 sm:w-7" />
                   Acesso Restrito
                 </CardTitle>
                 <CardDescription>
                   Identifique-se para acessar as ferramentas de gestão.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-7 sm:px-9">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -136,7 +135,7 @@ const Index = () => {
                         placeholder="Insira seu e-mail funcional aqui" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow"
+                        className="h-12 border-gray-200 transition-shadow focus-visible:ring-csae-green-500 sm:h-14"
                         required
                       />
                     </div>
@@ -160,7 +159,7 @@ const Index = () => {
                           placeholder="Insira sua senha aqui"
                           value={senha}
                           onChange={(e) => setSenha(e.target.value)}
-                          className="h-12 border-gray-200 focus-visible:ring-csae-green-500 transition-shadow pr-12"
+                          className="h-12 border-gray-200 pr-12 transition-shadow focus-visible:ring-csae-green-500 sm:h-14"
                           required
                         />
                         <button
@@ -177,7 +176,7 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full bg-csae-green-600 hover:bg-csae-green-700 h-12 text-lg font-semibold shadow-md active:scale-[0.98] transition-transform" disabled={carregando}>
+                  <Button type="submit" className="h-12 w-full bg-csae-green-600 text-lg font-semibold shadow-md transition-transform hover:bg-csae-green-700 active:scale-[0.98] sm:h-14" disabled={carregando}>
                     {carregando ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -192,7 +191,7 @@ const Index = () => {
                   </Button>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col border-t bg-gray-50/20 rounded-b-lg p-6">
+              <CardFooter className="flex flex-col rounded-b-lg border-t bg-gray-50/20 p-7 sm:p-8">
                 <p className="text-sm text-center text-gray-600 leading-relaxed font-medium">
                   Ainda fazendo evoluções manuais? {" "}
                   <Link to="/registrar" className="text-csae-green-700 hover:underline font-bold inline-block md:block md:mt-1">
