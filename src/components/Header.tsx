@@ -10,6 +10,7 @@ import {
   BarChart as BarChartIcon,
   LifeBuoy,
   Headphones,
+  History,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSupportNotifications } from "@/contexts/SupportNotificationsContext";
@@ -58,6 +59,12 @@ const Header = () => {
       icon: LifeBuoy,
       allowedPageId: "CentralAjuda",
       notificationCount: respostasNaoVisualizadas,
+    },
+    {
+      title: "História do Portal",
+      url: "/historia-portal",
+      icon: History,
+      allowedPageId: "HistoriaPortal",
     },
     {
       title: "Gestão de Suporte",

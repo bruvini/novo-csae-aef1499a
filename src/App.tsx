@@ -15,6 +15,7 @@ import DebugUsers from "./pages/DebugUsers";
 import CentralAjuda from "./pages/CentralAjuda";
 import GestaoSuporte from "./pages/GestaoSuporte";
 import Perfil from "./pages/Perfil";
+import HistoriaPortal from "./pages/HistoriaPortal";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -100,6 +101,14 @@ function App() {
                   element={
                     <ProtectedRoute allowedPageId="CentralAjuda">
                       <CentralAjuda />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/historia-portal"
+                  element={
+                    <ProtectedRoute allowedPageId="HistoriaPortal">
+                      <HistoriaPortal />
                     </ProtectedRoute>
                   }
                 />

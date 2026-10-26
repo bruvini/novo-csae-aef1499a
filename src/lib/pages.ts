@@ -10,12 +10,13 @@ export interface ProtectedRouteProps {
   allowedPageId?: string;
 }
 
-export const PERMISSION_SCHEMA_VERSION = 2;
+export const PERMISSION_SCHEMA_VERSION = 3;
 
 export const DEFAULT_COMMON_PAGE_IDS = [
   "Dashboard",
   "ProcessoEnfermagem",
   "CentralAjuda",
+  "HistoriaPortal",
 ];
 
 export const availablePages: PageInfo[] = [
@@ -36,6 +37,11 @@ export const availablePages: PageInfo[] = [
     label: "Central de Ajuda",
     description:
       "Canal para relatar problemas, sugerir melhorias e acompanhar respostas",
+  },
+  {
+    id: "HistoriaPortal",
+    label: "História do Portal",
+    description: "Linha do tempo com a trajetória do Portal CSAE",
   },
   {
     id: "GestaoConteudos",

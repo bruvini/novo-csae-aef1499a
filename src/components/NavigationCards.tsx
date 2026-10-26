@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Heart, Database, Users, BarChart, ArrowRight, Clock, LifeBuoy, Headphones } from 'lucide-react';
+import { Heart, Database, Users, BarChart, ArrowRight, Clock, LifeBuoy, Headphones, History } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { buscarUsuariosAguardando } from '@/services/bancodados';
 import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
@@ -73,6 +73,15 @@ const NavigationCards = () => {
       href: '/ajuda',
       disabled: false,
       notificationCount: respostasNaoVisualizadas,
+    },
+    {
+      id: 'historia-portal',
+      title: 'História do Portal',
+      description: 'Conheça a trajetória do Portal CSAE em uma linha do tempo interativa.',
+      icon: History,
+      href: '/historia-portal',
+      disabled: false,
+      allowedPageId: 'HistoriaPortal',
     },
     {
       id: 'gestao-suporte',
