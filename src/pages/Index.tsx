@@ -9,7 +9,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, LogIn, ArrowRight, KeyRound, Eye, EyeOff } from "lucide-react";
 import { auth } from "@/services/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
-import Footer from "@/components/Footer";
 import { normalizarEmailAutenticacao } from "@/utils/auth";
 
 const Index = () => {
@@ -84,47 +83,51 @@ const Index = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-csae-green-50 via-white to-emerald-50/70">
+    <div className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-csae-green-50 via-white to-emerald-50/70">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[url('/login-mesh.svg')] bg-cover bg-center"
+      />
       {/* Hero-like Section with Login */}
-      <main className="flex flex-1 items-center justify-center px-5 py-10 sm:px-8 lg:px-12 2xl:px-16">
-        <div className="grid w-full max-w-[1480px] items-center gap-10 sm:gap-14 md:grid-cols-2 lg:gap-20 2xl:gap-28">
+      <main className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
+        <div className="grid w-full max-w-6xl items-center gap-10 sm:gap-14 md:grid-cols-2 lg:gap-20">
           
-          <div className="order-2 space-y-7 text-left animate-fade-in md:order-1 lg:space-y-9">
-            <div className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-5 lg:gap-x-12">
+          <div className="order-2 space-y-8 text-left animate-fade-in md:order-1">
+            <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-4 xl:gap-x-8">
               <img 
                 src="/logo_csae.png" 
                 alt="Logo CSAE Floripa" 
-                className="h-20 w-auto object-contain sm:h-24 lg:h-28"
+                className="h-16 w-auto object-contain sm:h-20 xl:h-24"
               />
               <img 
                 src="/logo_enfermagem_floripa.jpg" 
                 alt="Logo Enfermagem Floripa" 
-                className="h-20 w-auto max-w-[min(100%,20rem)] object-contain mix-blend-multiply sm:h-24 lg:h-28"
+                className="h-16 w-auto max-w-[min(100%,18rem)] object-contain mix-blend-multiply sm:h-20 xl:h-24"
               />
             </div>
             
-            <h1 className="text-4xl font-extrabold leading-[1.08] text-gray-900 sm:text-5xl lg:text-6xl 2xl:text-7xl">
-              Gestão inteligente do{" "}
+            <h1 className="text-4xl font-extrabold leading-tight text-gray-900 sm:text-5xl lg:text-6xl">
+              Gestão inteligente do <br />
               <span className="text-csae-green-600">Processo de Enfermagem.</span>
             </h1>
             
-            <p className="max-w-2xl text-lg leading-relaxed text-gray-600 sm:text-xl 2xl:text-2xl">
+            <p className="max-w-lg text-lg leading-relaxed text-gray-600 sm:text-xl">
               Padronização, segurança de dados e agilidade na assistência à saúde da rede municipal. O Portal CSAE simplifica o registro e a consulta clínica.
             </p>
           </div>
 
-          <div className="order-1 flex justify-center md:order-2 md:justify-end">
-            <Card className="w-full max-w-[540px] border-t-8 border-t-csae-green-600 shadow-2xl transition-all duration-300 2xl:max-w-[600px]">
-              <CardHeader className="space-y-2 p-7 text-center sm:p-9">
-                <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold sm:text-3xl">
-                  <LogIn className="h-6 w-6 text-csae-green-600 sm:h-7 sm:w-7" />
+          <div className="order-1 flex justify-center md:order-2">
+            <Card className="w-full max-w-md border-t-8 border-t-csae-green-600 shadow-2xl transition-all duration-300 xl:max-w-lg">
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2 text-2xl font-bold">
+                  <LogIn className="h-6 w-6 text-csae-green-600" />
                   Acesso Restrito
                 </CardTitle>
                 <CardDescription>
                   Identifique-se para acessar as ferramentas de gestão.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="px-7 sm:px-9">
+              <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-4">
                     <div className="space-y-2">
@@ -135,7 +138,7 @@ const Index = () => {
                         placeholder="Insira seu e-mail funcional aqui" 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 border-gray-200 transition-shadow focus-visible:ring-csae-green-500 sm:h-14"
+                        className="h-12 border-gray-200 transition-shadow focus-visible:ring-csae-green-500 xl:h-14"
                         required
                       />
                     </div>
@@ -159,7 +162,7 @@ const Index = () => {
                           placeholder="Insira sua senha aqui"
                           value={senha}
                           onChange={(e) => setSenha(e.target.value)}
-                          className="h-12 border-gray-200 pr-12 transition-shadow focus-visible:ring-csae-green-500 sm:h-14"
+                          className="h-12 border-gray-200 pr-12 transition-shadow focus-visible:ring-csae-green-500 xl:h-14"
                           required
                         />
                         <button
@@ -176,7 +179,7 @@ const Index = () => {
                       </div>
                     </div>
                   </div>
-                  <Button type="submit" className="h-12 w-full bg-csae-green-600 text-lg font-semibold shadow-md transition-transform hover:bg-csae-green-700 active:scale-[0.98] sm:h-14" disabled={carregando}>
+                  <Button type="submit" className="h-12 w-full bg-csae-green-600 text-lg font-semibold shadow-md transition-transform hover:bg-csae-green-700 active:scale-[0.98] xl:h-14" disabled={carregando}>
                     {carregando ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -191,7 +194,7 @@ const Index = () => {
                   </Button>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col rounded-b-lg border-t bg-gray-50/20 p-7 sm:p-8">
+              <CardFooter className="flex flex-col rounded-b-lg border-t bg-gray-50/20 p-6">
                 <p className="text-sm text-center text-gray-600 leading-relaxed font-medium">
                   Ainda fazendo evoluções manuais? {" "}
                   <Link to="/registrar" className="text-csae-green-700 hover:underline font-bold inline-block md:block md:mt-1">
@@ -204,7 +207,11 @@ const Index = () => {
         </div>
       </main>
 
-      <Footer />
+      <footer className="mt-auto border-t bg-white px-4 py-4 text-center text-xs text-gray-500 sm:text-sm">
+        <p>
+          © {new Date().getFullYear()} Portal CSAE Floripa 2.0. Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) e Enf. Bruno Vinícius — Todos os direitos reservados.
+        </p>
+      </footer>
     </div>
   );
 };
