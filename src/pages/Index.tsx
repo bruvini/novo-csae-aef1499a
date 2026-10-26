@@ -83,10 +83,16 @@ const Index = () => {
   }
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-csae-green-50 via-white to-emerald-50/70">
+    <div className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-gradient-to-br from-emerald-100/80 via-white to-green-100/80">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10 bg-[url('/login-mesh.svg')] bg-cover bg-center"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_12%_38%,rgba(34,197,94,0.18),transparent_43%),radial-gradient(ellipse_at_88%_68%,rgba(16,185,129,0.17),transparent_45%)] blur-2xl"
+      />
+      <img
+        src="/login-mesh.svg"
+        alt=""
+        aria-hidden="true"
+        className="animate-synapse pointer-events-none absolute -inset-[4%] -z-10 h-[108%] w-[108%] object-cover"
       />
       {/* Hero-like Section with Login */}
       <main className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
@@ -209,7 +215,25 @@ const Index = () => {
 
       <footer className="mt-auto border-t bg-white px-4 py-4 text-center text-xs text-gray-500 sm:text-sm">
         <p>
-          © {new Date().getFullYear()} Portal CSAE Floripa 2.0. Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE) e Enf. Bruno Vinícius — Todos os direitos reservados.
+          © {new Date().getFullYear()} Portal CSAE Floripa 2.0. {" "}
+          <a
+            href="https://www.pmf.sc.gov.br/entidades/saude/index.php?cms=csae+++apresentacao&menu=10&submenuid=1478"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-csae-green-700 hover:underline"
+          >
+            Comissão Permanente de Sistematização da Assistência de Enfermagem (CSAE)
+          </a>{" "}
+          e {" "}
+          <a
+            href="https://www.linkedin.com/in/enfbrunovinicius/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-csae-green-700 hover:underline"
+          >
+            Enf. Bruno Vinícius
+          </a>{" "}
+          — Todos os direitos reservados.
         </p>
       </footer>
     </div>

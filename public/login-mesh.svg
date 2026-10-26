@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1000" fill="none">
   <defs>
     <radialGradient id="center" cx="50%" cy="49%" r="68%">
-      <stop offset="0" stop-color="#fff" stop-opacity=".97"/>
-      <stop offset=".58" stop-color="#fff" stop-opacity=".82"/>
-      <stop offset="1" stop-color="#d8f5e8" stop-opacity=".34"/>
+      <stop offset="0" stop-color="#fff" stop-opacity=".94"/>
+      <stop offset=".58" stop-color="#fff" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#9be7c0" stop-opacity=".42"/>
     </radialGradient>
   </defs>
   <path fill="url(#center)" d="M0 0h1920v1000H0z"/>
@@ -15,7 +15,7 @@
     <path d="M0 820 340 730 520 870 790 930 1030 900 1270 960 1510 860 1740 930 1920 850"/>
     <path d="M140 0 250 390M680 28 470 315M1100 132 910 350M1390 120 1320 335M1680 135 1580 360M315 545 500 565M760 650 980 610M1190 670 1380 590M1600 640 1880 655"/>
   </g>
-  <g fill="#19a876" fill-opacity=".11">
+  <g class="synapse-nodes" fill="#19a876" fill-opacity=".11">
     <circle cx="140" cy="0" r="6"/><circle cx="278" cy="145" r="5"/><circle cx="552" cy="150" r="6"/>
     <circle cx="820" cy="140" r="5"/><circle cx="1100" cy="132" r="6"/><circle cx="1390" cy="120" r="5"/>
     <circle cx="1680" cy="135" r="6"/><circle cx="250" cy="390" r="6"/><circle cx="680" cy="410" r="5"/>
@@ -23,4 +23,18 @@
     <circle cx="760" cy="650" r="5"/><circle cx="1190" cy="670" r="6"/><circle cx="1600" cy="640" r="5"/>
     <circle cx="520" cy="870" r="6"/><circle cx="1030" cy="900" r="5"/><circle cx="1510" cy="860" r="6"/>
   </g>
+  <style>
+    @keyframes synapsePulse {
+      0%, 100% { opacity: .08; }
+      50% { opacity: .28; }
+    }
+    .synapse-nodes circle {
+      animation: synapsePulse 4.8s ease-in-out infinite;
+    }
+    .synapse-nodes circle:nth-child(3n) { animation-delay: -1.6s; }
+    .synapse-nodes circle:nth-child(3n + 1) { animation-delay: -3.2s; }
+    @media (prefers-reduced-motion: reduce) {
+      .synapse-nodes circle { animation: none; }
+    }
+  </style>
 </svg>
