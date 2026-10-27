@@ -147,7 +147,7 @@ service cloud.firestore {
       return validProfileDocument(request.resource.data)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
-        && changed.hasOnly(['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'versaoPermissoes', 'statusAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
+        && changed.hasOnly(['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'versaoPermissoes', 'statusAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao', 'analisadoPor', 'analisadoPorUid', 'historicoRevisoes'])
         && (!(changed.hasAny(privilegedFields)) || resource.data.uid != request.auth.uid || safePermissionSchemaMigration())
         && (!changed.hasAny(['versaoPermissoes']) || resource.data.uid != request.auth.uid || safePermissionSchemaMigration())
         && (!(request.resource.data.statusAcesso in ['Liberado', 'Aprovado']) || request.resource.data.ehAdmin is bool)
@@ -157,6 +157,12 @@ service cloud.firestore {
         && (!changed.hasAny(['dataRevogacao']) || request.resource.data.dataRevogacao == request.time)
         && (!changed.hasAny(['dataRestauracao']) || request.resource.data.dataRestauracao == request.time)
         && (!changed.hasAny(['dataAtualizacaoPrivilegios']) || request.resource.data.dataAtualizacaoPrivilegios == request.time)
+        && (!changed.hasAny(['analisadoPor']) || boundedString(request.resource.data.analisadoPor, 160))
+        && (!changed.hasAny(['analisadoPorUid']) || request.resource.data.analisadoPorUid == request.auth.uid)
+        && (!changed.hasAny(['historicoRevisoes'])
+          || (request.resource.data.historicoRevisoes is list
+            && request.resource.data.historicoRevisoes.size() <= 500
+            && request.resource.data.historicoRevisoes.hasAll(resource.data.get('historicoRevisoes', []))))
         && (!('revogadoPorUid' in request.resource.data) || request.resource.data.revogadoPorUid == request.auth.uid || request.resource.data.revogadoPorUid == resource.data.revogadoPorUid);
     }
 
