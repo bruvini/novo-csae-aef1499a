@@ -109,7 +109,7 @@ export async function salvarAvaliacaoQualidade(id: string, avaliacao: AvaliacaoQ
     const atual = snapshot.data() as IntervencaoAutoral;
     const novo = { ...avaliacao, avaliadorId, avaliadoEm: serverTimestamp(), versaoCriterios: 'experimental-v1' };
     tx.update(sugestaoRef, { avaliacaoQualidade: novo, ultimaDecisaoId: auditRef.id });
-    tx.set(auditRef, { sugestaoId: id, statusAnterior: situacaoSugestao(atual), statusNovo: situacaoSugestao(atual), tipo: 'avaliar', avaliadorId, destinos: [], justificativa: '', dataHora: serverTimestamp() });
+    tx.set(auditRef, { sugestaoId: id, statusAnterior: situacaoSugestao(atual), statusNovo: situacaoSugestao(atual), tipo: 'avaliar', avaliadorId, destinos: [], justificativa: '', avaliacaoQualidade: novo, dataHora: serverTimestamp() });
   });
 }
 
@@ -237,5 +237,5 @@ export async function decidirSugestao(
 
 export async function listarDecisoes(sugestaoId: string) {
   const snapshot = await getDocs(query(collection(db, 'decisoesIntervencoes'), where('sugestaoId', '==', sugestaoId)));
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as { id: string; sugestaoId: string; tipo: string; avaliadorId: string; dataHora: Timestamp }));
+  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as { id: string; sugestaoId: string; tipo: string; avaliadorId: string; dataHora: Timestamp; avaliacaoQualidade?: AvaliacaoQualidadeIntervencao }));
 }

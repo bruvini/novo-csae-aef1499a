@@ -148,8 +148,9 @@ test('avaliação técnica parcial exige gestor, versão, timestamp e auditoria 
   await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'avaliar'), { textoIntervencao: 'Orientar retorno', tituloResultadoVinculado: 'Adesão', autorId: 'autor', autorNome: 'Autor', dataCriacao: serverTimestamp(), identificadorSugestao: 'avaliar', status: 'aguardando' }));
   const avaliacao = (db: typeof gestor, id: string, versao = 'experimental-v1') => {
     const batch = writeBatch(db);
-    batch.update(doc(db, 'intervencoesAutorais', 'avaliar'), { avaliacaoQualidade: { atomicidadeStatus: 'unica', avaliadorId: 'gestor', avaliadoEm: serverTimestamp(), versaoCriterios: versao }, ultimaDecisaoId: id });
-    batch.set(doc(db, 'decisoesIntervencoes', id), { sugestaoId: 'avaliar', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'avaliar', avaliadorId: 'gestor', destinos: [], justificativa: '', dataHora: serverTimestamp() });
+    const qualidade = { atomicidadeStatus: 'unica', avaliadorId: 'gestor', avaliadoEm: serverTimestamp(), versaoCriterios: versao };
+    batch.update(doc(db, 'intervencoesAutorais', 'avaliar'), { avaliacaoQualidade: qualidade, ultimaDecisaoId: id });
+    batch.set(doc(db, 'decisoesIntervencoes', id), { sugestaoId: 'avaliar', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'avaliar', avaliadorId: 'gestor', destinos: [], justificativa: '', avaliacaoQualidade: qualidade, dataHora: serverTimestamp() });
     return batch.commit();
   };
   await assertFails(avaliacao(autor, 'autor-1'));

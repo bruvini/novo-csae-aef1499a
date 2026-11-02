@@ -615,6 +615,7 @@ service cloud.firestore {
         && data.diff(resource.data).affectedKeys().hasAll(['avaliacaoQualidade', 'ultimaDecisaoId'])
         && validQualityEvaluation(data.avaliacaoQualidade)
         && audit.sugestaoId == suggestionId && audit.tipo == 'avaliar'
+        && audit.avaliacaoQualidade == data.avaliacaoQualidade
         && audit.statusAnterior == (('status' in resource.data) ? resource.data.status : 'aguardando')
         && audit.statusNovo == audit.statusAnterior
         && audit.avaliadorId == request.auth.uid && audit.dataHora == request.time;
@@ -661,7 +662,7 @@ service cloud.firestore {
     function validDecision(data) {
       return data is map
         && data.keys().hasAll(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
-        && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
+        && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'avaliacaoQualidade', 'dataHora'])
         && boundedString(data.sugestaoId, 128)
         && data.statusAnterior in ['aguardando', 'aprovada', 'rejeitada']
         && data.statusNovo in ['aguardando', 'aprovada', 'rejeitada']
@@ -669,6 +670,7 @@ service cloud.firestore {
         && (data.tipo == 'avaliar' || data.statusAnterior == 'aguardando')
         && (data.tipo != 'avaliar' || data.statusAnterior == data.statusNovo)
         && (data.tipo != 'desmembrar' || data.statusNovo == 'aguardando')
+        && (data.tipo == 'avaliar' ? ('avaliacaoQualidade' in data && validQualityEvaluation(data.avaliacaoQualidade)) : !('avaliacaoQualidade' in data))
         && (!(data.tipo in ['avaliar', 'desmembrar']) || (data.destinos.size() == 0 && data.justificativa == ''))
         && data.avaliadorId == request.auth.uid
         && data.destinos is list && data.destinos.size() <= 5
