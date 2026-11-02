@@ -380,7 +380,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleConcluirProcesso = async () => {
-    if (!processo.id || !paciente.id) return;
+    if (isInitializing || loadFailed || isSaving || !processo.id || !paciente.id || processo.pacienteId !== paciente.id) return;
 
     const etapasConcluidas = calcularEtapasCompletadas(processo, requisitosDescricao);
     if (![1, 2, 3, 4, 5, 6].every((etapa) => etapasConcluidas.includes(etapa))) {
@@ -637,7 +637,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 <Button 
                   type="button" 
                   onClick={handleConcluirProcesso}
-                  disabled={isSaving}
+                  disabled={isSaving || isInitializing || loadFailed || processo.pacienteId !== paciente.id}
                   className="bg-csae-green-600 hover:bg-csae-green-700 font-bold"
                 >
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
