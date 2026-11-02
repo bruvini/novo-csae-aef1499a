@@ -41,6 +41,7 @@ import {
   RequisitoDescricaoAvaliacao,
 } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
+import { invalidarResumoAoAlterarEntrega } from '@/utils/materiaisApoioProcesso';
 import { Loader2, Trash2, X, History } from 'lucide-react';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
@@ -236,7 +237,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleUpdateImplementacao = (novaImplementacao: ImplementacaoEnfermagem) => {
-    setProcesso(prev => {
+    const prev = processoAtualRef.current;
       // Recalcular intervencoesExecutadas: remover entradas que não são mais do executor "Enfermeiro"
       const intervencoesExecutadasAtualizadas: { [tituloDiag: string]: string[] } = {
         ...(prev.evolucao?.intervencoesExecutadas || {})
@@ -261,22 +262,22 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         });
       });
 
-      return {
+      const atualizado = {
         ...prev,
         implementacao: novaImplementacao,
-        evolucao: {
+        evolucao: invalidarResumoAoAlterarEntrega({
           ...(prev.evolucao || { resumoGerado: '' }),
           intervencoesExecutadas: intervencoesExecutadasAtualizadas,
-        },
+        }, prev.implementacao || {}, novaImplementacao),
       };
-    });
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
   };
 
   const handleUpdateEvolucao = (evolucao: EvolucaoEnfermagem) => {
-    setProcesso(prev => ({
-      ...prev,
-      evolucao
-    }));
+    const atualizado = { ...processoAtualRef.current, evolucao };
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
   };
 
   const handleSalvarProgresso = async (): Promise<boolean> => {
