@@ -1,0 +1,2180 @@
+{
+  "meta": {
+    "projeto": "csaefloripa",
+    "origem": "Oito PDFs dos Protocolos de Enfermagem fornecidos; indexação exploratória de termos e páginas (páginas PDF).",
+    "nota": "Não é lista exaustiva de cada termo ou faixa. Ocorrência textual não significa indicação de exame, nem referência homologada; validar em cada página antes de cadastrar.",
+    "seguranca": "Não autoriza escrita em Firestore nem associação automática a NHB."
+  },
+  "itens": [
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Frequência cardíaca",
+      "sinonimos": [
+        "Frequência Cardíaca (FC)",
+        "FC"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            23
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            95,
+            101
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            25,
+            66
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            11,
+            15
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            22
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            78
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Frequência respiratória",
+      "sinonimos": [
+        "Frequência Respiratória (FR)",
+        "FR"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            95,
+            101
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            25,
+            43
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10,
+            11
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            22,
+            36
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Pressão arterial sistólica",
+      "sinonimos": [
+        "PAS",
+        "Pressão Arterial Sistólica (PAS)"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            14
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            44,
+            96
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            51,
+            125
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            66
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            60
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Pressão arterial diastólica",
+      "sinonimos": [
+        "PAD",
+        "Pressão Arterial Diastólica (PAD)"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            54
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            96
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            51,
+            125
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Temperatura corporal",
+      "sinonimos": [
+        "Temperatura",
+        "Temperatura axilar"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            14,
+            45
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            21
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Saturação periférica de oxigênio",
+      "sinonimos": [
+        "SpO2",
+        "Oximetria",
+        "Saturação de O2"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            99
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            66
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            79
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            21,
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "sinais_vitais",
+      "nome": "Glicemia capilar",
+      "sinonimos": [
+        "Glicemia",
+        "HGT"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            12,
+            22
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            98,
+            99
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            62
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            42,
+            62
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Hemograma",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            81,
+            99
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            57,
+            115
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            22
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            34,
+            39
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            18,
+            24
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20,
+            46
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Hemoglobina",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            26,
+            28
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            91,
+            115
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            42
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            24
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            36
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Hematócrito",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            93,
+            99
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Plaquetas",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            99
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Leucócitos",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            99
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            37
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            24,
+            25
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Glicemia em jejum",
+      "sinonimos": [
+        "Glicemia de jejum"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            22,
+            23
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            126
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            98
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            18
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Hemoglobina glicada (HbA1c)",
+      "sinonimos": [
+        "HbA1c",
+        "Hemoglobina glicada"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            25,
+            26
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            127,
+            128
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            24
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Colesterol total",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            19,
+            20
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            50
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            166
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            53,
+            54
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Colesterol HDL",
+      "sinonimos": [
+        "HDL"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            19,
+            20
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            50,
+            51
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            166
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            53,
+            54
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Colesterol LDL",
+      "sinonimos": [
+        "LDL"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            19,
+            20
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            166,
+            184
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            53,
+            54
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Triglicerídeos",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            19,
+            20
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            50
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            166
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Creatinina sérica",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            20,
+            27
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Ureia",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            53,
+            54
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Potássio",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            20,
+            27
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            41
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            137
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Taxa de filtração glomerular estimada",
+      "sinonimos": [
+        "TFGe",
+        "Clearance de creatinina"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            16,
+            20
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            50,
+            51
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Microalbuminúria",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            20,
+            28
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "EAS/Urina tipo I",
+      "sinonimos": [
+        "EAS",
+        "Urina tipo I"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            20,
+            27
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            119
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Urocultura",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            33,
+            34
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Teste HIV",
+      "sinonimos": [
+        "HIV",
+        "Anti-HIV",
+        "Teste rápido HIV"
+      ],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            22,
+            23
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            11,
+            13
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            10,
+            24
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            25,
+            42
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            30,
+            34
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            63
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Teste para sífilis",
+      "sinonimos": [
+        "Teste rápido sífilis",
+        "Teste rápido de sífilis"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            58,
+            75
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "VDRL",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            17,
+            19
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            111
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            34,
+            44
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "HBsAg",
+      "sinonimos": [
+        "Antígeno de superfície hepatite B"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            20,
+            22
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            114,
+            144
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            44
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Anti-HCV",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            23,
+            50
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            144
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Baciloscopia de escarro",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            101,
+            102
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            42
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Teste molecular para tuberculose",
+      "sinonimos": [
+        "TRM-TB",
+        "GeneXpert"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            101,
+            102
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Beta-hCG",
+      "sinonimos": [
+        "BHCG",
+        "Beta HCG"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            46,
+            47
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "TSH",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            119,
+            172
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20,
+            44
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Vitamina B12",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            24
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Vitamina D",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            124,
+            168
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            13,
+            24
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Zinco",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            23,
+            25
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            15,
+            24
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Albumina sérica",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            18,
+            24
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Tipagem sanguínea",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            116,
+            117
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Teste de Coombs",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            116,
+            117
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_laboratoriais",
+      "nome": "Teste de HPV",
+      "sinonimos": [
+        "HPV"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            73,
+            74
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Ultrassonografia obstétrica",
+      "sinonimos": [
+        "US obstétrica",
+        "USG obstétrica"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            122
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Ultrassonografia transvaginal",
+      "sinonimos": [
+        "USG transvaginal",
+        "USG TV"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            67,
+            70
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Mamografia",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            84,
+            85
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Radiografia de tórax",
+      "sinonimos": [
+        "Raio X tórax",
+        "RX de tórax"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            50,
+            51
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Radiografia de abdome",
+      "sinonimos": [
+        "RX abdômen",
+        "Raio X abdome"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            70,
+            184
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exames_imagem",
+      "nome": "Ultrassonografia de mama",
+      "sinonimos": [
+        "USG mamas",
+        "Ultrassonografia mamária"
+      ],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            85
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Ausculta cardíaca",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            101,
+            138
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            41
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Ausculta pulmonar",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            101
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10,
+            41
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Otoscopia",
+      "sinonimos": [
+        "Exame otoscópico"
+      ],
+      "fontes": [
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            16,
+            17
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10,
+            12
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Oroscopia e orofaringe",
+      "sinonimos": [
+        "Oroscopia",
+        "Orofaringe"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            25,
+            28
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            100,
+            120
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            20,
+            30
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            124
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Inspeção de tonsilas",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            30,
+            31
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação de mucosas",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            23
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            32,
+            54
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            100,
+            145
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            22,
+            27
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10,
+            17
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            39
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            24,
+            25
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Turgor cutâneo",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            23
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            102
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            27
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10,
+            17
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            24,
+            25
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Tempo de enchimento capilar",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            93
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            57
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            21,
+            40
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Edema",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            14,
+            39
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            14,
+            22
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            17,
+            18
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            12,
+            19
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            15,
+            23
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            17,
+            18
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            43
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Cianose",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            21,
+            66
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            21,
+            36
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Tiragem respiratória",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            130
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            21
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            40
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Batimento de asa nasal",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            36,
+            37
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Estridor",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            37,
+            40
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Sibilos e estertores",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            10
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            37,
+            40
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Altura uterina",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            102,
+            103
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Batimentos cardíacos fetais",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            94,
+            96
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Manobras de Leopold",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            102,
+            104
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação das mamas",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            88
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Exame especular",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            16,
+            17
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Fundoscopia",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            21,
+            30
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Neurológico — nível de consciência",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            57
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            25,
+            59
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            21,
+            40
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            65,
+            80
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação do estado mental",
+      "sinonimos": [
+        "Exame do estado mental"
+      ],
+      "fontes": [
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            17,
+            19
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Humor e afeto",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            144
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            59
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Linguagem e fala",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            41
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            17,
+            22
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — leito",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            15,
+            19
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — exsudato",
+      "sinonimos": [
+        "Exsudato"
+      ],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            36
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            30
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            18,
+            19
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — bordas",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            14,
+            17
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            50
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            27
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            14,
+            32
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — perilesão",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            19,
+            29
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — odor",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            14,
+            36
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            17,
+            22
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            94
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da ferida — dimensões",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            65
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            14
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            33
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            19,
+            20
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            33
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação tegumentar — lesões",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            30,
+            31
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            15,
+            159
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            30,
+            45
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            23,
+            25
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            17,
+            43
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            21
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Avaliação da hidratação",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            23
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            93,
+            94
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            92,
+            107
+          ]
+        },
+        {
+          "volume": 4,
+          "paginas_pdf": [
+            22,
+            24
+          ]
+        },
+        {
+          "volume": 5,
+          "paginas_pdf": [
+            17,
+            18
+          ]
+        },
+        {
+          "volume": 6,
+          "paginas_pdf": [
+            15,
+            18
+          ]
+        },
+        {
+          "volume": 7,
+          "paginas_pdf": [
+            24,
+            25
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            43,
+            66
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    },
+    {
+      "categoria": "exame_fisico_revisao",
+      "nome": "Antropometria — peso/IMC",
+      "sinonimos": [],
+      "fontes": [
+        {
+          "volume": 1,
+          "paginas_pdf": [
+            22,
+            39
+          ]
+        },
+        {
+          "volume": 2,
+          "paginas_pdf": [
+            63
+          ]
+        },
+        {
+          "volume": 3,
+          "paginas_pdf": [
+            44,
+            47
+          ]
+        },
+        {
+          "volume": 8,
+          "paginas_pdf": [
+            20,
+            55
+          ]
+        }
+      ],
+      "status": "CANDIDATO_PARA_CONCILIACAO"
+    }
+  ]
+}

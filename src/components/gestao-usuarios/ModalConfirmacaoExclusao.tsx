@@ -28,14 +28,13 @@ const ModalConfirmacaoExclusao: React.FC<ModalConfirmacaoExclusaoProps> = ({
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
+          <AlertDialogTitle>Revogar acesso</AlertDialogTitle>
           <AlertDialogDescription>
-            Tem certeza que deseja excluir o usuário{' '}
+            Tem certeza que deseja revogar o acesso de{' '}
             <strong>{nomeUsuario}</strong>?
             <br />
             <br />
-            Esta ação é <strong>irreversível</strong> e o usuário será removido 
-            permanentemente do sistema, incluindo do Firebase Authentication.
+            A pessoa não poderá entrar no Portal, mas a conta e o cadastro serão preservados para manter o histórico e permitir revisão administrativa. Esta ação não apaga a conta do Firebase Authentication nem os registros clínicos.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -44,7 +43,7 @@ const ModalConfirmacaoExclusao: React.FC<ModalConfirmacaoExclusaoProps> = ({
             onClick={onConfirm} 
             className="bg-red-600 hover:bg-red-700"
           >
-            Excluir Permanentemente
+            Revogar acesso
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

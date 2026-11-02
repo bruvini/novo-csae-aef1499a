@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { formatarSinaisVitais } from './formatarSinaisVitais';
 
+function formatarLinhas(
+  exameFisico: Record<string, string | number | null | undefined>,
+  catalogo: Array<{ sinalVitalNome: string; unidadeMedida?: string | null }>,
+) {
+  return formatarSinaisVitais(exameFisico, catalogo).map(({ nome, valor }) => ({ nome, valor }));
+}
+
 const sinaisDoTicket = [
   { sinalVitalNome: 'Frequência Cardíaca (FC)', unidadeMedida: 'bpm' },
   { sinalVitalNome: 'Glicemia Capilar', unidadeMedida: 'mg/dL' },
@@ -13,7 +20,7 @@ const sinaisDoTicket = [
 ];
 
 test('formata os parâmetros e unidades do exemplo sem duplicar a PA', () => {
-  const result = formatarSinaisVitais({
+  const result = formatarLinhas({
     'Frequência Cardíaca (FC)': 87,
     'Glicemia Capilar': 106,
     'Pressão Arterial Diastólica (PAD)': 70,
@@ -37,17 +44,17 @@ test('formata os parâmetros e unidades do exemplo sem duplicar a PA', () => {
 test('mantém PAS e PAD identificadas individualmente quando só uma está preenchida', () => {
   const catalogo = sinaisDoTicket.slice(2, 4);
   assert.deepEqual(
-    formatarSinaisVitais({ 'Pressão Arterial Diastólica (PAD)': '', 'Pressão Arterial Sistólica (PAS)': 0 }, catalogo),
+    formatarLinhas({ 'Pressão Arterial Diastólica (PAD)': '', 'Pressão Arterial Sistólica (PAS)': 0 }, catalogo),
     [{ nome: 'Pressão Arterial Sistólica (PAS)', valor: '0 mmHg' }],
   );
   assert.deepEqual(
-    formatarSinaisVitais({ 'Pressão Arterial Diastólica (PAD)': 70 }, catalogo),
+    formatarLinhas({ 'Pressão Arterial Diastólica (PAD)': 70 }, catalogo),
     [{ nome: 'Pressão Arterial Diastólica (PAD)', valor: '70 mmHg' }],
   );
 });
 
 test('combina PA em ordem sistólica/diastólica mesmo se o catálogo vier invertido', () => {
-  const result = formatarSinaisVitais({
+  const result = formatarLinhas({
     'Pressão Arterial Diastólica (PAD)': '70',
     'Pressão Arterial Sistólica (PAS)': '90',
   }, sinaisDoTicket.slice(2, 4));
@@ -62,7 +69,7 @@ test('não confunde PAM, pressão diferencial ou medidas posturais com PAS/PAD',
     { sinalVitalNome: 'Pressão Arterial Sistólica Postural (PAS)', unidadeMedida: 'mmHg' },
     { sinalVitalNome: 'Pressão Arterial Diastólica Postural (PAD)', unidadeMedida: 'mmHg' },
   ];
-  const result = formatarSinaisVitais({
+  const result = formatarLinhas({
     'Pressão Arterial Média (PAM)': 80,
     'Pressão Diferencial (Convergência)': 20,
     'Pressão Arterial Sistólica Postural (PAS)': 90,
@@ -83,7 +90,7 @@ test('combina apenas pressões com o mesmo contexto e preserva a indicação no 
     { sinalVitalNome: 'Pressão Arterial Diastólica (PAD) — Investigação de Dengue', unidadeMedida: 'mmHg' },
   ];
   assert.deepEqual(
-    formatarSinaisVitais({
+    formatarLinhas({
       'Pressão Arterial Sistólica (PAS) — Investigação de Dengue': 90,
       'Pressão Arterial Diastólica (PAD) — Investigação de Dengue': 60,
     }, catalogo),
@@ -94,10 +101,30 @@ test('combina apenas pressões com o mesmo contexto e preserva a indicação no 
     catalogo[0],
     { sinalVitalNome: 'Pressão Arterial Diastólica (PAD)', unidadeMedida: 'mmHg' },
   ];
-  assert.equal(formatarSinaisVitais({
+  assert.equal(formatarLinhas({
     [contextosDiferentes[0].sinalVitalNome]: 90,
     [contextosDiferentes[1].sinalVitalNome]: 60,
   }, contextosDiferentes).length, 2);
+});
+
+test('não mistura contextos clínicos registrados e mantém a anotação ao unificar', () => {
+  const catalogo = sinaisDoTicket.slice(2, 4);
+  const nomes = catalogo.map(({ sinalVitalNome }) => sinalVitalNome);
+  const dados = { [nomes[0]]: 70, [nomes[1]]: 90 };
+  const contextosDiferentes = formatarSinaisVitais(dados, catalogo, {
+    [nomes[0]]: 'dengue',
+    [nomes[1]]: 'geral',
+  });
+  assert.equal(contextosDiferentes.length, 2);
+
+  const mesmoContexto = formatarSinaisVitais(dados, catalogo, {
+    [nomes[0]]: 'dengue',
+    [nomes[1]]: 'dengue',
+  });
+  assert.deepEqual(mesmoContexto.map(({ nome, valor }) => ({ nome, valor })), [
+    { nome: 'Pressão Arterial (PA)', valor: '90/70 mmHg' },
+  ]);
+  assert.equal(mesmoContexto[0].contexto, ' [Contexto clínico informado: Investigação de dengue]');
 });
 
 test('normaliza decimais inequívocos e preserva strings de formato ambíguo', () => {
@@ -105,7 +132,7 @@ test('normaliza decimais inequívocos e preserva strings de formato ambíguo', (
     { sinalVitalNome: 'Temperatura Corporal', unidadeMedida: '°C' },
     { sinalVitalNome: 'Medida legada', unidadeMedida: '' },
   ];
-  assert.deepEqual(formatarSinaisVitais({
+  assert.deepEqual(formatarLinhas({
     'Temperatura Corporal': '36.25',
     'Medida legada': '1.234',
   }, catalogo), [
@@ -121,7 +148,7 @@ test('não repete unidade incorporada no nome ou no valor e converte aliases con
     { sinalVitalNome: 'Temperatura Corporal', unidadeMedida: 'ºC' },
     { sinalVitalNome: 'Tempo de Enchimento Capilar', unidadeMedida: 'segundos' },
   ];
-  assert.deepEqual(formatarSinaisVitais({
+  assert.deepEqual(formatarLinhas({
     'Frequência Cardíaca (bpm)': '87 bpm',
     'Glicemia Capilar': '106mg/dl',
     'Temperatura Corporal': '36,1 ºC',
@@ -141,7 +168,7 @@ test('não inventa unidade para parâmetros sem unidade confiável e não altera
   };
   const original = structuredClone(processoAntigo);
 
-  assert.deepEqual(formatarSinaisVitais(processoAntigo, [
+  assert.deepEqual(formatarLinhas(processoAntigo, [
     { sinalVitalNome: 'Sinal sem unidade' },
     { sinalVitalNome: 'Sinal sem valor', unidadeMedida: 'bpm' },
   ]), [{ nome: 'Sinal sem unidade', valor: '0' }]);
@@ -150,7 +177,7 @@ test('não inventa unidade para parâmetros sem unidade confiável e não altera
 
 test('não combina leituras PA com sufixos não numéricos ou unidades conflitantes', () => {
   const catalogo = sinaisDoTicket.slice(2, 4);
-  const result = formatarSinaisVitais({
+  const result = formatarLinhas({
     'Pressão Arterial Diastólica (PAD)': '70%',
     'Pressão Arterial Sistólica (PAS)': '90 mmHg',
   }, catalogo);

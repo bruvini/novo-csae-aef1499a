@@ -305,8 +305,8 @@ const ListaPacientes: React.FC = () => {
 
   return (
     <div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="w-full max-w-full overflow-x-auto rounded-md border" role="region" aria-label="Tabela de pacientes" tabIndex={0}>
+        <Table className="min-w-[600px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

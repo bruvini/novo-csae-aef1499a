@@ -5,7 +5,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, RotateCcw, UserMinus, UserCheck, UserX } from 'lucide-react';
+import { Search, RotateCcw, UserMinus, UserCheck, UserX, Users, Clock3, Activity } from 'lucide-react';
+import { IndicadoresResumo } from '@/components/IndicadoresResumo';
+import { calcularIndicadoresUsuarios, formatarDuracaoHoras } from '@/utils/indicadoresAdministrativos';
 import { Link } from 'react-router-dom';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
@@ -15,14 +17,12 @@ import ModalEdicaoPrivilegios from '@/components/gestao-usuarios/ModalEdicaoPriv
 import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import ModalMotivoRecusa from '@/components/gestao-usuarios/ModalMotivoRecusa';
 import {
-  buscarUsuariosAguardando,
-  buscarUsuariosAprovados,
-  buscarUsuariosRecusados,
+  buscarUsuariosGestao,
   aprovarUsuario,
   editarPrivilegiosUsuario,
   recusarUsuario,
   restaurarUsuarioParaAguardando,
-  excluirUsuario
+  revogarAcessoUsuario
 } from '@/services/bancodados';
 import { Usuario } from '@/types/usuario';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +34,9 @@ const GestaoUsuarios = () => {
   const [usuariosAguardando, setUsuariosAguardando] = useState<Usuario[]>([]);
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [usuariosRecusados, setUsuariosRecusados] = useState<Usuario[]>([]);
+  const [usuariosRevogados, setUsuariosRevogados] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState(false);
   
   const [textoBusca, setTextoBusca] = useState('');
   const [filtroFormacao, setFiltroFormacao] = useState('todos');
@@ -48,17 +50,16 @@ const GestaoUsuarios = () => {
 
   const carregarUsuarios = useCallback(async () => {
     setCarregando(true);
+    setErroCarregamento(false);
     try {
-      const [aguardando, aprovados, recusados] = await Promise.all([
-        buscarUsuariosAguardando(),
-        buscarUsuariosAprovados(),
-        buscarUsuariosRecusados()
-      ]);
-      setUsuariosAguardando(aguardando);
-      setUsuariosAprovados(aprovados);
-      setUsuariosRecusados(recusados);
+      const usuarios = await buscarUsuariosGestao();
+      setUsuariosAguardando(usuarios.aguardando);
+      setUsuariosAprovados(usuarios.aprovados);
+      setUsuariosRecusados(usuarios.recusados);
+      setUsuariosRevogados(usuarios.revogados);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
+      setErroCarregamento(true);
       toast({
         title: 'Erro',
         description: 'Não foi possível carregar os usuários.',
@@ -73,7 +74,7 @@ const GestaoUsuarios = () => {
     carregarUsuarios();
   }, [carregarUsuarios]);
 
-  const filtrarUsuarios = (usuarios: Usuario[]) => {
+  const filtrarUsuarios = useCallback((usuarios: Usuario[]) => {
     return usuarios.filter(usuario => {
       const nomeCompleto = usuario.dadosPessoais?.nomeCompleto?.toLowerCase() || '';
       const matricula = usuario.dadosProfissionais?.matricula?.toLowerCase() || '';
@@ -90,17 +91,25 @@ const GestaoUsuarios = () => {
       
       return matchBusca && matchFormacao;
     });
-  };
+  }, [textoBusca, filtroFormacao]);
 
-  const aguardandoFiltrados = useMemo(() => filtrarUsuarios(usuariosAguardando), [usuariosAguardando, textoBusca, filtroFormacao]);
-  const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, textoBusca, filtroFormacao]);
-  const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, textoBusca, filtroFormacao]);
+  const aguardandoFiltrados = useMemo(() => filtrarUsuarios(usuariosAguardando), [usuariosAguardando, filtrarUsuarios]);
+  const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, filtrarUsuarios]);
+  const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, filtrarUsuarios]);
+  const revogadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRevogados), [usuariosRevogados, filtrarUsuarios]);
+
+  const metricasUsuarios = useMemo(() => calcularIndicadoresUsuarios({
+    aguardando: usuariosAguardando,
+    aprovados: usuariosAprovados,
+    recusados: usuariosRecusados,
+    revogados: usuariosRevogados,
+  }), [usuariosAguardando, usuariosAprovados, usuariosRecusados, usuariosRevogados]);
 
   const handleDetalhes = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalDetalhesAberto(true); };
   const handleAprovar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalAprovacaoAberto(true); };
   const handleEditarPrivilegios = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalEdicaoPrivilegiosAberto(true); };
   const handleRecusar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalRecusaAberto(true); };
-  const handleExcluir = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalExclusaoAberto(true); };
+  const handleRevogar = (usuario: Usuario) => { setUsuarioSelecionado(usuario); setModalExclusaoAberto(true); };
   
   const handleRestaurar = async (usuario: Usuario) => {
     if (!usuario.id) return;
@@ -159,17 +168,17 @@ const GestaoUsuarios = () => {
     }
   };
 
-  const confirmarExclusao = async () => {
-    if (!usuarioSelecionado?.id || !usuarioSelecionado?.uid) return;
+  const confirmarRevogacao = async () => {
+    if (!usuarioSelecionado?.id || !sessionData?.uid) return;
     try {
-      await excluirUsuario(usuarioSelecionado.id, usuarioSelecionado.uid);
-      toast({ title: 'Usuário excluído', description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi excluído.` });
+      await revogarAcessoUsuario(usuarioSelecionado.id, sessionData.uid);
+      toast({ title: 'Acesso revogado', description: 'O cadastro e o histórico foram preservados.' });
       setModalExclusaoAberto(false);
       setUsuarioSelecionado(null);
       carregarUsuarios();
     } catch (error) {
-      console.error('Erro ao excluir usuário:', error);
-      toast({ title: 'Erro', description: 'Não foi possível excluir o usuário.', variant: 'destructive' });
+      console.error('Falha ao revogar acesso do usuário.');
+      toast({ title: 'Erro', description: 'Não foi possível revogar o acesso. O cadastro foi preservado.', variant: 'destructive' });
     }
   };
 
@@ -188,8 +197,27 @@ const GestaoUsuarios = () => {
               <p className="text-gray-500 font-medium anim-pulse">Buscando dados no servidor...</p>
             </div>
           </div>
+        ) : erroCarregamento ? (
+          <Card className="border border-red-200 bg-red-50">
+            <CardContent className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-red-900">Não foi possível carregar os perfis.</p>
+                <p className="text-sm text-red-800">A lista não está vazia: houve uma falha na consulta. Tente novamente.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={carregarUsuarios}>
+                <RotateCcw className="mr-2 h-4 w-4" /> Tentar novamente
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <>
+            <IndicadoresResumo itens={[
+              { titulo: 'Perfis cadastrados', valor: metricasUsuarios.total, icone: <Users className="h-4 w-4" /> },
+              { titulo: 'Aguardando análise', valor: metricasUsuarios.aguardando, icone: <UserMinus className="h-4 w-4" /> },
+              { titulo: 'Aprovados', valor: metricasUsuarios.aprovados, icone: <UserCheck className="h-4 w-4" /> },
+              { titulo: 'Tempo médio de aprovação', valor: formatarDuracaoHoras(metricasUsuarios.tempoAprovacao), descricao: 'Apenas perfis com datas disponíveis', icone: <Clock3 className="h-4 w-4" /> },
+              { titulo: 'Acessos contabilizados', valor: metricasUsuarios.totalAcessos ?? '—', descricao: 'Perfis aprovados com registro', icone: <Activity className="h-4 w-4" /> },
+            ]} />
             <Card className="border-none shadow-sm h-fit">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
@@ -220,7 +248,7 @@ const GestaoUsuarios = () => {
             </Card>
 
             <Tabs defaultValue="aguardando" className="space-y-6">
-              <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-2xl grid grid-cols-3 h-12">
+              <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-4xl grid grid-cols-4 h-12">
                 <TabsTrigger value="aguardando" className="rounded-md flex items-center gap-2 font-semibold">
                   <UserMinus className="w-4 h-4" />
                   Aguardando
@@ -242,6 +270,13 @@ const GestaoUsuarios = () => {
                     {usuariosRecusados.length}
                   </span>
                 </TabsTrigger>
+                <TabsTrigger value="revogados" className="rounded-md flex items-center gap-2 font-semibold">
+                  <UserX className="w-4 h-4" />
+                  Revogados
+                  <span className="bg-slate-200 text-slate-700 text-[10px] px-2 py-0.5 rounded-full border border-slate-300">
+                    {usuariosRevogados.length}
+                  </span>
+                </TabsTrigger>
               </TabsList>
               
               <TabsContent value="aguardando" className="anim-fade-in">
@@ -251,7 +286,6 @@ const GestaoUsuarios = () => {
                   onDetalhes={handleDetalhes} 
                   onAprovar={handleAprovar} 
                   onRecusar={handleRecusar} 
-                  onExcluir={handleExcluir} 
                 />
               </TabsContent>
               <TabsContent value="aprovados" className="anim-fade-in">
@@ -259,7 +293,7 @@ const GestaoUsuarios = () => {
                   usuarios={aprovadosFiltrados} 
                   tipo="aprovados" 
                   onDetalhes={handleDetalhes} 
-                  onExcluir={isAdmin ? handleExcluir : undefined} 
+                  onRevogar={isAdmin ? handleRevogar : undefined}
                   onEditarPrivilegios={isAdmin ? handleEditarPrivilegios : undefined} 
                 />
               </TabsContent>
@@ -268,7 +302,14 @@ const GestaoUsuarios = () => {
                   usuarios={recusadosFiltrados} 
                   tipo="recusados" 
                   onDetalhes={handleDetalhes} 
-                  onExcluir={handleExcluir} 
+                  onRestaurar={handleRestaurar}
+                />
+              </TabsContent>
+              <TabsContent value="revogados" className="anim-fade-in">
+                <TabelaUsuarios
+                  usuarios={revogadosFiltrados}
+                  tipo="revogados"
+                  onDetalhes={handleDetalhes}
                   onRestaurar={handleRestaurar}
                 />
               </TabsContent>
@@ -299,7 +340,7 @@ const GestaoUsuarios = () => {
         <ModalConfirmacaoExclusao 
           isOpen={modalExclusaoAberto} 
           onClose={() => { setModalExclusaoAberto(false); setUsuarioSelecionado(null); }} 
-          onConfirm={confirmarExclusao} 
+          onConfirm={confirmarRevogacao}
           nomeUsuario={usuarioSelecionado?.dadosPessoais?.nomeCompleto || ''} 
         />
         

@@ -1,3 +1,9 @@
+import {
+  contextoRegistradoParaTexto,
+  familiaPressaoArterial as identificarFamiliaPressaoArterial,
+  normalizarNomeClinico,
+} from './referenciasClinicas';
+
 export type ValorSinalVital = string | number | null | undefined;
 
 export interface SinalVitalParaApresentacao {
@@ -8,10 +14,12 @@ export interface SinalVitalParaApresentacao {
 export interface SinalVitalApresentado {
   nome: string;
   valor: string;
+  origens: string[];
+  contexto?: string;
 }
 
 interface FamiliaPressaoArterial {
-  medida: 'sistolica' | 'diastolica';
+  medida: 'pas' | 'pad';
   chave: string;
   contexto: string;
 }
@@ -134,25 +142,19 @@ function formatarValorComUnidade(
 }
 
 /**
- * Identifica somente PAS/PAD explícitas. Medidas médias, diferenciais,
- * posturais e outras derivadas permanecem como parâmetros independentes.
+ * Reutiliza a classificação clínica existente e exclui outros termos
+ * derivados antes de considerar um par para apresentação.
  */
-export function familiaPressaoArterial(nome: string): FamiliaPressaoArterial | null {
+function familiaPressaoArterialDoCatalogo(nome: string): FamiliaPressaoArterial | null {
   const normalizado = normalizarTexto(nome);
-  if (/\b(media|pam|diferencial|pulso|postural|ortostatica|ortostatismo|convergencia|convergente)\b/.test(normalizado)) {
+  if (/\b(queda|diferencial|pulso|postural|ortostatica|ortostatismo|convergencia|convergente|media|pam)\b/.test(normalizado)) {
     return null;
   }
 
-  const temSistolica = /\bsistolica\b/.test(normalizado);
-  const temDiastolica = /\bdiastolica\b/.test(normalizado);
-  const temPAS = /\bpas\b/.test(normalizado);
-  const temPAD = /\bpad\b/.test(normalizado);
-  const sistolica = temSistolica || temPAS;
-  const diastolica = temDiastolica || temPAD;
+  const medida = identificarFamiliaPressaoArterial(nome);
+  if (!medida) return null;
 
-  if (sistolica === diastolica) return null;
-
-  const contextoNormalizado = normalizado
+  const contextoNormalizado = normalizarNomeClinico(nome)
     .replace(/\bpressao\s+arterial\b/g, ' ')
     .replace(/\bpressao\b/g, ' ')
     .replace(/\bpa\b/g, ' ')
@@ -170,7 +172,7 @@ export function familiaPressaoArterial(nome: string): FamiliaPressaoArterial | n
     .trim();
 
   return {
-    medida: sistolica ? 'sistolica' : 'diastolica',
+    medida,
     chave: contextoNormalizado,
     contexto,
   };
@@ -189,29 +191,32 @@ function valorNumericoParaPA(valor: ValorSinalVital, unidade: string): string | 
 export function formatarSinaisVitais(
   exameFisico: Record<string, ValorSinalVital>,
   catalogo: SinalVitalParaApresentacao[],
+  contextosParametros?: Record<string, string>,
 ): SinalVitalApresentado[] {
   const preenchidos = catalogo.flatMap((sinal, indice) => {
     const valor = exameFisico[sinal.sinalVitalNome];
     const formatado = formatarValorComUnidade(valor, sinal.sinalVitalNome, sinal.unidadeMedida);
     if (formatado === null) return [];
 
-    return [{ sinal, indice, valor, formatado, familia: familiaPressaoArterial(sinal.sinalVitalNome) }];
+    return [{ sinal, indice, valor, formatado, familia: familiaPressaoArterialDoCatalogo(sinal.sinalVitalNome) }];
   });
 
-  const gruposPA = new Map<string, { sistolicas: typeof preenchidos; diastolicas: typeof preenchidos }>();
+  const gruposPA = new Map<string, { pas: typeof preenchidos; pad: typeof preenchidos }>();
   preenchidos.forEach((item) => {
     if (!item.familia || unidadeApresentavel(item.sinal.unidadeMedida) !== 'mmHg') return;
-    const grupo = gruposPA.get(item.familia.chave) ?? { sistolicas: [], diastolicas: [] };
-    grupo[item.familia.medida === 'sistolica' ? 'sistolicas' : 'diastolicas'].push(item);
-    gruposPA.set(item.familia.chave, grupo);
+    const contexto = contextosParametros?.[item.sinal.sinalVitalNome]?.trim() ?? '';
+    const chaveGrupo = `${item.familia.chave}|${contexto}`;
+    const grupo = gruposPA.get(chaveGrupo) ?? { pas: [], pad: [] };
+    grupo[item.familia.medida].push(item);
+    gruposPA.set(chaveGrupo, grupo);
   });
 
   const pares = new Map<number, SinalVitalApresentado>();
   const pareados = new Set<number>();
-  gruposPA.forEach(({ sistolicas, diastolicas }) => {
-    if (sistolicas.length !== 1 || diastolicas.length !== 1) return;
-    const sistolica = sistolicas[0];
-    const diastolica = diastolicas[0];
+  gruposPA.forEach(({ pas, pad }) => {
+    if (pas.length !== 1 || pad.length !== 1) return;
+    const sistolica = pas[0];
+    const diastolica = pad[0];
     const valorSistolico = valorNumericoParaPA(sistolica.valor, sistolica.sinal.unidadeMedida ?? '');
     const valorDiastolico = valorNumericoParaPA(diastolica.valor, diastolica.sinal.unidadeMedida ?? '');
     if (valorSistolico === null || valorDiastolico === null) return;
@@ -219,7 +224,13 @@ export function formatarSinaisVitais(
     const primeiro = sistolica.indice < diastolica.indice ? sistolica : diastolica;
     const contexto = sistolica.familia?.contexto || diastolica.familia?.contexto;
     const nome = `Pressão Arterial (PA)${contexto ? ` — ${contexto}` : ''}`;
-    pares.set(primeiro.indice, { nome, valor: `${valorSistolico}/${valorDiastolico} mmHg` });
+    const contextoClinico = contextoRegistradoParaTexto(contextosParametros, sistolica.sinal.sinalVitalNome);
+    pares.set(primeiro.indice, {
+      nome,
+      valor: `${valorSistolico}/${valorDiastolico} mmHg`,
+      origens: [sistolica.sinal.sinalVitalNome, diastolica.sinal.sinalVitalNome],
+      ...(contextoClinico ? { contexto: contextoClinico } : {}),
+    });
     pareados.add(primeiro.indice);
     pareados.add(primeiro === sistolica ? diastolica.indice : sistolica.indice);
   });
@@ -229,9 +240,12 @@ export function formatarSinaisVitais(
       const par = pares.get(item.indice);
       return par ? [par] : [];
     }
+    const contexto = contextoRegistradoParaTexto(contextosParametros, item.sinal.sinalVitalNome);
     return [{
       nome: item.sinal.sinalVitalNome,
       valor: item.formatado,
+      origens: [item.sinal.sinalVitalNome],
+      ...(contexto ? { contexto } : {}),
     }];
   });
 }

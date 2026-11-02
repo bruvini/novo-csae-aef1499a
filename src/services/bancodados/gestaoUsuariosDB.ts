@@ -6,81 +6,65 @@ import {
   where, 
   doc,
   updateDoc,
-  deleteDoc,
+  getDoc,
   serverTimestamp,
-  orderBy,
   getAggregateFromServer,
   sum,
   count
 } from 'firebase/firestore';
-import { deleteUser } from 'firebase/auth';
-import { db, auth } from '../firebase';
+import { db } from '../firebase';
+import { calcularTempoAtivoSegundos, type ProcessoComTempo } from '@/utils/tempoProcesso';
 import { Usuario } from '@/types/usuario';
+import { agruparStatusCadastro, ordenarPerfisPorDataCadastro } from '@/utils/registrationData';
+
+export interface UsuariosGestao {
+  aguardando: Usuario[];
+  aprovados: Usuario[];
+  recusados: Usuario[];
+  revogados: Usuario[];
+}
+
+export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'usuarios'));
+    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [], revogados: [] };
+
+    querySnapshot.forEach((doc) => {
+      const data = { ...doc.data(), id: doc.id } as Usuario;
+      if ((data.statusAcesso || '').toLowerCase() === 'revogado') {
+        usuarios.revogados.push(data);
+        return;
+      }
+      const status = agruparStatusCadastro(data.statusAcesso);
+      // Status ausentes/desconhecidos ficam visíveis para revisão manual;
+      // isso não altera o status nem libera acesso automaticamente.
+      if (status === 'Aguardando' || status === 'Status não identificado') usuarios.aguardando.push(data);
+      else if (status === 'Liberado') usuarios.aprovados.push(data);
+      else if (status === 'Recusado') usuarios.recusados.push(data);
+    });
+
+    return {
+      aguardando: ordenarPerfisPorDataCadastro(usuarios.aguardando),
+      aprovados: ordenarPerfisPorDataCadastro(usuarios.aprovados),
+      recusados: ordenarPerfisPorDataCadastro(usuarios.recusados),
+      revogados: ordenarPerfisPorDataCadastro(usuarios.revogados),
+    };
+  } catch (error) {
+    console.error("Falha na leitura dos perfis da Gestão de Usuários.");
+    throw error;
+  }
+}
 
 export async function buscarUsuariosAguardando(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Aguardando'
-      if (status === 'aguardando' || status === 'pendente' || status === '') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários aguardando:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).aguardando;
 }
 
 export async function buscarUsuariosAprovados(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Liberado' ou 'Aprovado'
-      if (status === 'liberado' || status === 'aprovado') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários aprovados:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).aprovados;
 }
 
 export async function buscarUsuariosRecusados(): Promise<Usuario[]> {
-  try {
-    const q = query(collection(db, 'usuarios'), orderBy('dataCadastro', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    const usuarios: Usuario[] = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data() as Usuario;
-      const status = (data.statusAcesso || '').toLowerCase();
-      // Capturar variantes de 'Recusado' ou 'Rejeitado'
-      if (status === 'recusado' || status === 'rejeitado') {
-        usuarios.push({ ...data, id: doc.id });
-      }
-    });
-    
-    return usuarios;
-  } catch (error) {
-    console.error("Erro ao buscar usuários recusados:", error);
-    return [];
-  }
+  return (await buscarUsuariosGestao()).recusados;
 }
 
 export async function aprovarUsuario(
@@ -156,12 +140,25 @@ export async function restaurarUsuarioParaAguardando(userId: string): Promise<vo
   }
 }
 
-export async function excluirUsuario(userId: string, uid: string): Promise<void> {
+export async function revogarAcessoUsuario(userId: string, revogadoPorUid: string): Promise<void> {
+  if (!revogadoPorUid || userId === revogadoPorUid) {
+    throw new Error('Não é permitido revogar a própria conta.');
+  }
+
   try {
     const userRef = doc(db, 'usuarios', userId);
-    await deleteDoc(userRef);
+    const target = await getDoc(userRef);
+    if (!target.exists()) throw new Error('Perfil não encontrado para revogação.');
+    if (target.data().ehAdmin === true) {
+      throw new Error('A revogação de uma conta administradora exige revisão assistida.');
+    }
+    await updateDoc(userRef, {
+      statusAcesso: 'Revogado',
+      dataRevogacao: serverTimestamp(),
+      revogadoPorUid,
+    });
   } catch (error) {
-    console.error("Erro ao excluir usuário:", error);
+    console.error("Falha ao revogar acesso do usuário.");
     throw error;
   }
 }
@@ -171,12 +168,14 @@ export async function buscarEstatisticasGlobais(): Promise<{
   processosAndamento: number;
   processosConcluidos: number;
   totalAcessosPlataforma: number;
+  totalTempoProcessosMinutos: number;
 }> {
   try {
     let aprovados = 0;
     let totalAcessosPlataforma = 0;
     let andamento = 0;
     let concluidos = 0;
+    let tempoTotalSegundos = 0;
 
     // 1. Contar profissionais aprovados e somar acessos via Iteração Client-side (visto flutuação na base)
     try {
@@ -201,11 +200,13 @@ export async function buscarEstatisticasGlobais(): Promise<{
       
       processosSnap.forEach(doc => {
         const data = doc.data();
-        const processos = data.processosEnfermagem || [];
-        processos.forEach((p: any) => {
-          if (p.status === 'concluido') {
+        const processos: unknown[] = Array.isArray(data.processosEnfermagem) ? data.processosEnfermagem : [];
+        processos.forEach((processo) => {
+          if (typeof processo !== 'object' || processo === null || !('status' in processo)) return;
+          tempoTotalSegundos += calcularTempoAtivoSegundos(processo as ProcessoComTempo);
+          if (processo.status === 'concluido') {
             concluidos++;
-          } else if (p.status === 'em_andamento') {
+          } else if (processo.status === 'em_andamento') {
             andamento++;
           }
         });
@@ -218,7 +219,8 @@ export async function buscarEstatisticasGlobais(): Promise<{
       profissionaisAprovados: aprovados,
       processosAndamento: andamento,
       processosConcluidos: concluidos,
-      totalAcessosPlataforma
+      totalAcessosPlataforma,
+      totalTempoProcessosMinutos: Math.round(tempoTotalSegundos / 60)
     };
   } catch (error) {
     console.error("Erro critico ao buscar estatísticas globais:", error);
@@ -226,7 +228,8 @@ export async function buscarEstatisticasGlobais(): Promise<{
       profissionaisAprovados: 0,
       processosAndamento: 0,
       processosConcluidos: 0,
-      totalAcessosPlataforma: 0
+      totalAcessosPlataforma: 0,
+      totalTempoProcessosMinutos: 0
     };
   }
 }

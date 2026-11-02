@@ -13,15 +13,15 @@ import { Badge } from '@/components/ui/badge';
 import { Usuario } from '@/types/usuario';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, Check, X, Trash2, Settings, Undo } from 'lucide-react';
+import { Eye, Check, X, UserX, Settings, Undo } from 'lucide-react';
 
 interface TabelaUsuariosProps {
   usuarios: Usuario[];
-  tipo: 'aguardando' | 'aprovados' | 'recusados';
+  tipo: 'aguardando' | 'aprovados' | 'recusados' | 'revogados';
   onDetalhes: (usuario: Usuario) => void;
   onAprovar?: (usuario: Usuario) => void;
   onRecusar?: (usuario: Usuario) => void;
-  onExcluir?: (usuario: Usuario) => void;
+  onRevogar?: (usuario: Usuario) => void;
   onEditarPrivilegios?: (usuario: Usuario) => void;
   onRestaurar?: (usuario: Usuario) => void;
 }
@@ -32,14 +32,22 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
   onDetalhes,
   onAprovar,
   onRecusar,
-  onExcluir,
+  onRevogar,
   onEditarPrivilegios,
   onRestaurar
 }) => {
-  const formatarData = (timestamp: any) => {
+  const formatarData = (timestamp: unknown) => {
     if (!timestamp) return 'Não informado';
     try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      const date = timestamp instanceof Date
+        ? timestamp
+        : typeof timestamp === 'string' || typeof timestamp === 'number'
+          ? new Date(timestamp)
+          : typeof timestamp === 'object' && 'toDate' in timestamp
+            && typeof timestamp.toDate === 'function'
+            ? (timestamp as { toDate: () => Date }).toDate()
+            : null;
+      if (!date || Number.isNaN(date.getTime())) return 'Data inválida';
       return format(date, 'dd/MM/yyyy HH:mm', { locale: ptBR });
     } catch {
       return 'Data inválida';
@@ -57,7 +65,8 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
     const mensagens = {
       aguardando: 'Nenhum usuário aguardando aprovação',
       aprovados: 'Nenhum usuário aprovado encontrado',
-      recusados: 'Nenhum usuário recusado encontrado'
+      recusados: 'Nenhum usuário recusado encontrado',
+      revogados: 'Nenhum usuário com acesso revogado'
     };
     return (
       <div className="text-center py-8 text-gray-500">
@@ -78,6 +87,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
             {tipo === 'aprovados' && <TableHead className="font-bold">Último Acesso</TableHead>}
             {tipo === 'aprovados' && <TableHead className="font-bold">Data de Aprovação</TableHead>}
             {tipo === 'recusados' && <TableHead className="font-bold">Data de Recusa</TableHead>}
+            {tipo === 'revogados' && <TableHead className="font-bold">Data de Revogação</TableHead>}
             {tipo === 'recusados' && <TableHead className="font-bold">Motivo da Recusa</TableHead>}
             <TableHead className="text-right font-bold w-[250px]">Ações</TableHead>
           </TableRow>
@@ -106,7 +116,9 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                   ? formatarData(usuario.dataAprovacao || usuario.dataCadastro)
                   : tipo === 'recusados'
                     ? formatarData(usuario.dataRecusa || usuario.dataCadastro)
-                    : formatarData(usuario.dataCadastro)
+                    : tipo === 'revogados'
+                      ? formatarData(usuario.dataRevogacao || usuario.dataCadastro)
+                      : formatarData(usuario.dataCadastro)
                 }
               </TableCell>
               {tipo === 'recusados' && (
@@ -164,7 +176,7 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     </Button>
                   )}
 
-                  {tipo === 'recusados' && onRestaurar && (
+                  {(tipo === 'recusados' || tipo === 'revogados') && onRestaurar && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -176,16 +188,16 @@ const TabelaUsuarios: React.FC<TabelaUsuariosProps> = ({
                     </Button>
                   )}
                   
-                  {onExcluir && (
+                  {tipo === 'aprovados' && onRevogar && !usuario.ehAdmin && (
                     <Button
                       variant="destructive"
                       size="sm"
                       className="h-8 px-2"
-                      onClick={() => onExcluir(usuario)}
-                      title="Excluir permanentemente"
+                      onClick={() => onRevogar(usuario)}
+                      title="Revogar acesso sem apagar o cadastro"
                     >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Excluir</span>
+                      <UserX className="h-4 w-4" />
+                      <span className="sr-only">Revogar acesso</span>
                     </Button>
                   )}
                 </div>

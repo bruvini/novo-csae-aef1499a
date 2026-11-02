@@ -1,0 +1,66 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
+    }
+
+    function approved() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
+        && profile().statusAcesso in ['Aprovado', 'Liberado'];
+    }
+
+    function admin() {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
+        && profile().statusAcesso in ['Aprovado', 'Liberado']
+        && profile().ehAdmin == true;
+    }
+
+    function contentManager() {
+      return admin() || (approved()
+        && profile().gestorConteudos == true
+        && 'paginasPermitidas' in profile()
+        && profile().paginasPermitidas is list
+        && 'GestaoConteudos' in profile().paginasPermitidas);
+    }
+
+    function canReadClinicalFiles() {
+      return admin() || (approved()
+        && ((!('paginasPermitidas' in profile())
+            || (profile().paginasPermitidas is list && profile().paginasPermitidas.size() == 0))
+          || ('paginasPermitidas' in profile()
+            && profile().paginasPermitidas is list
+            && 'ProcessoEnfermagem' in profile().paginasPermitidas)));
+    }
+
+    function validProtocolFile() {
+      return request.resource.size < 15 * 1024 * 1024
+        && request.resource.contentType.matches('application/pdf|image/(jpeg|png|webp)');
+    }
+
+    match /materiais-apoio/{diagnosticoId}/{interventionIndex}/{fileName} {
+      allow read: if canReadClinicalFiles();
+      allow create, update: if contentManager() && validProtocolFile();
+      allow delete: if contentManager();
+    }
+
+    match /protocolos/{fileName} {
+      allow read: if canReadClinicalFiles();
+      allow create, update: if contentManager()
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if contentManager();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

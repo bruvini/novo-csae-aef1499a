@@ -6,13 +6,13 @@ import { auth, db } from '@/services/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import { useAuth } from '@/contexts/AuthContext';
 import HeroBanner from '@/components/HeroBanner';
 import NavigationCards from '@/components/NavigationCards';
 import ModalHistoricoChangelog from '@/components/ModalHistoricoChangelog';
+import { assinarChangelogsRecentes } from '@/services/bancodados/changelogDB';
 import {
   buscarEstatisticasGlobais,
-  buscarChangelogsRecentes,
-  seedChangelogCompleto,
   type Changelog,
 } from '@/services/bancodados';
 
@@ -26,12 +26,14 @@ function formatarDataHora(ts: Timestamp | undefined): string {
 
 // ── Dashboard ────────────────────────────────────────────────
 const Dashboard = () => {
+  const { sessionData } = useAuth();
   const [userData, setUserData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number } | null>(null);
+  const [stats, setStats] = useState<{ profissionaisAprovados: number; processosAndamento: number; processosConcluidos: number; totalAcessosPlataforma: number; totalTempoProcessosMinutos: number } | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [changelogs, setChangelogs] = useState<Changelog[]>([]);
   const [changelogLoading, setChangelogLoading] = useState(true);
+  const [changelogErro, setChangelogErro] = useState(false);
   const [changelogModalOpen, setChangelogModalOpen] = useState(false);
 
   useEffect(() => {
@@ -48,29 +50,35 @@ const Dashboard = () => {
 
       // ── Estatísticas ────────────────────────────────────────
       try {
-        const globalStats = await buscarEstatisticasGlobais();
-        setStats(globalStats);
+        if (sessionData?.ehAdmin === true) {
+          const globalStats = await buscarEstatisticasGlobais();
+          setStats(globalStats);
+        }
       } catch (error) {
         console.error('Erro ao buscar estatísticas:', error);
       } finally {
         setStatsLoading(false);
       }
 
-      // ── Changelogs ──────────────────────────────────────────
-      // Fluxo sequencial: seed idempotente → buscar → exibir.
-      // Não depende de localStorage; deduplicação feita por título no Firestore.
-      try {
-        await seedChangelogCompleto();
-        const logs = await buscarChangelogsRecentes();
-        setChangelogs(logs);
-      } catch (error) {
-        console.error('Erro ao carregar changelogs:', error);
-      } finally {
-        setChangelogLoading(false);
-      }
     };
 
     fetchDashboardData();
+  }, [sessionData?.ehAdmin]);
+
+  useEffect(() => {
+    const unsubscribe = assinarChangelogsRecentes(
+      (novos) => {
+        setChangelogs(novos);
+        setChangelogErro(false);
+        setChangelogLoading(false);
+      },
+      (error) => {
+        console.error('Erro ao acompanhar changelogs:', error);
+        setChangelogErro(true);
+        setChangelogLoading(false);
+      },
+    );
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -120,6 +128,10 @@ const Dashboard = () => {
                   <div className="flex items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-csae-green-600"></div>
                   </div>
+                ) : changelogErro ? (
+                  <p role="alert" className="text-sm text-rose-600 text-center py-8">
+                    Não foi possível atualizar o mural. Verifique sua conexão ou permissão de acesso e recarregue a página.
+                  </p>
                 ) : changelogs.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-12">
                     Nenhuma atualização registrada.

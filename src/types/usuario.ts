@@ -42,12 +42,14 @@ export interface Usuario {
   ehAdmin: boolean;
   gestorConteudos: boolean;
   tipoUsuario: 'Comum' | 'Admin' | 'Administrador';
-  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado' | 'Rejeitado';
+  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado' | 'Rejeitado' | 'Revogado';
   paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
   totalAcessos?: number;
   ultimoAcesso?: Timestamp;
   dataCadastro?: Timestamp;
   dataRecusa?: Timestamp;
+  dataRevogacao?: Timestamp;
+  revogadoPorUid?: string;
   dataAprovacao?: Timestamp;
   dataRestauracao?: Timestamp;
   dataRecusaAcesso?: Timestamp;

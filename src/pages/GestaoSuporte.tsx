@@ -20,7 +20,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Headphones, Lightbulb, BarChart2, CheckCircle2, MessageSquare, Eye, Star } from 'lucide-react';
+import { Headphones, Lightbulb, BarChart2, CheckCircle2, MessageSquare, Eye, Star, Clock3 } from 'lucide-react';
+import { IndicadoresResumo } from '@/components/IndicadoresResumo';
+import { calcularIndicadoresTickets, calcularIndicadoresSugestoes, formatarDuracaoHoras } from '@/utils/indicadoresAdministrativos';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Timestamp } from 'firebase/firestore';
@@ -224,6 +226,10 @@ const GestaoSuporte = () => {
     }
   };
 
+  // Indicadores administrativos sobre os mesmos registros exibidos nas tabelas.
+  const metricasTickets = calcularIndicadoresTickets(tickets);
+  const metricasSugestoes = calcularIndicadoresSugestoes(sugestoes);
+
   // ── NPS metrics
   const mediaGeral = media(avaliacoes.map((a) => a.notaGeral));
   const mediaUsabilidade = media(avaliacoes.map((a) => a.notaUsabilidade));
@@ -268,6 +274,13 @@ const GestaoSuporte = () => {
 
           {/* ─── ABA 1: Tickets ──────────────────────────────── */}
           <TabsContent value="tickets">
+            <IndicadoresResumo carregando={carregandoTickets} itens={[
+              { titulo: 'Total de tickets', valor: metricasTickets.total, icone: <Headphones className="h-4 w-4" /> },
+              { titulo: 'Abertos', valor: metricasTickets.abertos, icone: <MessageSquare className="h-4 w-4" /> },
+              { titulo: 'Resolvidos', valor: metricasTickets.resolvidos, icone: <CheckCircle2 className="h-4 w-4" /> },
+              { titulo: 'Não visualizados', valor: metricasTickets.semLeitura, icone: <Eye className="h-4 w-4" /> },
+              { titulo: 'Tempo médio de resolução', valor: formatarDuracaoHoras(metricasTickets.tempoResolucao), descricao: 'Somente tickets com datas completas', icone: <Clock3 className="h-4 w-4" /> },
+            ]} />
             <Card className="border-none shadow-sm">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">
@@ -344,6 +357,13 @@ const GestaoSuporte = () => {
 
           {/* ─── ABA 2: Sugestões ────────────────────────────── */}
           <TabsContent value="sugestoes">
+            <IndicadoresResumo carregando={carregandoSugestoes} itens={[
+              { titulo: 'Total de sugestões', valor: metricasSugestoes.total, icone: <Lightbulb className="h-4 w-4" /> },
+              { titulo: 'Aguardando resposta', valor: metricasSugestoes.pendentes, icone: <MessageSquare className="h-4 w-4" /> },
+              { titulo: 'Respondidas', valor: metricasSugestoes.respondidas, icone: <CheckCircle2 className="h-4 w-4" /> },
+              { titulo: 'Não visualizadas', valor: metricasSugestoes.semLeitura, icone: <Eye className="h-4 w-4" /> },
+              { titulo: 'Tempo médio de resposta', valor: formatarDuracaoHoras(metricasSugestoes.tempoResposta), descricao: 'Somente sugestões com datas completas', icone: <Clock3 className="h-4 w-4" /> },
+            ]} />
             <Card className="border-none shadow-sm">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg text-slate-700">

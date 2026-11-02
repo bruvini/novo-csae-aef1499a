@@ -62,23 +62,30 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   }, [diagnosticosDetalhados]);
 
   useEffect(() => {
-    // Inicializar diagnosticosPriorizados com base nos diagnósticos selecionados
-    if (processo.diagnostico.diagnosticosSelecionados.length > 0 && diagnosticosPriorizados.length === 0) {
-      const diagnosticosIniciais = processo.diagnostico.diagnosticosSelecionados.map((diag, index) => ({
-        diagnosticoId: diag.id,
-        tituloDiagnostico: diag.tituloDiagnostico,
-        ordemPrioridade: index + 1,
-        intervencoesSelecionadas: []
-      }));
-
-      // Se já existe planejamento salvo, usar esses dados
-      if (processo.planejamento?.diagnosticosPlanejados?.length > 0) {
-        setDiagnosticosPrivorizados(processo.planejamento.diagnosticosPlanejados);
-      } else {
-        setDiagnosticosPrivorizados(diagnosticosIniciais);
-      }
+    // Alinhar cada diagnóstico escolhido à sua linha de planejamento.
+    // Preserva as seleções antigas, adiciona os novos e ignora diagnósticos
+    // removidos, inclusive após reabrir o processo.
+    const selecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
+    const salvos = processo.planejamento?.diagnosticosPlanejados ?? [];
+    const alinhados = selecionados.map((diag, index) => {
+      const salvo = salvos.find((item) => item.diagnosticoId === diag.id);
+      return salvo
+        ? { ...salvo, tituloDiagnostico: diag.tituloDiagnostico }
+        : {
+            diagnosticoId: diag.id,
+            tituloDiagnostico: diag.tituloDiagnostico,
+            ordemPrioridade: index + 1,
+            intervencoesSelecionadas: [],
+          };
+    });
+    setDiagnosticosPrivorizados(alinhados);
+    if (
+      alinhados.length !== salvos.length
+      || alinhados.some((diag, index) => diag.diagnosticoId !== salvos[index]?.diagnosticoId)
+    ) {
+      onUpdatePlanejamento({ diagnosticosPlanejados: alinhados });
     }
-  }, [processo.diagnostico.diagnosticosSelecionados, processo.planejamento, diagnosticosPriorizados.length]);
+  }, [processo.diagnostico?.diagnosticosSelecionados, processo.planejamento?.diagnosticosPlanejados]);
 
   const handleDragEnd = (result: unknown) => {
     const res = result as { destination: any; source: any };
@@ -99,9 +106,17 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   };
 
   const handleResultadoChange = (diagnosticoId: string, resultado: string) => {
-    const updated = diagnosticosPriorizados.map(diag => 
-      diag.diagnosticoId === diagnosticoId 
-        ? { ...diag, resultadoEsperadoSelecionado: resultado }
+    const updated = diagnosticosPriorizados.map(diag =>
+      diag.diagnosticoId === diagnosticoId
+        ? {
+            ...diag,
+            resultadoEsperadoSelecionado: resultado,
+            // Intervenções do resultado anterior não devem ser mantidas
+            // quando o enfermeiro altera o resultado esperado.
+            intervencoesSelecionadas: diag.resultadoEsperadoSelecionado === resultado
+              ? diag.intervencoesSelecionadas
+              : (diag.intervencoesSelecionadas ?? []).filter((item) => item.tipo === 'autoral'),
+          }
         : diag
     );
     setDiagnosticosPrivorizados(updated);
@@ -111,19 +126,12 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   const handleIntervencaoChange = (diagnosticoId: string, acaoPrescrita: string, acaoEnfermeiro: string | undefined, checked: boolean) => {
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
-        const intervencoes = diag.intervencoesSelecionadas || [];
-        if (checked) {
-          // Adicionar intervenção se não existir
-          if (!intervencoes.some(i => i.acaoPrescrita === acaoPrescrita)) {
-            intervencoes.push({ acaoPrescrita, acaoEnfermeiro, tipo: 'padrao' });
-          }
-        } else {
-          // Remover intervenção
-          const index = intervencoes.findIndex(i => i.acaoPrescrita === acaoPrescrita);
-          if (index > -1) {
-            intervencoes.splice(index, 1);
-          }
-        }
+        const anteriores = diag.intervencoesSelecionadas ?? [];
+        const intervencoes = checked
+          ? anteriores.some((item) => item.acaoPrescrita === acaoPrescrita)
+            ? anteriores
+            : [...anteriores, { acaoPrescrita, acaoEnfermeiro, tipo: 'padrao' as const }]
+          : anteriores.filter((item) => item.acaoPrescrita !== acaoPrescrita || item.tipo !== 'padrao');
         return { ...diag, intervencoesSelecionadas: intervencoes };
       }
       return diag;
@@ -138,9 +146,12 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
 
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
-        const intervencoes = diag.intervencoesSelecionadas || [];
-        intervencoes.push({ acaoPrescrita: texto, tipo: 'autoral' });
-        return { ...diag, intervencoesSelecionadas: intervencoes };
+        const intervencoes = diag.intervencoesSelecionadas ?? [];
+        if (intervencoes.some((item) => item.tipo === 'autoral' && item.acaoPrescrita === texto)) return diag;
+        return {
+          ...diag,
+          intervencoesSelecionadas: [...intervencoes, { acaoPrescrita: texto, tipo: 'autoral' as const }],
+        };
       }
       return diag;
     });

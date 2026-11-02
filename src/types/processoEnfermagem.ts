@@ -24,6 +24,8 @@ export interface AvaliacaoEnfermagem {
       valorTexto: string;
     };
   };
+  /** Contexto selecionado pelo enfermeiro por parâmetro, sem presumir gestação ou DM. */
+  contextosParametros?: Record<string, string>;
   nhbsAfetadas: { parametro: string; nhb: string }[];
 }
 

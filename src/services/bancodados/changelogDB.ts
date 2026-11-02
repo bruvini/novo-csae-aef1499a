@@ -8,6 +8,7 @@ import {
   where,
   Timestamp,
   serverTimestamp,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
@@ -29,6 +30,18 @@ export async function buscarChangelogsRecentes(): Promise<Changelog[]> {
     id: doc.id,
     ...doc.data(),
   })) as Changelog[];
+}
+
+// Recebe novas publicações sem depender de recarregar o Dashboard.
+export function assinarChangelogsRecentes(
+  onData: (changes: Changelog[]) => void,
+  onError: (error: Error) => void,
+): () => void {
+  const ref = collection(db, 'changelogs');
+  const q = query(ref, orderBy('dataHora', 'desc'), limit(10));
+  return onSnapshot(q, (snapshot) => {
+    onData(snapshot.docs.map((item) => ({ id: item.id, ...item.data() })) as Changelog[]);
+  }, onError);
 }
 
 // ─── Buscar TODOS os changelogs (para modal de histórico) ──────────────────
@@ -186,6 +199,26 @@ const CHANGELOGS_SISTEMA: { titulo: string; descricao: string; dataHora?: Timest
     titulo: 'Footer Institucional Atualizado',
     descricao:
       'Atualizamos o rodapé do Portal com novos canais de suporte clínico e técnico, os perfis oficiais no Instagram, informações completas da CSAE e créditos de desenvolvimento e idealização. Os conteúdos de Termos, LGPD e Política de Privacidade estão sendo preparados e serão disponibilizados em breve.',
+  },
+  {
+    titulo: 'Indicadores Administrativos e Sugestões Clínicas Mais Organizadas',
+    descricao:
+      'As telas de Gestão de Suporte e Gestão de Usuários agora apresentam painéis com quantitativos e tempos médios calculados a partir dos registros disponíveis. Quando uma data necessária não está registrada, o tempo aparece como não disponível. Também ampliamos a aba Sugerir Melhoria: agora você pode propor diagnósticos, resultados esperados, intervenções e parâmetros de exame físico. Todas as propostas clínicas serão avaliadas pela CSAE conforme os protocolos municipais e as atribuições profissionais.',
+  },
+  {
+    titulo: 'Aprimoramento da Navegação entre Diagnóstico e Planejamento',
+    descricao:
+      'Aprimoramos a passagem entre as etapas do Processo de Enfermagem. Agora o Portal reconhece imediatamente os diagnósticos, resultados esperados e intervenções selecionados, evitando bloqueios indevidos. Também ajustamos o planejamento para preservar as escolhas e indicar com mais clareza quando ainda há algum campo obrigatório pendente. A atualização não altera os registros clínicos já salvos.',
+  },
+  {
+    titulo: 'Mais Espaço para Indicadores e Pacientes no Processo de Enfermagem',
+    descricao:
+      'A tela do Processo de Enfermagem ficou mais prática: as orientações iniciais foram reorganizadas em um painel compacto, sem perder os fundamentos e as cinco etapas. O Dashboard e a lista de pacientes voltaram a ocupar toda a largura disponível. A visualização se adapta automaticamente a computadores, tablets e celulares, sem alterar dados ou registros assistenciais.',
+  },
+  {
+    titulo: 'Processo de Enfermagem com Layout Mais Amplo e Responsivo',
+    descricao:
+      'Aproveitamos melhor o espaço da tela do Processo de Enfermagem. Em computadores, a explicação das etapas agora aparece ao lado do Dashboard e da lista de pacientes, facilitando o acompanhamento das informações. Em tablets e celulares, a organização se adapta automaticamente à largura disponível, mantendo os botões e a tabela acessíveis. A melhoria é visual e não altera os dados nem os registros dos pacientes.',
   },
   {
     titulo: 'Dashboard mais limpo e organizado',

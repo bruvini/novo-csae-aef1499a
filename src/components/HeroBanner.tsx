@@ -1,9 +1,12 @@
+import { formatarTempoRegistrado } from '@/utils/tempoProcesso';
+
 interface HeroBannerProps {
   stats?: {
     profissionaisAprovados: number;
     processosAndamento: number;
     processosConcluidos: number;
     totalAcessosPlataforma: number;
+    totalTempoProcessosMinutos: number;
   };
   loading?: boolean;
 }
@@ -57,7 +60,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               Transformando o cuidado com ferramentas tecnológicas desenvolvidas especialmente para a rede municipal de Florianópolis.
             </p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-2xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
                 <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Profissionais Ativos</p>
                 <p className="text-2xl font-black text-white mt-auto">
@@ -75,6 +78,12 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
                 <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Acessos ao Portal</p>
                 <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.totalAcessosPlataforma || 0}
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full" title="Soma do tempo efetivamente registrado nas sessões encerradas do Processo de Enfermagem. Não inclui períodos sem atividade registrada.">
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Tempo de uso do PE</p>
+                <p className="text-xl sm:text-2xl font-black text-white mt-auto">
+                  {loading ? '---' : formatarTempoRegistrado(stats?.totalTempoProcessosMinutos ?? 0)}
                 </p>
               </div>
             </div>

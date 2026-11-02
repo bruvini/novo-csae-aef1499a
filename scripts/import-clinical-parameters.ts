@@ -90,7 +90,7 @@ const sistemaSchema = z.object({
   dataCadastro: z.unknown().optional(),
   exames: z.array(z.object({
     nomeExame: z.string().trim().min(1),
-    propedeutica: z.enum(['Inspeção', 'Palpação', 'Percussão', 'Ausculta']),
+    propedeutica: z.enum(['Inspeção', 'Palpação', 'Percussão', 'Ausculta', 'Entrevista clínica']),
     achados: z.array(achadoSchema).min(1),
   })).min(1),
 });

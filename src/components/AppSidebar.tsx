@@ -32,6 +32,7 @@ export function AppSidebar() {
   const filteredItems = navigationItems.filter(item => {
     if (!item.allowedPageId) return true;
     const ehAdmin = sessionData?.ehAdmin === true;
+    if (item.allowedPageId === 'PainelEstatistico' || item.allowedPageId === 'GestaoUsuarios') return ehAdmin;
     const paginasPermitidas = sessionData?.paginasPermitidas || [];
     return ehAdmin || paginasPermitidas.includes(item.allowedPageId);
   });

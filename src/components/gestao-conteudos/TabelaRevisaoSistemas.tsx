@@ -176,6 +176,8 @@ const TabelaRevisaoSistemas: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleExcluir(sistema)}
+                              disabled
+                              title="Exclusão permanente bloqueada para preservar os prontuários históricos"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

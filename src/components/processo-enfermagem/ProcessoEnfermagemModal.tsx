@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,13 @@ import {
 } from '@/services/bancodados/processosEnfermagemDB';
 import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
-import { calcularEtapasCompletadas, isEtapaAcessivel, getMotivoBloqueio } from '@/utils/processoUtils';
+import {
+  calcularEtapasCompletadas,
+  isEtapaAcessivel,
+  getMotivoBloqueio,
+  executarAvancoAposSalvar,
+  RequisitoDescricaoAvaliacao,
+} from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Timestamp } from 'firebase/firestore';
 import { Loader2, Trash2, X, History } from 'lucide-react';
@@ -86,12 +92,21 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   );
   const [etapaAtual, setEtapaAtual] = useState(1);
-  const [etapasCompletadas, setEtapasCompletadas] = useState<number[]>([]);
+  const [requisitosDescricao, setRequisitosDescricao] = useState<RequisitoDescricaoAvaliacao[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const processoAtualRef = useRef(processo);
+  processoAtualRef.current = processo;
+  // Não duplicar as etapas concluídas em state: elas sempre refletem as
+  // escolhas atuais, inclusive antes do primeiro salvamento no Firestore.
+  const etapasCompletadas = calcularEtapasCompletadas(processo, requisitosDescricao);
+
+  const atualizarRequisitosDescricao = useCallback((requisitos: RequisitoDescricaoAvaliacao[]) => {
+    setRequisitosDescricao(requisitos);
+  }, []);
 
   // Timer para atualizar o tempo ativo a cada segundo - REMOVIDO para TempoAtivoBadge
 
@@ -117,11 +132,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           // Re-buscar para obter a sessão iniciada e garantir o contador em tempo real
           const atualizado = await buscarProcessoPorId(paciente.id, processoAtual.id);
           if (atualizado) {
+            processoAtualRef.current = atualizado;
             setProcesso(atualizado);
             setEtapaAtual(atualizado.etapaAtual);
-
-            const etapasConcluidas = calcularEtapasCompletadas(atualizado);
-            setEtapasCompletadas(etapasConcluidas);
           }
           return;
         }
@@ -144,9 +157,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const criarNovoProcesso = async () => {
     if (!paciente.id) return;
 
-    // Reset visual imediato do Stepper antes de qualquer I/O
+    // O Stepper será recalculado quando o novo processo for carregado.
     setEtapaAtual(1);
-    setEtapasCompletadas([]);
     
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
@@ -154,9 +166,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       // Carregar documento completo
       const docCarregado = await buscarProcessoPorId(paciente.id, novoId);
       if (docCarregado) {
+        processoAtualRef.current = docCarregado;
         setProcesso(docCarregado);
         setEtapaAtual(docCarregado.etapaAtual || 1);
-        setEtapasCompletadas([]);
       } else {
         setProcesso(prev => ({ ...prev, id: novoId }));
       }
@@ -178,10 +190,18 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const handleEtapaChange = async (etapa: number) => {
     // Se está tentando avançar (etapa > etapaAtual)
     if (etapa > etapaAtual) {
-      const isAcessivel = isEtapaAcessivel(etapa, etapaAtual, etapasCompletadas, processo);
+      const atual = processoAtualRef.current;
+      const conclusoes = calcularEtapasCompletadas(atual, requisitosDescricao);
+      const isAcessivel = isEtapaAcessivel(
+        etapa,
+        etapaAtual,
+        conclusoes,
+        atual,
+        requisitosDescricao
+      );
       
       if (!isAcessivel) {
-        const motivo = getMotivoBloqueio(etapa, etapaAtual, etapasCompletadas, processo);
+        const motivo = getMotivoBloqueio(etapa, etapaAtual, conclusoes, atual, requisitosDescricao);
         toast({
           title: "Etapa Bloqueada",
           description: motivo || "Complete as etapas anteriores para liberar.",
@@ -189,30 +209,30 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         });
         return; // Aborta navegação
       }
+
+      const avancou = await executarAvancoAposSalvar(handleSalvarProgresso, () => setEtapaAtual(etapa));
+      return;
     }
 
     setEtapaAtual(etapa);
   };
 
   const handleUpdateAvaliacao = (avaliacao: AvaliacaoEnfermagem) => {
-    setProcesso(prev => ({
-      ...prev,
-      avaliacao
-    }));
+    const atualizado = { ...processoAtualRef.current, avaliacao };
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
   };
 
   const handleUpdateDiagnostico = (diagnostico: DiagnosticoEnfermagem) => {
-    setProcesso(prev => ({
-      ...prev,
-      diagnostico
-    }));
+    const atualizado = { ...processoAtualRef.current, diagnostico };
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
   };
 
   const handleUpdatePlanejamento = (planejamento: PlanejamentoEnfermagem) => {
-    setProcesso(prev => ({
-      ...prev,
-      planejamento
-    }));
+    const atualizado = { ...processoAtualRef.current, planejamento };
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
   };
 
   const handleUpdateImplementacao = (novaImplementacao: ImplementacaoEnfermagem) => {
@@ -259,32 +279,30 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }));
   };
 
-  const handleSalvarProgresso = async () => {
-    if (!processo.id || !paciente.id) return;
+  const handleSalvarProgresso = async (): Promise<boolean> => {
+    if (!processo.id || !paciente.id) return false;
 
     setIsSaving(true);
     try {
+      const atual = processoAtualRef.current;
       await salvarProgressoProcesso(
         paciente.id,
-        processo.id,
+        atual.id,
         etapaAtual,
         {
-          avaliacao: processo.avaliacao,
-          diagnostico: processo.diagnostico,
-          planejamento: processo.planejamento,
-          implementacao: processo.implementacao,
-          evolucao: processo.evolucao,
+          avaliacao: atual.avaliacao,
+          diagnostico: atual.diagnostico,
+          planejamento: atual.planejamento,
+          implementacao: atual.implementacao,
+          evolucao: atual.evolucao,
         }
       );
-
-      if (!etapasCompletadas.includes(etapaAtual)) {
-        setEtapasCompletadas([...etapasCompletadas, etapaAtual]);
-      }
 
       toast({
         title: "Sucesso",
         description: "Progresso salvo com sucesso!",
       })
+      return true;
     } catch (error) {
       console.error('Erro ao salvar progresso:', error);
 
@@ -303,6 +321,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         description: descricaoErro,
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -330,13 +349,25 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
 
   const handleSaveAndClose = async () => {
+    if (!processo.id || !paciente.id) {
+      onClose();
+      return;
+    }
+
+    const salvo = await handleSalvarProgresso();
+    if (!salvo) return;
+
     setIsSaving(true);
     try {
-      await handleSalvarProgresso();
       await finalizarSessaoAtual(paciente.id, processo.id);
       onClose();
     } catch (error) {
       console.error('Erro ao fechar processo:', error);
+      toast({
+        title: "Erro ao encerrar sessão",
+        description: "O progresso foi salvo, mas não foi possível encerrar a sessão. Tente novamente.",
+        variant: "destructive",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -423,7 +454,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
       // Reset visual do Stepper antes de fechar
       setEtapaAtual(1);
-      setEtapasCompletadas([]);
       setShowDeleteAlert(false);
       onClose();
       onProcessoDeleted?.();
@@ -447,6 +477,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             processo={processo}
             paciente={paciente}
             onUpdateAvaliacao={handleUpdateAvaliacao}
+            onUpdateRequisitosDescricao={atualizarRequisitosDescricao}
           />
         );
       case 2:
@@ -532,6 +563,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               onEtapaChange={handleEtapaChange}
               etapasCompletadas={etapasCompletadas}
               processo={processo}
+              requisitosDescricao={requisitosDescricao}
             />
           </div>
 
@@ -570,26 +602,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               {etapaAtual < 6 ? (
                 <Button 
                   type="button" 
-                  onClick={async () => {
-                    const nextEtapa = etapaAtual + 1;
-
-                    // 1. Validar com estado local — sem Firestore, instantâneo
-                    if (!isEtapaAcessivel(nextEtapa, etapaAtual, etapasCompletadas, processo)) {
-                      toast({
-                        title: "Etapa Bloqueada",
-                        description: getMotivoBloqueio(nextEtapa, etapaAtual, etapasCompletadas, processo) 
-                          || "Complete as etapas anteriores para liberar.",
-                        variant: "destructive"
-                      });
-                      return;
-                    }
-
-                    await handleSalvarProgresso();
-
-                    // 2. Navegar e atualizar stepper
-                    setEtapaAtual(nextEtapa);
-                    setEtapasCompletadas(calcularEtapasCompletadas(processo));
-                  }}
+                  onClick={() => handleEtapaChange(etapaAtual + 1)}
                   disabled={isSaving}
                 >
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

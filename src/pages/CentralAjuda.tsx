@@ -71,6 +71,10 @@ const MODULOS = [
 ];
 
 const CATEGORIAS_SUGESTAO = [
+  'Diagnósticos de Enfermagem',
+  'Resultados Esperados',
+  'Intervenções de Enfermagem',
+  'Parâmetros do Exame Físico',
   'Interface / Design',
   'Nova Funcionalidade',
   'Desempenho',
@@ -564,6 +568,20 @@ const CentralAjuda = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {['Diagnósticos de Enfermagem', 'Resultados Esperados', 'Intervenções de Enfermagem', 'Parâmetros do Exame Físico'].includes(categoriaSugestao) && (
+                    <Alert className="border-csae-green-200 bg-csae-green-50">
+                      <Lightbulb className="h-4 w-4 text-csae-green-700" />
+                      <AlertDescription className="text-sm text-csae-green-900">
+                        Informe qual item você sugere, em qual situação seria utilizado e, se possível,
+                        o protocolo de enfermagem correspondente. A Comissão Permanente de
+                        Sistematização da Assistência de Enfermagem (CSAE) avaliará a pertinência
+                        clínica e a compatibilidade com os protocolos municipais e as atribuições do
+                        enfermeiro. Para parâmetros de exame físico, você também pode sugerir sinais
+                        vitais, achados, exames laboratoriais ou de imagem e itens de revisão de sistemas.
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700">Descreva sua sugestão</label>

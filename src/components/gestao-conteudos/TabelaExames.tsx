@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CONTEXTOS_CLINICOS } from '@/utils/referenciasClinicas';
 
 const TabelaExames = () => {
   const [exames, setExames] = useState<Exame[]>([]);
@@ -174,10 +175,14 @@ const TabelaExames = () => {
       valorMinimo: null,
       valorMaximo: null,
       nomeAlteracao: '',
+      interpretacaoClinica: 'informativo',
+      contextoClinico: 'geral',
+      criterioCondicao: '',
       subconjuntoNHBVinculado: ''
     } : {
       resultadoClassificatorio: '',
       nomeAlteracao: '',
+      interpretacaoClinica: 'informativo',
       subconjuntoNHBVinculado: ''
     };
     
@@ -198,10 +203,12 @@ const TabelaExames = () => {
     valor: ResultadoExame[K]
   ) => {
     const novosComponentes = [...componentes];
-    novosComponentes[componenteIndex].resultados[resultadoIndex] = {
+    const atualizado = {
       ...novosComponentes[componenteIndex].resultados[resultadoIndex],
       [campo]: valor
     };
+    if (valor === undefined) delete atualizado[campo];
+    novosComponentes[componenteIndex].resultados[resultadoIndex] = atualizado;
     setComponentes(novosComponentes);
   };
 
@@ -240,7 +247,7 @@ const TabelaExames = () => {
       setSheetOpen(false);
       limparFormulario();
     } catch (error) {
-      toast.error('Erro ao salvar exame');
+      toast.error(error instanceof Error ? error.message : 'Erro ao salvar exame');
       console.error(error);
     } finally {
       setSalvandoExame(false);
@@ -305,7 +312,9 @@ const TabelaExames = () => {
                 <h3 className="text-lg font-semibold">Dados do Exame</h3>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Nome do Exame *</label>
-                  {loadingExames ? (
+                  {editandoExame ? (
+                    <Input value={nomeExame} disabled aria-label="Nome do exame (preservado por integridade histórica)" />
+                  ) : loadingExames ? (
                     <Input value={nomeExame} onChange={(e) => setNomeExame(e.target.value)} placeholder="Carregando..." disabled />
                   ) : (
                     <Combobox
@@ -317,7 +326,7 @@ const TabelaExames = () => {
                       emptyText="Nenhum exame encontrado"
                     />
                   )}
-                  <p className="text-[11px] text-muted-foreground mt-1">Ex: "Hemograma Completo", "Glicemia de Jejum". Selecione um exame existente para adicionar um novo componente a ele.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">O nome e os componentes de exames existentes são preservados por segurança dos históricos. Adicione novos componentes sem substituir os já utilizados.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Descrição</label>
@@ -335,11 +344,11 @@ const TabelaExames = () => {
                   <Select value={tipoExame} onValueChange={(value: 'Laboratorial' | 'Imagem') => setTipoExame(value)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Laboratorial">Laboratorial — valores numéricos com faixas de referência</SelectItem>
-                      <SelectItem value="Imagem">Imagem — resultado classificatório (Normal, Alterado etc.)</SelectItem>
+                      <SelectItem value="Laboratorial">Laboratorial — exame em amostra clínica (resultado quantitativo ou qualitativo)</SelectItem>
+                      <SelectItem value="Imagem">Imagem — exame de imagem com classificação ou laudo</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">Laboratorial = inserção de valores numéricos pelo enfermeiro. Imagem = seleção de resultado classificatório.</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Este campo define a natureza do exame. A forma de registrar o resultado é definida por cada componente: exames laboratoriais também podem ter resultados qualitativos; exames de imagem podem usar classificações.</p>
                 </div>
               </div>
 
@@ -372,6 +381,7 @@ const TabelaExames = () => {
                         <label className="block text-sm font-medium mb-1.5">Componente Analisado *</label>
                         <Input
                           value={componente.componenteAnalisado}
+                          disabled={Boolean(editandoExame?.componentes.some(comp => comp.componenteAnalisado === componente.componenteAnalisado))}
                           onChange={(e) => atualizarComponente(componenteIndex, 'componenteAnalisado', e.target.value)}
                           placeholder="Ex: Glicose, Hemoglobina"
                           spellCheck
@@ -425,7 +435,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.idadeMinima || ''}
+                                    value={resultado.idadeMinima ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMinima', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -434,7 +444,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.idadeMaxima || ''}
+                                    value={resultado.idadeMaxima ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeMaxima', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -442,7 +452,12 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Unidade Idade</label>
                                   <Select
                                     value={resultado.idadeUnidade === '' ? 'not-specified' : resultado.idadeUnidade}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'idadeUnidade', value === 'not-specified' ? '' : value)}
+                                    onValueChange={(value) => atualizarResultado(
+                                      componenteIndex,
+                                      resultadoIndex,
+                                      'idadeUnidade',
+                                      value === 'not-specified' ? '' : value as NonNullable<ResultadoExame['idadeUnidade']>
+                                    )}
                                   >
                                     <SelectTrigger className="h-8">
                                       <SelectValue />
@@ -462,7 +477,12 @@ const TabelaExames = () => {
                                   <label className="block text-xs font-medium mb-1">Critério Sexo</label>
                                   <Select
                                     value={resultado.criterioSexo}
-                                    onValueChange={(value) => atualizarResultado(componenteIndex, resultadoIndex, 'criterioSexo', value)}
+                                    onValueChange={(value) => atualizarResultado(
+                                      componenteIndex,
+                                      resultadoIndex,
+                                      'criterioSexo',
+                                      value as NonNullable<ResultadoExame['criterioSexo']>
+                                    )}
                                   >
                                     <SelectTrigger className="h-8">
                                       <SelectValue />
@@ -479,7 +499,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.valorMinimo || ''}
+                                    value={resultado.valorMinimo ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMinimo', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -488,7 +508,7 @@ const TabelaExames = () => {
                                   <Input
                                     type="number"
                                     className="h-8"
-                                    value={resultado.valorMaximo || ''}
+                                    value={resultado.valorMaximo ?? ''}
                                     onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'valorMaximo', e.target.value ? Number(e.target.value) : null)}
                                   />
                                 </div>
@@ -501,11 +521,79 @@ const TabelaExames = () => {
                                 className="h-8"
                                 value={resultado.resultadoClassificatorio || ''}
                                 onChange={(e) => atualizarResultado(componenteIndex, resultadoIndex, 'resultadoClassificatorio', e.target.value)}
-                                placeholder="Ex: Normal"
+                                placeholder={tipoExame === 'Laboratorial' ? 'Ex: Reagente, Não reagente' : 'Ex: Normal, Alterado'}
                               />
                             </div>
                           )}
 
+                          
+                           {componenteEhClassificatorio(tipoExame, componente) && (
+                             <div className="rounded-md border bg-white p-3 space-y-2">
+                               <label className="flex items-center gap-2 text-xs font-medium">
+                                 <input
+                                   type="checkbox"
+                                   checked={resultado.permiteValorTexto === true}
+                                   onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'permiteValorTexto', event.target.checked)}
+                                 />
+                                 Permitir informação complementar (genótipo, laudo, microrganismo, antibiograma)
+                               </label>
+                               {resultado.permiteValorTexto && (
+                                 <div className="space-y-2">
+                                   <Input
+                                     className="h-8"
+                                     value={resultado.rotuloValorTexto || ''}
+                                     onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'rotuloValorTexto', event.target.value)}
+                                     placeholder="Rótulo: ex. Genótipos identificados"
+                                   />
+                                   <label className="flex items-center gap-2 text-xs">
+                                     <input
+                                       type="checkbox"
+                                       checked={resultado.valorTextoObrigatorio === true}
+                                       onChange={(event) => atualizarResultado(componenteIndex, resultadoIndex, 'valorTextoObrigatorio', event.target.checked)}
+                                     />
+                                     Texto complementar obrigatório
+                                   </label>
+                                 </div>
+                               )}
+                             </div>
+                           )}
+                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {!componenteEhClassificatorio(tipoExame, componente) && (
+                              <div>
+                                <label className="block text-xs font-medium mb-1">Contexto clínico da referência</label>
+                                <Select value={resultado.contextoClinico || 'legado'} onValueChange={v =>
+                                  atualizarResultado(componenteIndex, resultadoIndex, 'contextoClinico', v === 'legado' ? '' : v)}>
+                                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    {!resultado.contextoClinico && <SelectItem value="legado">Legado — revisar condição</SelectItem>}
+                                    {CONTEXTOS_CLINICOS.map(ctx => <SelectItem key={ctx.id} value={ctx.id}>{ctx.titulo}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            <div>
+                              <label className="block text-xs font-medium mb-1">Interpretação do resultado</label>
+                              <Select value={resultado.interpretacaoClinica || 'legado'} onValueChange={v =>
+                                atualizarResultado(componenteIndex, resultadoIndex, 'interpretacaoClinica', v === 'legado' ? undefined : v as NonNullable<ResultadoExame['interpretacaoClinica']>)}>
+                                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  {!resultado.interpretacaoClinica && <SelectItem value="legado">Legado — sem regra explícita</SelectItem>}
+                                  <SelectItem value="normal">Normal / dentro da meta</SelectItem>
+                                  <SelectItem value="alterado">Alterado — avaliar NHB</SelectItem>
+                                  <SelectItem value="informativo">Informativo — registro sem inferência de diagnóstico</SelectItem>
+                                  <SelectItem value="indeterminado">Pendente — referência não cadastrada (legado)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          {!componenteEhClassificatorio(tipoExame, componente) && (
+                            <div className="mt-2">
+                              <label className="block text-xs font-medium mb-1">Condição ou técnica de coleta</label>
+                              <Input className="h-8" value={resultado.criterioCondicao || ''} onChange={e =>
+                                atualizarResultado(componenteIndex, resultadoIndex, 'criterioCondicao', e.target.value)}
+                                placeholder="Ex.: jejum, pós-prandial, gestação (texto orientativo)" />
+                            </div>
+                          )}
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-medium mb-1">Nome da Alteração</label>
@@ -599,7 +687,7 @@ const TabelaExames = () => {
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
+                          <Button variant="destructive" size="sm" className="h-8 w-8 p-0" disabled title="Exclusão permanente bloqueada para preservar os prontuários históricos">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>

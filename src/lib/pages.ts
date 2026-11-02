@@ -21,16 +21,6 @@ export const availablePages: PageInfo[] = [
     label: "Gestão de Conteúdos",
     description: "Área administrativa para gerenciar e atualizar os conteúdos do sistema"
   },
-  { 
-    id: "GestaoUsuarios", 
-    label: "Gestão de Usuários",
-    description: "Painel de controle para administrar profissionais cadastrados"
-  },
-  { 
-    id: "PainelEstatistico", 
-    label: "Painel Estatístico",
-    description: "Módulo Business Intelligence com visão global de métricas e indicadores de produção da rede"
-  },
   {
     id: "GestaoSuporte",
     label: "Gestão de Suporte",

@@ -1,6 +1,6 @@
 
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { getApps, initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -24,3 +24,12 @@ export const analytics = getAnalytics(app);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
+
+// Registration uses an isolated Firebase app so its temporary sign-in state
+// cannot trigger the global AuthContext listener before the profile is saved.
+const registrationAppName = "csae-registration";
+export const registrationApp =
+  getApps().find((firebaseApp) => firebaseApp.name === registrationAppName) ??
+  initializeApp(app.options, registrationAppName);
+export const registrationAuth = getAuth(registrationApp);
+export const registrationDb = getFirestore(registrationApp);

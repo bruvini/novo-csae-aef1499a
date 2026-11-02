@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,26 +18,30 @@ import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
-import { Timestamp } from 'firebase/firestore';
 import { ExameResultadoInput } from './ExameResultadoInput';
+import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
   status: 'normal' | 'alterado' | 'neutro';
   nomeAlteracao?: string;
   nhb?: string;
+  motivo?: string;
 }
 
 interface EtapaAvaliacaoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
   onUpdateAvaliacao: (avaliacao: AvaliacaoEnfermagem) => void;
+  onUpdateRequisitosDescricao: (requisitos: RequisitoDescricaoAvaliacao[]) => void;
 }
 
 const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   processo,
   paciente,
-  onUpdateAvaliacao
+  onUpdateAvaliacao,
+  onUpdateRequisitosDescricao,
 }) => {
   const [guiaColetaOpen, setGuiaColetaOpen] = useState(false);
   const [guiaExameOpen, setGuiaExameOpen] = useState(false);
@@ -75,6 +80,17 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
+        const requisitosDescricao = sistemasData.flatMap((sistema) =>
+          sistema.exames.flatMap((exame) =>
+            exame.achados.flatMap((achado) => [
+              ...(achado.exigeDescricao ? [{ exame: exame.nomeExame, achado: achado.descricaoAchado }] : []),
+              ...(achado.opcoes || [])
+                .filter((opcao) => opcao.exigeDescricao)
+                .map((opcao) => ({ exame: exame.nomeExame, achado: opcao.textoOpcao })),
+            ])
+          )
+        );
+        onUpdateRequisitosDescricao(requisitosDescricao);
       } catch (error) {
         console.error('Erro ao carregar dados da avaliação:', error);
       } finally {
@@ -83,7 +99,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     };
 
     loadData();
-  }, []); // Array vazio: executa apenas na montagem
+  }, [onUpdateRequisitosDescricao]);
 
   // Effect 2: Sincroniza NHBs locais quando o processo é carregado (montagem)
   useEffect(() => {
@@ -92,19 +108,6 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Inicialização apenas — atualizações subsequentes são gerenciadas por updateNhbs
-
-  const calculateAge = (dataNascimento: Timestamp): number => {
-    const birth = dataNascimento.toDate();
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
-  };
 
   // Utilitário: atualiza a lista de NHBs (local + no processo via callback)
   const updateNhbs = (parametro: string, isNormal: boolean, nhb?: string) => {
@@ -123,11 +126,12 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     parametro: string,
     status: ValidationStatus['status'],
     nomeAlteracao?: string,
-    nhb?: string
+    nhb?: string,
+    motivo?: string,
   ) => {
     setValidationStates((prev) => ({
       ...prev,
-      [parametro]: { status, nomeAlteracao, nhb },
+      [parametro]: { status, nomeAlteracao, nhb, motivo },
     }));
   };
 
@@ -137,9 +141,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     selectedValue: string
   ): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
     for (const achado of exame.achados) {
+      if (!idadeCompativel(achado, paciente.dataNascimento.toDate()) || !sexoCompativel(achado, paciente.sexo)) continue;
       if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === selectedValue) {
         const isAlt = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
-        if (isAlt && !isTextoNormal(achado.nomeAlteracao)) {
+        if (isAlt && interpretarRegra({ nomeAlteracao: achado.nomeAlteracao, subconjuntoNHBVinculado: achado.subconjuntoNHBVinculado }) === 'alterado') {
           return { status: 'alterado', nomeAlteracao: achado.nomeAlteracao, nhb: achado.subconjuntoNHBVinculado };
         }
         return { status: 'normal' };
@@ -160,7 +165,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   // Função centralizada para recalcular todas as NHBs do processo
   const calculateAllNhbs = (
     tempExameFisico: Record<string, string | number>,
-    tempExameFisicoMulti: Record<string, string[]> = {}
+    tempExameFisicoMulti: Record<string, string[]> = {},
+    contextos: Record<string, string> = processo.avaliacao?.contextosParametros || {},
   ) => {
     const novaLista: { parametro: string; nhb: string }[] = [];
 
@@ -168,7 +174,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     sinaisVitais.forEach(sv => {
       const val = tempExameFisico[sv.sinalVitalNome];
       if (val !== undefined && val !== '') {
-        const v = getNumericValidation(sv.sinalVitalNome, val, 'sinal');
+        const v = getNumericValidation(sv.sinalVitalNome, val, 'sinal', contextos);
         if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: sv.sinalVitalNome, nhb: v.nhb });
       }
     });
@@ -180,7 +186,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         if (val !== undefined && val !== '') {
           const v = componenteEhClassificatorio(ex.tipoExame, comp)
             ? getImagemValidation(comp.componenteAnalisado, String(val))
-            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab');
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab', contextos);
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
         }
       });
@@ -206,7 +212,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const updateAvaliacaoAtomic = (
     parametro: string,
     value: string | number,
-    validation: { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string },
+    validation: ValidationStatus,
     extra: Partial<AvaliacaoEnfermagem> = {}
   ) => {
     const novoExameFisico = { ...(processo.avaliacao?.exameFisico || {}), [parametro]: value };
@@ -214,7 +220,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     const novaListaNhbs = calculateAllNhbs(novoExameFisico, multiAtual);
 
     setNhbsAfetadas(novaListaNhbs);
-    setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb);
+    setParametroValidation(parametro, validation.status, validation.nomeAlteracao, validation.nhb, validation.motivo);
 
     onUpdateAvaliacao({
       ...processo.avaliacao,
@@ -238,13 +244,18 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const updateValorTextoExame = (parametro: string, resultado: ResultadoExame, valorTexto: string) => {
     onUpdateAvaliacao({
       ...processo.avaliacao,
-      examesValoresTexto: {
-        ...(processo.avaliacao?.examesValoresTexto || {}),
-        [parametro]: {
-          resultadoClassificatorio: resultado.resultadoClassificatorio || '',
-          valorTexto,
-        },
-      },
+      examesValoresTexto: valorTexto.trim()
+        ? {
+            ...(processo.avaliacao?.examesValoresTexto || {}),
+            [parametro]: {
+              resultadoClassificatorio: resultado.resultadoClassificatorio || '',
+              valorTexto,
+            },
+          }
+        : Object.fromEntries(
+            Object.entries(processo.avaliacao?.examesValoresTexto || {})
+              .filter(([nomeComponente]) => nomeComponente !== parametro)
+          ),
     });
   };
 
@@ -269,8 +280,12 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   };
 
   const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
+    if (checked && !isAchadoDoCatalogoAprovado(sistemas, nomeExame, valor)) return;
+
     const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
-    const updated = checked ? [...current, valor] : current.filter((v) => v !== valor);
+    const updated = checked
+      ? current.includes(valor) ? current : [...current, valor]
+      : current.filter((v) => v !== valor);
 
     const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
     if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
@@ -292,101 +307,74 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     });
   };
 
-  // Normalização de normalidade por texto clínico (fallback para quando não há faixa ou o resultado é classificatório)
-  const isTextoNormal = (nomeAlt?: string | null) => {
-    if (!nomeAlt || nomeAlt.trim() === '') return true;
-    const termosNormais = ['Normal', 'Normalidade', 'Ótima', 'Ótimo', 'Bom', 'Boa', 'Bem', 'Adequada', 'Adequado', 'Eupneico', 'Eufônico', 'Preservado', 'Normo', 'Ausente', 'Negat'];
-    return termosNormais.some(t => nomeAlt.toLowerCase().includes(t.toLowerCase()));
+  // Referências são avaliadas por idade real, sexo e contexto de observação.
+  // Conflitos produzem um estado neutro em vez de um alerta incorreto.
+  const getNumericValidation = (
+    parametro: string, value: string | number, type: 'sinal' | 'exameLab',
+    contextos = processo.avaliacao?.contextosParametros || {},
+  ): ValidationStatus => {
+    const refs = type === 'sinal'
+      ? sinaisVitais.find(s => s.sinalVitalNome === parametro)?.valoresDeReferencia || []
+      : exames.find(e => e.tipoExame === 'Laboratorial'
+          && e.componentes.some(c => c.componenteAnalisado === parametro))
+          ?.componentes.find(c => c.componenteAnalisado === parametro)?.resultados || [];
+    return classificarReferenciaNumerica(value, refs,
+      { dataNascimento: paciente.dataNascimento.toDate(), sexo: paciente.sexo },
+      contextos[parametro]);
   };
 
-  // Validação para valores numéricos (sinais vitais e exames laboratoriais)
-  const getNumericValidation = (parametro: string, value: string | number, type: 'sinal' | 'exameLab'): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
-    if (value === '' || value === null || typeof value === 'undefined') {
-      return { status: 'neutro' };
-    }
-
-    const numValue = Number(value);
-    if (isNaN(numValue) || numValue < 0) {
-      return { status: 'neutro' };
-    }
-
-    const idade = calculateAge(paciente.dataNascimento);
-    const sexo = paciente.sexo;
-
-    let referenceData: (ValorReferenciaVital | ResultadoExame)[] = [];
-
-    if (type === 'sinal') {
-      const sinal = sinaisVitais.find((s) => s.sinalVitalNome === parametro);
-      referenceData = (sinal?.valoresDeReferencia || []) as ValorReferenciaVital[];
-    } else {
-      const exame = exames.find(
-        (e) => e.tipoExame === 'Laboratorial' && e.componentes.some((c) => c.componenteAnalisado === parametro)
-      );
-      const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
-      referenceData = (componente?.resultados || []) as ResultadoExame[];
-    }
-
-    if (!referenceData.length) {
-      return { status: 'neutro' };
-    }
-
-    // 1. Filtrar referências compatíveis por idade e sexo
-    const possibleRanges = referenceData.filter((ref: ValorReferenciaVital | ResultadoExame) => {
-      const r = ref as unknown as Record<string, number | string | undefined>;
-      const idadeMinOk = r.idadeMinima == null || idade >= (r.idadeMinima as number);
-      const idadeMaxOk = r.idadeMaxima == null || idade <= (r.idadeMaxima as number);
-      const sexoOk = !r.criterioSexo || r.criterioSexo === 'Ambos' || r.criterioSexo === sexo;
-      return idadeMinOk && idadeMaxOk && sexoOk;
-    });
-
-    if (possibleRanges.length === 0) return { status: 'neutro' as const };
-
-    // 2. Encontrar a faixa específica onde o VALOR se encaixa
-    const matchingRange = possibleRanges.find((ref: ValorReferenciaVital | ResultadoExame) => {
-      const r = ref as unknown as Record<string, number | undefined>;
-      const min = r.valorMinimo;
-      const max = r.valorMaximo;
-      
-      if (min != null && max != null) return numValue >= min && numValue <= max;
-      if (min != null) return numValue >= min;
-      if (max != null) return numValue <= max;
-      return false;
-    }) as (ValorReferenciaVital | ResultadoExame) | undefined;
-
-    if (!matchingRange) {
-      return { status: 'neutro' as const };
-    }
-
-    const matchingAny = matchingRange as unknown as Record<string, string | undefined>;
-    const nomeAlt: string | null | undefined = matchingAny.nomeAlteracao;
-    const nhb: string | undefined = matchingAny.subconjuntoNHBVinculado;
-    const isNormal = isTextoNormal(nomeAlt);
-
-    return isNormal 
-      ? { status: 'normal' } 
-      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
-  };
-
-  // Validação para exames de imagem
-  const getImagemValidation = (parametro: string, selected: string): { status: ValidationStatus['status']; nomeAlteracao?: string; nhb?: string } => {
+  const getImagemValidation = (parametro: string, selected: string): ValidationStatus => {
     if (!selected) return { status: 'neutro' };
+    const exame = exames.find(e => e.componentes.some(c =>
+      c.componenteAnalisado === parametro && componenteEhClassificatorio(e.tipoExame, c)));
+    const componente = exame?.componentes.find(c => c.componenteAnalisado === parametro);
+    const applicable = (componente?.resultados || []).filter(r =>
+      idadeCompativel(r, paciente.dataNascimento.toDate())
+      && sexoCompativel(r, paciente.sexo));
+    return classificarReferenciaQualitativa(selected, applicable);
+  };
 
-    const exame = exames.find((e) => e.componentes.some(
-      (componente) => componente.componenteAnalisado === parametro
-        && componenteEhClassificatorio(e.tipoExame, componente)
-    ));
-    const componente = exame?.componentes.find((c) => c.componenteAnalisado === parametro);
-    const resultado = componente?.resultados.find((r) => r.resultadoClassificatorio === selected);
-
-    if (!resultado) return { status: 'neutro' };
-
-    const nomeAlt = resultado.nomeAlteracao;
-    const nhb = resultado.subconjuntoNHBVinculado;
-    const isNormal = isTextoNormal(nomeAlt);
-
-    return isNormal 
-      ? { status: 'normal' } 
-      : { status: 'alterado', nomeAlteracao: nomeAlt || 'Alteração', nhb };
+  const renderContexto = (
+    parametro: string,
+    referencias: readonly (ValorReferenciaVital | ResultadoExame)[],
+  ) => {
+    const contexts = contextosDoParametro(referencias.filter(ref =>
+      idadeCompativel(ref, paciente.dataNascimento.toDate())
+      && sexoCompativel(ref, paciente.sexo)));
+    if (contexts.length <= 1 && contexts[0] === 'geral') return null;
+    const atual = processo.avaliacao?.contextosParametros?.[parametro] || '';
+    const opcoes = [...new Set(['geral', ...contexts])];
+    return (
+      <div className="space-y-1">
+        <label className="text-[10px] font-semibold text-gray-600">Contexto da aferição (necessário para classificar)</label>
+        <Select value={atual || undefined} onValueChange={(next) => {
+          const contextosNovos = { ...(processo.avaliacao?.contextosParametros || {}), [parametro]: next };
+          const novaLista = calculateAllNhbs(
+            processo.avaliacao?.exameFisico || {},
+            processo.avaliacao?.exameFisicoMulti || {},
+            contextosNovos);
+          setNhbsAfetadas(novaLista);
+          const atualValor = processo.avaliacao?.exameFisico?.[parametro];
+          if (atualValor !== undefined && atualValor !== '') {
+            const tipo = sinaisVitais.some(v => v.sinalVitalNome === parametro) ? 'sinal' : 'exameLab';
+            const res = getNumericValidation(parametro, atualValor, tipo, contextosNovos);
+            setParametroValidation(parametro, res.status, res.nomeAlteracao, res.nhb, res.motivo);
+          }
+          onUpdateAvaliacao({ ...processo.avaliacao, contextosParametros: contextosNovos, nhbsAfetadas: novaLista });
+        }}>
+          <SelectTrigger aria-label={'Contexto clínico para ' + parametro} className="h-8 text-xs">
+            <SelectValue placeholder="Selecionar contexto" />
+          </SelectTrigger>
+          <SelectContent>
+            {opcoes.map(ctx => (
+              <SelectItem key={ctx} value={ctx}>
+                {CONTEXTOS_CLINICOS.find(c => c.id === ctx)?.titulo || ctx}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    );
   };
 
   // Validação para revisão de sistemas
@@ -397,7 +385,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     sistemas.some((sist) => {
       const exame = sist.exames.find((ex) => ex.nomeExame === parametro);
       if (exame) {
-        achadoSelecionado = exame.achados.find((a) => a.descricaoAchado === selectedDescricao);
+        achadoSelecionado = exame.achados.find((a) => a.descricaoAchado === selectedDescricao
+          && idadeCompativel(a, paciente.dataNascimento.toDate()) && sexoCompativel(a, paciente.sexo));
         return true;
       }
       return false;
@@ -407,7 +396,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
     const nomeAlt = (achadoSelecionado as Achado).nomeAlteracao;
     const nhb = (achadoSelecionado as Achado).subconjuntoNHBVinculado;
-    const isNormal = isTextoNormal(nomeAlt);
+    const isNormal = interpretarRegra({ nomeAlteracao: nomeAlt, subconjuntoNHBVinculado: nhb }) === 'normal';
 
     return isNormal 
       ? { status: 'normal' } 
@@ -432,12 +421,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   // ─── Helpers de identificação e filtro ────────────────────
   const isPAS = (nome: string) => {
-    const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return n.includes('sistolica') || n.includes(' pas)') || n.includes('(pas)');
+    return familiaPressaoArterial(nome) === 'pas';
   };
   const isPAD = (nome: string) => {
-    const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-    return n.includes('diastoilica') || n.includes('diastolica') || n.includes(' pad)') || n.includes('(pad)');
+    return familiaPressaoArterial(nome) === 'pad';
   };
   const isIMC = (nome: string) => {
     const n = nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -454,14 +441,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   /** Sinal vital aplicável ao paciente (age/sex filter) */
   const sinalMatchesPaciente = (sinal: SinalVital): boolean => {
     if (!sinal.valoresDeReferencia || sinal.valoresDeReferencia.length === 0) return true;
-    const idade = calculateAge(paciente.dataNascimento);
-    const sexo = paciente.sexo;
-    return sinal.valoresDeReferencia.some((ref: ValorReferenciaVital) => {
-      const idadeMinOk = ref.idadeMinima == null || idade >= ref.idadeMinima;
-      const idadeMaxOk = ref.idadeMaxima == null || idade <= ref.idadeMaxima;
-      const sexoOk = !ref.criterioSexo || ref.criterioSexo === 'Ambos' || ref.criterioSexo === (sexo as string);
-      return idadeMinOk && idadeMaxOk && sexoOk;
-    });
+    return sinal.valoresDeReferencia.some((ref: ValorReferenciaVital) =>
+      idadeCompativel(ref, paciente.dataNascimento.toDate()) && sexoCompativel(ref, paciente.sexo));
   };
 
   /** Atualiza Peso, Altura e IMC calculado em uma única operação */
@@ -497,9 +478,13 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   const renderValidationMessage = (parametro: string) => {
     const v = validationStates[parametro];
-    if (!v || v.status !== 'alterado') return null;
+    if (!v) return null;
+    if (v.status === 'neutro' && v.motivo) {
+      return <p role="status" className="mt-1 text-[11px] text-amber-700">{v.motivo}</p>;
+    }
+    if (v.status !== 'alterado') return null;
     return (
-      <div className="flex items-center gap-1.5 text-red-600 mt-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+      <div className="flex items-center gap-1.5 text-red-600 mt-1.5">
         <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
         <p className="text-[11px] font-bold leading-tight">{v.nomeAlteracao}</p>
       </div>
@@ -769,6 +754,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
               </Dialog>
             </div>
 
+            <p className="text-xs text-muted-foreground rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              Os exames e achados disponíveis seguem os Protocolos de Enfermagem do Município de Florianópolis. Sugestões de inclusão devem ser encaminhadas à CSAE para avaliação.
+            </p>
+
             {/* Barra de busca */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -820,6 +809,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     )}
                                   </label>
                                   <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[pasV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(pasV.sinalVitalNome, v, getNumericValidation(pasV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(pasV.sinalVitalNome)} />
+                                  {renderContexto(pasV.sinalVitalNome, pasV.valoresDeReferencia)}
                                   {renderValidationMessage(pasV.sinalVitalNome)}
                                 </div>
                               )}
@@ -832,6 +822,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     )}
                                   </label>
                                   <Input type="number" min="0" placeholder="00" value={processo.avaliacao?.exameFisico?.[padV.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(padV.sinalVitalNome, v, getNumericValidation(padV.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(padV.sinalVitalNome)} />
+                                  {renderContexto(padV.sinalVitalNome, padV.valoresDeReferencia)}
                                   {renderValidationMessage(padV.sinalVitalNome)}
                                 </div>
                               )}
@@ -876,7 +867,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                               )}
                             </label>
                             <Input type="number" min="0" placeholder="00.0" value={processo.avaliacao?.exameFisico?.[sinal.sinalVitalNome] ?? ''} onChange={(e) => { const v = e.target.value; if (v === '' || Number(v) >= 0) updateAvaliacaoAtomic(sinal.sinalVitalNome, v, getNumericValidation(sinal.sinalVitalNome, v, 'sinal')); }} className={getInputClassName(sinal.sinalVitalNome)} />
-                            {renderValidationMessage(sinal.sinalVitalNome)}
+                            {renderContexto(sinal.sinalVitalNome, sinal.valoresDeReferencia)}
+                              {renderValidationMessage(sinal.sinalVitalNome)}
                           </div>
                         ))}
                       </div>
@@ -940,6 +932,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   onValorTextoChange={(resultado, valor) => updateValorTextoExame(parametro, resultado, valor)}
                                   className={"w-full " + getInputClassName(parametro)}
                                 />
+                                {!componenteEhClassificatorio(exame.tipoExame, componente)
+                                  && renderContexto(parametro, componente.resultados)}
                                 {renderValidationMessage(parametro)}
                               </div>
                             );
@@ -989,11 +983,15 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                 : []);
                             const descricoes = processo.avaliacao?.exameFisicoDescricoes || {};
 
+                            const aplicavel = (a: Achado) =>
+                              (idadeCompativel(a, paciente.dataNascimento.toDate()) && sexoCompativel(a, paciente.sexo))
+                              || selectedValues.includes(a.descricaoAchado)
+                              || (a.opcoes || []).some(o => selectedValues.includes(o.textoOpcao));
                             const simpleAchados = (exame.achados || []).filter(
-                              (a) => !a.tipoAchado || a.tipoAchado === 'simples'
+                              (a) => aplicavel(a) && (!a.tipoAchado || a.tipoAchado === 'simples')
                             );
                             const opcoesAchados = (exame.achados || []).filter(
-                              (a) => a.tipoAchado === 'opcoes'
+                              (a) => aplicavel(a) && a.tipoAchado === 'opcoes'
                             );
 
                             return (
@@ -1062,6 +1060,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                             placeholder={achado.dicaAchado || 'Descreva o achado encontrado…'}
                                             className="text-xs resize-none min-h-[56px]"
                                             rows={2}
+                                            required
+                                            aria-label={`Descrição obrigatória para ${achado.descricaoAchado}`}
                                           />
                                           {!descAtual.trim() && (
                                             <p className="text-[10px] text-amber-600 mt-0.5 flex items-center gap-1">
@@ -1136,6 +1136,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                                 placeholder="Descreva este achado…"
                                                 className="text-xs resize-none min-h-[48px]"
                                                 rows={2}
+                                                required
+                                                aria-label={`Descrição obrigatória para ${opcao.textoOpcao}`}
                                               />
                                             </div>
                                           )}

@@ -9,14 +9,21 @@ import {
   Copy, Search, FileText, Target, Play, TrendingUp, BadgeCheck,
   Stethoscope, Heart, AlertTriangle, CheckCircle2
 } from 'lucide-react';
-import { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
+import {
+  IntervencaoImplementada,
+  IntervencaoSelecionada,
+  ProcessoEnfermagem,
+  EvolucaoEnfermagem,
+} from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { useToast } from '@/hooks/use-toast';
-import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
-import { getExames } from '@/services/bancodados/examesDB';
-import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
+import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisDB';
+import { getExames, Exame } from '@/services/bancodados/examesDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
-import { formatarSinaisVitais, familiaPressaoArterial, valorSinalVitalPreenchido } from '@/utils/formatarSinaisVitais';
+import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
+import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
+import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
+import { formatarSinaisVitais } from '@/utils/formatarSinaisVitais';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -31,27 +38,24 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 }) => {
   const [textoEvolucao, setTextoEvolucao] = useState(processo.evolucao?.resumoGerado || '');
   const { toast } = useToast();
-  const [sinaisVitais, setSinaisVitais] = useState<any[]>([]);
-  const [exames, setExames] = useState<any[]>([]);
-  const [sistemas, setSistemas] = useState<any[]>([]);
+  const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
+  const [exames, setExames] = useState<Exame[]>([]);
   const [diagnosticosRol, setDiagnosticosRol] = useState<Diagnostico[]>([]);
 
 
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
-        const [sv, ex, sist] = await Promise.all([
-          new Promise<any[]>((resolve) => {
+        const [sv, ex] = await Promise.all([
+          new Promise<SinalVital[]>((resolve) => {
             const unsubscribe = getSinaisVitais((data) => { resolve(data); unsubscribe(); });
           }),
-          new Promise<any[]>((resolve) => {
+          new Promise<Exame[]>((resolve) => {
             const unsubscribe = getExames((data) => { resolve(data); unsubscribe(); });
-          }),
-          getSistemas()
+          })
         ]);
         setSinaisVitais(sv);
         setExames(ex);
-        setSistemas(sist);
       } catch (err) {
         console.error('Erro ao carregar catálogos:', err);
       }
@@ -143,67 +147,82 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
     // ── Exame Físico ──────────────────────────────────────────────────────────
     const exameFisicoData = processo.avaliacao?.exameFisico || {};
-    const sinaisVitaisFormatados = formatarSinaisVitais(exameFisicoData, sinaisVitais);
-    if (Object.keys(exameFisicoData).length > 0) {
+    const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
+    if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-
+      const sinaisVitaisFormatados = formatarSinaisVitais(
+        exameFisicoData,
+        sinaisVitais,
+        processo.avaliacao?.contextosParametros,
+      );
+      const parametrosRenderizados = new Set<string>();
       if (sinaisVitaisFormatados.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        sinaisVitaisFormatados.forEach(sinal => linhas.push(`  • ${sinal.nome}: ${sinal.valor}`));
+        sinaisVitaisFormatados.forEach(sinal => {
+          sinal.origens.forEach(origem => parametrosRenderizados.add(origem));
+          linhas.push(`  • ${sinal.nome}: ${sinal.valor}${sinal.contexto ?? ''}`);
+        });
       }
 
-      const exMap = new Map<string, string[]>();
-      const sinaisPressaoRegistrados = new Set(
-        sinaisVitais
-          .filter(sinal => familiaPressaoArterial(sinal.sinalVitalNome)
-            && valorSinalVitalPreenchido(exameFisicoData[sinal.sinalVitalNome]))
-          .map(sinal => sinal.sinalVitalNome),
-      );
-      exames.forEach(ex => {
-        ex.componentes.forEach((c: any) => {
-          if (
-            !sinaisPressaoRegistrados.has(c.componenteAnalisado)
-            && exameFisicoData[c.componenteAnalisado]
-          ) {
-            const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
-            if (!exMap.has(grp)) exMap.set(grp, []);
-            exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
-          }
-        });
+      const resultadosExame: string[] = [];
+      const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
+      const parametrosVitais = new Set(sinaisVitais.map((sinal) => sinal.sinalVitalNome));
+      const registrosParametro = registrosExameFisico.filter((registro) => registro.tipo === 'parametro');
+      registrosParametro.forEach((registro) => {
+        if (parametrosVitais.has(registro.exame) || camposIMCAux.includes(registro.exame)) return;
+        const cadastro = exames.flatMap((exame) => exame.componentes
+          .filter((componente) => componente.componenteAnalisado === registro.exame)
+          .map((componente) => ({ exame, componente })))[0];
+        resultadosExame.push(formatarLinhaResultadoExame({
+          tipoExame: cadastro?.exame.tipoExame,
+          nomeExame: cadastro?.exame.nomeExame,
+          componente: registro.exame,
+          valor: registro.valor,
+          resultadosConfigurados: cadastro?.componente.resultados,
+          valorTexto: processo.avaliacao?.examesValoresTexto?.[registro.exame],
+        }) + contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, registro.exame));
+        parametrosRenderizados.add(registro.exame);
       });
-      if (exMap.size > 0) {
+      if (resultadosExame.length > 0) {
         linhas.push('  [EXAMES DIAGNÓSTICOS]');
-        exMap.forEach((vals, titulo) => linhas.push(`  • ${titulo}: ${vals.join(', ')}`));
+        resultadosExame.forEach((resultado) => linhas.push(`  • ${resultado}`));
       }
 
       // Peso e Altura (campos auxiliares do cálculo de IMC)
-      const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
-      const temIMCAux = camposIMCAux.some(k => valorSinalVitalPreenchido(exameFisicoData[k]));
+      const temIMCAux = camposIMCAux.some(k => isValorAvaliacaoValido(exameFisicoData[k]));
       if (temIMCAux) {
         if (sinaisVitaisFormatados.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
         camposIMCAux.forEach((chave) => {
           const val = exameFisicoData[chave];
-          if (valorSinalVitalPreenchido(val)) linhas.push(`  • ${chave}: ${val}`);
+          if (isValorAvaliacaoValido(val)) {
+            parametrosRenderizados.add(chave);
+            linhas.push(`  • ${chave}: ${val}`);
+          }
         });
       }
 
-      const rsEncontrados: string[] = [];
-      const exameFisicoMultiData = processo.avaliacao?.exameFisicoMulti || {};
-      const exameFisicoDescricoesData = processo.avaliacao?.exameFisicoDescricoes || {};
-      sistemas.forEach(s => {
-        s.exames.forEach((e: any) => {
-          const multiVals: string[] = exameFisicoMultiData[e.nomeExame] || [];
-          const legacyVal = exameFisicoData[e.nomeExame];
-          const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
-          if (values.length > 0) {
-            const withDesc = values.map((v: string) => {
-              const desc = exameFisicoDescricoesData[`${e.nomeExame}|||${v}`];
-              return desc ? `${v}: ${desc}` : v;
-            });
-            rsEncontrados.push(`${e.nomeExame}: ${withDesc.join(', ')}`);
-          }
+      const parametrosNaoClassificados = registrosExameFisico.filter(
+        (registro) => registro.tipo === 'parametro' && !parametrosRenderizados.has(registro.exame)
+      );
+      if (parametrosNaoClassificados.length > 0) {
+        linhas.push('  [OUTROS PARÂMETROS REGISTRADOS]');
+        parametrosNaoClassificados.forEach((registro) => {
+          parametrosRenderizados.add(registro.exame);
+          linhas.push(`  • ${registro.exame}: ${registro.valor}`);
         });
-      });
+      }
+
+      const achadosPorExame = new Map<string, string[]>();
+      registrosExameFisico
+        .filter((registro) => registro.tipo === 'achado')
+        .forEach((registro) => {
+          if (!achadosPorExame.has(registro.exame)) achadosPorExame.set(registro.exame, []);
+          achadosPorExame.get(registro.exame)!.push(
+            registro.descricao ? `${registro.valor}: ${registro.descricao}` : String(registro.valor)
+          );
+        });
+      const rsEncontrados = [...achadosPorExame.entries()]
+        .map(([exame, valores]) => `${exame}: ${valores.join(', ')}`);
       if (rsEncontrados.length > 0) {
         linhas.push('  [REVISÃO DE SISTEMAS]');
         rsEncontrados.forEach(item => linhas.push(`  • ${item}`));
@@ -219,14 +238,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     if (diagnosticosPlanejados.length > 0) {
       linhas.push('PLANEJAMENTO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
-      diagnosticosPlanejados.forEach((diag: any) => {
+      diagnosticosPlanejados.forEach((diag) => {
         linhas.push(`[${diag.tituloDiagnostico}]`);
         if (diag.resultadoEsperadoSelecionado) {
           linhas.push(`Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
         }
         linhas.push('');
         if (diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0) {
-          diag.intervencoesSelecionadas.forEach((int: any) => {
+          diag.intervencoesSelecionadas.forEach((int) => {
             linhas.push(`• ${int.acaoPrescrita};`);
           });
         }
@@ -238,19 +257,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     // Lista apenas intervenções marcadas como implementadas, com executor.
     // Sem agrupamento por diagnóstico.
     const implementacao = processo.implementacao || {};
-    const implementadas: any[] = [];
-    Object.values(implementacao).forEach((dados: any) => {
-      if (dados.intervencoes) {
-        dados.intervencoes.forEach((i: any) => {
-          if (i.implementadoNestaConsulta) implementadas.push(i);
-        });
-      }
-    });
+    const implementadas: IntervencaoImplementada[] = Object.values(implementacao)
+      .flatMap((dados) => dados.intervencoes.filter((intervencao) => intervencao.implementadoNestaConsulta));
 
     if (implementadas.length > 0) {
       linhas.push('IMPLEMENTAÇÃO DE ENFERMAGEM (Prescrições da Consulta):');
       linhas.push('');
-      implementadas.forEach((int: any) => {
+      implementadas.forEach((int) => {
         const executor = int.quemExecuta ? ` (Executor: ${int.quemExecuta})` : '';
         linhas.push(`• ${int.acaoPrescrita}${executor}`);
       });
@@ -263,11 +276,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
     const acoesEnfermeiro: string[] = [];
 
-    Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]: any) => {
+    Object.entries(intervencoesExecutadas).forEach(([tituloDiag, acoesMarcadas]) => {
       if (!acoesMarcadas || acoesMarcadas.length === 0) return;
       acoesMarcadas.forEach((acaoPresc: string) => {
         const dxImpl = processo.implementacao?.[tituloDiag];
-        const intv = dxImpl?.intervencoes.find((i: any) => i.acaoPrescrita === acaoPresc);
+        const intv = dxImpl?.intervencoes.find((i) => i.acaoPrescrita === acaoPresc);
         const textoBase = intv?.acaoEnfermeiro || acaoPresc;
         acoesEnfermeiro.push(conjugarVerbo(textoBase));
       });
@@ -312,8 +325,8 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   const DiagnosticoBlock = ({ titulo, resultado, intervencoes, renderIntervencao }: {
     titulo: string;
     resultado?: string;
-    intervencoes: any[];
-    renderIntervencao: (int: any, idx: number) => React.ReactNode;
+    intervencoes: Array<IntervencaoSelecionada | IntervencaoImplementada | string>;
+    renderIntervencao: (int: IntervencaoSelecionada | IntervencaoImplementada | string, idx: number) => React.ReactNode;
   }) => (
     <InfoCard>
       <p className="font-bold text-sm text-gray-900 mb-1">{titulo}</p>
@@ -331,13 +344,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   // ─── Dados derivados ──────────────────────────────────────────────────────────
   const exameFisico = processo.avaliacao?.exameFisico || {};
   // nhbsAfetadas pode ter objetos { parametro, nhb } ou strings legadas
-  const nhbsAfetadas: any[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
+  const nhbsAfetadas: unknown[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
     ? processo.avaliacao.nhbsAfetadas
     : [];
 
   // Diagnósticos agrupados por subconjunto via cruzamento com o Rol de Enfermagem
   const diagnosticosPorSubconjunto: Record<string, string[]> = {};
-  (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d: any) => {
+  (processo.diagnostico?.diagnosticosSelecionados || []).forEach((d) => {
     // Busca o documento completo no Rol para extrair os subconjuntos reais
     const docRol = diagnosticosRol.find((r) => r.id === d.id || r.tituloDiagnostico === d.tituloDiagnostico);
     const subconjuntos = docRol?.subconjuntos;
@@ -351,7 +364,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   });
 
   const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
-  const temExecutada = Object.values(intervencoesExecutadas).some((l: any) => l.length > 0);
+  const temExecutada = Object.values(intervencoesExecutadas).some((lista) => lista.length > 0);
 
   return (
     <div className="space-y-8">
@@ -384,20 +397,22 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Exame Físico / Parâmetros Registrados" />
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
-                    {formatarSinaisVitais(exameFisico, sinaisVitais).map((sinal, index) => (
+                    {formatarSinaisVitais(
+                      exameFisico,
+                      sinaisVitais,
+                      processo.avaliacao?.contextosParametros,
+                    ).map((sinal, index) => (
                       <li key={`sinal-vital-${index}`} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{sinal.nome}:</span>
-                        <span className="text-gray-600">{sinal.valor}</span>
+                        <span className="text-gray-600">{sinal.valor}{sinal.contexto ?? ''}</span>
                       </li>
                     ))}
-                  </ul>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
                     {Object.entries(exameFisico)
                       .filter(([chave]) => !sinaisVitais.some(sinal => sinal.sinalVitalNome === chave))
-                      .map(([chave, valor]: any) => (
+                      .map(([chave, valor]) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
-                        <span className="text-gray-600">{valor}</span>
+                        <span className="text-gray-600">{valor}{contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, chave)}</span>
                       </li>
                     ))}
                   </ul>
@@ -409,16 +424,17 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Necessidades Humanas Básicas Afetadas" />
                   <ul className="space-y-1">
-                    {nhbsAfetadas.map((item: any, i: number) => {
+                    {nhbsAfetadas.map((item, i) => {
                       // Suporta objetos { parametro, nhb } e strings legadas
                       if (item && typeof item === 'object') {
+                        const nhbItem = item as Record<string, unknown>;
                         return (
                           <li key={i} className="flex items-baseline gap-1 text-sm">
                             <Heart className="w-3 h-3 text-rose-400 flex-shrink-0 mt-0.5" />
-                            {item.parametro && (
-                              <span className="font-semibold text-gray-700">{item.parametro}:</span>
+                            {nhbItem.parametro && (
+                              <span className="font-semibold text-gray-700">{String(nhbItem.parametro)}:</span>
                             )}
-                            <span className="text-gray-600">{item.nhb ?? String(item)}</span>
+                            <span className="text-gray-600">{String(nhbItem.nhb ?? item)}</span>
                           </li>
                         );
                       }
@@ -468,7 +484,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag: any, index: number) => (
+              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag, index) => (
                 <DiagnosticoBlock
                   key={index}
                   titulo={diag.tituloDiagnostico}
@@ -477,7 +493,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   renderIntervencao={(int, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                       <span className="text-csae-green-500 font-bold mt-0.5">•</span>
-                      {int.acaoPrescrita}
+                      {typeof int === 'string' ? int : int.acaoPrescrita}
                     </li>
                   )}
                 />
@@ -493,11 +509,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {Object.entries(processo.implementacao || {}).map(([titulo, dados]: any, i: number) => {
+              {Object.entries(processo.implementacao || {}).map(([titulo, dados], i) => {
                 const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
-                  (p: any) => p.tituloDiagnostico === titulo
+                  (p) => p.tituloDiagnostico === titulo
                 );
-                const implementadas = dados.intervencoes.filter((iv: any) => iv.implementadoNestaConsulta);
+                const implementadas = dados.intervencoes.filter((iv) => iv.implementadoNestaConsulta);
                 if (implementadas.length === 0) return null;
                 return (
                   <DiagnosticoBlock
@@ -506,17 +522,23 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                     resultado={planejadoDiag?.resultadoEsperadoSelecionado}
                     intervencoes={implementadas}
                     renderIntervencao={(iv, idx) => (
+                      (() => {
+                        const acao = typeof iv === 'string' ? iv : iv.acaoPrescrita;
+                        const executor = typeof iv !== 'string' && 'quemExecuta' in iv ? iv.quemExecuta : undefined;
+                        return (
                       <li key={idx} className="flex items-start justify-between gap-2">
                         <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                          {iv.acaoPrescrita}
+                          {acao}
                         </span>
-                        {iv.quemExecuta && (
+                        {executor && (
                           <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
-                            Executor: {iv.quemExecuta}
+                            Executor: {executor}
                           </Badge>
                         )}
                       </li>
+                        );
+                      })()
                     )}
                   />
                 );
@@ -540,10 +562,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   </AlertDescription>
                 </Alert>
               ) : (
-                Object.entries(intervencoesExecutadas).map(([titulo, lista]: any, i) => {
+                Object.entries(intervencoesExecutadas).map(([titulo, lista], i) => {
                   if (lista.length === 0) return null;
                   const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
-                    (d: any) => d.tituloDiagnostico === titulo
+                    (d) => d.tituloDiagnostico === titulo
                   );
                   const resultadoExp = planejadoDiag?.resultadoEsperadoSelecionado;
                   return (
@@ -552,10 +574,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                       titulo={titulo}
                       resultado={resultadoExp}
                       intervencoes={lista}
-                      renderIntervencao={(acaoPresc: string, idx: number) => {
+                      renderIntervencao={(acaoPresc, idx: number) => {
+                        const textoAcaoPrescrita = typeof acaoPresc === 'string' ? acaoPresc : acaoPresc.acaoPrescrita;
                         const dxImpl = processo.implementacao?.[titulo];
-                        const intv = dxImpl?.intervencoes.find((inv: any) => inv.acaoPrescrita === acaoPresc);
-                        const textoPresente = intv?.acaoEnfermeiro || acaoPresc;
+                        const intv = dxImpl?.intervencoes.find((inv) => inv.acaoPrescrita === textoAcaoPrescrita);
+                        const textoPresente = intv?.acaoEnfermeiro || textoAcaoPrescrita;
                         return (
                           <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                             <CheckCircle2 className="w-4 h-4 text-csae-green-500 mt-0.5 flex-shrink-0" />
