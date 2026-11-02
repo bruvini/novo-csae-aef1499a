@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +15,7 @@ import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico, type Intervencao as IntervencaoCatalogo } from '@/services/bancodados/rolEnfermagemDB';
-import { isDiagnosticoPositivo } from '@/utils/processoUtils';
+import { alinharDiagnosticosPlanejados, isDiagnosticoPositivo, reordenarDiagnosticosPlanejados } from '@/utils/processoUtils';
 import { revisarSeparacao, sinalizarIntervencoesMultiplas } from '@/utils/individualizacaoIntervencoes';
 import { criarIntervencaoConsulta } from '@/utils/materiaisApoioProcesso';
 
@@ -53,22 +54,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     // removidos, inclusive após reabrir o processo.
     const selecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
     const salvos = processo.planejamento?.diagnosticosPlanejados ?? [];
-    const alinhados = selecionados.map((diag, index) => {
-      const salvo = salvos.find((item) => item.diagnosticoId === diag.id);
-      return salvo
-        ? {
-            ...salvo,
-            tituloDiagnostico: diag.tituloDiagnostico,
-            ...(diag.naturezaDiagnostico ? { naturezaDiagnostico: diag.naturezaDiagnostico } : {}),
-          }
-        : {
-            diagnosticoId: diag.id,
-            tituloDiagnostico: diag.tituloDiagnostico,
-            ordemPrioridade: index + 1,
-            intervencoesSelecionadas: [],
-            ...(diag.naturezaDiagnostico ? { naturezaDiagnostico: diag.naturezaDiagnostico } : {}),
-          };
-    });
+    const alinhados = alinharDiagnosticosPlanejados(selecionados, salvos);
     setDiagnosticosPrivorizados(alinhados);
     if (
       alinhados.length !== salvos.length
@@ -81,15 +67,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const items = Array.from(diagnosticosPriorizados);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    // Atualizar ordem
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      ordemPrioridade: index + 1
-    }));
+    const updatedItems = reordenarDiagnosticosPlanejados(diagnosticosPriorizados, result.source.index, result.destination.index);
 
     setDiagnosticosPrivorizados(updatedItems);
     salvarPlanejamento(updatedItems);
@@ -101,6 +79,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
         ? {
             ...diag,
             resultadoEsperadoSelecionado: resultado,
+            ...(resultado ? { resultadoPlanejadoId: diag.resultadoEsperadoSelecionado === resultado && diag.resultadoPlanejadoId ? diag.resultadoPlanejadoId : crypto.randomUUID() } : { resultadoPlanejadoId: undefined }),
             // Intervenções do resultado anterior não devem ser mantidas
             // quando o enfermeiro altera o resultado esperado.
             intervencoesSelecionadas: diag.resultadoEsperadoSelecionado === resultado
@@ -296,15 +275,15 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                     <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
                       {diagnosticosPriorizados.map((diagnostico, index) => (
                         <Draggable key={diagnostico.diagnosticoId} draggableId={diagnostico.diagnosticoId} index={index}>
-                          {(provided, snapshot) => (
-                            <div
+                          {(provided, snapshot) => {
+                            const item = <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                               className={`flex items-center gap-3 p-3 bg-white border rounded-lg ${
                                 snapshot.isDragging ? 'shadow-lg' : 'shadow-sm'
                               }`}
                             >
-                              <div {...provided.dragHandleProps}>
+                              <div {...provided.dragHandleProps} aria-label={`Reordenar ${diagnostico.tituloDiagnostico}`}>
                                 <GripVertical className="w-5 h-5 text-muted-foreground" />
                               </div>
                               <div className="flex-1">
@@ -315,8 +294,9 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                   <span className="font-medium">{diagnostico.tituloDiagnostico}</span>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            </div>;
+                            return snapshot.isDragging ? createPortal(item, document.body) : item;
+                          }}
                         </Draggable>
                       ))}
                       {provided.placeholder}

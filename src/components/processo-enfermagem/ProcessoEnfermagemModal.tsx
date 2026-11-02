@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -32,7 +32,6 @@ import {
   finalizarSessaoAtual,
 } from '@/services/bancodados/processosEnfermagemDB';
 import { encaminharSugestoes, identificadorSugestao, reprocessarSugestoesPendentes, type IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
-import { calcularTempoAtivo } from '@/utils/timeUtils';
 import {
   calcularEtapasCompletadas,
   isEtapaAcessivel,
@@ -41,8 +40,9 @@ import {
   RequisitoDescricaoAvaliacao,
 } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { invalidarResumoAoAlterarEntrega } from '@/utils/materiaisApoioProcesso';
-import { Loader2, Trash2, X, History } from 'lucide-react';
+import { conciliarImplementacao, invalidarResumoAoAlterarEntrega } from '@/utils/materiaisApoioProcesso';
+import { conciliarEvolucao } from '@/utils/evolucaoProcesso';
+import { Loader2, Trash2, History } from 'lucide-react';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
 import EtapaDiagnostico from './EtapaDiagnostico';
@@ -50,7 +50,7 @@ import EtapaPlanejamento from './EtapaPlanejamento';
 import EtapaImplementacao from './EtapaImplementacao';
 import EtapaEvolucao from './EtapaEvolucao';
 import EtapaResumo from './EtapaResumo';
-import { ImplementacaoEnfermagem, PlanejamentoEnfermagem, AvaliacaoEnfermagem, DiagnosticoEnfermagem, EvolucaoEnfermagem, IntervencaoImplementada } from '@/types/processoEnfermagem';
+import { ImplementacaoEnfermagem, PlanejamentoEnfermagem, AvaliacaoEnfermagem, DiagnosticoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnfermagem';
 import HistoricoProcessosModal from './HistoricoProcessosModal';
 import TempoAtivoBadge from './TempoAtivoBadge';
 
@@ -94,6 +94,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [etapaAtual, setEtapaAtual] = useState(1);
   const [requisitosDescricao, setRequisitosDescricao] = useState<RequisitoDescricaoAvaliacao[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const conteudoRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { if (conteudoRef.current) conteudoRef.current.scrollTop = 0; }, [etapaAtual]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
@@ -114,6 +118,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   // Carregar processo ativo ao abrir, ou criar um novo se não existir
   useEffect(() => {
     if (!isOpen || !paciente.id) return;
+    let ativo = true;
+    setIsInitializing(true);
+    setLoadFailed(false);
 
     const carregarOuCriarProcesso = async () => {
       try {
@@ -132,7 +139,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           
           // Re-buscar para obter a sessão iniciada e garantir o contador em tempo real
           const atualizado = await buscarProcessoPorId(paciente.id, processoAtual.id);
-          if (atualizado) {
+          if (!atualizado) throw new Error('Processo não encontrado após iniciar sessão.');
+          if (ativo) {
             processoAtualRef.current = atualizado;
             setProcesso(atualizado);
             setEtapaAtual(atualizado.etapaAtual);
@@ -141,21 +149,25 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         }
 
         // Se não existir, cria novo (já inicia sessão internamente)
-        await criarNovoProcesso();
+        if (ativo) await criarNovoProcesso(() => ativo);
       } catch (error) {
         console.error('Erro ao carregar ou criar processo:', error);
+        if (ativo) setLoadFailed(true);
         toast({
           title: "Erro",
           description: "Não foi possível carregar ou iniciar o processo.",
           variant: "destructive",
         });
+      } finally {
+        if (ativo) setIsInitializing(false);
       }
     };
 
     carregarOuCriarProcesso();
+    return () => { ativo = false; };
   }, [isOpen, processoInicial, paciente.id, enfermeiroId]);
 
-  const criarNovoProcesso = async () => {
+  const criarNovoProcesso = async (isActive: () => boolean) => {
     if (!paciente.id) return;
 
     // O Stepper será recalculado quando o novo processo for carregado.
@@ -163,15 +175,17 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     
     try {
       const novoId = await criarProcessoEnfermagem(paciente.id, enfermeiroId);
+      if (!isActive()) return;
 
       // Carregar documento completo
       const docCarregado = await buscarProcessoPorId(paciente.id, novoId);
+      if (!isActive()) return;
       if (docCarregado) {
         processoAtualRef.current = docCarregado;
         setProcesso(docCarregado);
         setEtapaAtual(docCarregado.etapaAtual || 1);
       } else {
-        setProcesso(prev => ({ ...prev, id: novoId }));
+        throw new Error('Processo recém-criado não encontrado.');
       }
 
       toast({
@@ -180,6 +194,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       })
     } catch (error) {
       console.error('Erro ao criar processo:', error);
+      if (isActive()) setLoadFailed(true);
       toast({
         title: "Erro",
         description: "Erro ao iniciar processo de enfermagem.",
@@ -189,6 +204,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleEtapaChange = async (etapa: number) => {
+    if (isInitializing || loadFailed || isSaving) return;
     // Se está tentando avançar (etapa > etapaAtual)
     if (etapa > etapaAtual) {
       const atual = processoAtualRef.current;
@@ -211,10 +227,18 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         return; // Aborta navegação
       }
 
-      const avancou = await executarAvancoAposSalvar(handleSalvarProgresso, () => setEtapaAtual(etapa));
+      await executarAvancoAposSalvar(handleSalvarProgresso, () => {
+        const atualizado = { ...processoAtualRef.current, etapaAtual: etapa };
+        processoAtualRef.current = atualizado;
+        setProcesso(atualizado);
+        setEtapaAtual(etapa);
+      });
       return;
     }
 
+    const atualizado = { ...processoAtualRef.current, etapaAtual: etapa };
+    processoAtualRef.current = atualizado;
+    setProcesso(atualizado);
     setEtapaAtual(etapa);
   };
 
@@ -225,13 +249,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleUpdateDiagnostico = (diagnostico: DiagnosticoEnfermagem) => {
-    const atualizado = { ...processoAtualRef.current, diagnostico };
+    const base = { ...processoAtualRef.current, diagnostico };
+    const atualizado = { ...base, evolucao: { ...conciliarEvolucao(base), resumoGerado: '' } };
     processoAtualRef.current = atualizado;
     setProcesso(atualizado);
   };
 
   const handleUpdatePlanejamento = (planejamento: PlanejamentoEnfermagem) => {
-    const atualizado = { ...processoAtualRef.current, planejamento };
+    const base = { ...processoAtualRef.current, planejamento, implementacao: conciliarImplementacao(planejamento.diagnosticosPlanejados, processoAtualRef.current.implementacao || {}) };
+    const atualizado = { ...base, evolucao: { ...conciliarEvolucao(base), resumoGerado: '' } };
     processoAtualRef.current = atualizado;
     setProcesso(atualizado);
   };
@@ -262,13 +288,16 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         });
       });
 
-      const atualizado = {
+      const base = {
         ...prev,
         implementacao: novaImplementacao,
-        evolucao: invalidarResumoAoAlterarEntrega({
-          ...(prev.evolucao || { resumoGerado: '' }),
+      };
+      const atualizado = {
+        ...base,
+        evolucao: { ...invalidarResumoAoAlterarEntrega({
+          ...conciliarEvolucao(base),
           intervencoesExecutadas: intervencoesExecutadasAtualizadas,
-        }, prev.implementacao || {}, novaImplementacao),
+        }, prev.implementacao || {}, novaImplementacao), resumoGerado: '' },
       };
     processoAtualRef.current = atualizado;
     setProcesso(atualizado);
@@ -299,10 +328,6 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         }
       );
 
-      toast({
-        title: "Sucesso",
-        description: "Progresso salvo com sucesso!",
-      })
       return true;
     } catch (error) {
       console.error('Erro ao salvar progresso:', error);
@@ -328,29 +353,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     }
   };
 
-  // Salva o progresso em background sem bloquear a UI (sem isSaving, sem toast de sucesso)
-  const salvarEmBackground = (etapaParaSalvar: number, processoAtual: ProcessoEnfermagem) => {
-    if (!processoAtual.id || !paciente.id) return;
-
-    salvarProgressoProcesso(
-      paciente.id,
-      processoAtual.id,
-      etapaParaSalvar,
-      {
-        avaliacao: processoAtual.avaliacao,
-        diagnostico: processoAtual.diagnostico,
-        planejamento: processoAtual.planejamento,
-        implementacao: processoAtual.implementacao,
-        evolucao: processoAtual.evolucao,
-      }
-    ).catch((err) => {
-      console.error('Erro ao salvar progresso em background:', err);
-    });
-  };
-
-
   const handleSaveAndClose = async () => {
-    if (!processo.id || !paciente.id) {
+    if (isInitializing || loadFailed || !processo.id || !paciente.id || processo.pacienteId !== paciente.id) {
       onClose();
       return;
     }
@@ -588,8 +592,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           </div>
 
           {/* Área de conteúdo rolável */}
-          <div className="flex-1 overflow-y-auto px-4">
-            {renderEtapaAtual()}
+          <div ref={conteudoRef} className="flex-1 overflow-y-auto px-4">
+            {isInitializing ? <div className="flex items-center justify-center gap-2 p-8"><Loader2 className="h-5 w-5 animate-spin" />Carregando processo de enfermagem...</div> : !loadFailed && processo.id && processo.pacienteId === paciente.id ? renderEtapaAtual() : <p className="p-8 text-center">Não foi possível abrir o processo. Feche esta janela e tente novamente.</p>}
           </div>
 
           {/* Footer fixo */}
@@ -598,12 +602,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
               variant="destructive" 
               className="mr-auto" 
               onClick={() => setShowDeleteAlert(true)}
-              disabled={isSaving}
+              disabled={isSaving || isInitializing || loadFailed}
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir Processo
             </Button>
-            <Button type="button" variant="secondary" onClick={handleSaveAndClose} disabled={isSaving}>
+            <Button type="button" variant="secondary" onClick={handleSaveAndClose} disabled={isSaving || isInitializing}>
               Cancelar
             </Button>
             
@@ -613,7 +617,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                   type="button" 
                   variant="outline" 
                   onClick={() => handleEtapaChange(etapaAtual - 1)}
-                  disabled={isSaving}
+                  disabled={isSaving || isInitializing || loadFailed}
                 >
                   Voltar
                 </Button>
@@ -623,7 +627,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 <Button 
                   type="button" 
                   onClick={() => handleEtapaChange(etapaAtual + 1)}
-                  disabled={isSaving}
+                  disabled={isSaving || isInitializing || loadFailed}
                 >
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Avançar

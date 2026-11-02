@@ -5,6 +5,10 @@ from google.cloud import firestore
 
 PROJECT = 'csaefloripa'
 ENTRIES = {
+    'evolucao-intervencoes-resultados-20261102': (
+        'Evolução de Enfermagem Mais Flexível',
+        'Agora você pode registrar as respostas às intervenções realizadas, avaliar os resultados esperados e compartilhar observações entre cuidados. Também ajustamos a navegação e o resumo do Processo de Enfermagem. Esses registros na Evolução são opcionais e ficam a seu critério clínico.',
+    ),
     'materiais-apoio-implementacao-20261102': (
         'Materiais de Apoio Durante a Consulta',
         'Os materiais de apoio vinculados às intervenções agora podem ser acessados durante a Implementação de Enfermagem. Você também pode registrar quais materiais foram entregues ao paciente e consultar essas informações nas etapas seguintes.',

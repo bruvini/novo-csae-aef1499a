@@ -3,11 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   Copy, Search, FileText, Target, Play, TrendingUp, BadgeCheck,
-  Stethoscope, Heart, AlertTriangle, CheckCircle2
+  Stethoscope, Heart, CheckCircle2
 } from 'lucide-react';
 import {
   IntervencaoImplementada,
@@ -25,6 +24,7 @@ import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
 import { linhasMateriaisEntregues, materiaisAgrupados } from '@/utils/materiaisApoioProcesso';
 import MateriaisApoioLeitura from './MateriaisApoioLeitura';
+import { obterIntervencoesDaConsulta, referenciaResultado } from '@/utils/evolucaoProcesso';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -295,7 +295,8 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       if (!acoesMarcadas || acoesMarcadas.length === 0) return;
       acoesMarcadas.forEach((acaoPresc: string) => {
         const dxImpl = processo.implementacao?.[tituloDiag];
-        const intv = dxImpl?.intervencoes.find((i) => i.acaoPrescrita === acaoPresc);
+        const intv = dxImpl?.intervencoes.find((i) => i.acaoPrescrita === acaoPresc && i.implementadoNestaConsulta && i.quemExecuta === 'Enfermeiro');
+        if (!intv) return;
         const textoBase = intv?.acaoEnfermeiro || acaoPresc;
         acoesEnfermeiro.push(conjugarVerbo(textoBase));
       });
@@ -311,6 +312,29 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     if (processo.evolucao?.julgamentoClinico?.trim()) {
       linhas.push('JULGAMENTO CLÍNICO E AVALIAÇÃO DOS RESULTADOS:');
       linhas.push(processo.evolucao.julgamentoClinico.trim());
+      linhas.push('');
+    }
+
+    const rotulosRespostas: Record<string, string> = { favoravel: 'Resposta favorável observada', parcial: 'Resposta parcial', desfavoravel: 'Resposta desfavorável', sem_resposta: 'Sem resposta avaliável nesta consulta', acompanhamento: 'Requer acompanhamento posterior' };
+    const rotulosResultados: Record<string, string> = { alcancado: 'Alcançado', parcial: 'Parcialmente alcançado', nao_alcancado: 'Não alcançado', nao_avaliavel: 'Ainda não avaliável' };
+    const respostas = processo.evolucao?.respostasIntervencoes || {};
+    const avaliacoes = processo.evolucao?.avaliacoesResultados || {};
+    if (Object.keys(respostas).length || Object.keys(avaliacoes).length || processo.evolucao?.observacoesCompartilhadas?.length) {
+      linhas.push('AVALIAÇÕES REGISTRADAS NA EVOLUÇÃO:');
+      Object.entries(respostas).forEach(([id, resposta]) => {
+        const intervencao = obterIntervencoesDaConsulta(processo).find((item) => item.id === id && item.executada);
+        if (!intervencao) return;
+        linhas.push(`• ${intervencao.prescrita.acaoPrescrita} (Executor: ${intervencao.implementada?.quemExecuta || 'não informado'}): ${resposta.classificacao ? rotulosRespostas[resposta.classificacao] : 'Observação registrada'}${resposta.observacao?.trim() ? ` — ${resposta.observacao.trim()}` : ''}`);
+      });
+      (processo.evolucao?.observacoesCompartilhadas || []).forEach((observacao) => {
+        const vinculadas = obterIntervencoesDaConsulta(processo).filter((item) => item.executada && observacao.intervencaoIds.includes(item.id));
+        if (vinculadas.length && observacao.texto.trim()) linhas.push(`• Observação compartilhada (${vinculadas.map((item) => item.prescrita.acaoPrescrita).join('; ')}): ${observacao.texto.trim()}`);
+      });
+      Object.entries(avaliacoes).forEach(([id, avaliacao]) => {
+        const resultado = (processo.planejamento?.diagnosticosPlanejados || []).find((diag) => referenciaResultado(diag.diagnosticoId, diag.resultadoPlanejadoId) === id);
+        if (!resultado) return;
+        linhas.push(`• Resultado esperado ${resultado.resultadoEsperadoSelecionado}: ${avaliacao.classificacao ? rotulosResultados[avaliacao.classificacao] : 'Observação registrada'}${avaliacao.observacao?.trim() ? ` — ${avaliacao.observacao.trim()}` : ''}`);
+      });
       linhas.push('');
     }
 
@@ -385,8 +409,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     diagnosticosPorSubconjunto[nomeGrupo].push(d.tituloDiagnostico);
   });
 
-  const intervencoesExecutadas = processo.evolucao?.intervencoesExecutadas || {};
-  const temExecutada = Object.values(intervencoesExecutadas).some((lista) => lista.length > 0);
+  const temExecutada = obterIntervencoesDaConsulta(processo).some((item) => item.executada);
 
   return (
     <div className="space-y-8">
@@ -501,11 +524,9 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   resultado={diag.resultadoEsperadoSelecionado}
                   intervencoes={diag.intervencoesSelecionadas || []}
                   renderIntervencao={(int, idx) => {
-                    const chave = typeof int === 'string' ? '' : `${diag.diagnosticoId}|${int.intervencaoId || int.acaoPrescrita}`;
-                    const materiais = gruposMateriais.find(grupo => grupo.chave === chave)?.materiais || [];
                     return <li key={typeof int === 'string' ? idx : int.intervencaoId || idx} className="flex items-start gap-2 text-sm text-gray-700">
                       <span className="text-csae-green-500 font-bold mt-0.5">•</span>
-                      <div><span>{typeof int === 'string' ? int : int.acaoPrescrita}</span>{materiais.length > 0 && <MateriaisApoioLeitura materiais={materiais} />}</div>
+                      <span>{typeof int === 'string' ? int : int.acaoPrescrita}</span>
                     </li>;
                   }}
                 />
@@ -525,7 +546,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
                   (p) => p.tituloDiagnostico === titulo
                 );
-                const implementadas = dados.intervencoes.filter((iv) => iv.implementadoNestaConsulta);
+                const implementadas = dados.intervencoes;
                 if (implementadas.length === 0) return null;
                 return (
                   <DiagnosticoBlock
@@ -537,12 +558,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                       (() => {
                         const acao = typeof iv === 'string' ? iv : iv.acaoPrescrita;
                         const executor = typeof iv !== 'string' && 'quemExecuta' in iv ? iv.quemExecuta : undefined;
+                        const chave = `${planejadoDiag?.diagnosticoId || ''}|${typeof iv === 'string' ? acao : iv.intervencaoId || acao}`;
+                        const materiais = gruposMateriais.find(grupo => grupo.chave === chave)?.materiais || [];
                         return (
                       <li key={idx} className="flex items-start justify-between gap-2">
-                        <span className="text-sm text-gray-700 flex-1 flex items-start gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
-                          {acao}
-                        </span>
+                        <div className="text-sm text-gray-700 flex-1"><span className="flex items-start gap-2">{typeof iv !== 'string' && 'implementadoNestaConsulta' in iv && iv.implementadoNestaConsulta ? <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" /> : <span>○</span>}{acao}{typeof iv !== 'string' && 'implementadoNestaConsulta' in iv && !iv.implementadoNestaConsulta ? ' · Não realizada nesta consulta' : ''}</span>{materiais.length > 0 && <MateriaisApoioLeitura materiais={materiais} />}</div>
                         {executor && (
                           <Badge variant="outline" className="text-[10px] whitespace-nowrap flex-shrink-0">
                             Executor: {executor}
@@ -566,42 +586,23 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
-              {!temExecutada ? (
-                <Alert className="border-orange-300 bg-orange-50">
-                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                  <AlertDescription className="font-bold text-orange-700">
-                    Não executei nenhuma intervenção nesta consulta
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                Object.entries(intervencoesExecutadas).map(([titulo, lista], i) => {
-                  if (lista.length === 0) return null;
-                  const planejadoDiag = processo.planejamento?.diagnosticosPlanejados?.find(
-                    (d) => d.tituloDiagnostico === titulo
-                  );
-                  const resultadoExp = planejadoDiag?.resultadoEsperadoSelecionado;
-                  return (
-                    <DiagnosticoBlock
-                      key={i}
-                      titulo={titulo}
-                      resultado={resultadoExp}
-                      intervencoes={lista}
-                      renderIntervencao={(acaoPresc, idx: number) => {
-                        const textoAcaoPrescrita = typeof acaoPresc === 'string' ? acaoPresc : acaoPresc.acaoPrescrita;
-                        const dxImpl = processo.implementacao?.[titulo];
-                        const intv = dxImpl?.intervencoes.find((inv) => inv.acaoPrescrita === textoAcaoPrescrita);
-                        const textoPresente = intv?.acaoEnfermeiro || textoAcaoPrescrita;
-                        return (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                            <CheckCircle2 className="w-4 h-4 text-csae-green-500 mt-0.5 flex-shrink-0" />
-                            <span className="italic">{textoPresente}</span>
-                          </li>
-                        );
-                      }}
-                    />
-                  );
-                })
-              )}
+              {!temExecutada && <p className="text-sm text-muted-foreground">Nenhuma intervenção foi realizada nesta consulta.</p>}
+              {obterIntervencoesDaConsulta(processo).filter((item) => item.executada).map((item) => {
+                const resposta = processo.evolucao?.respostasIntervencoes?.[item.id];
+                return <InfoCard key={item.id}>
+                  <p className="font-medium text-sm">{item.tituloDiagnostico}</p>
+                  <p className="text-sm">{item.prescrita.acaoPrescrita} · Executor: {item.implementada?.quemExecuta || 'não informado'}</p>
+                  {resposta?.classificacao && <p className="text-sm">Resposta: {({ favoravel: 'Favorável', parcial: 'Parcial', desfavoravel: 'Desfavorável', sem_resposta: 'Sem resposta avaliável', acompanhamento: 'Requer acompanhamento' })[resposta.classificacao]}</p>}
+                  {resposta?.observacao && <p className="text-sm">{resposta.observacao}</p>}
+                </InfoCard>;
+              })}
+              {(processo.evolucao?.observacoesCompartilhadas || []).map((observacao) => <InfoCard key={observacao.id}><p className="text-sm">{observacao.texto}</p><p className="text-xs text-muted-foreground">Intervenções vinculadas: {obterIntervencoesDaConsulta(processo).filter((item) => item.executada && observacao.intervencaoIds.includes(item.id)).map((item) => item.prescrita.acaoPrescrita).join('; ')}</p></InfoCard>)}
+              {(processo.planejamento?.diagnosticosPlanejados || []).map((diag) => {
+                const avaliacao = processo.evolucao?.avaliacoesResultados?.[referenciaResultado(diag.diagnosticoId, diag.resultadoPlanejadoId)];
+                if (!avaliacao) return null;
+                return <InfoCard key={diag.diagnosticoId}><p className="font-medium text-sm">{diag.tituloDiagnostico} · {diag.resultadoEsperadoSelecionado}</p><p className="text-sm">{avaliacao.classificacao ? ({ alcancado: 'Alcançado', parcial: 'Parcialmente alcançado', nao_alcancado: 'Não alcançado', nao_avaliavel: 'Ainda não avaliável' })[avaliacao.classificacao] : ''} {avaliacao.observacao}</p></InfoCard>;
+              })}
+              {processo.evolucao?.julgamentoClinico?.trim() && <InfoCard><p className="font-medium text-sm">Julgamento Clínico e Avaliação dos Resultados</p><p className="text-sm whitespace-pre-wrap">{processo.evolucao.julgamentoClinico}</p></InfoCard>}
             </AccordionContent>
           </AccordionItem>
 

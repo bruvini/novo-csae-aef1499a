@@ -82,19 +82,6 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, materiai
             </Badge>
           </div>
 
-          {materiais.length > 0 && <div className="space-y-1 rounded-md border bg-muted/20 p-2" aria-label="Materiais de apoio">
-            <p className="text-xs font-semibold">Materiais de apoio · marque apenas os entregues ao paciente</p>
-            {materiaisComEntrega(materiais, intervencao).map(material => {
-              const href = linkMaterialSeguro(material.urlMaterialApoio);
-              const checkboxId = `entrega-${identificador}-${material.id}`;
-              return <div key={material.id} className="flex items-center gap-2 text-sm">
-                <Checkbox id={checkboxId} aria-label={`Material entregue: ${material.tituloMaterialApoio}`} checked={material.entregue} onCheckedChange={checked => onMaterialEntregaChange(material.id, checked === true)} />
-                {href ? <a className="inline-flex items-center gap-1 text-primary underline underline-offset-2" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${material.tituloMaterialApoio} em nova aba`}>{material.tituloMaterialApoio}<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a> : <span title="Link HTTPS indisponível">{material.tituloMaterialApoio} · link indisponível</span>}
-              </div>;
-            })}
-            <p className="text-[11px] text-muted-foreground">Abrir um documento não registra sua entrega.</p>
-          </div>}
-
           {/* ToggleGroup para quem executa */}
           <div className={cn("flex items-center gap-4 mt-2", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>
             <Label className={cn("text-xs font-medium", intervencao.implementadoNestaConsulta && !intervencao.quemExecuta ? "text-red-500 font-bold" : "text-muted-foreground")}>
@@ -161,6 +148,18 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, materiai
               </Select>
             </div>
           </div>
+          {materiais.length > 0 && <div className="space-y-1 rounded-md border bg-muted/20 p-2" aria-label="Materiais de apoio">
+            <p className="text-xs font-semibold">Materiais de apoio · marque apenas os entregues ao paciente</p>
+            {materiaisComEntrega(materiais, intervencao).map(material => {
+              const href = linkMaterialSeguro(material.urlMaterialApoio);
+              const checkboxId = `entrega-${identificador}-${material.id}`;
+              return <div key={material.id} className="flex items-center gap-2 text-sm">
+                <Checkbox id={checkboxId} aria-label={`Material entregue: ${material.tituloMaterialApoio}`} checked={material.entregue} onCheckedChange={checked => onMaterialEntregaChange(material.id, checked === true)} />
+                {href ? <a className="inline-flex items-center gap-1 text-primary underline underline-offset-2" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${material.tituloMaterialApoio} em nova aba`}>{material.tituloMaterialApoio}<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a> : <span title="Link HTTPS indisponível">{material.tituloMaterialApoio} · link indisponível</span>}
+              </div>;
+            })}
+            <p className="text-[11px] text-muted-foreground">Abrir um documento não registra sua entrega.</p>
+          </div>}
         </div>
       </div>
     </div>

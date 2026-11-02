@@ -65,6 +65,7 @@ export interface DiagnosticoPlanejado {
   tituloDiagnostico: string;
   ordemPrioridade: number;
   resultadoEsperadoSelecionado?: string; // Armazena o título do resultado escolhido
+  resultadoPlanejadoId?: string; // Identidade estável desta escolha na consulta
   intervencoesSelecionadas: IntervencaoSelecionada[];
   naturezaDiagnostico?: NaturezaDiagnostico;
   /** Compatibilidade com processos legados; novos fluxos usam naturezaDiagnostico. */
@@ -98,6 +99,9 @@ export interface EvolucaoEnfermagem {
   resumoGerado: string; // Armazenará o texto copiado para o histórico
   intervencoesExecutadas?: { [tituloDiagnostico: string]: string[] };
   julgamentoClinico?: string;
+  respostasIntervencoes?: Record<string, { diagnosticoId: string; classificacao?: 'favoravel' | 'parcial' | 'desfavoravel' | 'sem_resposta' | 'acompanhamento'; observacao?: string }>;
+  observacoesCompartilhadas?: Array<{ id: string; texto: string; intervencaoIds: string[] }>;
+  avaliacoesResultados?: Record<string, { diagnosticoId: string; resultadoTitulo: string; classificacao?: 'alcancado' | 'parcial' | 'nao_alcancado' | 'nao_avaliavel'; observacao?: string }>;
 }
 
 export interface ProcessoEnfermagem {

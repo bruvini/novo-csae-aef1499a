@@ -68,7 +68,7 @@ test('processo exclusivamente positivo sem intervenção exige justificativa e j
   assert.deepEqual(calcularEtapasCompletadas(semEvolucao), [1, 2, 3, 4]);
 });
 
-test('diagnósticos mistos exigem implementação do diagnóstico não positivo', () => {
+test('diagnósticos mistos permitem adiar intervenções; ações executadas exigem executor', () => {
   const process = fixture({
     diagnostico: { diagnosticosSelecionados: [positive, problem] },
     planejamento: { diagnosticosPlanejados: [
@@ -82,7 +82,9 @@ test('diagnósticos mistos exigem implementação do diagnóstico não positivo'
   });
   assert.ok(calcularEtapasCompletadas(process).includes(4));
   const semAcaoObrigatória = { ...process, implementacao: { [positive.tituloDiagnostico]: { intervencoes: [] } } };
-  assert.ok(!calcularEtapasCompletadas(semAcaoObrigatória).includes(4));
+  assert.ok(calcularEtapasCompletadas(semAcaoObrigatória).includes(4));
+  const executorPendente = { ...process, implementacao: { ...process.implementacao, [problem.tituloDiagnostico]: { intervencoes: [{ ...intervention(), implementadoNestaConsulta: true }] } } };
+  assert.ok(!calcularEtapasCompletadas(executorPendente).includes(4));
 });
 
 test('planejamento incompleto de diagnóstico não positivo bloqueia implementação', () => {
