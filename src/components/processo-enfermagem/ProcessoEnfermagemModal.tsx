@@ -389,6 +389,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setIsSaving(true);
     try {
+      let sugestoesPendentes = false;
       await concluirProcesso(
         paciente.id,
         processo.id,
@@ -422,12 +423,14 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         }
       } catch (erroAdministrativo) {
         console.error('Processo concluído; sugestão administrativa pendente:', erroAdministrativo);
-        toast({ title: 'Processo concluído', description: 'O envio de uma sugestão ficou pendente e será tentado novamente neste navegador.' });
+        sugestoesPendentes = true;
       }
 
       toast({
         title: "Sucesso",
-        description: "Processo concluído com sucesso!",
+        description: sugestoesPendentes
+          ? 'Processo concluído. O envio de uma sugestão ficou pendente neste navegador.'
+          : 'Processo concluído com sucesso!',
       })
       onClose();
     } catch (error) {

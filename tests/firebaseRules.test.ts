@@ -133,7 +133,10 @@ test('preparação permanece aguardando; publicação exige homologação e deci
     textoIntervencao: 'Orientar atividade', tituloResultadoVinculado: 'Mobilidade', autorId: 'autor', autorNome: 'Autor',
     dataCriacao: serverTimestamp(), identificadorSugestao: 's1', status: 'aguardando',
   }));
-  const preparacao = { acaoPrescrita: 'Orientar atividade física', acaoEnfermeiro: 'Oriento atividade física', destinos: [{ diagnosticoId: 'd1', tituloDiagnostico: 'Mobilidade', tituloResultado: 'Mobilidade melhorada' }] };
+  const preparacao = { acaoPrescrita: 'Orientar atividade física', acaoEnfermeiro: 'Oriento atividade física', destinos: [
+    { diagnosticoId: 'd1', tituloDiagnostico: 'Mobilidade', tituloResultado: 'Mobilidade melhorada' },
+    { diagnosticoId: 'd2', tituloDiagnostico: 'Autocuidado', tituloResultado: 'Autocuidado preservado' },
+  ] };
   const sugestao = doc(gestor, 'intervencoesAutorais', 's1');
   const preparar = writeBatch(gestor);
   preparar.update(sugestao, { status: 'aguardando', preparacao, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a1' });
@@ -149,11 +152,19 @@ test('preparação permanece aguardando; publicação exige homologação e deci
       tituloDiagnostico: 'Mobilidade', descricaoDiagnostico: '', subconjuntos: [],
       resultadosEsperados: [{ tituloResultado: 'Mobilidade melhorada', descricaoResultado: '', intervencoes: [] }],
     });
+    await setDoc(doc(context.firestore(), 'rolEnfermagem', 'd2'), {
+      tituloDiagnostico: 'Autocuidado', descricaoDiagnostico: '', subconjuntos: [],
+      resultadosEsperados: [{ tituloResultado: 'Autocuidado preservado', descricaoResultado: '', intervencoes: [] }],
+    });
   });
   const completa = { ...preparacao, referenciaDeliberacao: 'Deliberação de teste', dataDeliberacao: '2026-11-02', documentoHomologacao: 'Ata de teste', responsavelValidacao: 'CSAE teste' };
   const publicar = writeBatch(gestor);
   publicar.update(doc(gestor, 'rolEnfermagem', 'd1'), {
     resultadosEsperados: [{ tituloResultado: 'Mobilidade melhorada', descricaoResultado: '', intervencoes: [{ acaoPrescrita: completa.acaoPrescrita, acaoEnfermeiro: completa.acaoEnfermeiro, materiaisDeApoio: [] }] }],
+    ultimaSugestaoPublicada: 's1',
+  });
+  publicar.update(doc(gestor, 'rolEnfermagem', 'd2'), {
+    resultadosEsperados: [{ tituloResultado: 'Autocuidado preservado', descricaoResultado: '', intervencoes: [{ acaoPrescrita: completa.acaoPrescrita, acaoEnfermeiro: completa.acaoEnfermeiro, materiaisDeApoio: [] }] }],
     ultimaSugestaoPublicada: 's1',
   });
   publicar.update(sugestao, { status: 'aprovada', preparacao: completa, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a3' });
@@ -164,6 +175,7 @@ test('preparação permanece aguardando; publicação exige homologação e deci
   concorrente.set(doc(gestor, 'decisoesIntervencoes', 'a4'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'publicar', avaliadorId: 'gestor', destinos: completa.destinos, justificativa: '', dataHora: serverTimestamp() });
   await assertFails(concorrente.commit());
   assert.equal((await getDoc(sugestao)).data()?.status, 'aprovada');
+  assert.equal((await getDoc(doc(gestor, 'rolEnfermagem', 'd2'))).data()?.resultadosEsperados[0].intervencoes[0].acaoPrescrita, completa.acaoPrescrita);
 });
 
 test('novo cadastro só cria o próprio perfil como pendente, sem permissões elevadas', async () => {
