@@ -526,9 +526,16 @@ service cloud.firestore {
       let previous = resource.data;
       let oldStatus = ('status' in previous) ? previous.status : 'aguardando';
       let audit = getAfter(/databases/$(database)/documents/decisoesIntervencoes/$(data.ultimaDecisaoId)).data;
-      return validSuggestion(data)
-        && oldStatus == 'aguardando'
+      // Os campos clínicos e de autoria já foram validados na criação e são
+      // imutáveis; validar novamente o mapa inteiro excede o limite de
+      // expressões do Emulator em operações atômicas com o catálogo.
+      return oldStatus == 'aguardando'
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
         && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.status in ['aguardando', 'aprovada', 'rejeitada']
+        && (!('preparacao' in data) || validPreparation(data.preparacao))
+        && (!('categoriaRejeicao' in data) || data.categoriaRejeicao in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'])
+        && (!('justificativaRejeicao' in data) || boundedString(data.justificativaRejeicao, 2000))
         && data.avaliadorId == request.auth.uid
         && boundedString(data.avaliadorNome, 160) && data.avaliadorNome.size() > 0
         && data.dataDecisao == request.time
