@@ -10,12 +10,12 @@ import { db } from '../firebase';
 import { agruparStatusCadastro, perfilCadastroIncompleto, timestampToDate } from '@/utils/registrationData';
 import {
   chaveDataSaoPaulo, chaveMesSaoPaulo, converterDataAcesso, diaSemanaSaoPaulo,
-  cacheTemporalAindaValido, LIMITE_HISTORICO_ACESSO, normalizarTotalAcessos, preencherDias,
-  somarTotalLoginsRegistrados,
+  cacheTemporalAindaValido, LIMITE_HISTORICO_ACESSO, normalizarTotalAcessos,
+  somarTotalLoginsRegistrados, diasComEventos,
 } from '@/utils/accessMetrics';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 7;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 export interface EvolucaoEntry {
@@ -148,6 +148,20 @@ export async function obterEstatisticasUsuariosBI(options: { forcarAtualizacao?:
     const mapAMensal: Record<string, number> = {};
     const mapAAnual: Record<string, number> = {};
 
+    const registrarData = (valor: unknown) => {
+      const date = converterDataAcesso(valor);
+      if (!date) return;
+      historicoAcessosConsiderados++;
+      const dia = chaveDataSaoPaulo(date);
+      const mes = chaveMesSaoPaulo(date);
+      const ano = dia.slice(0, 4);
+      const diaSemana = diaSemanaSaoPaulo(date);
+      mapADiario[dia] = (mapADiario[dia] || 0) + 1;
+      mapASemanal[DIAS_SEMANA[diaSemana]] = (mapASemanal[DIAS_SEMANA[diaSemana]] || 0) + 1;
+      mapAMensal[mes] = (mapAMensal[mes] || 0) + 1;
+      mapAAnual[ano] = (mapAAnual[ano] || 0) + 1;
+    };
+
     usuariosSnap.forEach((uDoc) => {
       const data = uDoc.data();
       const acessosUsuario = normalizarTotalAcessos(data.totalAcessos);
@@ -220,23 +234,26 @@ export async function obterEstatisticasUsuariosBI(options: { forcarAtualizacao?:
         mapCAnual[ano] = (mapCAnual[ano] || 0) + 1;
       }
 
-      // Evolução temporal de Acessos
+      // Históricos anteriores à transição permanecem intactos.
       if (Array.isArray(data.historicoAcesso)) {
-        const historicoAcesso: Record<string, unknown>[] = data.historicoAcesso;
-        historicoAcesso.forEach((acesso) => {
-          const date = converterDataAcesso(acesso?.dataHora);
-          if (!date) return;
-          historicoAcessosConsiderados++;
-          const dia = chaveDataSaoPaulo(date);
-          const mes = chaveMesSaoPaulo(date);
-          const ano = dia.slice(0, 4);
-          const diaSemana = diaSemanaSaoPaulo(date);
-          mapADiario[dia] = (mapADiario[dia] || 0) + 1;
-          mapASemanal[DIAS_SEMANA[diaSemana]] = (mapASemanal[DIAS_SEMANA[diaSemana]] || 0) + 1;
-          mapAMensal[mes] = (mapAMensal[mes] || 0) + 1;
-          mapAAnual[ano] = (mapAAnual[ano] || 0) + 1;
-        });
+        data.historicoAcesso.forEach((acesso: Record<string, unknown>) => registrarData(acesso?.dataHora));
       }
+    });
+
+    // Um documento por dia substitui a leitura integral dos eventos individuais.
+    const diasNovos = await getDocs(collection(db, 'acessosDiarios'));
+    diasNovos.forEach((diaDoc) => {
+      const { dia, total } = diaDoc.data();
+      if (typeof dia !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dia) || !Number.isSafeInteger(total) || total <= 0) return;
+      historicoAcessosConsiderados += total;
+      const date = new Date(`${dia}T12:00:00-03:00`);
+      const semana = DIAS_SEMANA[diaSemanaSaoPaulo(date)];
+      mapADiario[dia] = (mapADiario[dia] || 0) + total;
+      mapASemanal[semana] = (mapASemanal[semana] || 0) + total;
+      const mes = dia.slice(0, 7);
+      mapAMensal[mes] = (mapAMensal[mes] || 0) + total;
+      const ano = dia.slice(0, 4);
+      mapAAnual[ano] = (mapAAnual[ano] || 0) + total;
     });
 
     totalAcessosPlataforma = somarTotalLoginsRegistrados(contadoresAcesso);
@@ -265,12 +282,10 @@ export async function obterEstatisticasUsuariosBI(options: { forcarAtualizacao?:
     const evolucaoAnual = calcAcumuladoComVariacao(Object.entries(mapCAnual).sort(sortAnual).map(([key, novos]) => ({ key, novos })));
 
     // Acessos
-    const datasAcesso = Object.keys(mapADiario).sort();
-    const hojePainel = chaveDataSaoPaulo(new Date());
     const evolucaoAcessosDiaria = calcAcumuladoComVariacao(
-      preencherDias(mapADiario, datasAcesso[0], hojePainel).map(({ key, novos }) => ({ key: key.split('-').reverse().join('/'), novos })),
+      diasComEventos(mapADiario).map(({ key, novos }) => ({ key: key.split('-').reverse().join('/'), novos })),
     );
-    const evolucaoAcessosSemanal = DIAS_SEMANA.map((dia) => ({
+    const evolucaoAcessosSemanal = DIAS_SEMANA.filter((dia) => mapASemanal[dia] > 0).map((dia) => ({
       name: dia, novos: mapASemanal[dia] || 0, acumulado: 0, variacaoPercentual: 0,
     }));
     const evolucaoAcessosMensal = calcAcumuladoComVariacao(

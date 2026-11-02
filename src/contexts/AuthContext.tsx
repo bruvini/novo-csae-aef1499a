@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Usuario } from '@/types/usuario';
 import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
-import { deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
+import { chaveDataSaoPaulo, deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
 
 const NPS_PENDENTE_KEY = 'csae_nps_pendente';
 
@@ -389,12 +389,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             totalAcessos: totalAtual + 1,
             ultimoAcesso: serverTimestamp(),
           };
-          // A regra vigente limita cada array a 200 itens. Ao atingir o limite,
-          // preservamos todo o histórico e ainda gravamos contador e timestamp.
-          if (planoRegistro.acrescentarHistorico) {
-            atualizacao.historicoAcesso = arrayUnion({ dataHora: Timestamp.now() });
-          }
+          // O número sequencial torna a gravação idempotente por usuário.
+          const eventoRef = doc(db, 'eventosAcesso', `${user.uid}_${totalAtual + 1}`);
+          const dia = chaveDataSaoPaulo(new Date());
+          const diarioRef = doc(db, 'acessosDiarios', dia);
+          const diario = await transaction.get(diarioRef);
           transaction.update(updateRef, atualizacao);
+          transaction.set(eventoRef, { uid: user.uid, numero: totalAtual + 1, dia, dataHora: serverTimestamp() });
+          transaction.set(diarioRef, { dia, total: (diario.exists() ? diario.data().total : 0) + 1, ultimoEvento: eventoRef.id }, { merge: true });
           return totalAtual + 1;
         });
       }, (error) => {

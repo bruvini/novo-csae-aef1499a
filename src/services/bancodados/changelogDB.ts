@@ -9,6 +9,8 @@ import {
   Timestamp,
   serverTimestamp,
   onSnapshot,
+  doc,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 
@@ -86,6 +88,17 @@ export async function inserirChangelogIdempotente(
     return true; // inserido
   }
   return false; // já existia
+}
+
+// IDs estáveis evitam duplicações mesmo em publicações simultâneas.
+export async function publicarChangelogPorId(id: string, titulo: string, descricao: string): Promise<boolean> {
+  const ref = doc(db, 'changelogs', id);
+  return runTransaction(db, async (transaction) => {
+    const existente = await transaction.get(ref);
+    if (existente.exists()) return false;
+    transaction.set(ref, { titulo, descricao, dataHora: serverTimestamp() });
+    return true;
+  });
 }
 
 // ─── Lista completa de changelogs do sistema ────────────────

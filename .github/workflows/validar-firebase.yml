@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - codex/regularizacao-cadastros
+      - codex/persistencia-logins
       - main
   pull_request:
     branches:
