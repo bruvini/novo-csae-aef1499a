@@ -23,6 +23,8 @@ import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermage
 import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
 import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
+import { linhasMateriaisEntregues, materiaisAgrupados } from '@/utils/materiaisApoioProcesso';
+import MateriaisApoioLeitura from './MateriaisApoioLeitura';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -36,6 +38,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
   onUpdateEvolucao
 }) => {
   const [textoEvolucao, setTextoEvolucao] = useState(processo.evolucao?.resumoGerado || '');
+  useEffect(() => { setTextoEvolucao(processo.evolucao?.resumoGerado || ''); }, [processo.evolucao?.resumoGerado]);
   const { toast } = useToast();
   const [sinaisVitais, setSinaisVitais] = useState<SinalVital[]>([]);
   const [exames, setExames] = useState<Exame[]>([]);
@@ -275,6 +278,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
+    const materiaisEntregues = linhasMateriaisEntregues(processo);
+    if (materiaisEntregues.length > 0) {
+      linhas.push('MATERIAIS DE APOIO ENTREGUES:');
+      materiaisEntregues.forEach(linha => linhas.push(`• ${linha}`));
+      linhas.push('');
+    }
+
     // ── Evolução ─────────────────────────────────────────────────────────────
     // Lista ações efetivamente realizadas pelo enfermeiro, com verbos conjugados
     // na 1ª pessoa do presente do indicativo. Sem agrupamento por diagnóstico.
@@ -354,6 +364,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
   // ─── Dados derivados ──────────────────────────────────────────────────────────
   const exameFisico = processo.avaliacao?.exameFisico || {};
+  const gruposMateriais = materiaisAgrupados(processo);
   // nhbsAfetadas pode ter objetos { parametro, nhb } ou strings legadas
   const nhbsAfetadas: unknown[] = Array.isArray(processo.avaliacao?.nhbsAfetadas)
     ? processo.avaliacao.nhbsAfetadas
@@ -489,12 +500,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   titulo={diag.tituloDiagnostico}
                   resultado={diag.resultadoEsperadoSelecionado}
                   intervencoes={diag.intervencoesSelecionadas || []}
-                  renderIntervencao={(int, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+                  renderIntervencao={(int, idx) => {
+                    const chave = typeof int === 'string' ? '' : `${diag.diagnosticoId}|${int.intervencaoId || int.acaoPrescrita}`;
+                    const materiais = gruposMateriais.find(grupo => grupo.chave === chave)?.materiais || [];
+                    return <li key={typeof int === 'string' ? idx : int.intervencaoId || idx} className="flex items-start gap-2 text-sm text-gray-700">
                       <span className="text-csae-green-500 font-bold mt-0.5">•</span>
-                      {typeof int === 'string' ? int : int.acaoPrescrita}
-                    </li>
-                  )}
+                      <div><span>{typeof int === 'string' ? int : int.acaoPrescrita}</span>{materiais.length > 0 && <MateriaisApoioLeitura materiais={materiais} />}</div>
+                    </li>;
+                  }}
                 />
               ))}
             </AccordionContent>

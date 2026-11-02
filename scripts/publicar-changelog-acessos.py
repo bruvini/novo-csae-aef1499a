@@ -5,6 +5,10 @@ from google.cloud import firestore
 
 PROJECT = 'csaefloripa'
 ENTRIES = {
+    'materiais-apoio-implementacao-20261102': (
+        'Materiais de Apoio Durante a Consulta',
+        'Os materiais de apoio vinculados às intervenções agora podem ser acessados durante a Implementação de Enfermagem. Você também pode registrar quais materiais foram entregues ao paciente e consultar essas informações nas etapas seguintes.',
+    ),
     'sugestoes-intervencoes-20261102': (
         'Suas Sugestões de Intervenções Ganharam Espaço',
         'As intervenções autorais registradas nas consultas agora podem ser analisadas na Gestão de Conteúdos. Após análise técnica e homologação da CSAE registrada, as sugestões podem integrar o catálogo do Portal.',

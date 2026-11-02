@@ -8,13 +8,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { IntervencaoImplementada } from '@/types/processoEnfermagem';
+import type { MaterialApoioConsulta } from '@/types/processoEnfermagem';
+import { linkMaterialSeguro, materiaisComEntrega } from '@/utils/materiaisApoioProcesso';
+import { ExternalLink } from 'lucide-react';
 
 interface IntervencaoItemProps {
   intervencao: IntervencaoImplementada;
+  materiais: MaterialApoioConsulta[];
+  identificador: string;
   onUpdate: (intervencao: IntervencaoImplementada) => void;
+  onMaterialEntregaChange: (materialId: string, entregue: boolean) => void;
 }
 
-const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate }) => {
+const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, materiais, identificador, onUpdate, onMaterialEntregaChange }) => {
   const handleImplementadoChange = (checked: boolean) => {
     if (checked) {
       onUpdate({
@@ -24,7 +30,6 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
     } else {
       // Remove quemExecuta, prazo e prazoUnidade da chave do objeto ao desmarcar —
       // nunca atribuir undefined explicitamente pois o Firestore rejeita escrita com undefined.
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { quemExecuta: _q, prazo: _p, prazoUnidade: _u, ...resto } = intervencao;
       onUpdate({
         ...resto,
@@ -59,7 +64,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
       {/* Checkbox principal e texto da intervenção */}
       <div className="flex items-start gap-3">
         <Checkbox
-          id={`intervencao-${intervencao.acaoPrescrita}`}
+          id={`intervencao-${identificador}`}
           checked={intervencao.implementadoNestaConsulta}
           onCheckedChange={handleImplementadoChange}
           className="mt-1"
@@ -67,7 +72,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
         <div className="flex-1 space-y-2">
           <div className="flex items-start gap-2">
             <label
-              htmlFor={`intervencao-${intervencao.acaoPrescrita}`}
+              htmlFor={`intervencao-${identificador}`}
               className="text-sm font-medium leading-relaxed cursor-pointer flex-1"
             >
               {intervencao.acaoPrescrita}
@@ -76,6 +81,19 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, onUpdate
               {intervencao.tipo === 'padrao' ? 'Padrão' : 'Autoral'}
             </Badge>
           </div>
+
+          {materiais.length > 0 && <div className="space-y-1 rounded-md border bg-muted/20 p-2" aria-label="Materiais de apoio">
+            <p className="text-xs font-semibold">Materiais de apoio · marque apenas os entregues ao paciente</p>
+            {materiaisComEntrega(materiais, intervencao).map(material => {
+              const href = linkMaterialSeguro(material.urlMaterialApoio);
+              const checkboxId = `entrega-${identificador}-${material.id}`;
+              return <div key={material.id} className="flex items-center gap-2 text-sm">
+                <Checkbox id={checkboxId} aria-label={`Material entregue: ${material.tituloMaterialApoio}`} checked={material.entregue} onCheckedChange={checked => onMaterialEntregaChange(material.id, checked === true)} />
+                {href ? <a className="inline-flex items-center gap-1 text-primary underline underline-offset-2" href={href} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${material.tituloMaterialApoio} em nova aba`}>{material.tituloMaterialApoio}<ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /></a> : <span title="Link HTTPS indisponível">{material.tituloMaterialApoio} · link indisponível</span>}
+              </div>;
+            })}
+            <p className="text-[11px] text-muted-foreground">Abrir um documento não registra sua entrega.</p>
+          </div>}
 
           {/* ToggleGroup para quem executa */}
           <div className={cn("flex items-center gap-4 mt-2", !intervencao.implementadoNestaConsulta && "opacity-40 pointer-events-none select-none")}>

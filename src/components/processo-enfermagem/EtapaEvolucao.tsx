@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Info, CheckCircle, AlertTriangle } from 'lucide-react';
 import { ProcessoEnfermagem, EvolucaoEnfermagem, IntervencaoImplementada } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
+import { materiaisAgrupados } from '@/utils/materiaisApoioProcesso';
+import MateriaisApoioLeitura from './MateriaisApoioLeitura';
 
 interface EtapaEvolucaoProps {
   processo: ProcessoEnfermagem;
@@ -40,6 +42,7 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
   const implementacaoAtiva = Object.entries(implementacaoEnfermeiro) as Array<
     [string, { intervencoes: IntervencaoImplementada[] }]
   >;
+  const gruposMateriais = materiaisAgrupados(processo);
 
   const handleCheck = (tituloDiag: string, acaoPrescrita: string, checked: boolean) => {
     const list = executadas[tituloDiag] || [];
@@ -84,6 +87,14 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({
               </div>
             ))}
           </div>
+
+          {gruposMateriais.length > 0 && <div className="space-y-2 border-b py-4">
+            <h4 className="font-semibold text-sm">Materiais de apoio vinculados às intervenções</h4>
+            {gruposMateriais.map(grupo => <div key={grupo.chave} className="rounded-md border bg-muted/20 p-3">
+              <p className="text-xs font-medium">{grupo.tituloDiagnostico} · {grupo.acaoPrescrita}</p>
+              <MateriaisApoioLeitura materiais={grupo.materiais} />
+            </div>)}
+          </div>}
 
           {implementacaoAtiva.length === 0 && (
             <Alert className="my-4 border-blue-200 bg-blue-50">

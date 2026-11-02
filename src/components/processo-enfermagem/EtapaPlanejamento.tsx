@@ -13,9 +13,10 @@ import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-be
 import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
-import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { getDiagnosticos, Diagnostico, type Intervencao as IntervencaoCatalogo } from '@/services/bancodados/rolEnfermagemDB';
 import { isDiagnosticoPositivo } from '@/utils/processoUtils';
 import { revisarSeparacao, sinalizarIntervencoesMultiplas } from '@/utils/individualizacaoIntervencoes';
+import { criarIntervencaoConsulta } from '@/utils/materiaisApoioProcesso';
 
 interface EtapaPlanejamentoProps {
   processo: ProcessoEnfermagem;
@@ -112,15 +113,16 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     salvarPlanejamento(updated);
   };
 
-  const handleIntervencaoChange = (diagnosticoId: string, acaoPrescrita: string, acaoEnfermeiro: string | undefined, checked: boolean) => {
+  const handleIntervencaoChange = (diagnosticoId: string, resultado: string, indice: number, intervencao: IntervencaoCatalogo, checked: boolean) => {
+    const origemCatalogoChave = `${diagnosticoId}|${resultado}|${indice}`;
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
         const anteriores = diag.intervencoesSelecionadas ?? [];
         const intervencoes = checked
-          ? anteriores.some((item) => item.acaoPrescrita === acaoPrescrita)
+          ? anteriores.some((item) => item.origemCatalogoChave === origemCatalogoChave || (!item.origemCatalogoChave && item.tipo === 'padrao' && item.acaoPrescrita === intervencao.acaoPrescrita))
             ? anteriores
-            : [...anteriores, { acaoPrescrita, acaoEnfermeiro, tipo: 'padrao' as const }]
-          : anteriores.filter((item) => item.acaoPrescrita !== acaoPrescrita || item.tipo !== 'padrao');
+            : [...anteriores, criarIntervencaoConsulta(intervencao, 'padrao', origemCatalogoChave)]
+          : anteriores.filter((item) => item.origemCatalogoChave !== origemCatalogoChave && !(item.tipo === 'padrao' && !item.origemCatalogoChave && item.acaoPrescrita === intervencao.acaoPrescrita));
         return { ...diag, intervencoesSelecionadas: intervencoes };
       }
       return diag;
@@ -135,7 +137,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
         const intervencoes = diag.intervencoesSelecionadas ?? [];
         return {
           ...diag,
-          intervencoesSelecionadas: [...intervencoes, ...acoes.filter(texto => !intervencoes.some(item => item.tipo === 'autoral' && item.acaoPrescrita === texto)).map(texto => ({ acaoPrescrita: texto, tipo: 'autoral' as const, ...(justificativaIntervencaoUnica ? { justificativaIntervencaoUnica } : {}) }))],
+          intervencoesSelecionadas: [...intervencoes, ...acoes.filter(texto => !intervencoes.some(item => item.tipo === 'autoral' && item.acaoPrescrita === texto)).map(texto => ({ ...criarIntervencaoConsulta({ acaoPrescrita: texto, acaoEnfermeiro: '' }, 'autoral'), ...(justificativaIntervencaoUnica ? { justificativaIntervencaoUnica } : {}) }))],
         };
       }
       return diag;
@@ -160,11 +162,11 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     catch (erro) { setErroRevisao(erro instanceof Error ? erro.message : 'Revise as intervenções.'); }
   };
 
-  const handleRemoverIntervencaoAutoral = (diagnosticoId: string, acaoPrescrita: string) => {
+  const handleRemoverIntervencaoAutoral = (diagnosticoId: string, intervencao: IntervencaoSelecionada) => {
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
         const intervencoes = diag.intervencoesSelecionadas || [];
-        const filtered = intervencoes.filter(i => !(i.acaoPrescrita === acaoPrescrita && i.tipo === 'autoral'));
+        const filtered = intervencoes.filter(i => !(i.tipo === 'autoral' && (intervencao.intervencaoId ? i.intervencaoId === intervencao.intervencaoId : i.acaoPrescrita === intervencao.acaoPrescrita)));
         return { ...diag, intervencoesSelecionadas: filtered };
       }
       return diag;
@@ -457,9 +459,9 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                   <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
                                     <Checkbox
                                       id={`${diagnostico.diagnosticoId}-int-${index}`}
-                                      checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}
+                                      checked={diagnostico.intervencoesSelecionadas?.some(i => i.origemCatalogoChave === `${diagnostico.diagnosticoId}|${diagnostico.resultadoEsperadoSelecionado}|${index}` || (!i.origemCatalogoChave && i.tipo === 'padrao' && i.acaoPrescrita === intervencao.acaoPrescrita)) || false}
                                       onCheckedChange={(checked) =>
-                                        handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, intervencao.acaoEnfermeiro, checked as boolean)
+                                        handleIntervencaoChange(diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado || '', index, intervencao, checked === true)
                                       }
                                     />
                                     <Label htmlFor={`${diagnostico.diagnosticoId}-int-${index}`} className="flex-1 cursor-pointer">
@@ -527,13 +529,13 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                   {diagnostico.intervencoesSelecionadas
                                     .filter(i => i.tipo === 'autoral')
                                     .map((intervencao, index) => (
-                                      <div key={index} className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                                      <div key={intervencao.intervencaoId || index} className="flex items-center justify-between p-2 bg-blue-50 border border-blue-200 rounded text-sm">
                                         <span>{intervencao.acaoPrescrita}</span>
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                                          onClick={() => handleRemoverIntervencaoAutoral(diagnostico.diagnosticoId, intervencao.acaoPrescrita)}
+                                          onClick={() => handleRemoverIntervencaoAutoral(diagnostico.diagnosticoId, intervencao)}
                                         >
                                           <Trash2 className="w-4 h-4" />
                                         </Button>

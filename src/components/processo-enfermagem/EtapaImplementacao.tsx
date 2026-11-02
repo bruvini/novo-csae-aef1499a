@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -9,6 +9,7 @@ import { Info, HelpCircle } from 'lucide-react';
 import { ProcessoEnfermagem, ImplementacaoEnfermagem, IntervencaoImplementada } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import IntervencaoItem from './IntervencaoItem';
+import { atualizarEntrega, conciliarImplementacao } from '@/utils/materiaisApoioProcesso';
 
 interface EtapaImplementacaoProps {
   processo: ProcessoEnfermagem;
@@ -22,67 +23,35 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
   onUpdateImplementacao
 }) => {
   const [implementacaoLocal, setImplementacaoLocal] = useState<ImplementacaoEnfermagem>({});
+  const implementacaoRef = useRef(implementacaoLocal);
 
   useEffect(() => {
     const diagnosticos = processo.planejamento?.diagnosticosPlanejados || [];
-    if (diagnosticos.length > 0) {
-      let teveAlteracao = false;
-      const implementacaoAtual = processo.implementacao || {};
-      const novaImplementacao: ImplementacaoEnfermagem = {};
+    const atual = processo.implementacao || {};
+    const proxima = conciliarImplementacao(diagnosticos, atual);
+    implementacaoRef.current = proxima;
+    setImplementacaoLocal(proxima);
+    if (JSON.stringify(proxima) !== JSON.stringify(atual)) onUpdateImplementacao(proxima);
+  }, [processo.planejamento, processo.implementacao, onUpdateImplementacao]);
 
-      const chavesAtuais = Object.keys(implementacaoAtual);
-      if (chavesAtuais.length !== diagnosticos.length) {
-        teveAlteracao = true;
-      }
-
-      diagnosticos.forEach(diag => {
-        const intervencoesPlanejadas = diag.intervencoesSelecionadas || [];
-        const intervencoesExistentes = implementacaoAtual[diag.tituloDiagnostico]?.intervencoes || [];
-
-        if (intervencoesPlanejadas.length !== intervencoesExistentes.length) {
-          teveAlteracao = true;
-        }
-
-        novaImplementacao[diag.tituloDiagnostico] = {
-          intervencoes: intervencoesPlanejadas.map(intervencao => {
-            const existente = intervencoesExistentes.find(
-              i => i.acaoPrescrita === intervencao.acaoPrescrita
-            );
-
-            if (existente) {
-              return existente;
-            } else {
-              teveAlteracao = true;
-              return {
-                ...intervencao,
-                implementadoNestaConsulta: false
-              };
-            }
-          })
-        };
-      });
-
-      if (teveAlteracao) {
-        setImplementacaoLocal(novaImplementacao);
-        onUpdateImplementacao(novaImplementacao);
-      } else {
-        setImplementacaoLocal(implementacaoAtual);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processo.planejamento]);
-
-  const handleIntervencaoUpdate = (tituloDiagnostico: string, index: number, intervencaoAtualizada: IntervencaoImplementada) => {
-    const novaImplementacao = { ...implementacaoLocal };
-    
-    if (!novaImplementacao[tituloDiagnostico]) {
-      novaImplementacao[tituloDiagnostico] = { intervencoes: [] };
-    }
-    
-    novaImplementacao[tituloDiagnostico].intervencoes[index] = intervencaoAtualizada;
-    
+  const handleIntervencaoUpdate = (tituloDiagnostico: string, index: number, intervencaoAtualizada: IntervencaoImplementada, preservarEntrega = true) => {
+    const atual = implementacaoRef.current;
+    const entregaAtual = preservarEntrega ? atual[tituloDiagnostico]?.intervencoes[index]?.materiaisEntreguesIds : undefined;
+    const preservada = entregaAtual ? { ...intervencaoAtualizada, materiaisEntreguesIds: entregaAtual } : intervencaoAtualizada;
+    const novaImplementacao = {
+      ...atual,
+      [tituloDiagnostico]: {
+        intervencoes: (atual[tituloDiagnostico]?.intervencoes || []).map((item, posicao) => posicao === index ? preservada : item),
+      },
+    };
+    implementacaoRef.current = novaImplementacao;
     setImplementacaoLocal(novaImplementacao);
     onUpdateImplementacao(novaImplementacao);
+  };
+
+  const handleMaterialEntregaChange = (tituloDiagnostico: string, index: number, materialId: string, entregue: boolean) => {
+    const atual = implementacaoRef.current[tituloDiagnostico]?.intervencoes[index];
+    if (atual) handleIntervencaoUpdate(tituloDiagnostico, index, atualizarEntrega(atual, materialId, entregue), false);
   };
 
   // Verificar se o planejamento está completo
@@ -230,10 +199,15 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
                             </h4>
                             {intervencoes.map((intervencao, intervencaoIndex) => (
                               <IntervencaoItem
-                                key={intervencaoIndex}
+                                key={intervencao.intervencaoId || intervencaoIndex}
+                                identificador={`${diagnostico.diagnosticoId}-${intervencaoIndex}`}
                                 intervencao={intervencao}
+                                materiais={diagnostico.intervencoesSelecionadas[intervencaoIndex]?.materiaisDeApoio || []}
                                 onUpdate={(intervencaoAtualizada) =>
                                   handleIntervencaoUpdate(diagnostico.tituloDiagnostico, intervencaoIndex, intervencaoAtualizada)
+                                }
+                                onMaterialEntregaChange={(materialId, entregue) =>
+                                  handleMaterialEntregaChange(diagnostico.tituloDiagnostico, intervencaoIndex, materialId, entregue)
                                 }
                               />
                             ))}

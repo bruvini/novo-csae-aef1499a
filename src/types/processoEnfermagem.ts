@@ -42,11 +42,22 @@ export interface DiagnosticoEnfermagem {
 }
 
 // NOVOS TIPOS para a Etapa de Planejamento
+export interface MaterialApoioConsulta {
+  id: string;
+  tituloMaterialApoio: string;
+  urlMaterialApoio: string;
+}
+
 export interface IntervencaoSelecionada {
+  /** Identidade desta seleção na consulta; opcional para processos legados. */
+  intervencaoId?: string;
+  origemCatalogoChave?: string;
   acaoPrescrita: string;
   acaoEnfermeiro?: string;
   tipo: 'padrao' | 'autoral'; // 'padrao' para as do sistema, 'autoral' para as customizadas
   justificativaIntervencaoUnica?: string;
+  /** Cópia dos materiais disponíveis no momento da seleção, sem atualização retroativa. */
+  materiaisDeApoio?: MaterialApoioConsulta[];
 }
 
 export interface DiagnosticoPlanejado {
@@ -66,8 +77,10 @@ export interface PlanejamentoEnfermagem {
 }
 
 // NOVOS TIPOS para a Etapa de Implementação
-export interface IntervencaoImplementada extends IntervencaoSelecionada {
+export interface IntervencaoImplementada extends Omit<IntervencaoSelecionada, 'materiaisDeApoio'> {
   implementadoNestaConsulta: boolean;
+  /** Declarações de entrega independentes da checagem de implementação. */
+  materiaisEntreguesIds?: string[];
   quemExecuta?: string;
   prazo?: number;
   prazoUnidade?: 'segundos' | 'minutos' | 'horas' | 'dias' | 'semanas' | 'meses' | 'anos';
