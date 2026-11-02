@@ -1,9 +1,8 @@
 
-import React from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Database } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Database, Download } from 'lucide-react';
 import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
 import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
 import TabelaSinaisVitais from '@/components/gestao-conteudos/TabelaSinaisVitais';
@@ -12,13 +11,16 @@ import TabelaRevisaoSistemas from '@/components/gestao-conteudos/TabelaRevisaoSi
 import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteudo';
 import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
+import ExportarCatalogoModal from '@/components/gestao-conteudos/ExportarCatalogoModal';
 
 const GestaoConteudos = () => {
+  const [exportarAberto, setExportarAberto] = useState(false);
   return (
     <AuthenticatedLayout fullWidth>
       <div className="space-y-6">
         {/* Header da Página */}
-        <div className="space-y-1">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-1">
           <div className="flex items-center gap-2 mb-1">
             <Database className="w-6 h-6 text-csae-green-600" />
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
@@ -28,7 +30,12 @@ const GestaoConteudos = () => {
           <p className="text-gray-500 font-medium">
             Manutenção dos bancos de dados do Processo de Enfermagem
           </p>
+          </div>
+          <Button onClick={() => setExportarAberto(true)} className="w-full sm:w-auto">
+            <Download className="mr-2 h-4 w-4" /> Exportar Catálogo Clínico
+          </Button>
         </div>
+        <ExportarCatalogoModal open={exportarAberto} onOpenChange={setExportarAberto} />
 
         {/* Indicadores */}
         <IndicadoresConteudo />

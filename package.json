@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "import:clinical": "tsx scripts/import-clinical-parameters.ts",
     "lint": "eslint .",
-    "test": "tsx --test tests/registrationData.test.ts tests/registrationFlow.test.ts src/utils/processoUtils.test.ts src/utils/processoUtilsPositive.test.ts src/utils/accessMetrics.test.ts src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts",
+    "test": "tsx --test tests/registrationData.test.ts tests/registrationFlow.test.ts src/utils/processoUtils.test.ts src/utils/processoUtilsPositive.test.ts src/utils/accessMetrics.test.ts src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/catalogoClinicoExport.test.ts",
     "test:rules": "npx --yes firebase-tools emulators:exec --project demo-csaefloripa --only firestore,storage \"tsx --test tests/firebaseRules.test.ts\"",
     "preview": "vite preview"
   },
@@ -50,10 +50,12 @@
     "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.3.0",
+    "exceljs": "^4.4.0",
     "firebase": "^11.6.0",
     "framer-motion": "^12.6.3",
     "html2pdf.js": "^0.10.3",
     "input-otp": "^1.2.4",
+    "jszip": "^3.10.2",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
@@ -70,8 +72,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
     "vaul": "^0.9.3",
-    "zod": "^3.23.8",
-    "exceljs": "^4.4.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

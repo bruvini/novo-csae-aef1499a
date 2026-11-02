@@ -5,6 +5,10 @@ from google.cloud import firestore
 
 PROJECT = 'csaefloripa'
 ENTRIES = {
+    'catalogo-clinico-exportacao-20261102': (
+        'Catálogo Clínico Agora Pode Ser Exportado',
+        'Agora ficou mais fácil consultar e revisar os conteúdos do Portal! A Gestão de Conteúdos permite exportar sinais vitais, exames, subconjuntos, diagnósticos, resultados esperados e intervenções em Excel, CSV ou JSON, tudo organizado para facilitar a conferência e a análise.',
+    ),
     'processo-indicadores-20261102': (
         'Melhorias no Processo de Enfermagem e nos Indicadores',
         'Atualizamos o Processo de Enfermagem para facilitar o planejamento e a conclusão das consultas com diagnósticos positivos. Também aprimoramos a apresentação dos indicadores do Portal.',
