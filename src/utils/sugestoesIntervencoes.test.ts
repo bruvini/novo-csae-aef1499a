@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contagensSugestoes, filtrarSugestoes, sugestoesSemelhantes } from './sugestoesIntervencoes';
+import { contagensSugestoes, filtrarSugestoes, indiceSemelhantes, sugestoesSemelhantes, taxaAprovacao } from './sugestoesIntervencoes';
 import type { IntervencaoAutoral } from '../services/bancodados/intervencoesAutoraisDB';
 import { encontrarResultado, identificadorSugestao, incorporarIntervencao, normalizarAcao } from './intervencoesAutorais';
 import type { Diagnostico } from '../services/bancodados/rolEnfermagemDB';
@@ -17,6 +17,23 @@ test('três situações, legado, filtros combinados e sugestões semelhantes', (
   assert.deepEqual(resultado.map(i => i.id), ['1']);
   assert.equal(sugestoesSemelhantes(items[0], items), 1);
   assert.equal(normalizarAcao('  Verificar  PRESSÃO '), 'verificar pressao');
+});
+
+test('taxa global inclui pendentes e rejeitadas e trata base vazia', () => {
+  assert.equal(taxaAprovacao(25, 100), 25);
+  assert.equal(taxaAprovacao(0, 0), null);
+  assert.equal(taxaAprovacao(0, 100), 0);
+});
+
+test('índice de texto e filtros operam sobre 1.300 registros sem limitar as contagens', () => {
+  const massa = Array.from({ length: 1300 }, (_, i): IntervencaoAutoral => ({
+    id: String(i), textoIntervencao: i < 2 ? 'Orientar caminhada' : `Ação ${i}`,
+    tituloResultadoVinculado: 'Resultado', autorId: 'uid', autorNome: 'email@example.test',
+    autorNomeResolvido: 'Nome Completo', status: i < 25 ? 'aprovada' : 'aguardando',
+  }));
+  assert.equal(indiceSemelhantes(massa).get(normalizarAcao('Orientar caminhada')), 2);
+  assert.equal(contagensSugestoes(massa).aprovada, 25);
+  assert.equal(filtrarSugestoes(massa, { status: 'aguardando', texto: '', autor: 'Nome Completo', diagnostico: '', resultado: '', ordem: 'recentes' }).length, 1275);
 });
 
 test('identificador de sugestão é estável e varia com processo e texto', async () => {

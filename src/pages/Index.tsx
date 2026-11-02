@@ -89,17 +89,16 @@ const Index = () => {
         <div className="max-w-6xl w-full grid md:grid-cols-2 gap-10 lg:gap-20 items-center">
           
           <div className="text-left space-y-8 animate-fade-in order-2 md:order-1">
-            <div className="flex items-center gap-6 mb-8">
+            <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-4 xl:gap-x-8">
               <img 
                 src="/logo_csae.png" 
                 alt="Logo CSAE Floripa" 
-                className="h-24 w-auto object-contain" 
+                className="h-16 sm:h-20 xl:h-24 w-auto object-contain"
               />
               <img 
-                src="/logo_enfermagem_floripa.jpg" 
+                src="/logo_enfermagem_floripa_transparente.png"
                 alt="Logo Enfermagem Floripa" 
-                className="h-24 w-auto object-contain mix-blend-multiply" 
-                style={{ filter: "contrast(1.1) brightness(1.05)" }}
+                className="h-16 sm:h-20 xl:h-24 max-w-[min(100%,20rem)] w-auto object-contain"
               />
             </div>
             

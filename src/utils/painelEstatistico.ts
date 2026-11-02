@@ -119,8 +119,17 @@ export function aplicarVariacoesTemporais(
 export function formatarVariacao(item: Pick<ItemTemporal, 'variacaoPercentual' | 'variacaoTipo'>): string {
   if (item.variacaoTipo === 'novo') return 'Novo';
   if (item.variacaoTipo === 'sem-base') return 'Sem base de comparação';
-  const valor = item.variacaoPercentual ?? 0;
+  if (typeof item.variacaoPercentual !== 'number' || !Number.isFinite(item.variacaoPercentual)) return 'Sem base de comparação';
+  const valor = item.variacaoPercentual;
   return `${valor > 0 ? '+' : ''}${valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+}
+
+export function classeVariacao(item: Pick<ItemTemporal, 'variacaoPercentual' | 'variacaoTipo'>): string {
+  if (item.variacaoTipo === 'novo' || item.variacaoTipo === 'sem-base') return 'text-slate-600';
+  const valor = item.variacaoPercentual;
+  return typeof valor === 'number' && Number.isFinite(valor)
+    ? valor > 0 ? 'text-emerald-600' : valor < 0 ? 'text-rose-600' : 'text-slate-600'
+    : 'text-slate-600';
 }
 
 export function rankingDeValores(values: string[], limit = 10): ItemRanking[] {

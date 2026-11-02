@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Activity, FileText, Target, Zap, Heart, TestTube, ClipboardCheck } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { Activity, FileText, Target, Zap, Heart, TestTube, ClipboardCheck, BadgeCheck } from 'lucide-react';
+import { collection, getCountFromServer, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { getSinaisVitaisCount } from '@/services/bancodados/sinaisVitaisDB';
 import { getExamesCount } from '@/services/bancodados/examesDB';
+import { taxaAprovacao } from '@/utils/sugestoesIntervencoes';
 
 interface IndicadoresData {
   totalDiagnosticos: number;
@@ -18,6 +19,8 @@ interface IndicadoresData {
   totalExames: number;
   totalSistemas: number;
   totalExamesFisicos: number;
+  totalSugestoes: number;
+  sugestoesAprovadas: number;
 }
 
 const IndicadoresConteudo = () => {
@@ -42,6 +45,11 @@ const IndicadoresConteudo = () => {
 
         // Buscar total de exames
         const totalExames = await getExamesCount();
+        const sugestoesRef = collection(db, 'intervencoesAutorais');
+        const [totalSugestoesSnap, aprovadasSnap] = await Promise.all([
+          getCountFromServer(sugestoesRef),
+          getCountFromServer(query(sugestoesRef, where('status', '==', 'aprovada'))),
+        ]);
 
         // Sistemas e exames físicos estruturados para revisão por sistema
         const sistemasSnapshot = await getDocs(collection(db, 'RevisaoSistemas'));
@@ -76,7 +84,9 @@ const IndicadoresConteudo = () => {
           totalSinaisVitais,
           totalExames,
           totalSistemas,
-          totalExamesFisicos
+          totalExamesFisicos,
+          totalSugestoes: totalSugestoesSnap.data().count,
+          sugestoesAprovadas: aprovadasSnap.data().count,
         });
       } catch (error) {
         console.error('Erro ao carregar indicadores:', error);
@@ -85,13 +95,15 @@ const IndicadoresConteudo = () => {
       }
     };
 
-    carregarIndicadores();
+    void carregarIndicadores();
+    window.addEventListener('csae-sugestao-decidida', carregarIndicadores);
+    return () => window.removeEventListener('csae-sugestao-decidida', carregarIndicadores);
   }, []);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
-        {[...Array(7)].map((_, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-4 mb-6">
+        {[...Array(8)].map((_, i) => (
           <Card key={i} className="min-w-0">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <Skeleton className="h-4 w-24" />
@@ -109,7 +121,7 @@ const IndicadoresConteudo = () => {
 
   if (!indicadores) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-4 mb-6">
         <Card>
           <CardContent className="p-6">
             <p className="text-center text-muted-foreground">
@@ -170,11 +182,19 @@ const IndicadoresConteudo = () => {
       description: `${indicadores.totalExamesFisicos} exames físicos estruturados`,
       icon: ClipboardCheck,
       color: "text-teal-600"
+    },
+    {
+      title: 'Taxa de Aprovação',
+      value: taxaAprovacao(indicadores.sugestoesAprovadas, indicadores.totalSugestoes) === null
+        ? 'Sem base' : `${taxaAprovacao(indicadores.sugestoesAprovadas, indicadores.totalSugestoes)!.toFixed(1)}%`,
+      description: `${indicadores.sugestoesAprovadas} de ${indicadores.totalSugestoes} sugestões aprovadas`,
+      icon: BadgeCheck,
+      color: 'text-emerald-600',
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8 gap-4 mb-6">
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (

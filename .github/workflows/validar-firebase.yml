@@ -56,6 +56,8 @@ jobs:
           python3 -m unittest discover -s scripts/tests -p 'test_popular_catalogo_protocolos.py'
       - name: Testar conciliação nominal dos oito protocolos (sem Firebase remoto)
         run: python3 -m unittest discover -s scripts/tests -p 'test_auditar_cobertura_oito_protocolos.py'
+      - name: Testar reconciliação segura de sugestões sem Firebase remoto
+        run: python3 -m unittest scripts.tests.test_reconciliar_origem_sugestoes
       - name: Testar exportação restrita do inventário clínico dos 8 volumes
         run: python3 -m unittest discover -s scripts/tests -p 'test_exportar_inventario_clinico_8v.py'
       - name: Testar plano de FC pediátrica sem credenciais Firestore
