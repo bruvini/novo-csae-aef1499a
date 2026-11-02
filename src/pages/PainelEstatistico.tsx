@@ -836,7 +836,8 @@ const PainelEstatistico = () => {
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="acumulado" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <YAxis yAxisId="periodo" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />
                   <RechartsTooltip
                     content={<ProducaoTooltip />}
                   />
@@ -845,6 +846,7 @@ const PainelEstatistico = () => {
                   {viewModeAcessos !== 'semanal' && (
                     <Area
                       type="monotone"
+                      yAxisId="acumulado"
                       dataKey="acumulado"
                       stroke="#2563eb"
                       strokeWidth={3}
@@ -853,7 +855,7 @@ const PainelEstatistico = () => {
                       name="Acumulado do histórico disponível"
                     />
                   )}
-                  <Bar dataKey="novos" fill="#60a5fa" barSize={20} name="Logins no período (histórico disponível)" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId="periodo" dataKey="novos" fill="#60a5fa" barSize={20} name="Logins no período (histórico disponível)" radius={[4, 4, 0, 0]} />
                 </ComposedChart>
               </ResponsiveContainer>
               {data && (

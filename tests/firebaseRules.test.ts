@@ -20,6 +20,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { deleteObject, ref, uploadBytes } from 'firebase/storage';
 
@@ -333,3 +334,24 @@ test('cache segmentado de produção: administrador pode ler e salvar, profissio
   await assertFails(getDoc(doc(environment.unauthenticatedContext().firestore(), chunksRef.path)));
 });
 
+
+
+test('eventos de login exigem identidade, timestamp e incremento atômico e são imutáveis', async () => {
+  await seedProfile('enfermeiro', 'Liberado', { totalAcessos: 200, historicoAcesso: Array.from({ length: 200 }, () => ({ dataHora: new Date('2026-01-01') })) });
+  await seedProfile('outro');
+  await seedProfile('admin', 'Liberado', { ehAdmin: true });
+  const db = environment.authenticatedContext('enfermeiro').firestore();
+  const evento = doc(db, 'eventosAcesso', 'enfermeiro_201');
+  await assertFails(setDoc(evento, { uid: 'enfermeiro', numero: 201, dataHora: serverTimestamp() }));
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'usuarios', 'enfermeiro'), { totalAcessos: 201, ultimoAcesso: serverTimestamp() });
+  batch.set(evento, { uid: 'enfermeiro', numero: 201, dataHora: serverTimestamp() });
+  await assertSucceeds(batch.commit());
+  await assertFails(getDoc(evento));
+  await assertFails(updateDoc(evento, { numero: 202 }));
+  await assertFails(deleteDoc(evento));
+  await assertFails(setDoc(evento, { uid: 'enfermeiro', numero: 201, dataHora: serverTimestamp() }));
+  await assertFails(setDoc(doc(db, 'eventosAcesso', 'outro_1'), { uid: 'outro', numero: 1, dataHora: serverTimestamp() }));
+  const admin = environment.authenticatedContext('admin').firestore();
+  await assertSucceeds(getDocs(collection(admin, 'eventosAcesso')));
+});

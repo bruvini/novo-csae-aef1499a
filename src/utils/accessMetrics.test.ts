@@ -11,7 +11,7 @@ import {
   normalizarTotalAcessos,
   planejarRegistroLogin,
   preencherDias,
-  somarTotalLoginsRegistrados,
+  somarTotalLoginsRegistrados, diasComEventos,
   tentarRegistrarLogin,
 } from './accessMetrics';
 
@@ -98,4 +98,11 @@ test('a série de login pode terminar antes dos processos concluídos sem repres
   assert.equal(ultimoLogin, '2026-10-26');
   assert.equal(conclusao, '2026-10-29');
   assert.ok(conclusao > ultimoLogin);
+});
+
+
+test('dias sem logins não aparecem na evolução', () => {
+  assert.deepEqual(diasComEventos({ '2026-10-29': 0, '2026-10-28': 3, '2026-10-26': 7 }), [
+    { key: '2026-10-26', novos: 7 }, { key: '2026-10-28', novos: 3 },
+  ]);
 });

@@ -94,3 +94,9 @@ export function preencherDias(
   }
   return entries;
 }
+
+// Ordena somente períodos efetivamente registrados; não fabrica zeros.
+export function diasComEventos(contagem: Record<string, number>): Array<{ key: string; novos: number }> {
+  return Object.entries(contagem).filter(([, total]) => total > 0).sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, novos]) => ({ key, novos }));
+}

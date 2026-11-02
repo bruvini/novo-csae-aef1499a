@@ -287,6 +287,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Eventos novos são imutáveis e vinculados ao incremento na mesma transação.
+    // A origem cliente não comprova, por si só, uma autenticação real.
+    match /eventosAcesso/{eventoId} {
+      allow read: if canViewBI();
+      allow create: if isApproved()
+        && request.resource.data.keys().hasOnly(['uid', 'numero', 'dataHora'])
+        && request.resource.data.keys().hasAll(['uid', 'numero', 'dataHora'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.numero is int && request.resource.data.numero > 0
+        && eventoId == request.auth.uid + '_' + string(request.resource.data.numero)
+        && request.resource.data.dataHora == request.time
+        && getAfter(profilePath()).data.totalAcessos == request.resource.data.numero
+        && getAfter(profilePath()).data.ultimoAcesso == request.time
+        && request.resource.data.numero == (('totalAcessos' in profile()) ? profile().totalAcessos : 0) + 1;
+      allow update, delete: if false;
+    }
+
     match /pacientesProcessoEnfermagem/{patientId} {
       allow read: if ownPatient() || (isActiveAdmin() && canViewBI());
       allow create: if isApproved() && hasPage('ProcessoEnfermagem') && validNewPatient();
