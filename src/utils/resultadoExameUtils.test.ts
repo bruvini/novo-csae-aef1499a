@@ -29,6 +29,16 @@ test('mantém valores quantitativos exatamente como registrados, inclusive zero'
   );
 });
 
+test('acrescenta unidade do cadastro a valores numéricos sem duplicar unidade ou alterar resultados descritivos', () => {
+  const formatar = (valor: string | number, unidadeMedida: string) => formatarLinhaResultadoExame({
+    tipoExame: 'Laboratorial', nomeExame: 'Glicemia', componente: 'Glicose', valor, unidadeMedida,
+  });
+  assert.equal(formatar(0, 'mg/dL'), 'Exame laboratorial — Glicemia — Glicose: 0 mg/dL');
+  assert.equal(formatar('106', 'mg/dL'), 'Exame laboratorial — Glicemia — Glicose: 106 mg/dL');
+  assert.equal(formatar('106 mg/dL', 'mg/dL'), 'Exame laboratorial — Glicemia — Glicose: 106 mg/dL');
+  assert.equal(formatar('Reagente', 'qualitativo'), 'Exame laboratorial — Glicemia — Glicose: Reagente');
+});
+
 test('inclui titulação de VDRL apenas quando corresponde à classificação salva', () => {
   assert.equal(
     formatarLinhaResultadoExame({

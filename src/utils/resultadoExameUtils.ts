@@ -57,6 +57,7 @@ export interface LinhaResultadoExame {
   nomeExame?: string;
   componente: string;
   valor: string | number;
+  unidadeMedida?: string | null;
   resultadosConfigurados?: ResultadoClassificatorioConfigurado[];
   valorTexto?: {
     resultadoClassificatorio: string;
@@ -70,6 +71,7 @@ export function formatarLinhaResultadoExame({
   nomeExame,
   componente,
   valor,
+  unidadeMedida,
   resultadosConfigurados = [],
   valorTexto,
 }: LinhaResultadoExame): string {
@@ -88,5 +90,15 @@ export function formatarLinhaResultadoExame({
     ? ` — ${resultadoConfigurado?.rotuloValorTexto || 'Informação complementar'}: ${valorTexto.valorTexto}`
     : '';
 
-  return `${natureza} — ${nomeVisivel} — ${componente}: ${valorResultado}${complemento}`;
+  const unidade = unidadeMedida?.trim();
+  const valorNumerico = typeof valor === 'number' || /^[-+]?\d+(?:[.,]\d+)?$/.test(valorResultado.trim());
+  const contemUnidade = unidade
+    ? valorResultado.toLocaleLowerCase('pt-BR').includes(unidade.toLocaleLowerCase('pt-BR'))
+    : false;
+  const valorComUnidade = unidade
+    && valorNumerico
+    && !contemUnidade
+    ? `${valorResultado} ${unidade}`
+    : valorResultado;
+  return `${natureza} — ${nomeVisivel} — ${componente}: ${valorComUnidade}${complemento}`;
 }

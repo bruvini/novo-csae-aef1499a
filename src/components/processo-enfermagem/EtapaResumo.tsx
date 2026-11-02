@@ -22,6 +22,7 @@ import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermage
 import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
 import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
+import { formatarSinaisVitais } from '@/utils/formatarSinaisVitais';
 import { linhasMateriaisEntregues, materiaisAgrupados } from '@/utils/materiaisApoioProcesso';
 import MateriaisApoioLeitura from './MateriaisApoioLeitura';
 import { obterIntervencoesDaConsulta, referenciaResultado } from '@/utils/evolucaoProcesso';
@@ -152,13 +153,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
     if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      const svAtivos = sinaisVitais.filter(s => isValorAvaliacaoValido(exameFisicoData[s.sinalVitalNome]));
+      const svAtivos = formatarSinaisVitais(exameFisicoData, sinaisVitais, processo.avaliacao?.contextosParametros);
       const parametrosRenderizados = new Set<string>();
       if (svAtivos.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
         svAtivos.forEach(s => {
-          parametrosRenderizados.add(s.sinalVitalNome);
-          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}${contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, s.sinalVitalNome)}`);
+          s.origens.forEach(origem => parametrosRenderizados.add(origem));
+          linhas.push(`  • ${s.nome}: ${s.valor}${s.contexto ?? ''}`);
         });
       }
 
@@ -176,6 +177,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
           nomeExame: cadastro?.exame.nomeExame,
           componente: registro.exame,
           valor: registro.valor,
+          unidadeMedida: cadastro?.componente.unidadeMedida,
           resultadosConfigurados: cadastro?.componente.resultados,
           valorTexto: processo.avaliacao?.examesValoresTexto?.[registro.exame],
         }) + contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, registro.exame));
@@ -442,7 +444,10 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Exame Físico / Parâmetros Registrados" />
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
-                    {Object.entries(exameFisico).map(([chave, valor]) => (
+                      {formatarSinaisVitais(exameFisico, sinaisVitais, processo.avaliacao?.contextosParametros).map((sinal, index) => (
+                        <li key={`sinal-vital-${index}`} className="flex items-baseline gap-1 text-sm"><span className="font-semibold text-gray-700">{sinal.nome}:</span><span className="text-gray-600">{sinal.valor}{sinal.contexto ?? ''}</span></li>
+                      ))}
+                      {Object.entries(exameFisico).filter(([chave]) => !sinaisVitais.some(s => s.sinalVitalNome === chave)).map(([chave, valor]) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
                         <span className="text-gray-600">{valor}{contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, chave)}</span>
