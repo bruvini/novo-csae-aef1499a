@@ -39,6 +39,8 @@ export default function SugestoesIntervencoes() {
   const [pagina, setPagina] = useState(1);
   const [agrupar, setAgrupar] = useState(false);
   const [grupoAberto, setGrupoAberto] = useState<string | null>(null);
+  const [paginaGrupos, setPaginaGrupos] = useState(1);
+  const [buscaGrupo, setBuscaGrupo] = useState('');
   const [carregando, setCarregando] = useState(true);
   const geracao = useRef(0);
   const [status, setStatus] = useState<SituacaoSugestao>(() => (['aguardando', 'aprovada', 'rejeitada'].includes(parametros.get('status') || '') ? parametros.get('status') as SituacaoSugestao : 'aguardando'));
@@ -48,6 +50,11 @@ export default function SugestoesIntervencoes() {
   const [resultado, setResultado] = useState(() => parametros.get('resultado') || '');
   const [categoriaFiltro, setCategoriaFiltro] = useState(() => parametros.get('categoria') || '');
   const [tipoFiltro, setTipoFiltro] = useState(() => parametros.get('tipo') || '');
+  const [dimensaoFiltro, setDimensaoFiltro] = useState<'' | 'atomicidadeStatus' | 'especificidadeNivel' | 'pertinenciaClinica' | 'exequibilidadeNivel' | 'reavaliabilidadeNivel'>(() => {
+    const campo = parametros.get('dimensao') || '';
+    return ['atomicidadeStatus', 'especificidadeNivel', 'pertinenciaClinica', 'exequibilidadeNivel', 'reavaliabilidadeNivel'].includes(campo) ? campo as typeof dimensaoFiltro : '';
+  });
+  const [classificacaoFiltro, setClassificacaoFiltro] = useState(() => parametros.get('classificacao') || '');
   const [ordem, setOrdem] = useState<'recentes' | 'antigas'>('recentes');
   const [selecionada, setSelecionada] = useState<IntervencaoAutoral | null>(null);
   const [modo, setModo] = useState<'detalhes' | 'rejeitar' | 'aprovar' | 'desmembrar'>('detalhes');
@@ -78,9 +85,10 @@ export default function SugestoesIntervencoes() {
   }, [selecionada, modo]);
 
   const contagens = useMemo(() => contagensSugestoes(items), [items]);
-  const filtrados = useMemo(() => filtrarSugestoes(items, { status, texto, autor, diagnostico, resultado, ordem, categoria: categoriaFiltro, tipo: tipoFiltro }), [items, status, texto, autor, diagnostico, resultado, ordem, categoriaFiltro, tipoFiltro]);
+  const filtrados = useMemo(() => filtrarSugestoes(items, { status, texto, autor, diagnostico, resultado, ordem, categoria: categoriaFiltro, tipo: tipoFiltro, dimensao: dimensaoFiltro, classificacao: classificacaoFiltro }), [items, status, texto, autor, diagnostico, resultado, ordem, categoriaFiltro, tipoFiltro, dimensaoFiltro, classificacaoFiltro]);
   const semelhantes = useMemo(() => indiceSemelhantes(items), [items]);
   const grupos = useMemo(() => agruparSugestoes(items.filter(item => !item.divisao)), [items]);
+  const gruposFiltrados = useMemo(() => grupos.filter(grupo => normalizarAcao(grupo.chave).includes(normalizarAcao(buscaGrupo))), [grupos, buscaGrupo]);
   const paginaAtual = Math.min(pagina, Math.max(1, Math.ceil(filtrados.length / TAMANHO_PAGINA)));
   const visiveis = useMemo(() => filtrados.slice((paginaAtual - 1) * TAMANHO_PAGINA, paginaAtual * TAMANHO_PAGINA), [filtrados, paginaAtual]);
   const diagnosticosFiltrados = useMemo(() => catalogo.filter(d => normalizarAcao(d.tituloDiagnostico).includes(normalizarAcao(buscaDiagnostico))).slice(0, 40), [catalogo, buscaDiagnostico]);
@@ -93,7 +101,7 @@ export default function SugestoesIntervencoes() {
       .map(r => ({ diagnosticoId: diagnosticoDestino.id, tituloDiagnostico: diagnosticoDestino.tituloDiagnostico, tituloResultado: r.tituloResultado }));
   }, [diagnosticoDestino, buscaDestino]);
 
-  useEffect(() => { setPagina(1); }, [status, texto, autor, diagnostico, resultado, ordem, categoriaFiltro, tipoFiltro]);
+  useEffect(() => { setPagina(1); }, [status, texto, autor, diagnostico, resultado, ordem, categoriaFiltro, tipoFiltro, dimensaoFiltro, classificacaoFiltro]);
 
   useEffect(() => {
     if (modo !== 'aprovar' || !selecionada || catalogo.length) return;
@@ -177,7 +185,20 @@ export default function SugestoesIntervencoes() {
   return <div className="space-y-5">
     <p className="text-sm text-muted-foreground">Sugestões autorais exigem análise técnica. A publicação no catálogo requer homologação institucional registrada.</p>
     <Button variant="outline" aria-pressed={agrupar} onClick={() => setAgrupar(valor => !valor)}>{agrupar ? 'Exibir sugestões individuais' : 'Agrupar sugestões semelhantes'}</Button>
-    {agrupar && <div className="space-y-3"><p className="text-sm text-muted-foreground">Agrupamento textual automático para triagem. Textos iguais em contextos clínicos diferentes exigem análise individual.</p>{grupos.slice(0, 25).map(grupo => <section key={grupo.chave} className="rounded-lg border p-3 space-y-2"><Button variant="ghost" className="h-auto whitespace-normal text-left" onClick={() => setGrupoAberto(atual => atual === grupo.chave ? null : grupo.chave)}>{grupo.ocorrencias.length} ocorrências · {grupo.autores} autor(es) · {grupo.tipo === 'exata' ? 'texto exato' : grupo.tipo === 'similar' ? 'texto semelhante (mesmas palavras e contexto)' : 'texto normalizado'} · {grupo.chave.slice(0, 110)}</Button><p className="text-xs text-muted-foreground">{grupo.diagnosticos.length} diagnóstico(s) · {grupo.resultados.length} resultado(s)</p>{grupoAberto === grupo.chave && <div className="space-y-2">{grupo.ocorrencias.map(item => <div key={item.id} className="rounded bg-muted p-2 text-sm"><p>{nomeAutor(item)} · {origem(item)} · {item.tituloResultadoOrigem || item.tituloResultadoVinculado} · {rotulos[item.status || 'aguardando']}</p><div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => abrir(item, 'detalhes')}>Detalhes</Button>{item.status !== 'aprovada' && item.status !== 'rejeitada' && <Button size="sm" variant="outline" onClick={() => reutilizarRedacao(item, grupo.ocorrencias[0].textoIntervencao)}>Reutilizar redação como rascunho</Button>}</div></div>)}</div>}</section>)}{grupos.length > 25 && <p className="text-sm">Exibindo 25 de {grupos.length} grupos. Refine a busca na lista individual para outras ocorrências.</p>}</div>}
+    {agrupar && <div className="space-y-3">
+      <p className="text-sm text-muted-foreground">Agrupamento textual automático para triagem. Textos iguais em contextos clínicos diferentes exigem análise individual.</p>
+      <Input aria-label="Buscar grupos de sugestões" placeholder="Buscar redação agrupada" value={buscaGrupo} onChange={e => { setBuscaGrupo(e.target.value); setPaginaGrupos(1); }} />
+      {gruposFiltrados.slice((paginaGrupos - 1) * 25, paginaGrupos * 25).map(grupo => <section key={grupo.chave} className="rounded-lg border p-3 space-y-2">
+        <Button variant="ghost" className="h-auto whitespace-normal text-left" onClick={() => setGrupoAberto(atual => atual === grupo.chave ? null : grupo.chave)}>{grupo.ocorrencias.length} ocorrências · {grupo.autores} autor(es) · {grupo.tipo === 'exata' ? 'texto exato' : grupo.tipo === 'similar' ? 'texto semelhante (mesmas palavras e contexto)' : 'texto normalizado'} · {grupo.chave.slice(0, 110)}</Button>
+        <p className="text-xs text-muted-foreground">{grupo.diagnosticos.length} diagnóstico(s) · {grupo.resultados.length} resultado(s)</p>
+        {grupoAberto === grupo.chave && <div className="space-y-2">{grupo.ocorrencias.map(item => <div key={item.id} className="rounded bg-muted p-2 text-sm">
+          <p>{nomeAutor(item)} · {origem(item)} · {item.tituloResultadoOrigem || item.tituloResultadoVinculado} · {rotulos[item.status || 'aguardando']}</p>
+          <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => abrir(item, 'detalhes')}>Detalhes</Button>{item.status !== 'aprovada' && item.status !== 'rejeitada' && <Button size="sm" variant="outline" onClick={() => reutilizarRedacao(item, grupo.ocorrencias[0].textoIntervencao)}>Reutilizar redação como rascunho</Button>}</div>
+        </div>)}</div>}
+      </section>)}
+      {gruposFiltrados.length > 25 && <nav aria-label="Páginas dos grupos" className="flex items-center gap-2 text-sm"><Button variant="outline" disabled={paginaGrupos === 1} onClick={() => setPaginaGrupos(n => n - 1)}>Anterior</Button><span>Página {paginaGrupos} de {Math.ceil(gruposFiltrados.length / 25)}</span><Button variant="outline" disabled={paginaGrupos * 25 >= gruposFiltrados.length} onClick={() => setPaginaGrupos(n => n + 1)}>Próxima</Button></nav>}
+      {!gruposFiltrados.length && !carregando && <p className="text-sm text-muted-foreground">Nenhum grupo textual encontrado.</p>}
+    </div>}
     {!agrupar && <>
     <Tabs value={status} onValueChange={v => setStatus(v as SituacaoSugestao)}>
       <TabsList className="h-auto flex flex-wrap justify-start gap-1">
@@ -191,7 +212,7 @@ export default function SugestoesIntervencoes() {
       <Input aria-label="Filtrar resultado" placeholder="Resultado esperado" value={resultado} onChange={e => setResultado(e.target.value)} />
       <select aria-label="Ordenar por data" className="rounded-md border px-3 py-2 text-sm" value={ordem} onChange={e => setOrdem(e.target.value as typeof ordem)}><option value="recentes">Mais recentes</option><option value="antigas">Mais antigas</option></select>
     </div>
-    <div className="flex flex-wrap gap-2 text-sm"><select aria-label="Filtrar categoria de rejeição" className="rounded border p-2" value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)}><option value="">Todas as categorias</option>{categoriasRejeicao.map(c => <option key={c}>{c}</option>)}</select><select aria-label="Filtrar tipo de registro" className="rounded border p-2" value={tipoFiltro} onChange={e => setTipoFiltro(e.target.value)}><option value="">Originais e derivados</option><option value="original">Originais</option><option value="derivada">Derivados</option></select></div>
+    <div className="flex flex-wrap gap-2 text-sm"><select aria-label="Filtrar categoria de rejeição" className="rounded border p-2" value={categoriaFiltro} onChange={e => setCategoriaFiltro(e.target.value)}><option value="">Todas as categorias</option>{categoriasRejeicao.map(c => <option key={c}>{c}</option>)}</select><select aria-label="Filtrar tipo de registro" className="rounded border p-2" value={tipoFiltro} onChange={e => setTipoFiltro(e.target.value)}><option value="">Originais e derivados</option><option value="original">Originais</option><option value="derivada">Derivados</option></select><select aria-label="Filtrar dimensão técnica" className="rounded border p-2" value={dimensaoFiltro} onChange={e => { setDimensaoFiltro(e.target.value as typeof dimensaoFiltro); setClassificacaoFiltro(''); }}><option value="">Todas as dimensões</option><option value="atomicidadeStatus">Atomicidade</option><option value="especificidadeNivel">Especificidade</option><option value="pertinenciaClinica">Pertinência clínica</option><option value="exequibilidadeNivel">Exequibilidade</option><option value="reavaliabilidadeNivel">Reavaliabilidade</option></select><Input aria-label="Filtrar classificação técnica" className="w-48" placeholder="Classificação técnica" value={classificacaoFiltro} onChange={e => setClassificacaoFiltro(e.target.value)} disabled={!dimensaoFiltro} /></div>
     {erro && !selecionada && <p role="alert" className="text-red-700">{erro}</p>}
     <div className="space-y-3">
       {carregando && Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)}
