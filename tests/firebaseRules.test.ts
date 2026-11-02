@@ -159,7 +159,10 @@ test('preparação permanece aguardando; publicação exige homologação e deci
   publicar.update(sugestao, { status: 'aprovada', preparacao: completa, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a3' });
   publicar.set(doc(gestor, 'decisoesIntervencoes', 'a3'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'publicar', avaliadorId: 'gestor', destinos: completa.destinos, justificativa: '', dataHora: serverTimestamp() });
   await assertSucceeds(publicar.commit());
-  await assertFails(publicar.commit());
+  const concorrente = writeBatch(gestor);
+  concorrente.update(sugestao, { status: 'aprovada', preparacao: completa, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a4' });
+  concorrente.set(doc(gestor, 'decisoesIntervencoes', 'a4'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'publicar', avaliadorId: 'gestor', destinos: completa.destinos, justificativa: '', dataHora: serverTimestamp() });
+  await assertFails(concorrente.commit());
   assert.equal((await getDoc(sugestao)).data()?.status, 'aprovada');
 });
 
