@@ -56,8 +56,16 @@ export function calcularGovernanca(items: IntervencaoAutoral[], granularidade: '
     const filhas = item.divisao?.derivadasIds.map(id => porId.get(id)) || [];
     return filhas.some(filha => filha?.status === 'aprovada') && filhas.some(filha => filha?.status !== 'aprovada');
   }).length;
-  const tempos = analisadas.flatMap(item => {
-    const criada = data(item.dataCriacao), decidida = data(item.dataDecisao);
+  const originaisAnalisadas = originais.filter(item => {
+    if (!item.divisao) return item.status === 'aprovada' || item.status === 'rejeitada';
+    return item.divisao.derivadasIds.every(id => {
+      const status = porId.get(id)?.status;
+      return status === 'aprovada' || status === 'rejeitada';
+    });
+  }).length;
+  const tempos = items.flatMap(item => {
+    const criada = data(item.dataCriacao), decidida = data(item.divisao?.dataHora || item.dataDecisao);
+    if (!item.divisao && item.status !== 'aprovada' && item.status !== 'rejeitada') return [];
     return criada && decidida && decidida >= criada ? [(decidida.getTime() - criada.getTime()) / 86_400_000] : [];
   });
   const esperas = pendentes.flatMap(item => {
@@ -122,7 +130,7 @@ export function calcularGovernanca(items: IntervencaoAutoral[], granularidade: '
   avaliadas.forEach(item => { const chave = item.avaliacaoQualidade?.intensidadeRevisao; if (chave) revisoes.set(chave, (revisoes.get(chave) || 0) + 1); });
   return {
     originais: originais.length, derivadas: derivadas.length, desmembradas: originais.filter(item => !!item.divisao).length,
-    pendentes: pendentes.length, aprovadas: aprovadas.length, rejeitadas: rejeitadas.length, parciais,
+    pendentes: pendentes.length, aprovadas: aprovadas.length, rejeitadas: rejeitadas.length, parciais, originaisAnalisadas,
     analisadas: analisadas.length, serie: [...serie.values()].sort((a, b) => a.periodo.localeCompare(b.periodo)),
     tempo: { mediana: mediana(tempos), p90: tempos.length ? Math.round([...tempos].sort((a, b) => a - b)[Math.ceil(tempos.length * .9) - 1] * 10) / 10 : null, esperaMediana: mediana(esperas), amostra: tempos.length, faixas: distribuicaoTempo },
     rejeicoes, qualidade, avaliadas: avaliadas.length, completas: completas.length,

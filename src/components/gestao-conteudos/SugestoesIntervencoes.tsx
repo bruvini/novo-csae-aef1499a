@@ -231,6 +231,11 @@ export default function SugestoesIntervencoes() {
         <DialogHeader><DialogTitle>{modo === 'aprovar' ? 'Analisar e publicar intervenção' : modo === 'rejeitar' ? 'Rejeitar sugestão' : modo === 'desmembrar' ? 'Desmembrar sugestão' : 'Detalhes da sugestão'}</DialogTitle></DialogHeader>
         {selecionada && <div className="space-y-4 text-sm">
           <div className="rounded-md bg-muted p-3"><strong>Texto original</strong><p className="whitespace-pre-wrap">{selecionada.textoIntervencao}</p></div>
+          {(sinalizarIntervencoesMultiplas(selecionada.textoIntervencao).nivel !== 'nenhuma' || selecionada.textoIntervencao.trim().length < 20 || (semelhantes.get(normalizarAcao(selecionada.textoIntervencao)) || 0) > 1) && <p className="rounded bg-amber-50 p-2 text-amber-900">Sinalização automática — requer avaliação: {[
+            sinalizarIntervencoesMultiplas(selecionada.textoIntervencao).nivel !== 'nenhuma' ? 'possível lista de ações' : '',
+            selecionada.textoIntervencao.trim().length < 20 ? 'texto curto' : '',
+            (semelhantes.get(normalizarAcao(selecionada.textoIntervencao)) || 0) > 1 ? 'texto repetido' : '',
+          ].filter(Boolean).join('; ')}. Isso não constitui parecer clínico.</p>}
           <p>Autor: {nomeAutor(selecionada)} · Criada em: {formatoData(selecionada.dataCriacao)}</p>
           <p>Diagnóstico de origem: {origem(selecionada)} · Resultado de origem: {selecionada.tituloResultadoOrigem || selecionada.tituloResultadoVinculado || 'Indisponível'}</p>
           {selecionada.derivacao && <p className="rounded bg-amber-50 p-2">Proposta derivada da submissão original. {items.find(item => item.id === selecionada.derivacao?.originalId)?.textoIntervencao && <span>Texto original preservado: {items.find(item => item.id === selecionada.derivacao?.originalId)?.textoIntervencao}</span>}</p>}
