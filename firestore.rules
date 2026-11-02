@@ -589,8 +589,7 @@ service cloud.firestore {
       allow read: if canManageContent();
       // A sugestão exige este documento no mesmo commit; a direção única evita
       // recursão de getAfter entre as duas regras.
-      allow create: if canManageContent() && validDecision(request.resource.data)
-        && exists(/databases/$(database)/documents/intervencoesAutorais/$(request.resource.data.sugestaoId));
+      allow create: if canManageContent() && validDecision(request.resource.data);
       allow update, delete: if false;
     }
 
