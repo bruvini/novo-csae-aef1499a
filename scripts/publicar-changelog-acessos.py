@@ -5,6 +5,10 @@ from google.cloud import firestore
 
 PROJECT = 'csaefloripa'
 ENTRIES = {
+    'sugestoes-intervencoes-20261102': (
+        'Suas Sugestões de Intervenções Ganharam Espaço',
+        'As intervenções autorais registradas nas consultas agora podem ser analisadas na Gestão de Conteúdos. Após análise técnica e homologação da CSAE registrada, as sugestões podem integrar o catálogo do Portal.',
+    ),
     'catalogo-clinico-exportacao-20261102': (
         'Catálogo Clínico Agora Pode Ser Exportado',
         'Agora ficou mais fácil consultar e revisar os conteúdos do Portal! A Gestão de Conteúdos permite exportar sinais vitais, exames, subconjuntos, diagnósticos, resultados esperados e intervenções em Excel, CSV ou JSON, tudo organizado para facilitar a conferência e a análise.',

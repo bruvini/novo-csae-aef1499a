@@ -8,7 +8,8 @@ service cloud.firestore {
     // Catalogs: ExamesLabImagem, RevisaoSistemas, SinaisVitais, rolEnfermagem,
     // diagnosticosEnfermagem and subconjuntosEnfermagem.
     // Support: tickets_suporte and sugestoes_melhoria, owner in usuarioId; pesquisas_nps, owner in usuarioId.
-    // Administrative: estatisticas and changelogs. interventions: intervencoesAutorais, author in autorId.
+    // Administrative: estatisticas, changelogs, intervencoesAutorais (author in autorId),
+    // decisoesIntervencoes (immutable decisions linked to a suggestion).
 
     function signedIn() {
       return request.auth != null;
@@ -257,11 +258,12 @@ service cloud.firestore {
           && data.exames is list && data.exames.size() <= 100)
         || (catalog == 'rolEnfermagem'
           && data.keys().hasAll(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados'])
-          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados', 'dataCadastro'])
+          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados', 'dataCadastro', 'ultimaSugestaoPublicada'])
           && boundedString(data.tituloDiagnostico, 300)
           && boundedString(data.descricaoDiagnostico, 5000)
           && data.subconjuntos is list && data.subconjuntos.size() <= 100
-          && data.resultadosEsperados is list && data.resultadosEsperados.size() <= 100)
+          && data.resultadosEsperados is list && data.resultadosEsperados.size() <= 100
+          && (!('ultimaSugestaoPublicada' in data) || boundedString(data.ultimaSugestaoPublicada, 128)))
         || (catalog == 'diagnosticosEnfermagem'
           && data.keys().hasAll(['tituloDiagnostico', 'subconjuntosVinculados', 'resultadosEsperados'])
           && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntosVinculados', 'resultadosEsperados', 'dataCadastro'])
@@ -458,16 +460,136 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    function validSuggestion(data) {
+      return data is map
+        && data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && boundedString(data.textoIntervencao, 2000) && data.textoIntervencao.size() > 0
+        && boundedString(data.tituloResultadoVinculado, 500)
+        && boundedString(data.autorId, 128) && data.autorId.size() > 0
+        && boundedString(data.autorNome, 160)
+        && data.dataCriacao is timestamp
+        && (!('tituloResultadoOrigem' in data) || boundedString(data.tituloResultadoOrigem, 500))
+        && (!('diagnosticoOrigemId' in data) || boundedString(data.diagnosticoOrigemId, 128))
+        && (!('tituloDiagnosticoOrigem' in data) || boundedString(data.tituloDiagnosticoOrigem, 300))
+        && (!('identificadorSugestao' in data) || boundedString(data.identificadorSugestao, 128))
+        && (!('status' in data) || data.status in ['aguardando', 'aprovada', 'rejeitada'])
+        && (!('preparacao' in data) || validPreparation(data.preparacao))
+        && (!('categoriaRejeicao' in data) || data.categoriaRejeicao in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'])
+        && (!('justificativaRejeicao' in data) || boundedString(data.justificativaRejeicao, 2000))
+        && (!('avaliadorId' in data) || boundedString(data.avaliadorId, 128))
+        && (!('avaliadorNome' in data) || boundedString(data.avaliadorNome, 160))
+        && (!('dataDecisao' in data) || data.dataDecisao is timestamp)
+        && (!('ultimaDecisaoId' in data) || boundedString(data.ultimaDecisaoId, 128));
+    }
+
+    function validPreparation(data) {
+      return data is map
+        && data.keys().hasAll(['acaoPrescrita', 'acaoEnfermeiro', 'destinos'])
+        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'destinos', 'referenciaDeliberacao', 'dataDeliberacao', 'documentoHomologacao', 'responsavelValidacao'])
+        && boundedString(data.acaoPrescrita, 1000) && data.acaoPrescrita.size() > 0
+        && boundedString(data.acaoEnfermeiro, 1000) && data.acaoEnfermeiro.size() > 0
+        && data.destinos is list && data.destinos.size() > 0 && data.destinos.size() <= 5
+        && validDestination(data.destinos[0])
+        && (data.destinos.size() < 2 || validDestination(data.destinos[1]))
+        && (data.destinos.size() < 3 || validDestination(data.destinos[2]))
+        && (data.destinos.size() < 4 || validDestination(data.destinos[3]))
+        && (data.destinos.size() < 5 || validDestination(data.destinos[4]))
+        && (!('referenciaDeliberacao' in data) || boundedString(data.referenciaDeliberacao, 300))
+        && (!('dataDeliberacao' in data) || boundedString(data.dataDeliberacao, 20))
+        && (!('documentoHomologacao' in data) || boundedString(data.documentoHomologacao, 300))
+        && (!('responsavelValidacao' in data) || boundedString(data.responsavelValidacao, 160));
+    }
+
+    function validDestination(dest) {
+      return dest is map && dest.keys().hasAll(['diagnosticoId', 'tituloDiagnostico', 'tituloResultado'])
+        && dest.keys().hasOnly(['diagnosticoId', 'tituloDiagnostico', 'tituloResultado'])
+        && boundedString(dest.diagnosticoId, 128) && dest.diagnosticoId.size() > 0
+        && boundedString(dest.tituloDiagnostico, 300) && dest.tituloDiagnostico.size() > 0
+        && boundedString(dest.tituloResultado, 500) && dest.tituloResultado.size() > 0;
+    }
+
+    function destinationPublished(dest, suggestionId) {
+      return getAfter(/databases/$(database)/documents/rolEnfermagem/$(dest.diagnosticoId)).data.ultimaSugestaoPublicada == suggestionId;
+    }
+
+    function allDestinationsPublished(destinos, suggestionId) {
+      return destinationPublished(destinos[0], suggestionId)
+        && (destinos.size() < 2 || destinationPublished(destinos[1], suggestionId))
+        && (destinos.size() < 3 || destinationPublished(destinos[2], suggestionId))
+        && (destinos.size() < 4 || destinationPublished(destinos[3], suggestionId))
+        && (destinos.size() < 5 || destinationPublished(destinos[4], suggestionId));
+    }
+
+    function validSuggestionUpdate(interventionId) {
+      let data = request.resource.data;
+      let previous = resource.data;
+      let oldStatus = ('status' in previous) ? previous.status : 'aguardando';
+      let audit = getAfter(/databases/$(database)/documents/decisoesIntervencoes/$(data.ultimaDecisaoId)).data;
+      // Os campos clínicos e de autoria já foram validados na criação e são
+      // imutáveis; validar novamente o mapa inteiro excede o limite de
+      // expressões do Emulator em operações atômicas com o catálogo.
+      return oldStatus == 'aguardando'
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.status in ['aguardando', 'aprovada', 'rejeitada']
+        && (!('preparacao' in data) || validPreparation(data.preparacao))
+        && (!('categoriaRejeicao' in data) || data.categoriaRejeicao in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'])
+        && (!('justificativaRejeicao' in data) || boundedString(data.justificativaRejeicao, 2000))
+        && data.avaliadorId == request.auth.uid
+        && boundedString(data.avaliadorNome, 160) && data.avaliadorNome.size() > 0
+        && data.dataDecisao == request.time
+        && boundedString(data.ultimaDecisaoId, 128)
+        && audit.sugestaoId == interventionId
+        && audit.statusAnterior == oldStatus
+        && audit.statusNovo == data.status
+        && audit.avaliadorId == request.auth.uid
+        && audit.dataHora == request.time
+        && ((data.status == 'aguardando' && 'preparacao' in data && audit.tipo == 'preparar')
+          || (data.status == 'rejeitada' && audit.tipo == 'rejeitar'
+            && 'categoriaRejeicao' in data && 'justificativaRejeicao' in data
+            && data.justificativaRejeicao.size() > 0)
+          || (data.status == 'aprovada' && audit.tipo == 'publicar'
+            && 'preparacao' in data
+            && allDestinationsPublished(data.preparacao.destinos, interventionId)
+            && boundedString(data.preparacao.referenciaDeliberacao, 300) && data.preparacao.referenciaDeliberacao.size() > 0
+            && boundedString(data.preparacao.dataDeliberacao, 20) && data.preparacao.dataDeliberacao.size() > 0
+            && boundedString(data.preparacao.documentoHomologacao, 300) && data.preparacao.documentoHomologacao.size() > 0
+            && boundedString(data.preparacao.responsavelValidacao, 160) && data.preparacao.responsavelValidacao.size() > 0));
+    }
+
     match /intervencoesAutorais/{interventionId} {
-      allow get, list: if isApproved() && resource.data.autorId == request.auth.uid;
-      allow create: if hasPage('ProcessoEnfermagem')
-        && request.resource.data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
-        && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
+      allow get, list: if canManageContent() || (isApproved() && resource.data.autorId == request.auth.uid);
+      allow create: if hasPage('ProcessoEnfermagem') && validSuggestion(request.resource.data)
         && request.resource.data.autorId == request.auth.uid
-        && boundedString(request.resource.data.textoIntervencao, 2000)
-        && boundedString(request.resource.data.tituloResultadoVinculado, 500)
-        && boundedString(request.resource.data.autorNome, 160)
-        && request.resource.data.dataCriacao is timestamp;
+        && ((request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao']))
+          || (request.resource.data.identificadorSugestao == interventionId
+            && request.resource.data.status == 'aguardando'
+            && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status'])
+            && request.resource.data.dataCriacao == request.time));
+      allow update: if canManageContent() && validSuggestionUpdate(interventionId);
+      allow delete: if false;
+    }
+
+    function validDecision(data) {
+      return data is map
+        && data.keys().hasAll(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
+        && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
+        && boundedString(data.sugestaoId, 128)
+        && data.statusAnterior == 'aguardando'
+        && data.statusNovo in ['aguardando', 'aprovada', 'rejeitada']
+        && data.tipo in ['preparar', 'publicar', 'rejeitar']
+        && data.avaliadorId == request.auth.uid
+        && data.destinos is list && data.destinos.size() <= 5
+        && boundedString(data.justificativa, 2000)
+        && data.dataHora == request.time;
+    }
+
+    match /decisoesIntervencoes/{decisionId} {
+      allow read: if canManageContent();
+      // A sugestão exige este documento no mesmo commit; a direção única evita
+      // recursão de getAfter entre as duas regras.
+      allow create: if canManageContent() && validDecision(request.resource.data);
       allow update, delete: if false;
     }
 

@@ -31,7 +31,7 @@ import {
   iniciarNovaSessao,
   finalizarSessaoAtual,
 } from '@/services/bancodados/processosEnfermagemDB';
-import { salvarIntervencoesAutorais, IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
+import { encaminharSugestoes, identificadorSugestao, reprocessarSugestoesPendentes, type IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import { calcularTempoAtivo } from '@/utils/timeUtils';
 import {
   calcularEtapasCompletadas,
@@ -41,7 +41,6 @@ import {
   RequisitoDescricaoAvaliacao,
 } from '@/utils/processoUtils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Timestamp } from 'firebase/firestore';
 import { Loader2, Trash2, X, History } from 'lucide-react';
 import StepperProcesso from './StepperProcesso';
 import EtapaAvaliacao from './EtapaAvaliacao';
@@ -98,6 +97,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  useEffect(() => { if (user?.uid) void reprocessarSugestoesPendentes(user.uid).catch(console.error); }, [user?.uid]);
   const processoAtualRef = useRef(processo);
   processoAtualRef.current = processo;
   // Não duplicar as etapas concluídas em state: elas sempre refletem as
@@ -389,26 +389,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
     setIsSaving(true);
     try {
-      const intervencoesAutorais: IntervencaoAutoral[] = [];
-
-      processo.planejamento.diagnosticosPlanejados.forEach(diagnostico => {
-        diagnostico.intervencoesSelecionadas
-          .filter(intervencao => intervencao.tipo === 'autoral')
-          .forEach(intervencao => {
-            intervencoesAutorais.push({
-              textoIntervencao: intervencao.acaoPrescrita,
-              tituloResultadoVinculado: diagnostico.resultadoEsperadoSelecionado || '',
-              autorId: user?.uid || '',
-              autorNome: user?.displayName || user?.email || user?.uid || 'Nome não disponível',
-              dataCriacao: Timestamp.now(),
-            });
-          });
-      });
-
-      if (intervencoesAutorais.length > 0) {
-        await salvarIntervencoesAutorais(intervencoesAutorais);
-      }
-
+      let sugestoesPendentes = false;
       await concluirProcesso(
         paciente.id,
         processo.id,
@@ -421,9 +402,35 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         }
       );
 
+      // A conclusão assistencial precede o encaminhamento administrativo. Uma falha
+      // deste último mantém a sugestão na fila local para retentativa idempotente.
+      try {
+        if (user?.uid) {
+          const intervencoesAutorais: IntervencaoAutoral[] = await Promise.all(
+            processo.planejamento.diagnosticosPlanejados.flatMap(diagnostico =>
+              (diagnostico.intervencoesSelecionadas || []).filter(i => i.tipo === 'autoral').map(async intervencao => ({
+                textoIntervencao: intervencao.acaoPrescrita,
+                tituloResultadoVinculado: diagnostico.resultadoEsperadoSelecionado || '',
+                tituloResultadoOrigem: diagnostico.resultadoEsperadoSelecionado || '',
+                diagnosticoOrigemId: diagnostico.diagnosticoId,
+                tituloDiagnosticoOrigem: diagnostico.tituloDiagnostico,
+                autorId: user.uid,
+                autorNome: user.displayName || user.email || user.uid,
+                identificadorSugestao: await identificadorSugestao(processo.id, diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado || '', intervencao.acaoPrescrita, user.uid),
+              })))
+          );
+          if (intervencoesAutorais.length) await encaminharSugestoes(intervencoesAutorais, user.uid);
+        }
+      } catch (erroAdministrativo) {
+        console.error('Processo concluído; sugestão administrativa pendente:', erroAdministrativo);
+        sugestoesPendentes = true;
+      }
+
       toast({
         title: "Sucesso",
-        description: "Processo concluído com sucesso!",
+        description: sugestoesPendentes
+          ? 'Processo concluído. O envio de uma sugestão ficou pendente neste navegador.'
+          : 'Processo concluído com sucesso!',
       })
       onClose();
     } catch (error) {
