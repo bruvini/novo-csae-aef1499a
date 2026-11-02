@@ -23,6 +23,7 @@ import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermage
 import { isValorAvaliacaoValido, obterRegistrosExameFisico } from '@/utils/processoUtils';
 import { formatarLinhaResultadoExame } from '@/utils/resultadoExameUtils';
 import { contextoRegistradoParaTexto } from '@/utils/referenciasClinicas';
+import { formatarSinaisVitais } from '@/utils/formatarSinaisVitais';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -149,13 +150,17 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     const registrosExameFisico = obterRegistrosExameFisico(processo.avaliacao);
     if (registrosExameFisico.length > 0) {
       linhas.push('EXAME FÍSICO:');
-      const svAtivos = sinaisVitais.filter(s => isValorAvaliacaoValido(exameFisicoData[s.sinalVitalNome]));
+      const sinaisVitaisFormatados = formatarSinaisVitais(
+        exameFisicoData,
+        sinaisVitais,
+        processo.avaliacao?.contextosParametros,
+      );
       const parametrosRenderizados = new Set<string>();
-      if (svAtivos.length > 0) {
+      if (sinaisVitaisFormatados.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => {
-          parametrosRenderizados.add(s.sinalVitalNome);
-          linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}${contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, s.sinalVitalNome)}`);
+        sinaisVitaisFormatados.forEach(sinal => {
+          sinal.origens.forEach(origem => parametrosRenderizados.add(origem));
+          linhas.push(`  • ${sinal.nome}: ${sinal.valor}${sinal.contexto ?? ''}`);
         });
       }
 
@@ -186,7 +191,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       // Peso e Altura (campos auxiliares do cálculo de IMC)
       const temIMCAux = camposIMCAux.some(k => isValorAvaliacaoValido(exameFisicoData[k]));
       if (temIMCAux) {
-        if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
+        if (sinaisVitaisFormatados.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
         camposIMCAux.forEach((chave) => {
           const val = exameFisicoData[chave];
           if (isValorAvaliacaoValido(val)) {
@@ -392,7 +397,19 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Exame Físico / Parâmetros Registrados" />
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
-                    {Object.entries(exameFisico).map(([chave, valor]) => (
+                    {formatarSinaisVitais(
+                      exameFisico,
+                      sinaisVitais,
+                      processo.avaliacao?.contextosParametros,
+                    ).map((sinal, index) => (
+                      <li key={`sinal-vital-${index}`} className="flex items-baseline gap-1 text-sm">
+                        <span className="font-semibold text-gray-700">{sinal.nome}:</span>
+                        <span className="text-gray-600">{sinal.valor}{sinal.contexto ?? ''}</span>
+                      </li>
+                    ))}
+                    {Object.entries(exameFisico)
+                      .filter(([chave]) => !sinaisVitais.some(sinal => sinal.sinalVitalNome === chave))
+                      .map(([chave, valor]) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
                         <span className="text-gray-600">{valor}{contextoRegistradoParaTexto(processo.avaliacao?.contextosParametros, chave)}</span>
