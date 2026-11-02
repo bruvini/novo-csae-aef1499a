@@ -76,6 +76,93 @@ test('visitante não lê coleções privadas e não envia arquivos', async () =>
   await assertFails(uploadBytes(ref(storage, 'protocolos/publico.png'), new Uint8Array([1]), { contentType: 'image/png' }));
 });
 
+test('sugestões legadas e novas preservam autoria e isolamento', async () => {
+  await seedProfile('autor');
+  await seedProfile('outro');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const outro = environment.authenticatedContext('outro').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  const legado = { textoIntervencao: 'Orientar atividade', tituloResultadoVinculado: 'Mobilidade', autorId: 'autor', autorNome: 'Autor', dataCriacao: new Date() };
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'legado'), legado));
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'nova'), {
+    ...legado, dataCriacao: serverTimestamp(), identificadorSugestao: 'nova', status: 'aguardando',
+    diagnosticoOrigemId: 'diagnostico', tituloDiagnosticoOrigem: 'Diagnóstico', tituloResultadoOrigem: 'Mobilidade',
+  }));
+  await assertSucceeds(getDoc(doc(autor, 'intervencoesAutorais', 'nova')));
+  await assertFails(getDoc(doc(outro, 'intervencoesAutorais', 'nova')));
+  await assertSucceeds(getDocs(collection(gestor, 'intervencoesAutorais')));
+  await assertFails(updateDoc(doc(autor, 'intervencoesAutorais', 'nova'), { status: 'aprovada' }));
+  await assertFails(setDoc(doc(outro, 'intervencoesAutorais', 'forjada'), { ...legado, autorId: 'autor' }));
+  await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'falsa'), { ...legado, status: 'aprovada' }));
+  await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'nova'), { ...legado }));
+});
+
+test('gestor registra preparação e rejeição auditadas; revogado e enfermeiro não decidem', async () => {
+  await seedProfile('autor');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  await seedProfile('revogado', 'Revogado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  const revogado = environment.authenticatedContext('revogado').firestore();
+  const original = { textoIntervencao: 'Orientar atividade', tituloResultadoVinculado: 'Mobilidade', autorId: 'autor', autorNome: 'Autor', dataCriacao: serverTimestamp(), identificadorSugestao: 'item', status: 'aguardando', diagnosticoOrigemId: 'd', tituloDiagnosticoOrigem: 'Diagnóstico', tituloResultadoOrigem: 'Mobilidade' };
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'item'), original));
+  await assertFails(getDoc(doc(revogado, 'intervencoesAutorais', 'item')));
+  const audit = doc(gestor, 'decisoesIntervencoes', 'decisao');
+  const sugestao = doc(gestor, 'intervencoesAutorais', 'item');
+  const batch = writeBatch(gestor);
+  batch.update(sugestao, { status: 'rejeitada', categoriaRejeicao: 'Duplicada', justificativaRejeicao: 'Já consta em análise', avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'decisao' });
+  batch.set(audit, { sugestaoId: 'item', statusAnterior: 'aguardando', statusNovo: 'rejeitada', tipo: 'rejeitar', avaliadorId: 'gestor', destinos: [], justificativa: 'Já consta em análise', dataHora: serverTimestamp() });
+  await assertSucceeds(batch.commit());
+  const saved = (await getDoc(sugestao)).data()!;
+  assert.equal(saved.textoIntervencao, 'Orientar atividade');
+  assert.equal(saved.status, 'rejeitada');
+  assert.ok(saved.dataDecisao);
+  await assertFails(updateDoc(audit, { justificativa: 'Alterada' }));
+  await assertFails(updateDoc(sugestao, { status: 'aprovada' }));
+  await assertFails(setDoc(doc(autor, 'decisoesIntervencoes', 'indevida'), { sugestaoId: 'item' }));
+  await assertFails(updateDoc(doc(revogado, 'intervencoesAutorais', 'item'), { status: 'aprovada' }));
+});
+
+test('preparação permanece aguardando; publicação exige homologação e decisão atômica', async () => {
+  await seedProfile('autor');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 's1'), {
+    textoIntervencao: 'Orientar atividade', tituloResultadoVinculado: 'Mobilidade', autorId: 'autor', autorNome: 'Autor',
+    dataCriacao: serverTimestamp(), identificadorSugestao: 's1', status: 'aguardando',
+  }));
+  const preparacao = { acaoPrescrita: 'Orientar atividade física', acaoEnfermeiro: 'Oriento atividade física', destinos: [{ diagnosticoId: 'd1', tituloDiagnostico: 'Mobilidade', tituloResultado: 'Mobilidade melhorada' }] };
+  const sugestao = doc(gestor, 'intervencoesAutorais', 's1');
+  const preparar = writeBatch(gestor);
+  preparar.update(sugestao, { status: 'aguardando', preparacao, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a1' });
+  preparar.set(doc(gestor, 'decisoesIntervencoes', 'a1'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'preparar', avaliadorId: 'gestor', destinos: [], justificativa: '', dataHora: serverTimestamp() });
+  await assertSucceeds(preparar.commit());
+  assert.equal((await getDoc(sugestao)).data()?.status, 'aguardando');
+  const publicarSemHomologacao = writeBatch(gestor);
+  publicarSemHomologacao.update(sugestao, { status: 'aprovada', avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a2' });
+  publicarSemHomologacao.set(doc(gestor, 'decisoesIntervencoes', 'a2'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'publicar', avaliadorId: 'gestor', destinos: preparacao.destinos, justificativa: '', dataHora: serverTimestamp() });
+  await assertFails(publicarSemHomologacao.commit());
+  await environment.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'rolEnfermagem', 'd1'), {
+      tituloDiagnostico: 'Mobilidade', descricaoDiagnostico: '', subconjuntos: [],
+      resultadosEsperados: [{ tituloResultado: 'Mobilidade melhorada', descricaoResultado: '', intervencoes: [] }],
+    });
+  });
+  const completa = { ...preparacao, referenciaDeliberacao: 'Deliberação de teste', dataDeliberacao: '2026-11-02', documentoHomologacao: 'Ata de teste', responsavelValidacao: 'CSAE teste' };
+  const publicar = writeBatch(gestor);
+  publicar.update(doc(gestor, 'rolEnfermagem', 'd1'), {
+    resultadosEsperados: [{ tituloResultado: 'Mobilidade melhorada', descricaoResultado: '', intervencoes: [{ acaoPrescrita: completa.acaoPrescrita, acaoEnfermeiro: completa.acaoEnfermeiro, materiaisDeApoio: [] }] }],
+    ultimaSugestaoPublicada: 's1',
+  });
+  publicar.update(sugestao, { status: 'aprovada', preparacao: completa, avaliadorId: 'gestor', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: 'a3' });
+  publicar.set(doc(gestor, 'decisoesIntervencoes', 'a3'), { sugestaoId: 's1', statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'publicar', avaliadorId: 'gestor', destinos: completa.destinos, justificativa: '', dataHora: serverTimestamp() });
+  await assertSucceeds(publicar.commit());
+  await assertFails(publicar.commit());
+  assert.equal((await getDoc(sugestao)).data()?.status, 'aprovada');
+});
+
 test('novo cadastro só cria o próprio perfil como pendente, sem permissões elevadas', async () => {
   const db = environment.authenticatedContext('novo', { email: 'novo@example.test' }).firestore();
   const data = profile('novo', 'Aguardando');

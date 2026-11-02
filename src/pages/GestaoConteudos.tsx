@@ -12,6 +12,7 @@ import IndicadoresConteudo from '@/components/gestao-conteudos/IndicadoresConteu
 import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import ExportarCatalogoModal from '@/components/gestao-conteudos/ExportarCatalogoModal';
+import SugestoesIntervencoes from '@/components/gestao-conteudos/SugestoesIntervencoes';
 
 const GestaoConteudos = () => {
   const [exportarAberto, setExportarAberto] = useState(false);
@@ -49,7 +50,7 @@ const GestaoConteudos = () => {
           </CardHeader>
           <CardContent className="p-0">
             <Tabs defaultValue="exame-fisico" className="w-full">
-              <TabsList className="w-full justify-start rounded-none border-b bg-gray-50/50 p-0 h-12">
+              <TabsList className="w-full justify-start rounded-none border-b bg-gray-50/50 p-0 h-auto flex flex-wrap">
                 <TabsTrigger 
                   value="exame-fisico" 
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-csae-green-600 data-[state=active]:bg-white h-12 px-6"
@@ -67,6 +68,9 @@ const GestaoConteudos = () => {
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-csae-green-600 data-[state=active]:bg-white h-12 px-6"
                 >
                   Diagnósticos de Enfermagem
+                </TabsTrigger>
+                <TabsTrigger value="sugestoes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-csae-green-600 data-[state=active]:bg-white h-12 px-6">
+                  Sugestões de Intervenções
                 </TabsTrigger>
               </TabsList>
 
@@ -99,6 +103,9 @@ const GestaoConteudos = () => {
 
                 <TabsContent value="diagnosticos" className="mt-0">
                   <TabelaDiagnosticos />
+                </TabsContent>
+                <TabsContent value="sugestoes" className="mt-0">
+                  <SugestoesIntervencoes />
                 </TabsContent>
               </div>
             </Tabs>
