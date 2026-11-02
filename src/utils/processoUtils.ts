@@ -30,6 +30,16 @@ export interface CatalogoAchadosAprovados {
   }>;
 }
 
+export function isDiagnosticoPositivo(
+  natureza: DiagnosticoPlanejado['naturezaDiagnostico'] | undefined,
+  legadoIsPositivo: boolean | undefined,
+): boolean {
+  if (natureza === 'problema' || natureza === 'risco' || natureza === 'promocao_saude') {
+    return natureza === 'promocao_saude';
+  }
+  return legadoIsPositivo === true;
+}
+
 export function isAchadoDoCatalogoAprovado(
   sistemas: CatalogoAchadosAprovados[],
   exame: string,
@@ -122,11 +132,26 @@ export function obterPendenciasPlanejamento(
   planejados: DiagnosticoPlanejado[] = [],
 ): string[] {
   const selecionados = diagnostico?.diagnosticosSelecionados ?? [];
+  const idsSelecionados = new Set(selecionados.map((item) => item.id));
+  const idsPlanejados = planejados.map((item) => item.diagnosticoId);
+  if (new Set(idsPlanejados).size !== idsPlanejados.length) {
+    return ['O planejamento contém diagnósticos duplicados; revise a seleção atual.'];
+  }
+  if (planejados.some((item) => !idsSelecionados.has(item.diagnosticoId))) {
+    return ['Remova do planejamento os diagnósticos que não estão selecionados.'];
+  }
   return selecionados.flatMap((selecionado) => {
     const plano = planejados.find((item) => item.diagnosticoId === selecionado.id);
     const nome = selecionado.tituloDiagnostico;
     if (!plano) return [`${nome}: planejamento ainda não iniciado`];
-    if (plano.isPositivo === true) return [];
+    const isPositivo = isDiagnosticoPositivo(
+      selecionado.naturezaDiagnostico || plano.naturezaDiagnostico,
+      plano.isPositivo,
+    );
+    if (isPositivo) {
+      if ((plano.intervencoesSelecionadas?.length ?? 0) > 0 || plano.justificativaSemIntervencao?.trim()) return [];
+      return [`${nome}: justifique a ausência de intervenção nesta consulta`];
+    }
     const pendencias: string[] = [];
     if (!plano.resultadoEsperadoSelecionado?.trim()) pendencias.push('resultado esperado');
     if (!(plano.intervencoesSelecionadas?.length > 0)) pendencias.push('intervenção');
@@ -161,31 +186,31 @@ export function calcularEtapasCompletadas(
     obterPendenciasPlanejamento(processo.diagnostico, diagnosticosPlanejados).length === 0;
   if (planejamentoOk) concluidas.push(3);
 
-  // Etapa 4 — Implementação: pelo menos 1 intervenção implementada nesta consulta e todas têm executor
+  // Etapa 4 — cada diagnóstico que tem intervenções prescritas precisa ter ação
+  // implementada nesta consulta. Diagnósticos positivos sem ação são válidos após
+  // justificativa de planejamento. Nenhum diagnóstico pode mascarar outro.
   const implementacao = processo.implementacao || {};
-  let peloMenosUmaImplementada = false;
-  let temPendenciaExecutor = false;
-
-  Object.values(implementacao).forEach((d) => {
-    const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
-    if (implementadas.length > 0) {
-      peloMenosUmaImplementada = true;
-      if (implementadas.some((i) => !i.quemExecuta)) {
-        temPendenciaExecutor = true;
-      }
-    }
+  const implementacaoOk = (processo.planejamento?.diagnosticosPlanejados ?? []).every((plano) => {
+    const prescritas = plano.intervencoesSelecionadas ?? [];
+    if (prescritas.length === 0) return true;
+    const implementadas = implementacao[plano.tituloDiagnostico]?.intervencoes
+      ?.filter((item) => item.implementadoNestaConsulta) ?? [];
+    return implementadas.length > 0 && implementadas.every((item) =>
+      Array.isArray(item.quemExecuta) ? item.quemExecuta.length > 0 : Boolean(item.quemExecuta)
+    );
   });
+  if (planejamentoOk && implementacaoOk) concluidas.push(4);
 
-  if (peloMenosUmaImplementada && !temPendenciaExecutor) concluidas.push(4);
-
-  // Etapa 5 — Evolução: pelo menos 1 grupo de intervenções executadas registrado
-  const temEvolucao =
-    !!processo.evolucao?.intervencoesExecutadas &&
-    Object.keys(processo.evolucao.intervencoesExecutadas).length > 0;
-  if (temEvolucao) concluidas.push(5);
+  // Etapa 5 avalia resultados. Registros legados com resumo gerado continuam
+  // válidos; novos processos precisam documentar julgamento clínico explícito.
+  const temEvolucao = Boolean(
+    processo.evolucao?.julgamentoClinico?.trim()
+    || processo.evolucao?.resumoGerado?.trim()
+  );
+  if (concluidas.includes(4) && temEvolucao) concluidas.push(5);
 
   // Etapa 6 — Resumo gerado
-  if (processo.evolucao?.resumoGerado) concluidas.push(6);
+  if (concluidas.includes(5) && processo.evolucao?.resumoGerado?.trim()) concluidas.push(6);
 
   return concluidas;
 }
@@ -218,22 +243,9 @@ export function isEtapaAcessivel(
     case 4:
       return atuais.includes(3);
     case 5:
-    case 6: {
-      const implementacao = processo.implementacao || {};
-      let peloMenosUmaImplementada = false;
-      let temPendenciaExecutor = false;
-
-      Object.values(implementacao).forEach((d) => {
-        const implementadas = d.intervencoes?.filter((i) => i.implementadoNestaConsulta) || [];
-        if (implementadas.length > 0) {
-          peloMenosUmaImplementada = true;
-          if (implementadas.some((i) => !i.quemExecuta)) {
-            temPendenciaExecutor = true;
-          }
-        }
-      });
-      return peloMenosUmaImplementada && !temPendenciaExecutor;
-    }
+      return atuais.includes(4);
+    case 6:
+      return atuais.includes(5);
     default:
       return false;
   }
@@ -280,19 +292,15 @@ export function getMotivoBloqueio(
     }
     case 5:
     case 6: {
-      const implementacao = processo.implementacao || {};
-      let peloMenosUmaImplementada = false;
-      
-      Object.values(implementacao).forEach((d) => {
-        if (d.intervencoes?.some((i) => i.implementadoNestaConsulta)) {
-          peloMenosUmaImplementada = true;
-        }
-      });
-
-      if (!peloMenosUmaImplementada) {
-        return 'Para liberar esta etapa, marque pelo menos uma intervenção como implementada na Etapa 4.';
+      if (numeroEtapa === 6 && !calcularEtapasCompletadas(processo, requisitosDescricao).includes(5)) {
+        return 'Conclua a Evolução de Enfermagem antes de abrir o resumo final.';
       }
-      return 'Existem intervenções implementadas sem um executor definido. Por favor, especifique quem executará cada ação técnica.';
+      const pendencias = obterPendenciasPlanejamento(
+        processo.diagnostico,
+        processo.planejamento?.diagnosticosPlanejados ?? [],
+      );
+      if (pendencias.length) return `Revise o planejamento: ${pendencias.join('; ')}.`;
+      return 'Conclua a implementação das intervenções prescritas, com executor definido, antes de registrar a evolução.';
     }
     default:
       return 'Complete as etapas anteriores para liberar.';

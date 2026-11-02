@@ -237,7 +237,7 @@ test('planejamento incompleto informa diagnóstico exato e bloqueia sem apagar o
   assert.equal(isEtapaAcessivel(4, 3, [1, 2, 3], processo), false);
 });
 
-test('diagnóstico positivo dispensa resultado e intervenção mas não dispensa planejamento vinculado', () => {
+test('diagnóstico positivo dispensa resultado e intervenção com justificativa clínica e planejamento vinculado', () => {
   const processo = criarProcesso({
     coletaDeDadosSubjetivos: 'Entrevista feita',
     exameFisico: { Temperatura: 36 },
@@ -246,6 +246,7 @@ test('diagnóstico positivo dispensa resultado e intervenção mas não dispensa
   processo.planejamento.diagnosticosPlanejados = [{
     diagnosticoId: 'positive', tituloDiagnostico: 'Disposição para melhorar', ordemPrioridade: 1,
     isPositivo: true, intervencoesSelecionadas: [],
+    justificativaSemIntervencao: 'Avaliação sem necessidade de ação adicional nesta consulta.',
   }];
   assert.equal(isEtapaAcessivel(4, 3, [], processo), true);
 });

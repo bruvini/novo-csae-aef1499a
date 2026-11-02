@@ -11,6 +11,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+import type { NaturezaDiagnostico } from '@/types/processoEnfermagem';
 
 export interface MaterialApoio {
   tituloMaterialApoio: string;
@@ -40,6 +41,8 @@ export interface Diagnostico {
   descricaoDiagnostico: string;
   subconjuntos: Subconjunto[];
   resultadosEsperados: ResultadoEsperado[];
+  /** Campo opcional; o catálogo só deve classificá-lo após homologação da CSAE. */
+  naturezaDiagnostico?: NaturezaDiagnostico;
   dataCadastro: Timestamp;
 }
 

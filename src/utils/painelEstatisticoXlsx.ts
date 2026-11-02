@@ -153,7 +153,7 @@ export function criarWorkbookPainelEstatistico(opcoes: OpcoesExportacaoPainel): 
   cabecalhoSecao(resumo, 12, 'Usuários', 8);
   const cardsUsuarios: Array<[string, number, string?]> = [
     ['Solicitações de cadastro', usuarios.totalCadastrados], ['Usuários liberados', usuarios.totalAprovados],
-    ['Acessos à plataforma', usuarios.totalAcessosPlataforma], ['Média de acessos por usuário', usuarios.mediaAcessosUsuario],
+    ['Logins registrados', usuarios.totalAcessosPlataforma], ['Média de logins por conta com acesso', usuarios.mediaAcessosUsuario],
     ['Taxa de aprovação', usuarios.taxaAprovacao / 100, '0.0%'], ['Tempo médio para liberação (h)', usuarios.tempoMedioLiberacaoHoras],
   ];
   cardsUsuarios.forEach(([titulo, valor, formato], index) => adicionarScorecard(resumo, 14 + Math.floor(index / 4) * 4, 1 + (index % 4) * 2, titulo, valor, formato));

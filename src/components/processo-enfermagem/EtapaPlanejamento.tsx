@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
 import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { isDiagnosticoPositivo } from '@/utils/processoUtils';
 
 interface EtapaPlanejamentoProps {
   processo: ProcessoEnfermagem;
@@ -41,27 +42,6 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   }, []);
 
   useEffect(() => {
-    if (diagnosticosDetalhados.length > 0 && diagnosticosPriorizados.length > 0) {
-      let needsUpdate = false;
-      const updated = diagnosticosPriorizados.map(diag => {
-        const dbDiag = diagnosticosDetalhados.find(d => d.id === diag.diagnosticoId);
-        if (dbDiag) {
-          const isPos = !dbDiag.resultadosEsperados || dbDiag.resultadosEsperados.length === 0;
-          if (diag.isPositivo !== isPos) {
-            needsUpdate = true;
-            return { ...diag, isPositivo: isPos };
-          }
-        }
-        return diag;
-      });
-      if (needsUpdate) {
-        setDiagnosticosPrivorizados(updated);
-        onUpdatePlanejamento({ diagnosticosPlanejados: updated });
-      }
-    }
-  }, [diagnosticosDetalhados]);
-
-  useEffect(() => {
     // Alinhar cada diagnóstico escolhido à sua linha de planejamento.
     // Preserva as seleções antigas, adiciona os novos e ignora diagnósticos
     // removidos, inclusive após reabrir o processo.
@@ -70,12 +50,17 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     const alinhados = selecionados.map((diag, index) => {
       const salvo = salvos.find((item) => item.diagnosticoId === diag.id);
       return salvo
-        ? { ...salvo, tituloDiagnostico: diag.tituloDiagnostico }
+        ? {
+            ...salvo,
+            tituloDiagnostico: diag.tituloDiagnostico,
+            ...(diag.naturezaDiagnostico ? { naturezaDiagnostico: diag.naturezaDiagnostico } : {}),
+          }
         : {
             diagnosticoId: diag.id,
             tituloDiagnostico: diag.tituloDiagnostico,
             ordemPrioridade: index + 1,
             intervencoesSelecionadas: [],
+            ...(diag.naturezaDiagnostico ? { naturezaDiagnostico: diag.naturezaDiagnostico } : {}),
           };
     });
     setDiagnosticosPrivorizados(alinhados);
@@ -87,13 +72,12 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     }
   }, [processo.diagnostico?.diagnosticosSelecionados, processo.planejamento?.diagnosticosPlanejados]);
 
-  const handleDragEnd = (result: unknown) => {
-    const res = result as { destination: any; source: any };
-    if (!res.destination) return;
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
 
     const items = Array.from(diagnosticosPriorizados);
-    const [reorderedItem] = items.splice(res.source.index, 1);
-    items.splice(res.destination.index, 0, reorderedItem);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
 
     // Atualizar ordem
     const updatedItems = items.map((item, index) => ({
@@ -339,7 +323,8 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
               <Accordion type="multiple" className="w-full">
                 {diagnosticosPriorizados.map((diagnostico) => {
                   const diagnosticoDetalhado = getDiagnosticoDetalhado(diagnostico.diagnosticoId);
-                  const isIncompleto = diagnostico.isPositivo ? false : !diagnostico.resultadoEsperadoSelecionado;
+                  const isPositivo = isDiagnosticoPositivo(diagnostico.naturezaDiagnostico, diagnostico.isPositivo);
+                  const isIncompleto = isPositivo ? false : !diagnostico.resultadoEsperadoSelecionado;
                   
                   return (
                     <AccordionItem 
@@ -361,11 +346,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
-                        {diagnostico.isPositivo ? (
-                          <div className="p-4 text-center text-sm text-csae-green-700 bg-csae-green-50 rounded-lg">
-                            Diagnóstico positivo ou de bem-estar. Não possui resultados previstos no banco de dados.
-                          </div>
-                        ) : diagnosticoDetalhado ? (
+                        {diagnosticoDetalhado && diagnosticoDetalhado.resultadosEsperados.length > 0 ? (
                           <RadioGroup
                             value={diagnostico.resultadoEsperadoSelecionado || ""}
                             onValueChange={(value) => handleResultadoChange(diagnostico.diagnosticoId, value)}
@@ -384,8 +365,10 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                               </div>
                             ))}
                           </RadioGroup>
+                        ) : isPositivo ? (
+                          <p className="text-sm text-muted-foreground">Não há resultados esperados homologados para este diagnóstico. A ausência no catálogo não define sua natureza clínica.</p>
                         ) : (
-                          <p className="text-muted-foreground">Carregando resultados esperados...</p>
+                          <p className="text-muted-foreground">Carregando resultados esperados homologados...</p>
                         )}
                       </AccordionContent>
                     </AccordionItem>
@@ -413,7 +396,10 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                   
                   const semIntervencoes = !diagnostico.intervencoesSelecionadas || diagnostico.intervencoesSelecionadas.length === 0;
                   const semResultado = !diagnostico.resultadoEsperadoSelecionado;
-                  const isIncompleto = diagnostico.isPositivo ? false : (semIntervencoes || semResultado);
+                  const isPositivo = isDiagnosticoPositivo(diagnostico.naturezaDiagnostico, diagnostico.isPositivo);
+                  const isIncompleto = isPositivo
+                    ? (semIntervencoes && !diagnostico.justificativaSemIntervencao?.trim())
+                    : (semIntervencoes || semResultado);
 
                   return (
                     <AccordionItem 
@@ -429,30 +415,25 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                           {diagnostico.tituloDiagnostico}
                           {isIncompleto && (
                             <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] uppercase font-bold rounded-full">
-                              Incompleto ({semResultado ? 'Falta Resultado' : 'Falta Intervenção'})
+                              Incompleto ({isPositivo ? 'Justifique ausência de intervenção' : semResultado ? 'Falta Resultado' : 'Falta Intervenção'})
                             </span>
                           )}
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
-                        {diagnostico.isPositivo ? (
-                          <div className="p-4 text-center text-sm text-csae-green-700 bg-csae-green-50 rounded-lg">
-                            Diagnóstico positivo ou de bem-estar. Nenhuma intervenção é requerida ou contabilizada.
-                          </div>
-                        ) : (
                           <div className="space-y-4">
                             {diagnostico.resultadoEsperadoSelecionado ? (
                               <div className="p-3 bg-muted rounded-lg">
                                 <p className="font-medium text-sm">Resultado Esperado:</p>
                                 <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
                               </div>
-                            ) : (
+                            ) : !isPositivo ? (
                               <Alert variant="destructive" className="bg-red-100 border-red-200 text-red-800">
                                 <AlertDescription>
                                   Selecione primeiro um resultado esperado na Fase II para visualizar as intervenções disponíveis.
                                 </AlertDescription>
                               </Alert>
-                            )}
+                            ) : null}
 
                             {intervencoes.length > 0 && (
                               <div className="space-y-3">
@@ -462,7 +443,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                     <Checkbox
                                       id={`${diagnostico.diagnosticoId}-int-${index}`}
                                       checked={diagnostico.intervencoesSelecionadas?.some(i => i.acaoPrescrita === intervencao.acaoPrescrita) || false}
-                                      onCheckedChange={(checked) => 
+                                      onCheckedChange={(checked) =>
                                         handleIntervencaoChange(diagnostico.diagnosticoId, intervencao.acaoPrescrita, intervencao.acaoEnfermeiro, checked as boolean)
                                       }
                                     />
@@ -475,6 +456,28 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                             )}
 
                             {/* Intervenções Autorais */}
+
+                            {isPositivo && semIntervencoes && (
+                              <div className="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                                <Label htmlFor={`justificativa-${diagnostico.diagnosticoId}`}>
+                                  Justificativa clínica para não prescrever intervenção nesta consulta
+                                </Label>
+                                <Textarea
+                                  id={`justificativa-${diagnostico.diagnosticoId}`}
+                                  value={diagnostico.justificativaSemIntervencao || ''}
+                                  onChange={(event) => {
+                                    const updated = diagnosticosPriorizados.map((item) => item.diagnosticoId === diagnostico.diagnosticoId
+                                      ? { ...item, justificativaSemIntervencao: event.target.value }
+                                      : item);
+                                    setDiagnosticosPrivorizados(updated);
+                                    salvarPlanejamento(updated);
+                                  }}
+                                  placeholder="Registre o julgamento que sustenta não haver ação adicional nesta consulta."
+                                  rows={2}
+                                />
+                              </div>
+                            )}
+
                             <div className="space-y-3 border-t pt-4">
                               <h4 className="font-medium">Adicionar Intervenção Autoral:</h4>
                               <div className="space-y-2">
@@ -525,7 +528,6 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                               )}
                             </div>
                           </div>
-                        )}
                       </AccordionContent>
                     </AccordionItem>
                   );

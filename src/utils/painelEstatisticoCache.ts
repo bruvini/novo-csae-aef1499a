@@ -1,4 +1,5 @@
 import type { RegistroProducao } from './painelEstatistico';
+import { cacheTemporalAindaValido } from './accessMetrics';
 
 export const CACHE_PROCESSOS_SCHEMA_VERSION = 9;
 export const CACHE_CHUNK_LIMITE_BYTES = 350_000;
@@ -49,11 +50,8 @@ export function cacheProducaoValido(
   agora = Date.now(),
 ): boolean {
   if (!data || data.schemaVersion !== CACHE_PROCESSOS_SCHEMA_VERSION) return false;
-  const timestamp = data.ultimaAtualizacao as { toDate?: () => Date } | Date | undefined;
-  const atualizadoEm = timestamp instanceof Date ? timestamp : timestamp?.toDate?.();
   return Boolean(
-    atualizadoEm
-    && agora - atualizadoEm.getTime() < CACHE_VALIDADE_MS
+    cacheTemporalAindaValido(data.ultimaAtualizacao, agora, CACHE_VALIDADE_MS)
     && Array.isArray(data.lotacoesUnicas)
     && Array.isArray(data.lotacaoDocumentos)
     && typeof data.registroChunks === 'number',

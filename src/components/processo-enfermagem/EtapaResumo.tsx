@@ -226,6 +226,13 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('');
     }
 
+    const diagnosticosSelecionados = processo.diagnostico?.diagnosticosSelecionados || [];
+    if (diagnosticosSelecionados.length > 0) {
+      linhas.push('DIAGNÓSTICOS DE ENFERMAGEM SELECIONADOS:');
+      diagnosticosSelecionados.forEach((diagnostico) => linhas.push(`• ${diagnostico.tituloDiagnostico}`));
+      linhas.push('');
+    }
+
     // ── Planejamento ─────────────────────────────────────────────────────────
     // Lista TODAS as intervenções planejadas (não apenas implementadas) por diagnóstico.
     // Não exibe executor — é uma prescrição, não uma execução.
@@ -237,6 +244,9 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         linhas.push(`[${diag.tituloDiagnostico}]`);
         if (diag.resultadoEsperadoSelecionado) {
           linhas.push(`Resultado Esperado: ${diag.resultadoEsperadoSelecionado}`);
+        }
+        if (diag.intervencoesSelecionadas.length === 0 && diag.justificativaSemIntervencao?.trim()) {
+          linhas.push(`Sem intervenção adicional nesta consulta: ${diag.justificativaSemIntervencao.trim()}`);
         }
         linhas.push('');
         if (diag.intervencoesSelecionadas && diag.intervencoesSelecionadas.length > 0) {
@@ -285,6 +295,12 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
       linhas.push('EVOLUÇÃO DE ENFERMAGEM (Ações Técnicas Realizadas pelo Enfermeiro):');
       linhas.push('');
       acoesEnfermeiro.forEach(acao => linhas.push(`• ${acao}`));
+      linhas.push('');
+    }
+
+    if (processo.evolucao?.julgamentoClinico?.trim()) {
+      linhas.push('JULGAMENTO CLÍNICO E AVALIAÇÃO DOS RESULTADOS:');
+      linhas.push(processo.evolucao.julgamentoClinico.trim());
       linhas.push('');
     }
 

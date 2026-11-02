@@ -62,15 +62,30 @@ test('séries diária, mensal e semanal são exatas e a semana respeita Dom a S�
     registro({ id: 'p2', pacienteChave: 'pac2', dataReferencia: '2026-09-16T11:00:00.000Z', dataConclusaoReferencia: '2026-09-16T11:00:00.000Z' }),
   ]);
   assert.deepEqual(stats.temporalAvancado.diaSemana.map((item) => item.name), ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']);
-  assert.equal(stats.temporalAvancado.diario.length, 2);
+  assert.ok(stats.temporalAvancado.diario.length >= 2);
+  assert.ok(stats.temporalAvancado.diario.some((item) => item.value === 0));
+  assert.equal(stats.temporalAvancado.diario.at(-1)?.acumulado, 2);
   assert.equal(stats.temporalAvancado.mensal[0].value, 2);
   assert.equal(stats.temporalAvancado.hora.length, 24);
+});
+
+test('série diária limitada a 30 dias preserva o acumulado desde o primeiro processo', () => {
+  const registros = Array.from({ length: 40 }, (_, index) => {
+    const data = new Date(Date.UTC(2026, 8, 1 + index, 12));
+    const iso = data.toISOString();
+    return registro({ id: `p${index}`, pacienteChave: `pac${index}`, dataReferencia: iso, dataConclusaoReferencia: iso });
+  });
+  const diaria = agregarRegistrosProducao(registros).temporalAvancado.diario;
+  assert.equal(diaria.length, 30);
+  assert.equal(diaria[0].acumulado, 34);
+  assert.equal(diaria.at(-1)?.acumulado, 40);
 });
 
 const usuariosFixture: EstatisticasBI = {
   ultimaAtualizacao: new Date('2026-09-21T12:00:00Z'), totalCadastrados: 10, totalAprovados: 8,
   totalAguardando: 1, totalRecusados: 1, totalIncompletos: 0,
   taxaAprovacao: 80, tempoMedioLiberacaoHoras: 12, totalAcessosPlataforma: 50, mediaAcessosUsuario: 6.25,
+  historicoAcessosConsiderados: 10, usuariosComHistoricoLimitado: 0,
   usuariosPorLotacao: { 'CS CENTRO': [{ nome: 'PROFISSIONAL 1', acessos: 5 }] },
   distribuicaoFormacao: [{ name: 'Enfermeiro', value: 10 }], distribuicaoAtuaSMS: [{ name: 'Sim', value: 10 }],
   todasLotacoes: [{ name: 'CS CENTRO', value: 10 }], situacaoCadastros: [{ name: 'Liberado', valor: 8 }],

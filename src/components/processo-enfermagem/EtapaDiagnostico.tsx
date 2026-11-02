@@ -155,7 +155,8 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
         ...selecionadosAtuais,
         {
           id: diagnostico.id,
-          tituloDiagnostico: diagnostico.tituloDiagnostico
+            tituloDiagnostico: diagnostico.tituloDiagnostico,
+            ...(diagnostico.naturezaDiagnostico ? { naturezaDiagnostico: diagnostico.naturezaDiagnostico } : {}),
         }
       ];
     }

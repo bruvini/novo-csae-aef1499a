@@ -186,6 +186,14 @@ const VIEW_LABELS: Record<ViewMode, string> = {
   anual: 'Anual',
 };
 
+function formatarAtualizacao(value: unknown): string {
+  const date = timestampToDate(value);
+  if (!date) return 'indisponível';
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short',
+  }).format(date);
+}
+
 // ── Componente Principal ───────────────────────────────────────────────────
 const PainelEstatistico = () => {
   const { toast } = useToast();
@@ -206,6 +214,7 @@ const PainelEstatistico = () => {
   const [periodoInicial, setPeriodoInicial] = useState('');
   const [periodoFinal, setPeriodoFinal] = useState('');
   const [exportando, setExportando] = useState(false);
+  const [atualizandoTudo, setAtualizandoTudo] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -221,11 +230,11 @@ const PainelEstatistico = () => {
     fetchData();
   }, []);
 
-  const fetchProcessos = useCallback(async () => {
+  const fetchProcessos = useCallback(async (forcarAtualizacao = false): Promise<boolean> => {
     setLoadingProcessos(true);
     setErroProcessos(null);
     try {
-      const stats = await obterEstatisticasProcessoEnfermagem();
+      const stats = await obterEstatisticasProcessoEnfermagem({ forcarAtualizacao });
       if (!stats) throw new Error('O serviço de produção não retornou dados.');
       setDataProcessos(stats);
       setLoadingProcessos(false);
@@ -240,16 +249,37 @@ const PainelEstatistico = () => {
           setCarregandoDetalhes(false);
         }
       }
+      return true;
     } catch (error) {
       console.error('Erro ao carregar dados de produção:', error);
       setDataProcessos(null);
       setErroProcessos('Não foi possível carregar os indicadores de produção.');
+      return false;
     } finally {
       setLoadingProcessos(false);
     }
   }, []);
 
   useEffect(() => { void fetchProcessos(); }, [fetchProcessos]);
+
+  const atualizarIndicadores = async () => {
+    if (atualizandoTudo) return;
+    setAtualizandoTudo(true);
+    try {
+      const [usuarios, producaoAtualizada] = await Promise.all([
+        obterEstatisticasUsuariosBI({ forcarAtualizacao: true }),
+        fetchProcessos(true),
+      ]);
+      if (!usuarios || !producaoAtualizada) throw new Error('Uma das fontes não foi atualizada.');
+      setData(usuarios);
+      toast({ title: 'Indicadores atualizados', description: 'As fontes de usuários e produção foram consultadas novamente.' });
+    } catch (error) {
+      console.error('Erro ao atualizar indicadores:', error);
+      toast({ title: 'Falha ao atualizar', description: 'Os dados exibidos foram preservados. Tente novamente.', variant: 'destructive' });
+    } finally {
+      setAtualizandoTudo(false);
+    }
+  };
 
   const evolucaoAtiva = useCallback((): EvolucaoEntry[] => {
     if (!data) return [];
@@ -363,12 +393,12 @@ const PainelEstatistico = () => {
             </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
             <span>Visão global de métricas e indicadores de produção da rede municipal de Florianópolis.</span>
-            {data?.ultimaAtualizacao && (
-              <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
-                Atualizado:{' '}
-                {timestampToDate(data.ultimaAtualizacao)?.toLocaleDateString('pt-BR') ?? 'Agora'}
-              </span>
-            )}
+            <span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider">
+              Usuários/logins: {formatarAtualizacao(data?.ultimaAtualizacao)} · Produção: {formatarAtualizacao(dataProcessos?.ultimaAtualizacao)}
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={() => void atualizarIndicadores()} disabled={atualizandoTudo}>
+              {atualizandoTudo ? 'Atualizando…' : 'Atualizar agora'}
+            </Button>
           </div>
           </div>
           <Button
@@ -426,7 +456,7 @@ const PainelEstatistico = () => {
               </div>
               <CardHeader className="pb-2">
                 <CardDescription className="uppercase text-[9px] font-black tracking-widest text-blue-600">
-                  Acessos à Plataforma
+                  Logins registrados
                 </CardDescription>
                 <CardTitle className="text-3xl font-black text-blue-900">
                   {data?.totalAcessosPlataforma || 0}
@@ -435,7 +465,7 @@ const PainelEstatistico = () => {
               <CardContent>
                 <div className="flex items-center text-[10px] font-semibold text-blue-700">
                   <MousePointerClick className="w-3 h-3 mr-1" />
-                  Sessões totais realizadas
+                  Soma dos contadores por conta; restaurações de sessão não são contadas como novos logins.
                 </div>
               </CardContent>
             </Card>
@@ -767,8 +797,8 @@ const PainelEstatistico = () => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                   <CardTitle className="text-lg font-bold">Evolução de Acessos</CardTitle>
-                  <CardDescription>
-                    Distribuição temporal dos acessos à plataforma — vista: <strong>{VIEW_LABELS[viewModeAcessos]}</strong>
+                    <CardDescription>
+                    Eventos de login com data ainda disponível no histórico (limite de 200 por conta) — vista: <strong>{VIEW_LABELS[viewModeAcessos]}</strong>
                   </CardDescription>
                 </div>
                 {/* Filtros de período */}
@@ -820,12 +850,18 @@ const PainelEstatistico = () => {
                       strokeWidth={3}
                       fillOpacity={1}
                       fill="url(#colorAcumAcessos)"
-                      name="Acessos Acumulados"
+                      name="Acumulado do histórico disponível"
                     />
                   )}
-                  <Bar dataKey="novos" fill="#60a5fa" barSize={20} name="Acessos no Período" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="novos" fill="#60a5fa" barSize={20} name="Logins no período (histórico disponível)" radius={[4, 4, 0, 0]} />
                 </ComposedChart>
               </ResponsiveContainer>
+              {data && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Total global: {data.totalAcessosPlataforma.toLocaleString('pt-BR')} logins registrados. O gráfico soma {data.historicoAcessosConsiderados.toLocaleString('pt-BR')} eventos datados disponíveis;
+                  {' '}{data.usuariosComHistoricoLimitado} conta(s) atingiram o limite de 200 eventos, então a série temporal pode estar incompleta.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -977,7 +1013,7 @@ const PainelEstatistico = () => {
                       <CardTitle className="text-lg font-black text-indigo-900 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" /> Evolução de Produção Clínica
                       </CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">Processos concluídos por período</CardDescription>
+                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">Processos concluídos pela data de conclusão, no fuso de São Paulo</CardDescription>
                     </div>
                     <Tabs value={temporalView} onValueChange={(v) => setTemporalView(v as typeof temporalView)} className="w-full md:w-auto">
                       <TabsList className="bg-indigo-100/50 p-1 w-full md:w-auto">

@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, increment, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, arrayUnion, serverTimestamp, collection, query, where, getDocs, Timestamp, runTransaction } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Usuario } from '@/types/usuario';
 import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
+import { deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
 
 const NPS_PENDENTE_KEY = 'csae_nps_pendente';
 
@@ -370,34 +371,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Status aprovado - registrar histórico e estatísticas de acesso
-      try {
-        const updateRef = doc(db, 'usuarios', userDoc.id);
-        
-        // Registrar contador, último acesso e histórico em uma única operação.
-        await updateDoc(updateRef, {
-          totalAcessos: increment(1),
-          ultimoAcesso: serverTimestamp(),
-          historicoAcesso: arrayUnion({
-            dataHora: Timestamp.now(),
-            ip: 'N/A',
-          }),
+      // Só o login explícito registra acesso. Restauração por onAuthStateChanged
+      // e recarregamentos não geram outro evento.
+      const updateRef = doc(db, 'usuarios', userDoc.id);
+      const novoTotalAcessos = await tentarRegistrarLogin(async () => {
+        if (!deveContabilizarLogin('login_explicito')) return null;
+        return runTransaction(db, async (transaction) => {
+          const snapshot = await transaction.get(updateRef);
+          if (!snapshot.exists()) throw new Error('Perfil de acesso não encontrado durante o registro do login.');
+          const dadosAtuais = snapshot.data();
+          const planoRegistro = planejarRegistroLogin(dadosAtuais.totalAcessos, dadosAtuais.historicoAcesso);
+          const totalAtual = planoRegistro.proximoTotal - 1;
+          if (Object.prototype.hasOwnProperty.call(dadosAtuais, 'totalAcessos') && totalAtual !== dadosAtuais.totalAcessos) {
+            throw new Error('O contador legado de acessos não é um número inteiro válido.');
+          }
+          const atualizacao: Record<string, unknown> = {
+            totalAcessos: totalAtual + 1,
+            ultimoAcesso: serverTimestamp(),
+          };
+          // A regra vigente limita cada array a 200 itens. Ao atingir o limite,
+          // preservamos todo o histórico e ainda gravamos contador e timestamp.
+          if (planoRegistro.acrescentarHistorico) {
+            atualizacao.historicoAcesso = arrayUnion({ dataHora: Timestamp.now() });
+          }
+          transaction.update(updateRef, atualizacao);
+          return totalAtual + 1;
         });
+      }, (error) => {
+        console.error('[Auth] O login foi concluído, mas o acesso não foi contabilizado:', error);
+        toast({
+          title: 'Login realizado com ressalva',
+          description: 'Não foi possível registrar este login nas estatísticas. O acesso ao Portal continua disponível.',
+          variant: 'default',
+        });
+      });
+      if (novoTotalAcessos !== null) {
         console.log(`[Auth] Acesso registrado para UID: ${user.uid}`);
-      } catch (error) {
-        console.error('[Auth] Erro crítico ao atualizar metadados de acesso no Firestore:', error);
-        // Não impedimos o fluxo de login se apenas as estatísticas falharem
       }
 
       // ── Verificar gatilho de NPS obrigatório (a cada 10 acessos) ──
       try {
-        const novoTotal = (userDoc.totalAcessos || 0) + 1;
-        if (novoTotal % 10 === 0) {
+        if (novoTotalAcessos && novoTotalAcessos % 10 === 0) {
           const elegivel = await verificarElegibilidadeNPS(user.uid);
           if (elegivel) {
             localStorage.setItem(NPS_PENDENTE_KEY, user.uid);
             setNpsModalPendente(true);
-            console.log(`[Auth] NPS obrigatório ativado (acesso #${novoTotal})`);
+            console.log(`[Auth] NPS obrigatório ativado (acesso #${novoTotalAcessos})`);
           }
         }
       } catch (npsError) {

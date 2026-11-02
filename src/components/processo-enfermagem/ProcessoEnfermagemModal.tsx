@@ -376,6 +376,17 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const handleConcluirProcesso = async () => {
     if (!processo.id || !paciente.id) return;
 
+    const etapasConcluidas = calcularEtapasCompletadas(processo, requisitosDescricao);
+    if (![1, 2, 3, 4, 5, 6].every((etapa) => etapasConcluidas.includes(etapa))) {
+      toast({
+        title: 'Processo incompleto',
+        description: getMotivoBloqueio(6, etapaAtual, etapasConcluidas, processo, requisitosDescricao)
+          || 'Conclua as cinco etapas do Processo de Enfermagem e gere o resumo final antes de encerrar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const intervencoesAutorais: IntervencaoAutoral[] = [];

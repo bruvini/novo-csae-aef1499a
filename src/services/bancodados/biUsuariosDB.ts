@@ -8,9 +8,14 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { agruparStatusCadastro, perfilCadastroIncompleto, timestampToDate } from '@/utils/registrationData';
+import {
+  chaveDataSaoPaulo, chaveMesSaoPaulo, converterDataAcesso, diaSemanaSaoPaulo,
+  cacheTemporalAindaValido, LIMITE_HISTORICO_ACESSO, normalizarTotalAcessos, preencherDias,
+  somarTotalLoginsRegistrados,
+} from '@/utils/accessMetrics';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 export interface EvolucaoEntry {
@@ -31,6 +36,8 @@ export interface EstatisticasBI {
   taxaAprovacao: number;
   tempoMedioLiberacaoHoras: number;
   totalAcessosPlataforma: number;
+  historicoAcessosConsiderados: number;
+  usuariosComHistoricoLimitado: number;
   mediaAcessosUsuario: number;
   usuariosPorLotacao: Record<string, { nome: string, acessos: number }[]>;
   distribuicaoFormacao: { name: string; value: number }[];
@@ -77,25 +84,23 @@ function buildSemanas(mapSemanal: Record<string, number>): EvolucaoEntry[] {
   }));
 }
 
-export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | null> {
+export async function obterEstatisticasUsuariosBI(options: { forcarAtualizacao?: boolean } = {}): Promise<EstatisticasBI | null> {
   const cacheDocRef = doc(db, 'estatisticas', 'painel_usuarios');
 
   try {
     const cacheSnap = await getDoc(cacheDocRef);
     if (cacheSnap.exists()) {
       const data = cacheSnap.data();
-      const ultimaAtualizacao = timestampToDate(data.ultimaAtualizacao);
       const agora = new Date();
 
       // Validar schema version e campos obrigatórios
       const cacheValido =
         data.schemaVersion === SCHEMA_VERSION &&
-        ultimaAtualizacao &&
-        agora.getTime() - ultimaAtualizacao.getTime() < CACHE_TTL_MS &&
+        cacheTemporalAindaValido(data.ultimaAtualizacao, agora.getTime(), CACHE_TTL_MS) &&
         typeof data.totalAcessosPlataforma === 'number' &&
         typeof data.totalIncompletos === 'number';
 
-      if (cacheValido) {
+      if (!options.forcarAtualizacao && cacheValido) {
         console.log('BI: Cache válido (schema v' + SCHEMA_VERSION + '). Custo: 1 leitura.');
         return data as EstatisticasBI;
       } else {
@@ -120,6 +125,10 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     let somaHorasLiberacao = 0;
     let countComDataAprovacao = 0;
     let totalAcessosPlataforma = 0;
+    const contadoresAcesso: unknown[] = [];
+    let usuariosComHistoricoLimitado = 0;
+    let historicoAcessosConsiderados = 0;
+    let usuariosComAcesso = 0;
 
     const mapFormacao: Record<string, number> = {};
     const mapAtuaSMS: Record<string, number> = { Sim: 0, Não: 0 };
@@ -141,6 +150,12 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
 
     usuariosSnap.forEach((uDoc) => {
       const data = uDoc.data();
+      const acessosUsuario = normalizarTotalAcessos(data.totalAcessos);
+      contadoresAcesso.push(data.totalAcessos);
+      if (acessosUsuario > 0) usuariosComAcesso++;
+      if (Array.isArray(data.historicoAcesso) && data.historicoAcesso.length >= LIMITE_HISTORICO_ACESSO) {
+        usuariosComHistoricoLimitado++;
+      }
       if (perfilCadastroIncompleto(data)) incompletos++;
 
       // Status
@@ -149,7 +164,6 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       if (isAprovado) {
         aprovados++;
         mapSituacao['Liberado']++;
-        totalAcessosPlataforma += data.totalAcessos || 0;
       } else if (status === 'Recusado') {
         recusados++;
         mapSituacao['Recusado']++;
@@ -190,7 +204,7 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       }
       mapUsuariosLotacao[lot].push({
         nome: data.dadosPessoais?.nomeCompleto || 'Sem nome',
-        acessos: data.totalAcessos || 0
+        acessos: acessosUsuario
       });
 
       // Evolução temporal de Cadastros
@@ -210,21 +224,22 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       if (Array.isArray(data.historicoAcesso)) {
         const historicoAcesso: Record<string, unknown>[] = data.historicoAcesso;
         historicoAcesso.forEach((acesso) => {
-          if (acesso.dataHora) {
-            const date = timestampToDate(acesso.dataHora);
-            if (!date) return;
-            const dia = date.getDate().toString().padStart(2, '0');
-            const mes = (date.getMonth() + 1).toString().padStart(2, '0');
-            const ano = date.getFullYear().toString();
-
-            mapADiario[`${dia}/${mes}/${ano}`] = (mapADiario[`${dia}/${mes}/${ano}`] || 0) + 1;
-            mapASemanal[DIAS_SEMANA[date.getDay()]] = (mapASemanal[DIAS_SEMANA[date.getDay()]] || 0) + 1;
-            mapAMensal[`${mes}/${ano}`] = (mapAMensal[`${mes}/${ano}`] || 0) + 1;
-            mapAAnual[ano] = (mapAAnual[ano] || 0) + 1;
-          }
+          const date = converterDataAcesso(acesso?.dataHora);
+          if (!date) return;
+          historicoAcessosConsiderados++;
+          const dia = chaveDataSaoPaulo(date);
+          const mes = chaveMesSaoPaulo(date);
+          const ano = dia.slice(0, 4);
+          const diaSemana = diaSemanaSaoPaulo(date);
+          mapADiario[dia] = (mapADiario[dia] || 0) + 1;
+          mapASemanal[DIAS_SEMANA[diaSemana]] = (mapASemanal[DIAS_SEMANA[diaSemana]] || 0) + 1;
+          mapAMensal[mes] = (mapAMensal[mes] || 0) + 1;
+          mapAAnual[ano] = (mapAAnual[ano] || 0) + 1;
         });
       }
     });
+
+    totalAcessosPlataforma = somarTotalLoginsRegistrados(contadoresAcesso);
 
     // Ordenar mapUsuariosLotacao
     for (const lotacao in mapUsuariosLotacao) {
@@ -250,20 +265,30 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     const evolucaoAnual = calcAcumuladoComVariacao(Object.entries(mapCAnual).sort(sortAnual).map(([key, novos]) => ({ key, novos })));
 
     // Acessos
-    const evolucaoAcessosDiaria = calcAcumuladoComVariacao(Object.entries(mapADiario).sort(sortDiario).map(([key, novos]) => ({ key, novos })));
-    const evolucaoAcessosSemanal = buildSemanas(mapASemanal);
-    const evolucaoAcessosMensal = calcAcumuladoComVariacao(Object.entries(mapAMensal).sort(sortMensal).map(([key, novos]) => ({ key, novos })));
-    const evolucaoAcessosAnual = calcAcumuladoComVariacao(Object.entries(mapAAnual).sort(sortAnual).map(([key, novos]) => ({ key, novos })));
+    const datasAcesso = Object.keys(mapADiario).sort();
+    const hojePainel = chaveDataSaoPaulo(new Date());
+    const evolucaoAcessosDiaria = calcAcumuladoComVariacao(
+      preencherDias(mapADiario, datasAcesso[0], hojePainel).map(({ key, novos }) => ({ key: key.split('-').reverse().join('/'), novos })),
+    );
+    const evolucaoAcessosSemanal = DIAS_SEMANA.map((dia) => ({
+      name: dia, novos: mapASemanal[dia] || 0, acumulado: 0, variacaoPercentual: 0,
+    }));
+    const evolucaoAcessosMensal = calcAcumuladoComVariacao(
+      Object.keys(mapAMensal).sort().map((key) => ({ key: key.slice(5, 7) + '/' + key.slice(0, 4), novos: mapAMensal[key] })),
+    );
+    const evolucaoAcessosAnual = calcAcumuladoComVariacao(
+      Object.keys(mapAAnual).sort().map((key) => ({ key, novos: mapAAnual[key] })),
+    );
 
     const todasLotacoes = Object.entries(mapLotacao)
       .sort((a, b) => b[1] - a[1])
       .map(([name, value]) => ({ name, value }));
 
-    const mediaAcessosUsuario = totalAcessosPlataforma / (aprovados > 0 ? aprovados : 1);
+    const mediaAcessosUsuario = totalAcessosPlataforma / (usuariosComAcesso > 0 ? usuariosComAcesso : 1);
 
     const stats: EstatisticasBI = {
       schemaVersion: SCHEMA_VERSION,
-      ultimaAtualizacao: serverTimestamp(),
+      ultimaAtualizacao: new Date(),
       totalCadastrados: totalDocs,
       totalAprovados: aprovados,
       totalAguardando: aguardando,
@@ -272,6 +297,8 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
       taxaAprovacao: Number(((aprovados / totalDocs) * 100).toFixed(1)),
       tempoMedioLiberacaoHoras: countComDataAprovacao > 0 ? Number((somaHorasLiberacao / countComDataAprovacao).toFixed(1)) : 0,
       totalAcessosPlataforma,
+      historicoAcessosConsiderados,
+      usuariosComHistoricoLimitado,
       mediaAcessosUsuario,
       usuariosPorLotacao: mapUsuariosLotacao,
       distribuicaoFormacao: Object.entries(mapFormacao).map(([name, value]) => ({ name, value })),
@@ -289,7 +316,7 @@ export async function obterEstatisticasUsuariosBI(): Promise<EstatisticasBI | nu
     };
 
     // Salvar cache 
-    await setDoc(cacheDocRef, stats);
+    await setDoc(cacheDocRef, { ...stats, ultimaAtualizacao: serverTimestamp() });
     return stats;
   } catch (error) {
     console.error('Erro ao gerar estatísticas de BI:', error);

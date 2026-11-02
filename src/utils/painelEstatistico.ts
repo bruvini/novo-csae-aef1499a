@@ -1,3 +1,5 @@
+import { chaveDataSaoPaulo, diaSemanaSaoPaulo, preencherDias } from './accessMetrics';
+
 export interface ItemRanking {
   name: string;
   value: number;
@@ -141,10 +143,15 @@ function temporalDeRegistros(registros: RegistroProducao[]): EstatisticasProduca
     acc[chave] = (acc[chave] || 0) + 1;
     return acc;
   }, {});
-  const construir = (map: Record<string, number>, nomes: (key: string) => string, limite?: number) => {
+  const construir = (map: Record<string, number>, nomes: (key: string) => string, limite?: number, preencherAteHoje = false) => {
     const entries = Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
-    const visiveis = limite ? entries.slice(-limite) : entries;
-    let acumulado = 0;
+    const todos = preencherAteHoje && entries.length > 0
+      ? preencherDias(map, entries[0][0], chaveDataSaoPaulo(new Date())).map(({ key, novos }) => [key, novos] as [string, number])
+      : entries;
+    const visiveis = limite ? todos.slice(-limite) : todos;
+    let acumulado = limite && todos.length > limite
+      ? todos.slice(0, -limite).reduce((total, [, value]) => total + value, 0)
+      : 0;
     return aplicarVariacoesTemporais(visiveis.map(([key, value]) => ({
       name: nomes(key),
       value,
@@ -155,8 +162,11 @@ function temporalDeRegistros(registros: RegistroProducao[]): EstatisticasProduca
   const porHora = Array.from({ length: 24 }, () => 0);
   const porSemana = Array.from({ length: 7 }, () => 0);
   datas.forEach((date) => {
-    porHora[date.getHours()] += 1;
-    porSemana[date.getDay()] += 1;
+    const hora = Number(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
+    }).format(date));
+    porHora[hora] += 1;
+    porSemana[diaSemanaSaoPaulo(date)] += 1;
   });
   const hora = aplicarVariacoesTemporais(porHora.map((value, index) => ({
     name: `${pad(index)}h`, value,
@@ -164,8 +174,8 @@ function temporalDeRegistros(registros: RegistroProducao[]): EstatisticasProduca
   const diaSemana = aplicarVariacoesTemporais(porSemana.map((value, index) => ({
     name: DIAS_SEMANA[index], value,
   })));
-  const diario = construir(contagem((date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`),
-    (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`, 30);
+  const diario = construir(contagem(chaveDataSaoPaulo),
+    (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`, 30, true);
   const mensal = construir(contagem((date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`),
     (key) => `${key.slice(5, 7)}/${key.slice(0, 4)}`, 12);
   const anual = construir(contagem((date) => String(date.getFullYear())), (key) => key, 12);

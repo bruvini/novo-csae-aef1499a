@@ -75,7 +75,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               </div>
               
               <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Acessos ao Portal</p>
+                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Logins registrados</p>
                 <p className="text-2xl font-black text-white mt-auto">
                   {loading ? '---' : stats?.totalAcessosPlataforma || 0}
                 </p>

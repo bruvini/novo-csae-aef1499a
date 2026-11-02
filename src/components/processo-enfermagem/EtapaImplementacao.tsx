@@ -213,43 +213,37 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-4">
-                        {diagnostico.isPositivo ? (
+                        {diagnostico.resultadoEsperadoSelecionado && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <p className="font-medium text-sm mb-1">Resultado Esperado:</p>
+                            <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
+                          </div>
+                        )}
+
+                        {intervencoes.length > 0 ? (
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-sm flex items-center justify-between">
+                              Intervenções Prescritas:
+                              {intervencoes.some((item) => item.implementadoNestaConsulta && !item.quemExecuta) && (
+                                <span className="text-[10px] text-red-500 font-bold animate-pulse">Executores pendentes*</span>
+                              )}
+                            </h4>
+                            {intervencoes.map((intervencao, intervencaoIndex) => (
+                              <IntervencaoItem
+                                key={intervencaoIndex}
+                                intervencao={intervencao}
+                                onUpdate={(intervencaoAtualizada) =>
+                                  handleIntervencaoUpdate(diagnostico.tituloDiagnostico, intervencaoIndex, intervencaoAtualizada)
+                                }
+                              />
+                            ))}
+                          </div>
+                        ) : (
                           <Alert className="bg-csae-green-50 text-csae-green-800 border-csae-green-200">
                             <AlertDescription>
-                              Diagnóstico positivo - sem intervenções necessárias para esta consulta.
+                              Não há intervenção prescrita para esta consulta. A justificativa clínica está registrada no planejamento.
                             </AlertDescription>
                           </Alert>
-                        ) : (
-                          <>
-                            {/* Resultado Esperado */}
-                            {diagnostico.resultadoEsperadoSelecionado && (
-                              <div className="p-3 bg-muted rounded-lg">
-                                <p className="font-medium text-sm mb-1">Resultado Esperado:</p>
-                                <p className="text-sm">{diagnostico.resultadoEsperadoSelecionado}</p>
-                              </div>
-                            )}
-
-                            {/* Lista de Intervenções */}
-                            <div className="space-y-3">
-                              <h4 className="font-medium text-sm flex items-center justify-between">
-                                Intervenções Prescritas:
-                                {intervencoes.filter(i => i.implementadoNestaConsulta && !i.quemExecuta).length > 0 && (
-                                  <span className="text-[10px] text-red-500 font-bold animate-pulse">
-                                    Executores pendentes*
-                                  </span>
-                                )}
-                              </h4>
-                              {intervencoes.map((intervencao, intervencaoIndex) => (
-                                <IntervencaoItem
-                                  key={intervencaoIndex}
-                                  intervencao={intervencao}
-                                  onUpdate={(intervencaoAtualizada) => 
-                                    handleIntervencaoUpdate(diagnostico.tituloDiagnostico, intervencaoIndex, intervencaoAtualizada)
-                                  }
-                                />
-                              ))}
-                            </div>
-                          </>
                         )}
                       </div>
                     </AccordionContent>

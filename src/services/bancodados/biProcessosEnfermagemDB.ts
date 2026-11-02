@@ -123,13 +123,13 @@ function normalizarSexo(value: unknown): string {
   return 'Outro';
 }
 
-export async function obterEstatisticasProcessoEnfermagem(): Promise<EstatisticasProcessoEnfermagem | null> {
+export async function obterEstatisticasProcessoEnfermagem(options: { forcarAtualizacao?: boolean } = {}): Promise<EstatisticasProcessoEnfermagem | null> {
   const cacheDocRef = doc(db, 'estatisticas', 'painel_processos');
   try {
     const cacheSnap = await getDoc(cacheDocRef);
     if (cacheSnap.exists()) {
       const data = cacheSnap.data();
-      if (cacheProducaoValido(data)) {
+      if (!options.forcarAtualizacao && cacheProducaoValido(data)) {
         const lotacaoDocumentos = data.lotacaoDocumentos as Array<{ id: string; lotacao: string }>;
         const porLotacao = await lerAgregadosLotacoes(cacheDocRef, lotacaoDocumentos);
         console.log(`BI Processos: Cache segmentado válido (schema v${CACHE_PROCESSOS_SCHEMA_VERSION}).`);

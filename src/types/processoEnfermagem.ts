@@ -29,9 +29,12 @@ export interface AvaliacaoEnfermagem {
   nhbsAfetadas: { parametro: string; nhb: string }[];
 }
 
+export type NaturezaDiagnostico = 'problema' | 'risco' | 'promocao_saude';
+
 interface DiagnosticoSelecionado {
   id: string; // ID do documento do diagnóstico em 'rolEnfermagem'
   tituloDiagnostico: string;
+  naturezaDiagnostico?: NaturezaDiagnostico;
 }
 
 export interface DiagnosticoEnfermagem {
@@ -51,7 +54,10 @@ export interface DiagnosticoPlanejado {
   ordemPrioridade: number;
   resultadoEsperadoSelecionado?: string; // Armazena o título do resultado escolhido
   intervencoesSelecionadas: IntervencaoSelecionada[];
-  isPositivo?: boolean; // Se não possuir resultados esperados no BD
+  naturezaDiagnostico?: NaturezaDiagnostico;
+  /** Compatibilidade com processos legados; novos fluxos usam naturezaDiagnostico. */
+  isPositivo?: boolean;
+  justificativaSemIntervencao?: string;
 }
 
 export interface PlanejamentoEnfermagem {
@@ -77,6 +83,7 @@ export interface ImplementacaoEnfermagem {
 export interface EvolucaoEnfermagem {
   resumoGerado: string; // Armazenará o texto copiado para o histórico
   intervencoesExecutadas?: { [tituloDiagnostico: string]: string[] };
+  julgamentoClinico?: string;
 }
 
 export interface ProcessoEnfermagem {
