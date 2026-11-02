@@ -587,6 +587,7 @@ service cloud.firestore {
         && (ids.size() < 4 || (ids[3] == originalId + '-d4' && splitChildAfter(ids[3], originalId, 4)))
         && (ids.size() < 5 || (ids[4] == originalId + '-d5' && splitChildAfter(ids[4], originalId, 5)))
         && audit.sugestaoId == originalId && audit.tipo == 'desmembrar'
+        && audit.statusAnterior == 'aguardando' && audit.statusNovo == 'aguardando'
         && audit.avaliadorId == request.auth.uid && audit.dataHora == request.time;
     }
 
@@ -614,6 +615,8 @@ service cloud.firestore {
         && data.diff(resource.data).affectedKeys().hasAll(['avaliacaoQualidade', 'ultimaDecisaoId'])
         && validQualityEvaluation(data.avaliacaoQualidade)
         && audit.sugestaoId == suggestionId && audit.tipo == 'avaliar'
+        && audit.statusAnterior == (('status' in resource.data) ? resource.data.status : 'aguardando')
+        && audit.statusNovo == audit.statusAnterior
         && audit.avaliadorId == request.auth.uid && audit.dataHora == request.time;
     }
 
@@ -665,6 +668,8 @@ service cloud.firestore {
         && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar']
         && (data.tipo == 'avaliar' || data.statusAnterior == 'aguardando')
         && (data.tipo != 'avaliar' || data.statusAnterior == data.statusNovo)
+        && (data.tipo != 'desmembrar' || data.statusNovo == 'aguardando')
+        && (!(data.tipo in ['avaliar', 'desmembrar']) || (data.destinos.size() == 0 && data.justificativa == ''))
         && data.avaliadorId == request.auth.uid
         && data.destinos is list && data.destinos.size() <= 5
         && boundedString(data.justificativa, 2000)

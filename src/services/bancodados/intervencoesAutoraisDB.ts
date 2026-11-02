@@ -219,7 +219,7 @@ export async function decidirSugestao(
       for (const snap of catalogoSnaps) {
         if (!snap.exists()) throw new Error('Diagnóstico de destino inexistente');
         const diagnostico = { id: snap.id, ...snap.data() } as Diagnostico;
-        const resultadosEsperados = incorporarIntervencao(diagnostico, destinos.filter(d => d.diagnosticoId === snap.id).map(d => d.tituloResultado), dados.preparacao!.acaoPrescrita.trim(), dados.preparacao!.acaoEnfermeiro.trim());
+        const resultadosEsperados = incorporarIntervencao(diagnostico, destinos.filter(d => d.diagnosticoId === snap.id).map(d => d.tituloResultado), dados.preparacao!.acaoPrescrita.trim(), dados.preparacao!.acaoEnfermeiro.trim(), id);
         for (const destino of destinos.filter(d => d.diagnosticoId === snap.id)) {
           if (destino.tituloDiagnostico !== diagnostico.tituloDiagnostico) throw new Error('Diagnóstico alterado desde a seleção');
           encontrarResultado(diagnostico, destino.tituloResultado);

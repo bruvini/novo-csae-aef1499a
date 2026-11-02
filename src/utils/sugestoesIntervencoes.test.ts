@@ -54,9 +54,10 @@ test('incorporação em vários resultados preserva materiais e bloqueia duplici
     { tituloResultado: 'A', descricaoResultado: '', intervencoes: [{ acaoPrescrita: 'Medir pressão', acaoEnfermeiro: 'Meço pressão', materiaisDeApoio: [{ tituloMaterialApoio: 'Guia', urlMaterialApoio: 'https://example.test' }] }] },
     { tituloResultado: 'B', descricaoResultado: '', intervencoes: [] },
   ] } as Diagnostico;
-  const resultado = incorporarIntervencao(diagnostico, ['A', 'B'], 'Orientar cuidados', 'Oriento cuidados');
+  const resultado = incorporarIntervencao(diagnostico, ['A', 'B'], 'Orientar cuidados', 'Oriento cuidados', 'sugestao-1');
   assert.equal(resultado[0].intervencoes[0].materiaisDeApoio[0].tituloMaterialApoio, 'Guia');
   assert.equal(resultado[0].intervencoes[1].acaoPrescrita, 'Orientar cuidados');
+  assert.equal(resultado[0].intervencoes[1].origemSugestaoId, 'sugestao-1');
   assert.equal(resultado[1].intervencoes[0].acaoEnfermeiro, 'Oriento cuidados');
   assert.equal(diagnostico.resultadosEsperados[1].intervencoes.length, 0);
   assert.throws(() => incorporarIntervencao(diagnostico, ['A'], 'MEDIR PRESSAO', 'Meço pressão'), /já existe/);

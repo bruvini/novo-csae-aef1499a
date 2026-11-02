@@ -159,6 +159,24 @@ test('avaliação técnica parcial exige gestor, versão, timestamp e auditoria 
   await assertFails(updateDoc(doc(gestor, 'decisoesIntervencoes', 'avaliacao-1'), { tipo: 'rejeitar' }));
 });
 
+test('duas divisões concorrentes da mesma origem não geram propostas duplicadas', async () => {
+  await seedProfile('autor');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'concorrente'), { textoIntervencao: 'Avaliar e orientar', tituloResultadoVinculado: 'Adesão', autorId: 'autor', autorNome: 'Autor', dataCriacao: serverTimestamp(), identificadorSugestao: 'concorrente', status: 'aguardando' }));
+  const preparar = (auditoria: string) => {
+    const batch = writeBatch(gestor);
+    batch.update(doc(gestor, 'intervencoesAutorais', 'concorrente'), { divisao: { grupoId: 'concorrente', derivadasIds: ['concorrente-d1', 'concorrente-d2'], revisorId: 'gestor', revisorNome: 'Gestor', dataHora: serverTimestamp() }, ultimaDecisaoId: auditoria });
+    for (let ordem = 1; ordem <= 2; ordem++) batch.set(doc(gestor, 'intervencoesAutorais', `concorrente-d${ordem}`), { textoIntervencao: ordem === 1 ? 'Avaliar adesão' : 'Orientar retorno', tituloResultadoVinculado: 'Adesão', tituloResultadoOrigem: '', diagnosticoOrigemId: '', tituloDiagnosticoOrigem: '', autorId: 'autor', autorNome: 'Autor', status: 'aguardando', tipoRegistro: 'derivada', dataCriacao: serverTimestamp(), derivacao: { originalId: 'concorrente', grupoId: 'concorrente', ordem, revisorId: 'gestor', dataHora: serverTimestamp() } });
+    batch.set(doc(gestor, 'decisoesIntervencoes', auditoria), { sugestaoId: 'concorrente', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'desmembrar', avaliadorId: 'gestor', destinos: [], justificativa: '', dataHora: serverTimestamp() });
+    return batch.commit();
+  };
+  const resultados = await Promise.allSettled([preparar('concorrente-a'), preparar('concorrente-b')]);
+  assert.equal(resultados.filter(resultado => resultado.status === 'fulfilled').length, 1);
+  assert.equal((await getDocs(collection(gestor, 'intervencoesAutorais'))).size, 3);
+});
+
 test('gestor registra preparação e rejeição auditadas; revogado e enfermeiro não decidem', async () => {
   await seedProfile('autor');
   await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
