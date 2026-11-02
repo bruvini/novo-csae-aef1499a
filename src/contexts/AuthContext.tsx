@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Usuario } from '@/types/usuario';
 import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
-import { deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
+import { chaveDataSaoPaulo, deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
 
 const NPS_PENDENTE_KEY = 'csae_nps_pendente';
 
@@ -391,8 +391,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           };
           // O número sequencial torna a gravação idempotente por usuário.
           const eventoRef = doc(db, 'eventosAcesso', `${user.uid}_${totalAtual + 1}`);
+          const dia = chaveDataSaoPaulo(new Date());
+          const diarioRef = doc(db, 'acessosDiarios', dia);
+          const diario = await transaction.get(diarioRef);
           transaction.update(updateRef, atualizacao);
-          transaction.set(eventoRef, { uid: user.uid, numero: totalAtual + 1, dataHora: serverTimestamp() });
+          transaction.set(eventoRef, { uid: user.uid, numero: totalAtual + 1, dia, dataHora: serverTimestamp() });
+          transaction.set(diarioRef, { dia, total: (diario.exists() ? diario.data().total : 0) + 1, ultimoEvento: eventoRef.id }, { merge: true });
           return totalAtual + 1;
         });
       }, (error) => {

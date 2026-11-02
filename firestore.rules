@@ -292,16 +292,33 @@ service cloud.firestore {
     match /eventosAcesso/{eventoId} {
       allow read: if canViewBI();
       allow create: if isApproved()
-        && request.resource.data.keys().hasOnly(['uid', 'numero', 'dataHora'])
-        && request.resource.data.keys().hasAll(['uid', 'numero', 'dataHora'])
+        && request.resource.data.keys().hasOnly(['uid', 'numero', 'dia', 'dataHora'])
+        && request.resource.data.keys().hasAll(['uid', 'numero', 'dia', 'dataHora'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.numero is int && request.resource.data.numero > 0
         && eventoId == request.auth.uid + '_' + string(request.resource.data.numero)
         && request.resource.data.dataHora == request.time
+        && request.resource.data.dia is string
+        && request.resource.data.dia.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && getAfter(/databases/$(database)/documents/acessosDiarios/$(request.resource.data.dia)).data.ultimoEvento == eventoId
         && getAfter(profilePath()).data.totalAcessos == request.resource.data.numero
         && getAfter(profilePath()).data.ultimoAcesso == request.time
         && request.resource.data.numero == (('totalAcessos' in profile()) ? profile().totalAcessos : 0) + 1;
       allow update, delete: if false;
+    }
+
+    match /acessosDiarios/{dia} {
+      allow read: if canViewBI();
+      allow create, update: if isApproved()
+        && dia.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.keys().hasAll(['dia', 'total', 'ultimoEvento'])
+        && request.resource.data.keys().hasOnly(['dia', 'total', 'ultimoEvento'])
+        && request.resource.data.dia == dia
+        && request.resource.data.total is int
+        && request.resource.data.total == (resource == null ? 0 : resource.data.total) + 1
+        && request.resource.data.ultimoEvento == request.auth.uid + '_' + string(getAfter(profilePath()).data.totalAcessos)
+        && getAfter(/databases/$(database)/documents/eventosAcesso/$(request.resource.data.ultimoEvento)).data.dia == dia;
+      allow delete: if false;
     }
 
     match /pacientesProcessoEnfermagem/{patientId} {

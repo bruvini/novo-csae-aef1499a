@@ -15,7 +15,7 @@ import {
 } from '@/utils/accessMetrics';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 6;
+const SCHEMA_VERSION = 7;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 export interface EvolucaoEntry {
@@ -240,9 +240,21 @@ export async function obterEstatisticasUsuariosBI(options: { forcarAtualizacao?:
       }
     });
 
-    // Novos clientes gravam somente na coleção; não acrescentam ao array legado.
-    const eventos = await getDocs(collection(db, 'eventosAcesso'));
-    eventos.forEach((evento) => registrarData(evento.data().dataHora));
+    // Um documento por dia substitui a leitura integral dos eventos individuais.
+    const diasNovos = await getDocs(collection(db, 'acessosDiarios'));
+    diasNovos.forEach((diaDoc) => {
+      const { dia, total } = diaDoc.data();
+      if (typeof dia !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dia) || !Number.isSafeInteger(total) || total <= 0) return;
+      historicoAcessosConsiderados += total;
+      const date = new Date(`${dia}T12:00:00-03:00`);
+      const semana = DIAS_SEMANA[diaSemanaSaoPaulo(date)];
+      mapADiario[dia] = (mapADiario[dia] || 0) + total;
+      mapASemanal[semana] = (mapASemanal[semana] || 0) + total;
+      const mes = dia.slice(0, 7);
+      mapAMensal[mes] = (mapAMensal[mes] || 0) + total;
+      const ano = dia.slice(0, 4);
+      mapAAnual[ano] = (mapAAnual[ano] || 0) + total;
+    });
 
     totalAcessosPlataforma = somarTotalLoginsRegistrados(contadoresAcesso);
 
