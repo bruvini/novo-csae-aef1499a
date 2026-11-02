@@ -90,10 +90,10 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({ processo, onUpdateEvoluca
       })}
       {executadas.length > 0 && <div className="border-t pt-4 space-y-3">
         <h3 className="font-semibold">Observações compartilhadas</h3>
-        {(evolucao.observacoesCompartilhadas || []).map((observacao) => <div key={observacao.id} className="rounded-md border p-3 space-y-2">
+        {(evolucao.observacoesCompartilhadas || []).filter((observacao) => observacao.intervencaoIds.some((id) => executadas.some((item) => item.id === id))).map((observacao) => <div key={observacao.id} className="rounded-md border p-3 space-y-2">
           <Textarea aria-label="Editar observação compartilhada" value={observacao.texto} onChange={(event) => editarObservacao(observacao.id, event.target.value)} />
           <p className="text-xs">Vinculada a:</p>
-          {executadas.map((item) => <label key={item.id} className="flex items-center gap-2 text-sm"><Checkbox checked={observacao.intervencaoIds.includes(item.id)} onCheckedChange={(marcado) => editarObservacao(observacao.id, undefined, marcado ? [...observacao.intervencaoIds, item.id] : observacao.intervencaoIds.filter((id) => id !== item.id))} />{item.prescrita.acaoPrescrita}</label>)}
+          {executadas.map((item) => <label key={item.id} className="flex items-center gap-2 text-sm"><Checkbox checked={observacao.intervencaoIds.includes(item.id)} disabled={observacao.intervencaoIds.length === 1 && observacao.intervencaoIds.includes(item.id)} onCheckedChange={(marcado) => editarObservacao(observacao.id, undefined, marcado ? [...observacao.intervencaoIds, item.id] : observacao.intervencaoIds.filter((id) => id !== item.id))} />{item.prescrita.acaoPrescrita}</label>)}
           <Button variant="outline" size="sm" onClick={() => atualizar({ observacoesCompartilhadas: (evolucao.observacoesCompartilhadas || []).filter((item) => item.id !== observacao.id) })}>Remover observação</Button>
         </div>)}
         <Textarea aria-label="Nova observação compartilhada" value={novaObservacao} onChange={(event) => setNovaObservacao(event.target.value)} placeholder="Observação que se aplica a várias intervenções" />

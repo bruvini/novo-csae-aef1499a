@@ -96,6 +96,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  useEffect(() => { if (!isOpen) setIsInitializing(true); }, [isOpen]);
   const conteudoRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (conteudoRef.current) conteudoRef.current.scrollTop = 0; }, [etapaAtual]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);

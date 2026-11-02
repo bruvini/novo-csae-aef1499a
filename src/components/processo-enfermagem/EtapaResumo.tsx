@@ -596,7 +596,7 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                   {resposta?.observacao && <p className="text-sm">{resposta.observacao}</p>}
                 </InfoCard>;
               })}
-              {(processo.evolucao?.observacoesCompartilhadas || []).map((observacao) => <InfoCard key={observacao.id}><p className="text-sm">{observacao.texto}</p><p className="text-xs text-muted-foreground">Intervenções vinculadas: {obterIntervencoesDaConsulta(processo).filter((item) => item.executada && observacao.intervencaoIds.includes(item.id)).map((item) => item.prescrita.acaoPrescrita).join('; ')}</p></InfoCard>)}
+              {(processo.evolucao?.observacoesCompartilhadas || []).filter((observacao) => observacao.texto.trim() && obterIntervencoesDaConsulta(processo).some((item) => item.executada && observacao.intervencaoIds.includes(item.id))).map((observacao) => <InfoCard key={observacao.id}><p className="text-sm">{observacao.texto}</p><p className="text-xs text-muted-foreground">Intervenções vinculadas: {obterIntervencoesDaConsulta(processo).filter((item) => item.executada && observacao.intervencaoIds.includes(item.id)).map((item) => item.prescrita.acaoPrescrita).join('; ')}</p></InfoCard>)}
               {(processo.planejamento?.diagnosticosPlanejados || []).map((diag) => {
                 const avaliacao = processo.evolucao?.avaliacoesResultados?.[referenciaResultado(diag.diagnosticoId, diag.resultadoPlanejadoId)];
                 if (!avaliacao) return null;
