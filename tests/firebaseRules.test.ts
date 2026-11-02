@@ -88,11 +88,21 @@ test('sugestões legadas e novas preservam autoria e isolamento', async () => {
   await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'nova'), {
     ...legado, dataCriacao: serverTimestamp(), identificadorSugestao: 'nova', status: 'aguardando',
     diagnosticoOrigemId: 'diagnostico', tituloDiagnosticoOrigem: 'Diagnóstico', tituloResultadoOrigem: 'Mobilidade',
+    autorNomeResolvido: 'Profissional de Teste', origemStatus: 'confirmada',
+  }));
+  await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'origem-forjada'), {
+    ...legado, dataCriacao: serverTimestamp(), identificadorSugestao: 'origem-forjada', status: 'aguardando',
+    origemStatus: 'confirmada', diagnosticoOrigemId: '',
+  }));
+  await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'nome-forjado'), {
+    ...legado, dataCriacao: serverTimestamp(), identificadorSugestao: 'nome-forjado', status: 'aguardando',
+    autorNomeResolvido: 'Nome falsificado',
   }));
   await assertSucceeds(getDoc(doc(autor, 'intervencoesAutorais', 'nova')));
   await assertFails(getDoc(doc(outro, 'intervencoesAutorais', 'nova')));
   await assertSucceeds(getDocs(collection(gestor, 'intervencoesAutorais')));
   await assertFails(updateDoc(doc(autor, 'intervencoesAutorais', 'nova'), { status: 'aprovada' }));
+  await assertFails(updateDoc(doc(autor, 'intervencoesAutorais', 'nova'), { autorNomeResolvido: 'Outro nome' }));
   await assertFails(setDoc(doc(outro, 'intervencoesAutorais', 'forjada'), { ...legado, autorId: 'autor' }));
   await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'falsa'), { ...legado, status: 'aprovada' }));
   await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'nova'), { ...legado }));

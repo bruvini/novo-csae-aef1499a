@@ -7,6 +7,8 @@ import {
   agregarRegistrosProducao,
   aplicarVariacoesTemporais,
   calcularVariacaoTemporal,
+  classeVariacao,
+  formatarVariacao,
   filtrarRegistrosProducao,
   type RegistroProducao,
 } from './painelEstatistico';
@@ -31,6 +33,15 @@ test('calcula aumento, redução, estabilidade, novo e primeiro ponto sem base',
   assert.deepEqual(calcularVariacaoTemporal(20, 20), { variacaoPercentual: 0, variacaoTipo: 'percentual' });
   assert.deepEqual(calcularVariacaoTemporal(5, 0), { variacaoPercentual: null, variacaoTipo: 'novo' });
   assert.deepEqual(calcularVariacaoTemporal(5), { variacaoPercentual: null, variacaoTipo: 'sem-base' });
+});
+
+test('tooltip colore pelo valor real e preserva ausência de base', () => {
+  assert.equal(classeVariacao({ variacaoPercentual: 12, variacaoTipo: 'percentual' }), 'text-emerald-600');
+  assert.equal(classeVariacao({ variacaoPercentual: -80, variacaoTipo: 'percentual' }), 'text-rose-600');
+  assert.equal(classeVariacao({ variacaoPercentual: 0, variacaoTipo: 'percentual' }), 'text-slate-600');
+  assert.equal(classeVariacao({ variacaoPercentual: null, variacaoTipo: 'novo' }), 'text-slate-600');
+  assert.equal(formatarVariacao({ variacaoPercentual: null, variacaoTipo: 'sem-base' }), 'Sem base de comparação');
+  assert.equal(formatarVariacao({ variacaoPercentual: -80, variacaoTipo: 'percentual' }), '-80%');
 });
 
 test('aplica comparação ao período imediatamente anterior apresentado', () => {

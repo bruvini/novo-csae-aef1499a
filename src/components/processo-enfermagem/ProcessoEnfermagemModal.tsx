@@ -96,7 +96,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, sessionData } = useAuth();
   useEffect(() => { if (user?.uid) void reprocessarSugestoesPendentes(user.uid).catch(console.error); }, [user?.uid]);
   const processoAtualRef = useRef(processo);
   processoAtualRef.current = processo;
@@ -415,7 +415,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
                 diagnosticoOrigemId: diagnostico.diagnosticoId,
                 tituloDiagnosticoOrigem: diagnostico.tituloDiagnostico,
                 autorId: user.uid,
-                autorNome: user.displayName || user.email || user.uid,
+                autorNome: sessionData?.nomeCompleto || user.displayName || user.uid,
+                autorNomeResolvido: sessionData?.nomeCompleto || undefined,
                 identificadorSugestao: await identificadorSugestao(processo.id, diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado || '', intervencao.acaoPrescrita, user.uid),
               })))
           );

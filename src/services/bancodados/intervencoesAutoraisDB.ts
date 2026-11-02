@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Diagnostico } from './rolEnfermagemDB';
 import { encontrarResultado, incorporarIntervencao } from '@/utils/intervencoesAutorais';
@@ -28,6 +28,8 @@ export interface IntervencaoAutoral {
   tituloResultadoVinculado: string;
   autorId: string;
   autorNome: string;
+  autorNomeResolvido?: string;
+  origemStatus?: 'confirmada' | 'ambigua' | 'nao_recuperavel';
   dataCriacao?: Timestamp;
   diagnosticoOrigemId?: string;
   tituloDiagnosticoOrigem?: string;
@@ -59,6 +61,8 @@ export async function salvarIntervencoesAutorais(intervencoes: IntervencaoAutora
         diagnosticoOrigemId: item.diagnosticoOrigemId || '',
         tituloDiagnosticoOrigem: item.tituloDiagnosticoOrigem || '',
         autorId: item.autorId, autorNome: item.autorNome,
+        ...(item.autorNomeResolvido ? { autorNomeResolvido: item.autorNomeResolvido } : {}),
+        origemStatus: item.diagnosticoOrigemId ? 'confirmada' : 'nao_recuperavel',
         identificadorSugestao: item.identificadorSugestao,
         status: 'aguardando', dataCriacao: serverTimestamp(),
       });
@@ -89,6 +93,11 @@ export async function encaminharSugestoes(intervencoes: IntervencaoAutoral[], ui
 export async function listarSugestoes(): Promise<IntervencaoAutoral[]> {
   const snapshot = await getDocs(collection(db, 'intervencoesAutorais'));
   return snapshot.docs.map(item => ({ id: item.id, ...item.data() }) as IntervencaoAutoral);
+}
+
+export async function obterSugestao(id: string): Promise<IntervencaoAutoral | null> {
+  const snapshot = await getDoc(doc(db, 'intervencoesAutorais', id));
+  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } as IntervencaoAutoral : null;
 }
 
 function validarPreparacao(preparacao: PreparacaoAprovacao | undefined, homologada: boolean) {

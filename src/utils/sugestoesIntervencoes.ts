@@ -16,7 +16,7 @@ export function filtrarSugestoes(items: IntervencaoAutoral[], filtros: FiltrosSu
   return items.filter(item =>
     situacaoSugestao(item) === filtros.status
     && contem(item.textoIntervencao, filtros.texto)
-    && contem(item.autorNome, filtros.autor)
+    && contem(item.autorNomeResolvido || item.autorNome, filtros.autor)
     && contem(item.tituloDiagnosticoOrigem, filtros.diagnostico)
     && contem(item.tituloResultadoOrigem || item.tituloResultadoVinculado, filtros.resultado)
   ).sort((a, b) => (filtros.ordem === 'recentes' ? -1 : 1) * ((a.dataCriacao?.toMillis?.() || 0) - (b.dataCriacao?.toMillis?.() || 0)));
@@ -31,4 +31,17 @@ export function contagensSugestoes(items: IntervencaoAutoral[]) {
 export function sugestoesSemelhantes(item: IntervencaoAutoral, items: IntervencaoAutoral[]) {
   const normalized = normalizarAcao(item.textoIntervencao);
   return items.filter(other => other.id !== item.id && normalizarAcao(other.textoIntervencao) === normalized).length;
+}
+
+export function indiceSemelhantes(items: IntervencaoAutoral[]): Map<string, number> {
+  const contagens = new Map<string, number>();
+  for (const item of items) {
+    const chave = normalizarAcao(item.textoIntervencao);
+    contagens.set(chave, (contagens.get(chave) || 0) + 1);
+  }
+  return contagens;
+}
+
+export function taxaAprovacao(aprovadas: number, total: number): number | null {
+  return total > 0 ? (aprovadas / total) * 100 : null;
 }

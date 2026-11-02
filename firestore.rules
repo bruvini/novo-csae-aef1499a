@@ -463,11 +463,13 @@ service cloud.firestore {
     function validSuggestion(data) {
       return data is map
         && data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
         && boundedString(data.textoIntervencao, 2000) && data.textoIntervencao.size() > 0
         && boundedString(data.tituloResultadoVinculado, 500)
         && boundedString(data.autorId, 128) && data.autorId.size() > 0
         && boundedString(data.autorNome, 160)
+        && (!('autorNomeResolvido' in data) || boundedString(data.autorNomeResolvido, 160))
+        && (!('origemStatus' in data) || data.origemStatus in ['confirmada', 'ambigua', 'nao_recuperavel'])
         && data.dataCriacao is timestamp
         && (!('tituloResultadoOrigem' in data) || boundedString(data.tituloResultadoOrigem, 500))
         && (!('diagnosticoOrigemId' in data) || boundedString(data.diagnosticoOrigemId, 128))
@@ -530,7 +532,7 @@ service cloud.firestore {
       // imutáveis; validar novamente o mapa inteiro excede o limite de
       // expressões do Emulator em operações atômicas com o catálogo.
       return oldStatus == 'aguardando'
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
         && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
         && data.status in ['aguardando', 'aprovada', 'rejeitada']
         && (!('preparacao' in data) || validPreparation(data.preparacao))
@@ -565,7 +567,9 @@ service cloud.firestore {
         && ((request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao']))
           || (request.resource.data.identificadorSugestao == interventionId
             && request.resource.data.status == 'aguardando'
-            && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status'])
+            && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status'])
+            && (!('autorNomeResolvido' in request.resource.data) || request.resource.data.autorNomeResolvido == get(profilePath()).data.dadosPessoais.nomeCompleto)
+            && (!('origemStatus' in request.resource.data) || request.resource.data.origemStatus == ('diagnosticoOrigemId' in request.resource.data && request.resource.data.diagnosticoOrigemId.size() > 0 ? 'confirmada' : 'nao_recuperavel'))
             && request.resource.data.dataCriacao == request.time));
       allow update: if canManageContent() && validSuggestionUpdate(interventionId);
       allow delete: if false;

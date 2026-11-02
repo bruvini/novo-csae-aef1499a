@@ -66,7 +66,7 @@ import {
   ItemTemporal,
   agregarRegistrosProducao,
 } from '@/services/bancodados/biProcessosEnfermagemDB';
-import { filtrarRegistrosProducao, formatarVariacao } from '@/utils/painelEstatistico';
+import { classeVariacao, filtrarRegistrosProducao, formatarVariacao } from '@/utils/painelEstatistico';
 import { exportacaoPainelHabilitada, resolverEstadoProducao } from '@/utils/painelEstatisticoCache';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -153,10 +153,7 @@ const ProducaoTooltip = ({
   const valor = (payload.find((p) => p.dataKey === 'value') || payload.find((p) => p.dataKey === 'novos'))?.value ?? 0;
   const acumulado = payload.find((p) => p.dataKey === 'acumulado')?.value;
   const item = payload[0]?.payload;
-  const variacao = item?.variacaoPercentual;
-  const variacaoClasse = item?.variacaoTipo === 'percentual' && (variacao ?? 0) > 0
-    ? 'text-emerald-600'
-    : item?.variacaoTipo === 'percentual' && (variacao ?? 0) < 0 ? 'text-rose-600' : 'text-indigo-500';
+  const variacaoClasse = item ? classeVariacao(item) : 'text-slate-600';
 
   return (
     <div className="bg-white shadow-xl rounded-xl p-3 border border-indigo-100 text-sm min-w-[160px]">
@@ -753,7 +750,7 @@ const PainelEstatistico = () => {
             </CardHeader>
             <CardContent className="h-[500px]">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={evolucaoAtiva()} margin={{ top: 10, right: 20, left: 0, bottom: 40 }}>
+                <ComposedChart data={evolucaoAtiva()} margin={{ top: 10, right: viewMode === 'semanal' ? 20 : 35, left: 0, bottom: 40 }}>
                   <defs>
                     <linearGradient id="colorAcum" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#059669" stopOpacity={0.7} />
@@ -768,7 +765,8 @@ const PainelEstatistico = () => {
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis yAxisId="acumulado" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  {viewMode !== 'semanal' && <YAxis yAxisId="periodo" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />}
                   <RechartsTooltip
                     content={<ProducaoTooltip />}
                   />
@@ -777,6 +775,7 @@ const PainelEstatistico = () => {
                   {viewMode !== 'semanal' && (
                     <Area
                       type="monotone"
+                      yAxisId="acumulado"
                       dataKey="acumulado"
                       stroke="#059669"
                       strokeWidth={3}
@@ -785,7 +784,7 @@ const PainelEstatistico = () => {
                       name="Total Acumulado"
                     />
                   )}
-                  <Bar dataKey="novos" fill="#34d399" barSize={20} name="Novos no Período" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId={viewMode === 'semanal' ? 'acumulado' : 'periodo'} dataKey="novos" fill="#34d399" barSize={20} name="Novos no Período" radius={[4, 4, 0, 0]} />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
@@ -837,7 +836,7 @@ const PainelEstatistico = () => {
                     height={60}
                   />
                   <YAxis yAxisId="acumulado" tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <YAxis yAxisId="periodo" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />
+                  {viewModeAcessos !== 'semanal' && <YAxis yAxisId="periodo" orientation="right" tick={{ fontSize: 11 }} allowDecimals={false} />}
                   <RechartsTooltip
                     content={<ProducaoTooltip />}
                   />
@@ -855,7 +854,7 @@ const PainelEstatistico = () => {
                       name="Acumulado do histórico disponível"
                     />
                   )}
-                  <Bar yAxisId="periodo" dataKey="novos" fill="#60a5fa" barSize={20} name="Logins no período (histórico disponível)" radius={[4, 4, 0, 0]} />
+                  <Bar yAxisId={viewModeAcessos === 'semanal' ? 'acumulado' : 'periodo'} dataKey="novos" fill="#60a5fa" barSize={20} name="Logins no período (histórico disponível)" radius={[4, 4, 0, 0]} />
                 </ComposedChart>
               </ResponsiveContainer>
               {data && (
@@ -1029,14 +1028,15 @@ const PainelEstatistico = () => {
                   </CardHeader>
                   <CardContent className="p-6 h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart data={dadosFiltrados?.temporalAvancado[temporalView] ?? []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                      <ComposedChart data={dadosFiltrados?.temporalAvancado[temporalView] ?? []} margin={{ top: 10, right: 40, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="acumulado" allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                        {['diario', 'mensal', 'anual'].includes(temporalView) && <YAxis yAxisId="periodo" orientation="right" allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />}
                         <RechartsTooltip content={<ProducaoTooltip />} />
-                        <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={temporalView === 'diario' ? 12 : 30} name="Processos" />
+                        <Bar yAxisId={['diario', 'mensal', 'anual'].includes(temporalView) ? 'periodo' : 'acumulado'} dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={temporalView === 'diario' ? 12 : 30} name="Processos" />
                         {['diario', 'mensal', 'anual'].includes(temporalView) && (
-                          <Area type="monotone" dataKey="acumulado" fill="#6366f1" fillOpacity={0.05} stroke="#818cf8" strokeWidth={2} name="Acumulado" />
+                          <Area yAxisId="acumulado" type="monotone" dataKey="acumulado" fill="#6366f1" fillOpacity={0.05} stroke="#818cf8" strokeWidth={2} name="Acumulado" />
                         )}
                       </ComposedChart>
                     </ResponsiveContainer>
