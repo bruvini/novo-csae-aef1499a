@@ -46,6 +46,7 @@ export interface IntervencaoSelecionada {
   acaoPrescrita: string;
   acaoEnfermeiro?: string;
   tipo: 'padrao' | 'autoral'; // 'padrao' para as do sistema, 'autoral' para as customizadas
+  justificativaIntervencaoUnica?: string;
 }
 
 export interface DiagnosticoPlanejado {

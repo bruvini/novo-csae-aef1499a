@@ -22,6 +22,8 @@ export interface Intervencao {
   acaoEnfermeiro: string;
   acaoPrescrita: string;
   materiaisDeApoio: MaterialApoio[];
+  /** Preenchido apenas em publicações novas com proveniência comprovada. */
+  origemSugestaoId?: string;
 }
 
 export interface ResultadoEsperado {

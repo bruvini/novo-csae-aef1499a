@@ -14,7 +14,7 @@ export function encontrarResultado(diagnostico: Diagnostico, titulo: string) {
   return iguais[0];
 }
 
-export function incorporarIntervencao(diagnostico: Diagnostico, destinos: string[], acaoPrescrita: string, acaoEnfermeiro: string) {
+export function incorporarIntervencao(diagnostico: Diagnostico, destinos: string[], acaoPrescrita: string, acaoEnfermeiro: string, origemSugestaoId?: string) {
   for (const titulo of destinos) encontrarResultado(diagnostico, titulo);
   return diagnostico.resultadosEsperados.map(resultado => {
     if (!destinos.includes(resultado.tituloResultado)) return resultado;
@@ -22,6 +22,6 @@ export function incorporarIntervencao(diagnostico: Diagnostico, destinos: string
     if (anteriores.some(item => normalizarAcao(item.acaoPrescrita) === normalizarAcao(acaoPrescrita))) {
       throw new Error(`Intervenção já existe em ${resultado.tituloResultado}`);
     }
-    return { ...resultado, intervencoes: [...anteriores, { acaoPrescrita, acaoEnfermeiro, materiaisDeApoio: [] }] };
+    return { ...resultado, intervencoes: [...anteriores, { acaoPrescrita, acaoEnfermeiro, materiaisDeApoio: [], ...(origemSugestaoId ? { origemSugestaoId } : {}) }] };
   });
 }

@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Activity, FileText, Target, Zap, Heart, TestTube, ClipboardCheck, BadgeCheck } from 'lucide-react';
-import { collection, getCountFromServer, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { getSinaisVitaisCount } from '@/services/bancodados/sinaisVitaisDB';
 import { getExamesCount } from '@/services/bancodados/examesDB';
-import { taxaAprovacao } from '@/utils/sugestoesIntervencoes';
+import { listarSugestoes } from '@/services/bancodados/intervencoesAutoraisDB';
+import { resumoAprovacaoOriginais } from '@/utils/sugestoesIntervencoes';
 
 interface IndicadoresData {
   totalDiagnosticos: number;
@@ -21,6 +22,7 @@ interface IndicadoresData {
   totalExamesFisicos: number;
   totalSugestoes: number;
   sugestoesAprovadas: number;
+  sugestoesParciais: number;
 }
 
 const IndicadoresConteudo = () => {
@@ -45,11 +47,7 @@ const IndicadoresConteudo = () => {
 
         // Buscar total de exames
         const totalExames = await getExamesCount();
-        const sugestoesRef = collection(db, 'intervencoesAutorais');
-        const [totalSugestoesSnap, aprovadasSnap] = await Promise.all([
-          getCountFromServer(sugestoesRef),
-          getCountFromServer(query(sugestoesRef, where('status', '==', 'aprovada'))),
-        ]);
+        const aprovacao = resumoAprovacaoOriginais(await listarSugestoes());
 
         // Sistemas e exames físicos estruturados para revisão por sistema
         const sistemasSnapshot = await getDocs(collection(db, 'RevisaoSistemas'));
@@ -85,8 +83,9 @@ const IndicadoresConteudo = () => {
           totalExames,
           totalSistemas,
           totalExamesFisicos,
-          totalSugestoes: totalSugestoesSnap.data().count,
-          sugestoesAprovadas: aprovadasSnap.data().count,
+          totalSugestoes: aprovacao.total,
+          sugestoesAprovadas: aprovacao.integrais,
+          sugestoesParciais: aprovacao.parciais,
         });
       } catch (error) {
         console.error('Erro ao carregar indicadores:', error);
@@ -184,10 +183,9 @@ const IndicadoresConteudo = () => {
       color: "text-teal-600"
     },
     {
-      title: 'Taxa de Aprovação',
-      value: taxaAprovacao(indicadores.sugestoesAprovadas, indicadores.totalSugestoes) === null
-        ? 'Sem base' : `${taxaAprovacao(indicadores.sugestoesAprovadas, indicadores.totalSugestoes)!.toFixed(1)}%`,
-      description: `${indicadores.sugestoesAprovadas} de ${indicadores.totalSugestoes} sugestões aprovadas`,
+      title: 'Aprovação de Sugestões',
+      value: indicadores.totalSugestoes === 0 ? 'Sem dados' : `${((indicadores.sugestoesAprovadas / indicadores.totalSugestoes) * 100).toFixed(1)}%`,
+      description: `${indicadores.sugestoesAprovadas} de ${indicadores.totalSugestoes} submissões originais integralmente aprovadas · ${indicadores.sugestoesParciais} parciais`,
       icon: BadgeCheck,
       color: 'text-emerald-600',
     }
@@ -198,12 +196,12 @@ const IndicadoresConteudo = () => {
       {cards.map((card, index) => {
         const IconComponent = card.icon;
         return (
-          <Card key={index} className="min-w-0 h-full">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-              <IconComponent className={`h-4 w-4 ${card.color}`} />
+          <Card key={index} className="min-w-0 h-full grid grid-rows-[minmax(3.5rem,auto)_1fr]" title={index === 7 ? 'Denominador: submissões originais enviadas pelos enfermeiros. Derivadas não ampliam o total; aprovação parcial é exibida separadamente.' : undefined}>
+            <CardHeader className="grid grid-cols-[1fr_auto] items-start gap-2 pb-2">
+              <CardTitle className="text-sm font-medium leading-snug">{card.title}</CardTitle>
+              <IconComponent className={`h-4 w-4 shrink-0 ${card.color}`} />
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col justify-end">
               <div className="text-2xl font-bold">{card.value}</div>
               <p className="text-xs text-muted-foreground">{card.description}</p>
             </CardContent>
