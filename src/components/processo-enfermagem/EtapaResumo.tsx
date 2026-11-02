@@ -16,6 +16,7 @@ import { getSinaisVitais } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames } from '@/services/bancodados/examesDB';
 import { getSistemas } from '@/services/bancodados/revisaoSistemasDB';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
+import { formatarSinaisVitais, familiaPressaoArterial, valorSinalVitalPreenchido } from '@/utils/formatarSinaisVitais';
 
 interface EtapaResumoProps {
   processo: ProcessoEnfermagem;
@@ -142,19 +143,28 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
     // ── Exame Físico ──────────────────────────────────────────────────────────
     const exameFisicoData = processo.avaliacao?.exameFisico || {};
+    const sinaisVitaisFormatados = formatarSinaisVitais(exameFisicoData, sinaisVitais);
     if (Object.keys(exameFisicoData).length > 0) {
       linhas.push('EXAME FÍSICO:');
 
-      const svAtivos = sinaisVitais.filter(s => exameFisicoData[s.sinalVitalNome]);
-      if (svAtivos.length > 0) {
+      if (sinaisVitaisFormatados.length > 0) {
         linhas.push('  [SINAIS VITAIS]');
-        svAtivos.forEach(s => linhas.push(`  • ${s.sinalVitalNome}: ${exameFisicoData[s.sinalVitalNome]}`));
+        sinaisVitaisFormatados.forEach(sinal => linhas.push(`  • ${sinal.nome}: ${sinal.valor}`));
       }
 
       const exMap = new Map<string, string[]>();
+      const sinaisPressaoRegistrados = new Set(
+        sinaisVitais
+          .filter(sinal => familiaPressaoArterial(sinal.sinalVitalNome)
+            && valorSinalVitalPreenchido(exameFisicoData[sinal.sinalVitalNome]))
+          .map(sinal => sinal.sinalVitalNome),
+      );
       exames.forEach(ex => {
         ex.componentes.forEach((c: any) => {
-          if (exameFisicoData[c.componenteAnalisado]) {
+          if (
+            !sinaisPressaoRegistrados.has(c.componenteAnalisado)
+            && exameFisicoData[c.componenteAnalisado]
+          ) {
             const grp = `${ex.tipoExame} - ${ex.tituloExame}`;
             if (!exMap.has(grp)) exMap.set(grp, []);
             exMap.get(grp)!.push(`${c.componenteAnalisado}: ${exameFisicoData[c.componenteAnalisado]}`);
@@ -168,12 +178,12 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
 
       // Peso e Altura (campos auxiliares do cálculo de IMC)
       const camposIMCAux = ['Peso (kg)', 'Altura (cm)'];
-      const temIMCAux = camposIMCAux.some(k => exameFisicoData[k]);
+      const temIMCAux = camposIMCAux.some(k => valorSinalVitalPreenchido(exameFisicoData[k]));
       if (temIMCAux) {
-        if (svAtivos.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
+        if (sinaisVitaisFormatados.length === 0) linhas.push('  [SINAIS VITAIS]'); // garante cabeçalho
         camposIMCAux.forEach((chave) => {
           const val = exameFisicoData[chave];
-          if (val !== undefined && val !== '') linhas.push(`  • ${chave}: ${val}`);
+          if (valorSinalVitalPreenchido(val)) linhas.push(`  • ${chave}: ${val}`);
         });
       }
 
@@ -374,7 +384,17 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
                 <InfoCard>
                   <SectionHeader label="Exame Físico / Parâmetros Registrados" />
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
-                    {Object.entries(exameFisico).map(([chave, valor]: any) => (
+                    {formatarSinaisVitais(exameFisico, sinaisVitais).map((sinal, index) => (
+                      <li key={`sinal-vital-${index}`} className="flex items-baseline gap-1 text-sm">
+                        <span className="font-semibold text-gray-700">{sinal.nome}:</span>
+                        <span className="text-gray-600">{sinal.valor}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4">
+                    {Object.entries(exameFisico)
+                      .filter(([chave]) => !sinaisVitais.some(sinal => sinal.sinalVitalNome === chave))
+                      .map(([chave, valor]: any) => (
                       <li key={chave} className="flex items-baseline gap-1 text-sm">
                         <span className="font-semibold text-gray-700">{chave}:</span>
                         <span className="text-gray-600">{valor}</span>
