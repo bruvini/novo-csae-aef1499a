@@ -165,7 +165,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
         </CardHeader>
         <CardContent>
           <Accordion type="multiple" className="w-full">
-            {diagnosticosPlanjados
+            {[...diagnosticosPlanjados]
               .sort((a, b) => a.ordemPrioridade - b.ordemPrioridade)
               .map((diagnostico, index) => {
                 const intervencoes = implementacaoLocal[diagnostico.tituloDiagnostico]?.intervencoes || [];

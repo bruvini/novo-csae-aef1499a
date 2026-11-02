@@ -30,6 +30,36 @@ export interface CatalogoAchadosAprovados {
   }>;
 }
 
+export function alinharDiagnosticosPlanejados(
+  selecionados: DiagnosticoEnfermagem['diagnosticosSelecionados'],
+  salvos: DiagnosticoPlanejado[],
+): DiagnosticoPlanejado[] {
+  const ordemSalva = salvos.filter((item) => selecionados.some((diag) => diag.id === item.diagnosticoId))
+    .sort((a, b) => a.ordemPrioridade - b.ordemPrioridade);
+  const idsSalvos = new Set(ordemSalva.map((item) => item.diagnosticoId));
+  const ordem = [...ordemSalva.map((item) => selecionados.find((diag) => diag.id === item.diagnosticoId)!), ...selecionados.filter((diag) => !idsSalvos.has(diag.id))];
+  return ordem.map((diag, index) => {
+    const salvo = salvos.find((item) => item.diagnosticoId === diag.id);
+    return {
+      ...(salvo || { diagnosticoId: diag.id, intervencoesSelecionadas: [] }),
+      tituloDiagnostico: diag.tituloDiagnostico,
+      ordemPrioridade: index + 1,
+      ...(diag.naturezaDiagnostico ? { naturezaDiagnostico: diag.naturezaDiagnostico } : {}),
+    };
+  });
+}
+
+/** Mesmo resultado para arraste com ponteiro e teclado. */
+export function reordenarDiagnosticosPlanejados(
+  itens: DiagnosticoPlanejado[], origem: number, destino: number,
+): DiagnosticoPlanejado[] {
+  if (origem < 0 || destino < 0 || origem >= itens.length || destino >= itens.length) return itens;
+  const ordenados = [...itens];
+  const [movido] = ordenados.splice(origem, 1);
+  ordenados.splice(destino, 0, movido);
+  return ordenados.map((item, index) => ({ ...item, ordemPrioridade: index + 1 }));
+}
+
 export function isDiagnosticoPositivo(
   natureza: DiagnosticoPlanejado['naturezaDiagnostico'] | undefined,
   legadoIsPositivo: boolean | undefined,
@@ -186,28 +216,29 @@ export function calcularEtapasCompletadas(
     obterPendenciasPlanejamento(processo.diagnostico, diagnosticosPlanejados).length === 0;
   if (planejamentoOk) concluidas.push(3);
 
-  // Etapa 4 — cada diagnóstico que tem intervenções prescritas precisa ter ação
-  // implementada nesta consulta. Diagnósticos positivos sem ação são válidos após
-  // justificativa de planejamento. Nenhum diagnóstico pode mascarar outro.
+  // A prescrição pode ficar para uma consulta futura. Somente ações marcadas
+  // como realizadas exigem executor.
   const implementacao = processo.implementacao || {};
   const implementacaoOk = (processo.planejamento?.diagnosticosPlanejados ?? []).every((plano) => {
     const prescritas = plano.intervencoesSelecionadas ?? [];
     if (prescritas.length === 0) return true;
     const implementadas = implementacao[plano.tituloDiagnostico]?.intervencoes
       ?.filter((item) => item.implementadoNestaConsulta) ?? [];
-    return implementadas.length > 0 && implementadas.every((item) =>
+    return implementadas.every((item) =>
       Array.isArray(item.quemExecuta) ? item.quemExecuta.length > 0 : Boolean(item.quemExecuta)
     );
   });
-  if (planejamentoOk && implementacaoOk) concluidas.push(4);
+  const implementacaoVisitada = processo.etapaAtual >= 4 || Object.keys(implementacao).length > 0;
+  if (planejamentoOk && implementacaoVisitada && implementacaoOk) concluidas.push(4);
 
-  // Etapa 5 avalia resultados. Registros legados com resumo gerado continuam
-  // válidos; novos processos precisam documentar julgamento clínico explícito.
-  const temEvolucao = Boolean(
-    processo.evolucao?.julgamentoClinico?.trim()
-    || processo.evolucao?.resumoGerado?.trim()
+  // A documentação da Evolução é opcional por decisão clínica desta entrega.
+  const evolucaoVisitada = processo.etapaAtual >= 5 || Boolean(
+    processo.evolucao?.julgamentoClinico?.trim() || processo.evolucao?.resumoGerado?.trim()
+    || Object.keys(processo.evolucao?.respostasIntervencoes || {}).length
+    || Object.keys(processo.evolucao?.avaliacoesResultados || {}).length
+    || processo.evolucao?.observacoesCompartilhadas?.length
   );
-  if (concluidas.includes(4) && temEvolucao) concluidas.push(5);
+  if (concluidas.includes(4) && evolucaoVisitada) concluidas.push(5);
 
   // Etapa 6 — Resumo gerado
   if (concluidas.includes(5) && processo.evolucao?.resumoGerado?.trim()) concluidas.push(6);
@@ -300,7 +331,7 @@ export function getMotivoBloqueio(
         processo.planejamento?.diagnosticosPlanejados ?? [],
       );
       if (pendencias.length) return `Revise o planejamento: ${pendencias.join('; ')}.`;
-      return 'Conclua a implementação das intervenções prescritas, com executor definido, antes de registrar a evolução.';
+      return 'Defina o executor de cada intervenção marcada como realizada antes de avançar.';
     }
     default:
       return 'Complete as etapas anteriores para liberar.';

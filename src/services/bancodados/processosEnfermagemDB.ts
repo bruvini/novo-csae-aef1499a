@@ -3,9 +3,9 @@ import {
   doc,
   getDoc,
   updateDoc,
-  arrayUnion,
   deleteDoc,
   Timestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import {
@@ -74,12 +74,15 @@ export async function criarProcessoEnfermagem(
     };
 
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
-    await updateDoc(pacienteRef, {
-      processosEnfermagem: arrayUnion(novoProcesso)
+    return await runTransaction(db, async (transacao) => {
+      const pacienteDoc = await transacao.get(pacienteRef);
+      if (!pacienteDoc.exists()) throw new Error('Registro do paciente não encontrado ao iniciar o processo.');
+      const processos = (pacienteDoc.data() as Paciente).processosEnfermagem || [];
+      const existente = processos.find((item) => item.status === 'em_andamento' && item.enfermeiroId === enfermeiroId);
+      if (existente) return existente.idProcesso;
+      transacao.update(pacienteRef, { processosEnfermagem: [...processos, novoProcesso] });
+      return processoId;
     });
-
-    console.log('Processo criado com ID:', processoId);
-    return processoId;
   } catch (error) {
     console.error('Erro ao criar processo:', error);
     throw error;
@@ -272,31 +275,29 @@ export async function salvarProgressoProcesso(
   dadosEtapas: DadosEtapasProcesso
 ): Promise<void> {
   try {
-    await finalizarSessaoAtual(pacienteId, processoId);
-
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
-    const pacienteDoc = await getDoc(pacienteRef);
+    await runTransaction(db, async (transacao) => {
+      const pacienteDoc = await transacao.get(pacienteRef);
 
-    if (!pacienteDoc.exists()) {
-      throw new Error('Registro do paciente não encontrado ao salvar o processo.');
-    }
+      if (!pacienteDoc.exists()) {
+        throw new Error('Registro do paciente não encontrado ao salvar o processo.');
+      }
 
-    const dadosPaciente = pacienteDoc.data() as Paciente;
-    const processos = dadosPaciente.processosEnfermagem || [];
+      const dadosPaciente = pacienteDoc.data() as Paciente;
+      const processos = [...(dadosPaciente.processosEnfermagem || [])];
     
-    const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
-    if (processoIndex === -1) {
-      throw new Error('Processo de enfermagem não encontrado ao salvar o progresso.');
-    }
+      const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
+      if (processoIndex === -1) {
+        throw new Error('Processo de enfermagem não encontrado ao salvar o progresso.');
+      }
 
-    processos[processoIndex] = sanitizarParaFirestore({
-      ...processos[processoIndex],
-      etapaAtual,
-      ...dadosEtapas,
-    });
+      processos[processoIndex] = sanitizarParaFirestore({
+        ...processos[processoIndex],
+        etapaAtual,
+        ...dadosEtapas,
+      });
 
-    await updateDoc(pacienteRef, {
-      processosEnfermagem: processos,
+      transacao.update(pacienteRef, { processosEnfermagem: processos });
     });
 
     console.log('Progresso salvo com sucesso');
