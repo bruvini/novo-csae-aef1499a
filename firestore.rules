@@ -580,9 +580,10 @@ service cloud.firestore {
 
     match /decisoesIntervencoes/{decisionId} {
       allow read: if canManageContent();
+      // A sugestão exige este documento no mesmo commit; a direção única evita
+      // recursão de getAfter entre as duas regras.
       allow create: if canManageContent() && validDecision(request.resource.data)
-        && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(request.resource.data.sugestaoId)).data.ultimaDecisaoId == decisionId
-        && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(request.resource.data.sugestaoId)).data.status == request.resource.data.statusNovo;
+        && exists(/databases/$(database)/documents/intervencoesAutorais/$(request.resource.data.sugestaoId));
       allow update, delete: if false;
     }
 
