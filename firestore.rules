@@ -463,7 +463,7 @@ service cloud.firestore {
     function validSuggestion(data) {
       return data is map
         && data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'divisao', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade'])
         && boundedString(data.textoIntervencao, 2000) && data.textoIntervencao.size() > 0
         && boundedString(data.tituloResultadoVinculado, 500)
         && boundedString(data.autorId, 128) && data.autorId.size() > 0
@@ -532,7 +532,8 @@ service cloud.firestore {
       // imutáveis; validar novamente o mapa inteiro excede o limite de
       // expressões do Emulator em operações atômicas com o catálogo.
       return oldStatus == 'aguardando'
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && !('divisao' in previous)
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade'])
         && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
         && data.status in ['aguardando', 'aprovada', 'rejeitada']
         && (!('preparacao' in data) || validPreparation(data.preparacao))
@@ -560,9 +561,88 @@ service cloud.firestore {
             && boundedString(data.preparacao.responsavelValidacao, 160) && data.preparacao.responsavelValidacao.size() > 0));
     }
 
+    function splitChildAfter(childId, originalId, index) {
+      let child = getAfter(/databases/$(database)/documents/intervencoesAutorais/$(childId)).data;
+      return child.derivacao.originalId == originalId
+        && child.derivacao.grupoId == originalId
+        && child.derivacao.ordem == index
+        && child.status == 'aguardando';
+    }
+
+    function validSplitUpdate(originalId) {
+      let data = request.resource.data;
+      let split = data.divisao;
+      let ids = split.derivadasIds;
+      let audit = getAfter(/databases/$(database)/documents/decisoesIntervencoes/$(data.ultimaDecisaoId)).data;
+      return !('divisao' in resource.data) && !('derivacao' in resource.data)
+        && (!('status' in resource.data) || resource.data.status == 'aguardando')
+        && data.diff(resource.data).affectedKeys().hasOnly(['divisao', 'ultimaDecisaoId'])
+        && split.keys().hasOnly(['grupoId', 'derivadasIds', 'revisorId', 'revisorNome', 'dataHora'])
+        && split.grupoId == originalId && split.revisorId == request.auth.uid
+        && boundedString(split.revisorNome, 160) && split.dataHora == request.time
+        && ids is list && ids.size() >= 2 && ids.size() <= 5
+        && ids[0] == originalId + '-d1' && ids[1] == originalId + '-d2'
+        && splitChildAfter(ids[0], originalId, 1) && splitChildAfter(ids[1], originalId, 2)
+        && (ids.size() < 3 || (ids[2] == originalId + '-d3' && splitChildAfter(ids[2], originalId, 3)))
+        && (ids.size() < 4 || (ids[3] == originalId + '-d4' && splitChildAfter(ids[3], originalId, 4)))
+        && (ids.size() < 5 || (ids[4] == originalId + '-d5' && splitChildAfter(ids[4], originalId, 5)))
+        && audit.sugestaoId == originalId && audit.tipo == 'desmembrar'
+        && audit.avaliadorId == request.auth.uid && audit.dataHora == request.time;
+    }
+
+    function validQualityEvaluation(quality) {
+      return quality is map
+        && quality.keys().hasAll(['avaliadorId', 'avaliadoEm', 'versaoCriterios'])
+        && quality.keys().hasOnly(['atomicidadeStatus', 'especificidadeNivel', 'pertinenciaClinica', 'exequibilidadeNivel', 'reavaliabilidadeNivel', 'alertasSeguranca', 'intensidadeRevisao', 'observacaoTecnica', 'avaliadorId', 'avaliadoEm', 'versaoCriterios'])
+        && quality.avaliadorId == request.auth.uid && quality.avaliadoEm == request.time
+        && quality.versaoCriterios == 'experimental-v1'
+        && (!('atomicidadeStatus' in quality) || quality.atomicidadeStatus in ['unica', 'multiplas_relacionadas', 'multiplas_independentes', 'indeterminada'])
+        && (!('especificidadeNivel' in quality) || quality.especificidadeNivel in ['adequada', 'parcial', 'insuficiente'])
+        && (!('pertinenciaClinica' in quality) || quality.pertinenciaClinica in ['pertinente', 'condicionada', 'incompativel', 'indeterminada'])
+        && (!('exequibilidadeNivel' in quality) || quality.exequibilidadeNivel in ['adequada', 'parcial', 'insuficiente'])
+        && (!('reavaliabilidadeNivel' in quality) || quality.reavaliabilidadeNivel in ['adequada', 'parcial', 'insuficiente'])
+        && (!('intensidadeRevisao' in quality) || quality.intensidadeRevisao in ['sem_alteracoes', 'ajuste_textual', 'reformulacao_tecnica', 'desmembramento'])
+        && (!('alertasSeguranca' in quality) || (quality.alertasSeguranca is list && quality.alertasSeguranca.size() <= 6
+          && quality.alertasSeguranca.hasOnly(['medicamentos', 'procedimentos', 'contencao', 'atribuicoes', 'protocolos', 'outros'])) )
+        && (!('observacaoTecnica' in quality) || boundedString(quality.observacaoTecnica, 1000));
+    }
+
+    function validQualityUpdate(suggestionId) {
+      let data = request.resource.data;
+      let audit = getAfter(/databases/$(database)/documents/decisoesIntervencoes/$(data.ultimaDecisaoId)).data;
+      return data.diff(resource.data).affectedKeys().hasOnly(['avaliacaoQualidade', 'ultimaDecisaoId'])
+        && data.diff(resource.data).affectedKeys().hasAll(['avaliacaoQualidade', 'ultimaDecisaoId'])
+        && validQualityEvaluation(data.avaliacaoQualidade)
+        && audit.sugestaoId == suggestionId && audit.tipo == 'avaliar'
+        && audit.avaliadorId == request.auth.uid && audit.dataHora == request.time;
+    }
+
+    function validDerivedCreate(childId) {
+      let data = request.resource.data;
+      let link = data.derivacao;
+      let original = get(/databases/$(database)/documents/intervencoesAutorais/$(link.originalId)).data;
+      let after = getAfter(/databases/$(database)/documents/intervencoesAutorais/$(link.originalId)).data;
+      return validSuggestion(data)
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'autorId', 'autorNome', 'autorNomeResolvido', 'status', 'tipoRegistro', 'dataCriacao', 'derivacao'])
+        && data.status == 'aguardando' && data.tipoRegistro == 'derivada' && data.dataCriacao == request.time
+        && link.keys().hasOnly(['originalId', 'grupoId', 'ordem', 'revisorId', 'dataHora'])
+        && boundedString(link.originalId, 120) && link.grupoId == link.originalId
+        && link.ordem is int && link.ordem >= 1 && link.ordem <= 5
+        && link.revisorId == request.auth.uid && link.dataHora == request.time
+        && !('divisao' in original) && !('derivacao' in original)
+        && after.divisao.derivadasIds[link.ordem - 1] == childId
+        && after.divisao.revisorId == request.auth.uid
+        && data.autorId == original.autorId && data.autorNome == original.autorNome
+        && (('autorNomeResolvido' in original) ? data.autorNomeResolvido == original.autorNomeResolvido : !('autorNomeResolvido' in data))
+        && data.tituloResultadoVinculado == original.tituloResultadoVinculado
+        && data.diagnosticoOrigemId == (('diagnosticoOrigemId' in original) ? original.diagnosticoOrigemId : '')
+        && data.tituloDiagnosticoOrigem == (('tituloDiagnosticoOrigem' in original) ? original.tituloDiagnosticoOrigem : '')
+        && data.tituloResultadoOrigem == (('tituloResultadoOrigem' in original) ? original.tituloResultadoOrigem : '');
+    }
+
     match /intervencoesAutorais/{interventionId} {
       allow get, list: if canManageContent() || (isApproved() && resource.data.autorId == request.auth.uid);
-      allow create: if hasPage('ProcessoEnfermagem') && validSuggestion(request.resource.data)
+      allow create: if (canManageContent() && validDerivedCreate(interventionId)) || (hasPage('ProcessoEnfermagem') && validSuggestion(request.resource.data)
         && request.resource.data.autorId == request.auth.uid
         && ((request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao']))
           || (request.resource.data.identificadorSugestao == interventionId
@@ -570,8 +650,8 @@ service cloud.firestore {
             && request.resource.data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status'])
             && (!('autorNomeResolvido' in request.resource.data) || request.resource.data.autorNomeResolvido == get(profilePath()).data.dadosPessoais.nomeCompleto)
             && (!('origemStatus' in request.resource.data) || request.resource.data.origemStatus == ('diagnosticoOrigemId' in request.resource.data && request.resource.data.diagnosticoOrigemId.size() > 0 ? 'confirmada' : 'nao_recuperavel'))
-            && request.resource.data.dataCriacao == request.time));
-      allow update: if canManageContent() && validSuggestionUpdate(interventionId);
+            && request.resource.data.dataCriacao == request.time)));
+      allow update: if canManageContent() && (validSuggestionUpdate(interventionId) || validSplitUpdate(interventionId) || validQualityUpdate(interventionId));
       allow delete: if false;
     }
 
@@ -580,9 +660,11 @@ service cloud.firestore {
         && data.keys().hasAll(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
         && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
         && boundedString(data.sugestaoId, 128)
-        && data.statusAnterior == 'aguardando'
+        && data.statusAnterior in ['aguardando', 'aprovada', 'rejeitada']
         && data.statusNovo in ['aguardando', 'aprovada', 'rejeitada']
-        && data.tipo in ['preparar', 'publicar', 'rejeitar']
+        && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar']
+        && (data.tipo == 'avaliar' || data.statusAnterior == 'aguardando')
+        && (data.tipo != 'avaliar' || data.statusAnterior == data.statusNovo)
         && data.avaliadorId == request.auth.uid
         && data.destinos is list && data.destinos.size() <= 5
         && boundedString(data.justificativa, 2000)

@@ -80,6 +80,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Eye } from 'lucide-react';
+import QualidadeIntervencoes from '@/components/painel-estatistico/QualidadeIntervencoes';
 
 // ── Paleta de Cores ──────────────────────────────────────────────────────────
 const COLORS = ['#059669', '#10b981', '#34d399', '#0f766e', '#14b8a6', '#5eead4', '#0d9488'];
@@ -1357,6 +1358,8 @@ const PainelEstatistico = () => {
             </div>
           )}
         </div>
+
+        <QualidadeIntervencoes />
 
         {/* ── Modal Raio-X do Usuário ── */}
         <Dialog open={raioXOpen} onOpenChange={setRaioXOpen}>

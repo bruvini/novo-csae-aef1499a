@@ -15,6 +15,7 @@ import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, Plane
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { isDiagnosticoPositivo } from '@/utils/processoUtils';
+import { revisarSeparacao, sinalizarIntervencoesMultiplas } from '@/utils/individualizacaoIntervencoes';
 
 interface EtapaPlanejamentoProps {
   processo: ProcessoEnfermagem;
@@ -30,6 +31,10 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   const [diagnosticosPriorizados, setDiagnosticosPrivorizados] = useState<DiagnosticoPlanejado[]>([]);
   const [diagnosticosDetalhados, setDiagnosticosDetalhados] = useState<Diagnostico[]>([]);
   const [novaIntervencao, setNovaIntervencao] = useState<{ [key: string]: string }>({});
+  const [revisaoId, setRevisaoId] = useState<string | null>(null);
+  const [acoesCandidatas, setAcoesCandidatas] = useState<string[]>([]);
+  const [justificativaUnica, setJustificativaUnica] = useState('');
+  const [erroRevisao, setErroRevisao] = useState('');
   const [faseAtual, setFaseAtual] = useState("item-1");
 
   useEffect(() => {
@@ -124,17 +129,13 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     salvarPlanejamento(updated);
   };
 
-  const handleAdicionarIntervencaoAutoral = (diagnosticoId: string) => {
-    const texto = novaIntervencao[diagnosticoId]?.trim();
-    if (!texto) return;
-
+  const adicionarAcoesAutorais = (diagnosticoId: string, acoes: string[], justificativaIntervencaoUnica?: string) => {
     const updated = diagnosticosPriorizados.map(diag => {
       if (diag.diagnosticoId === diagnosticoId) {
         const intervencoes = diag.intervencoesSelecionadas ?? [];
-        if (intervencoes.some((item) => item.tipo === 'autoral' && item.acaoPrescrita === texto)) return diag;
         return {
           ...diag,
-          intervencoesSelecionadas: [...intervencoes, { acaoPrescrita: texto, tipo: 'autoral' as const }],
+          intervencoesSelecionadas: [...intervencoes, ...acoes.filter(texto => !intervencoes.some(item => item.tipo === 'autoral' && item.acaoPrescrita === texto)).map(texto => ({ acaoPrescrita: texto, tipo: 'autoral' as const, ...(justificativaIntervencaoUnica ? { justificativaIntervencaoUnica } : {}) }))],
         };
       }
       return diag;
@@ -143,6 +144,20 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     setDiagnosticosPrivorizados(updated);
     setNovaIntervencao(prev => ({ ...prev, [diagnosticoId]: '' }));
     salvarPlanejamento(updated);
+  };
+
+  const handleAdicionarIntervencaoAutoral = (diagnosticoId: string) => {
+    const texto = novaIntervencao[diagnosticoId]?.trim();
+    if (!texto) return;
+    const sinal = sinalizarIntervencoesMultiplas(texto);
+    if (sinal.nivel === 'nenhuma') { adicionarAcoesAutorais(diagnosticoId, [texto]); return; }
+    setRevisaoId(diagnosticoId); setAcoesCandidatas(sinal.candidatas); setJustificativaUnica(''); setErroRevisao('');
+  };
+
+  const confirmarSeparacao = () => {
+    if (!revisaoId) return;
+    try { adicionarAcoesAutorais(revisaoId, revisarSeparacao(acoesCandidatas)); setRevisaoId(null); }
+    catch (erro) { setErroRevisao(erro instanceof Error ? erro.message : 'Revise as intervenções.'); }
   };
 
   const handleRemoverIntervencaoAutoral = (diagnosticoId: string, acaoPrescrita: string) => {
@@ -537,6 +552,19 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      <Dialog open={revisaoId !== null} onOpenChange={aberto => { if (!aberto) setRevisaoId(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Possíveis intervenções múltiplas</DialogTitle></DialogHeader>
+          <p className="text-sm">O texto parece conter mais de uma intervenção. Revise cada ação para facilitar executores, implementação e acompanhamento.</p>
+          <p className="rounded bg-muted p-3 text-sm whitespace-pre-wrap">{revisaoId && novaIntervencao[revisaoId]}</p>
+          {acoesCandidatas.map((acao, index) => <div key={index} className="flex gap-2"><Textarea aria-label={`Intervenção ${index + 1}`} value={acao} onChange={e => setAcoesCandidatas(atuais => atuais.map((item, i) => i === index ? e.target.value : item))} /><Button variant="outline" aria-label={`Remover intervenção ${index + 1}`} onClick={() => setAcoesCandidatas(atuais => atuais.filter((_, i) => i !== index))}><Trash2 className="h-4 w-4" /></Button></div>)}
+          <Button variant="outline" onClick={() => setAcoesCandidatas(atuais => [...atuais, ''])}>Acrescentar intervenção</Button>
+          {erroRevisao && <p role="alert" className="text-red-700">{erroRevisao}</p>}
+          <div className="flex flex-wrap gap-2"><Button onClick={confirmarSeparacao}>Confirmar intervenções</Button>
+            {revisaoId && sinalizarIntervencoesMultiplas(novaIntervencao[revisaoId] || '').nivel === 'possivel' && <div className="w-full space-y-2"><Textarea aria-label="Justificativa para intervenção única" placeholder="Justifique brevemente por que a ação deve permanecer integrada" value={justificativaUnica} onChange={e => setJustificativaUnica(e.target.value)} /><Button variant="outline" disabled={justificativaUnica.trim().length < 10} onClick={() => { adicionarAcoesAutorais(revisaoId, [(novaIntervencao[revisaoId] || '').trim()], justificativaUnica.trim()); setRevisaoId(null); }}>Manter como intervenção única</Button></div>}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -13,9 +13,12 @@ import { Button } from '@/components/ui/button';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import ExportarCatalogoModal from '@/components/gestao-conteudos/ExportarCatalogoModal';
 import SugestoesIntervencoes from '@/components/gestao-conteudos/SugestoesIntervencoes';
+import { useSearchParams } from 'react-router-dom';
 
 const GestaoConteudos = () => {
   const [exportarAberto, setExportarAberto] = useState(false);
+  const [parametros, definirParametros] = useSearchParams();
+  const aba = parametros.get('aba') || 'exame-fisico';
   return (
     <AuthenticatedLayout fullWidth>
       <div className="space-y-6">
@@ -49,7 +52,7 @@ const GestaoConteudos = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <Tabs defaultValue="exame-fisico" className="w-full">
+            <Tabs value={aba} onValueChange={valor => { const novos = new URLSearchParams(parametros); novos.set('aba', valor); definirParametros(novos); }} className="w-full">
               <TabsList className="w-full justify-start rounded-none border-b bg-gray-50/50 p-0 h-auto flex flex-wrap">
                 <TabsTrigger 
                   value="exame-fisico" 

@@ -108,6 +108,57 @@ test('sugestões legadas e novas preservam autoria e isolamento', async () => {
   await assertFails(setDoc(doc(autor, 'intervencoesAutorais', 'nova'), { ...legado }));
 });
 
+test('desmembramento é atômico, auditado e restrito a gestor; original não pode ser decidido duas vezes', async () => {
+  await seedProfile('autor');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  await seedProfile('revogado', 'Revogado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  const revogado = environment.authenticatedContext('revogado').firestore();
+  const original = { textoIntervencao: 'Avaliar adesão e orientar retorno', tituloResultadoVinculado: 'Adesão', autorId: 'autor', autorNome: 'Autor', dataCriacao: serverTimestamp(), identificadorSugestao: 'origem', status: 'aguardando' };
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'origem'), original));
+  const montar = (db: typeof gestor, auditoria: string) => {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'intervencoesAutorais', 'origem'), { divisao: { grupoId: 'origem', derivadasIds: ['origem-d1', 'origem-d2'], revisorId: 'gestor', revisorNome: 'Gestor', dataHora: serverTimestamp() }, ultimaDecisaoId: auditoria });
+    for (const [index, textoIntervencao] of ['Avaliar adesão', 'Orientar retorno'].entries()) {
+      batch.set(doc(db, 'intervencoesAutorais', `origem-d${index + 1}`), {
+        textoIntervencao, tituloResultadoVinculado: 'Adesão', tituloResultadoOrigem: '', diagnosticoOrigemId: '', tituloDiagnosticoOrigem: '',
+        autorId: 'autor', autorNome: 'Autor', status: 'aguardando', tipoRegistro: 'derivada', dataCriacao: serverTimestamp(),
+        derivacao: { originalId: 'origem', grupoId: 'origem', ordem: index + 1, revisorId: 'gestor', dataHora: serverTimestamp() },
+      });
+    }
+    batch.set(doc(db, 'decisoesIntervencoes', auditoria), { sugestaoId: 'origem', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'desmembrar', avaliadorId: 'gestor', destinos: [], justificativa: '', dataHora: serverTimestamp() });
+    return batch.commit();
+  };
+  await assertFails(montar(autor, 'ilegal'));
+  await assertFails(montar(revogado, 'revogado'));
+  await assertSucceeds(montar(gestor, 'auditoria-1'));
+  assert.equal((await getDoc(doc(gestor, 'intervencoesAutorais', 'origem'))).data()?.textoIntervencao, original.textoIntervencao);
+  assert.equal((await getDoc(doc(gestor, 'intervencoesAutorais', 'origem-d1'))).data()?.status, 'aguardando');
+  await assertFails(montar(gestor, 'auditoria-2'));
+  await assertFails(updateDoc(doc(gestor, 'intervencoesAutorais', 'origem'), { status: 'rejeitada' }));
+  await assertFails(updateDoc(doc(autor, 'intervencoesAutorais', 'origem-d1'), { textoIntervencao: 'Alterado' }));
+});
+
+test('avaliação técnica parcial exige gestor, versão, timestamp e auditoria imutável', async () => {
+  await seedProfile('autor');
+  await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor').firestore();
+  const gestor = environment.authenticatedContext('gestor').firestore();
+  await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', 'avaliar'), { textoIntervencao: 'Orientar retorno', tituloResultadoVinculado: 'Adesão', autorId: 'autor', autorNome: 'Autor', dataCriacao: serverTimestamp(), identificadorSugestao: 'avaliar', status: 'aguardando' }));
+  const avaliacao = (db: typeof gestor, id: string, versao = 'experimental-v1') => {
+    const batch = writeBatch(db);
+    batch.update(doc(db, 'intervencoesAutorais', 'avaliar'), { avaliacaoQualidade: { atomicidadeStatus: 'unica', avaliadorId: 'gestor', avaliadoEm: serverTimestamp(), versaoCriterios: versao }, ultimaDecisaoId: id });
+    batch.set(doc(db, 'decisoesIntervencoes', id), { sugestaoId: 'avaliar', statusAnterior: 'aguardando', statusNovo: 'aguardando', tipo: 'avaliar', avaliadorId: 'gestor', destinos: [], justificativa: '', dataHora: serverTimestamp() });
+    return batch.commit();
+  };
+  await assertFails(avaliacao(autor, 'autor-1'));
+  await assertFails(avaliacao(gestor, 'versao-invalida', 'inventada'));
+  await assertSucceeds(avaliacao(gestor, 'avaliacao-1'));
+  assert.equal((await getDoc(doc(gestor, 'intervencoesAutorais', 'avaliar'))).data()?.avaliacaoQualidade.atomicidadeStatus, 'unica');
+  await assertFails(updateDoc(doc(gestor, 'decisoesIntervencoes', 'avaliacao-1'), { tipo: 'rejeitar' }));
+});
+
 test('gestor registra preparação e rejeição auditadas; revogado e enfermeiro não decidem', async () => {
   await seedProfile('autor');
   await seedProfile('gestor', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
