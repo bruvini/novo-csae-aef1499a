@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { LogOut, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import { cn } from '@/lib/utils';
+import PerfilUsuarioDialog from '@/components/PerfilUsuarioDialog';
 
 const Header = () => {
   const { sessionData, logout } = useAuth();
+  const [perfilAberto, setPerfilAberto] = useState(false);
   const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
 
   const navigationItems = [
@@ -56,14 +58,16 @@ const Header = () => {
         {/* User Info and Logout */}
         <div className="flex items-center space-x-2 sm:space-x-4">
           {sessionData && (
-            <div className="hidden md:flex items-center space-x-2 text-sm text-gray-700 bg-csae-green-50/50 px-3 py-1.5 rounded-full border border-csae-green-100/50">
+            <button type="button" onClick={() => setPerfilAberto(true)}
+              aria-label="Abrir meus dados cadastrais" title="Meus dados"
+              className="flex items-center space-x-2 rounded-full border border-csae-green-100/50 bg-csae-green-50/50 px-2 py-1.5 text-sm text-gray-700 transition-colors hover:bg-csae-green-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600 sm:px-3">
               <div className="w-6 h-6 bg-csae-green-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
                 {sessionData.nomeCompleto.charAt(0).toUpperCase()}
               </div>
-              <span className="font-medium whitespace-nowrap">
+              <span className="hidden font-medium whitespace-nowrap sm:inline">
                 {sessionData.nomeCompleto.split(' ')[0]}
               </span>
-            </div>
+            </button>
           )}
           <Button
             onClick={logout}
@@ -111,6 +115,7 @@ const Header = () => {
           })}
         </div>
       </nav>
+      {sessionData && <PerfilUsuarioDialog open={perfilAberto} onOpenChange={setPerfilAberto} />}
     </header>
   );
 };

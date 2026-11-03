@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { BookOpen, CalendarDays, Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, CalendarDays, Heart, Image as ImageIcon, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
@@ -16,7 +16,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  criarEvento, dataParaInput, editarEvento, excluirEvento, formatarDataEvento,
+  criarEvento, curtirEvento, dataParaInput, editarEvento, excluirEvento, formatarDataEvento,
   listarEventos, validarEvento, type TimelineEvent, type TimelineEventInput,
 } from "@/services/bancodados/timelineDB";
 
@@ -52,7 +52,10 @@ const Timeline = () => {
     }
   }, []);
 
-  useEffect(() => { void atualizar(); }, [atualizar]);
+  useEffect(() => {
+    if (user && sessionData) void atualizar();
+    else { setEvents([]); setCarregando(false); }
+  }, [atualizar, user, sessionData]);
 
   const abrirNovo = () => {
     setEditando(null);
@@ -63,7 +66,7 @@ const Timeline = () => {
   const abrirEdicao = (evento: TimelineEvent) => {
     setEditando(evento);
     setForm({
-      dataEvento: dataParaInput(evento.dataEvento),
+      dataEvento: dataParaInput(evento),
       titulo: evento.titulo || "",
       subtitulo: evento.subtitulo || "",
       textoRedacao: evento.textoRedacao || "",
@@ -111,6 +114,16 @@ const Timeline = () => {
     }
   };
 
+  const curtir = async (evento: TimelineEvent) => {
+    if (!user || !sessionData) return;
+    try {
+      await curtirEvento(evento.id, user.uid, evento.curtidasPor.includes(user.uid));
+      await atualizar();
+    } catch {
+      toast.error("Não foi possível registrar sua curtida.");
+    }
+  };
+
   const alterar = (campo: keyof TimelineEventInput, valor: string) =>
     setForm((atual) => ({ ...atual, [campo]: valor }));
 
@@ -144,7 +157,12 @@ const Timeline = () => {
             )}
           </div>
 
-          {carregando ? (
+          {!user || !sessionData ? (
+            <div className="rounded-2xl border bg-white p-10 text-center text-gray-600">
+              Para conhecer a história do Portal CSAE, entre com sua conta autorizada.
+              <div className="mt-4"><Link className="font-semibold text-csae-green-700 underline" to="/login">Entrar</Link></div>
+            </div>
+          ) : carregando ? (
             <p role="status" className="py-16 text-center text-gray-600">Carregando os acontecimentos...</p>
           ) : falha ? (
             <div role="alert" className="rounded-2xl border border-red-100 bg-white p-6 text-center text-red-800">
@@ -182,15 +200,23 @@ const Timeline = () => {
                       )}
                       <div className="space-y-3 p-5 sm:p-6">
                         <time className="inline-flex items-center gap-2 rounded-full bg-csae-green-50 px-3 py-1 text-xs font-semibold text-csae-green-800">
-                          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> {formatarDataEvento(evento.dataEvento)}
+                          <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> {formatarDataEvento(evento)}
                         </time>
                         <h2 className="text-xl font-bold text-csae-green-900">{evento.titulo}</h2>
-                        <p className="font-medium text-gray-600">{evento.subtitulo}</p>
+                        {evento.subtitulo && <p className="font-medium text-gray-600">{evento.subtitulo}</p>}
                         <div className="space-y-3 text-sm leading-relaxed text-gray-700">
                           {(evento.textoRedacao || "").split(/\n\s*\n|\n/).filter(Boolean).map((paragrafo, i) => <p key={i}>{paragrafo}</p>)}
                         </div>
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-4">
+                          <Button type="button" variant="ghost" size="sm" onClick={() => void curtir(evento)}
+                            aria-label={evento.curtidasPor.includes(user.uid) ? "Remover minha curtida" : "Curtir acontecimento"}
+                            aria-pressed={evento.curtidasPor.includes(user.uid)}
+                            className={evento.curtidasPor.includes(user.uid) ? "text-red-700" : "text-gray-600"}>
+                            <Heart className="mr-1 h-4 w-4" aria-hidden="true" />
+                            {evento.curtidasPor.length} curtidas
+                          </Button>
                         {isAdmin && (
-                          <div className="flex gap-2 border-t pt-4">
+                          <div className="flex gap-2">
                             <Button type="button" size="sm" variant="outline" onClick={() => abrirEdicao(evento)}>
                               <Pencil className="mr-1 h-4 w-4" /> Editar
                             </Button>
@@ -199,6 +225,7 @@ const Timeline = () => {
                             </Button>
                           </div>
                         )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -223,8 +250,8 @@ const Timeline = () => {
           <form onSubmit={(event) => void salvar(event)} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="timeline-data">Data do acontecimento</Label>
-                <Input id="timeline-data" type="date" required value={form.dataEvento} onChange={(e) => alterar("dataEvento", e.target.value)} />
+                <Label htmlFor="timeline-data">Mês e ano do acontecimento</Label>
+                <Input id="timeline-data" type="month" required value={form.dataEvento} onChange={(e) => alterar("dataEvento", e.target.value)} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="timeline-titulo">Título</Label>
@@ -233,7 +260,7 @@ const Timeline = () => {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="timeline-subtitulo">Subtítulo</Label>
-              <Input id="timeline-subtitulo" required maxLength={240} value={form.subtitulo} onChange={(e) => alterar("subtitulo", e.target.value)} />
+              <Input id="timeline-subtitulo" maxLength={240} value={form.subtitulo} onChange={(e) => alterar("subtitulo", e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="timeline-texto">Texto da história</Label>

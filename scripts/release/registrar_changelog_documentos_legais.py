@@ -30,6 +30,15 @@ ENTRIES = (
         "Os modelos iniciais de Termos de Uso e Política de Privacidade foram atualizados para "
         "facilitar sua revisão pela equipe, sem publicação automática.",
     ),
+    (
+        "historias-portal-perfil-publicacao-20261103",
+        "História do Portal recuperada, perfil acessível e pendências jurídicas detalhadas",
+        "Nossa História passou a ler a coleção original historiasPortal, com meses de referência, "
+        "autoria e curtidas preservadas. A leitura agora exige conta aprovada porque os registros "
+        "contêm UIDs de usuários; administradores mantêm a edição. O cabeçalho oferece consulta "
+        "dos dados cadastrais e atualização segura do endereço. Documentos Legais passaram a "
+        "identificar o trecho exato que impede a publicação da minuta.",
+    ),
 )
 
 def main() -> None:
