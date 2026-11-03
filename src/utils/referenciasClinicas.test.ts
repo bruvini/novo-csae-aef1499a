@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, familiaPressaoArterial, contextoRegistradoParaTexto, identidadeParametroVital, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextoDaReferencia, contextosDaReferencia, contextosAplicaveisAoPaciente, familiaPressaoArterial, contextoRegistradoParaTexto, identidadeParametroVital, idadeCompativel, interpretarRegra, normalizarNomeClinico } from './referenciasClinicas';
 
 const pessoa = { dataNascimento: new Date(1995, 3, 10), sexo: 'Feminino', dataAvaliacao: new Date(2026, 9, 11) };
 const base = { idadeUnidade: 'anos' as const, criterioSexo: 'Ambos', nomeAlteracao: 'Normal', valorMinimo: 60, valorMaximo: 100 };
@@ -78,4 +78,81 @@ test('resultado informativo e valor limítrofe não geram alerta nem NHB automá
   assert.equal(classificarReferenciaQualitativa('BI-RADS 3 — provavelmente benigno', [categoria]).status, 'neutro');
   const suspeito = { resultadoClassificatorio: 'BI-RADS 4 — suspeito', interpretacaoClinica: 'alterado' as const, nomeAlteracao: 'Achado suspeito — encaminhar', subconjuntoNHBVinculado: 'Terapêutica e de Prevenção' };
   assert.equal(classificarReferenciaQualitativa('BI-RADS 4 — suspeito', [suspeito]).nhb, 'Terapêutica e de Prevenção');
+});
+
+test('faixa geral cadastrada classifica temperatura 38 °C e não altera a referência', () => {
+  const referencias = [
+    { ...base, valorMinimo: 35.5, valorMaximo: 37.9, contextoClinico: 'geral', nomeAlteracao: 'Normalidade', interpretacaoClinica: 'normal' as const },
+    { ...base, valorMinimo: 38, valorMaximo: null, contextoClinico: 'geral', nomeAlteracao: 'Febre', interpretacaoClinica: 'alterado' as const, subconjuntoNHBVinculado: 'Regulação térmica' },
+  ];
+  const antes = structuredClone(referencias);
+  const resultado = classificarReferenciaNumerica(38, referencias, pessoa);
+  assert.equal(resultado.status, 'alterado');
+  assert.equal(resultado.nomeAlteracao, 'Febre');
+  assert.deepEqual(referencias, antes);
+});
+
+test('38 °C sem faixa geral não usa faixa exclusiva de dengue', () => {
+  const dengue = { ...base, valorMinimo: 38, valorMaximo: null, criterioCondicao: 'Investigação de dengue', nomeAlteracao: 'Febre', subconjuntoNHBVinculado: 'Regulação térmica' };
+  const semContexto = classificarReferenciaNumerica(38, [dengue], pessoa);
+  const geral = classificarReferenciaNumerica(38, [dengue], pessoa, 'geral');
+  const contextoEspecifico = classificarReferenciaNumerica(38, [dengue], pessoa, 'dengue');
+  assert.equal(contextoDaReferencia(dengue), 'dengue');
+  assert.equal(semContexto.codigoMotivo, 'contexto-nao-selecionado');
+  assert.equal(geral.codigoMotivo, 'contexto-sem-referencia');
+  assert.equal(contextoEspecifico.status, 'alterado');
+});
+
+test('referência legada de febre conserva os dois contextos que declara no protocolo', () => {
+  const legado = {
+    ...base,
+    valorMinimo: 38,
+    valorMaximo: null,
+    criterioCondicao: 'Sinal de gravidade em hipoglicemia/desidratação (P1); compõe caso suspeito de dengue (P2)',
+    nomeAlteracao: 'Febre',
+    subconjuntoNHBVinculado: 'Regulação térmica',
+  };
+  assert.deepEqual(contextosDaReferencia(legado), ['hipoglicemia_desidratacao_grave', 'dengue']);
+  assert.equal(classificarReferenciaNumerica(38, [legado], pessoa).codigoMotivo, 'contexto-nao-selecionado');
+  assert.equal(classificarReferenciaNumerica(38, [legado], pessoa, 'hipoglicemia_desidratacao_grave').status, 'alterado');
+  assert.equal(classificarReferenciaNumerica(38, [legado], pessoa, 'dengue').status, 'alterado');
+  assert.equal(classificarReferenciaNumerica(38, [legado], pessoa, 'geral').codigoMotivo, 'contexto-sem-referencia');
+});
+
+test('avaliação geral única é automática, mas contexto específico único exige seleção explícita', () => {
+  const geral = { ...base, contextoClinico: 'geral', interpretacaoClinica: 'normal' as const };
+  const especial = { ...base, contextoClinico: 'dengue', interpretacaoClinica: 'alterado' as const, nomeAlteracao: 'Febre' };
+  assert.equal(classificarReferenciaNumerica(80, [geral], pessoa).status, 'normal');
+  assert.equal(classificarReferenciaNumerica(80, [especial], pessoa).codigoMotivo, 'contexto-nao-selecionado');
+  assert.deepEqual(contextosAplicaveisAoPaciente([geral, especial], pessoa), ['geral', 'dengue']);
+});
+
+test('contextos disponíveis respeitam idade e sexo e não aplicam regra de outro perfil', () => {
+  const referencias = [
+    { ...base, contextoClinico: 'geral' },
+    { ...base, criterioSexo: 'Feminino', contextoClinico: 'gestante' },
+    { ...base, idadeMinima: 0, idadeMaxima: 10, idadeUnidade: 'anos' as const, contextoClinico: 'pediatrico' },
+  ];
+  assert.deepEqual(contextosAplicaveisAoPaciente(referencias, pessoa), ['geral', 'gestante']);
+  assert.equal(classificarReferenciaNumerica(80, referencias, pessoa, 'pediatrico').codigoMotivo, 'contexto-sem-referencia');
+});
+
+test('contextos de glicemia em jejum, pós-prandial e gestação continuam independentes', () => {
+  const referencias = [
+    { ...base, valorMinimo: 70, valorMaximo: 99, criterioCondicao: 'Jejum — Diabetes', nomeAlteracao: 'Dentro da meta' },
+    { ...base, valorMinimo: 0, valorMaximo: 180, criterioCondicao: '2h após refeição — Diabetes', nomeAlteracao: 'Dentro da meta' },
+    { ...base, valorMinimo: 0, valorMaximo: 91, criterioCondicao: 'Gestante — jejum', nomeAlteracao: 'Normal gestacional' },
+  ];
+  assert.equal(classificarReferenciaNumerica(95, referencias, pessoa, 'diabetes_jejum').status, 'normal');
+  assert.equal(classificarReferenciaNumerica(95, referencias, pessoa, 'diabetes_pos_2h').status, 'normal');
+  assert.equal(classificarReferenciaNumerica(95, referencias, pessoa, 'gestante_jejum').codigoMotivo, 'fora-das-faixas');
+  assert.equal(classificarReferenciaNumerica(95, referencias, pessoa).codigoMotivo, 'contexto-nao-selecionado');
+});
+
+test('distingue valor fora de faixa, falta de contexto e referências conflitantes', () => {
+  const normal = { ...base, valorMinimo: 35.5, valorMaximo: 37.9, contextoClinico: 'geral', interpretacaoClinica: 'normal' as const };
+  const alterada = { ...base, valorMinimo: 37, valorMaximo: 39, contextoClinico: 'geral', nomeAlteracao: 'Febre', interpretacaoClinica: 'alterado' as const };
+  assert.equal(classificarReferenciaNumerica(40, [normal], pessoa, 'geral').codigoMotivo, 'fora-das-faixas');
+  assert.equal(classificarReferenciaNumerica(37.5, [normal, alterada], pessoa, 'geral').codigoMotivo, 'referencias-conflitantes');
+  assert.equal(classificarReferenciaNumerica(37.5, [normal, alterada], pessoa).codigoMotivo, 'referencias-conflitantes');
 });

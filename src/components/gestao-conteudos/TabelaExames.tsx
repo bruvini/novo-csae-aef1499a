@@ -569,6 +569,7 @@ const TabelaExames = () => {
                                     {CONTEXTOS_CLINICOS.map(ctx => <SelectItem key={ctx.id} value={ctx.id}>{ctx.titulo}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
+                                <p className="mt-1 text-[11px] text-muted-foreground">Use “Avaliação geral” somente para uma faixa aprovada para uso geral. Faixas de protocolos específicos devem manter seu próprio contexto.</p>
                               </div>
                             )}
                             <div>

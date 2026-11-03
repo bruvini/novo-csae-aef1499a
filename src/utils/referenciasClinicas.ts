@@ -14,6 +14,7 @@ export const CONTEXTOS_CLINICOS = [
   { id: 'pos_2h', titulo: '2h após refeição' },
   { id: 'aleatoria', titulo: 'Aferição aleatória' },
   { id: 'dengue', titulo: 'Investigação de dengue' },
+  { id: 'hipoglicemia_desidratacao_grave', titulo: 'Hipoglicemia ou desidratação grave' },
   { id: 'atleta', titulo: 'Atleta em repouso' },
   { id: 'sem_anticoagulante', titulo: 'Coagulação — sem anticoagulante' },
   { id: 'hiv_monitoramento', titulo: 'HIV — acompanhamento de TARV' },
@@ -28,6 +29,10 @@ export function contextoRegistradoParaTexto(contextos: Record<string, string> | 
   // Contextos antigos desconhecidos ainda são preservados na reprodução do registro.
   const rotulo = reconhecido?.titulo || codigo;
   return ' [Contexto clínico informado: ' + rotulo + ']';
+}
+
+export function tituloContextoClinico(contexto: string): string {
+  return CONTEXTOS_CLINICOS.find(item => item.id === contexto)?.titulo || contexto;
 }
 
 export interface RegraReferenciaClinica {
@@ -48,6 +53,7 @@ export interface ClassificacaoReferencia {
   nomeAlteracao?: string;
   nhb?: string;
   motivo?: string;
+  codigoMotivo?: 'valor-invalido' | 'sem-referencia-aplicavel' | 'contexto-nao-selecionado' | 'contexto-sem-referencia' | 'fora-das-faixas' | 'referencias-conflitantes' | 'interpretacao-nao-definida';
 }
 export interface PerfilReferencia {
   dataNascimento: Date;
@@ -99,30 +105,44 @@ export function sexoCompativel(ref: RegraReferenciaClinica, sexo: string): boole
 
 /** Apenas detecta alguns contextos legados explícitos; nunca infere gestação do sexo. */
 export function contextoDaReferencia(ref: RegraReferenciaClinica): string {
-  if (ref.contextoClinico?.trim()) return ref.contextoClinico;
+  return contextosDaReferencia(ref)[0] || 'geral';
+}
+
+export function contextosDaReferencia(ref: RegraReferenciaClinica): string[] {
+  if (ref.contextoClinico?.trim()) return [ref.contextoClinico.trim()];
   const text = normalizarNomeClinico(ref.criterioCondicao || '');
   const excluiGestacao = /exceto gestant|nao gestant|excluindo gestant/.test(text);
+  const encontrados: string[] = [];
   if (!excluiGestacao && /gestant|gravidez|dmg/.test(text)) {
-    if (/jejum/.test(text)) return 'gestante_jejum';
-    if (/\b1h\b|1 hora/.test(text)) return 'gestante_pos_1h';
-    if (/\b2h\b|2 horas/.test(text)) return 'gestante_pos_2h';
-    return 'gestante';
+    if (/jejum/.test(text)) encontrados.push('gestante_jejum');
+    else if (/\b1h\b|1 hora/.test(text)) encontrados.push('gestante_pos_1h');
+    else if (/\b2h\b|2 horas/.test(text)) encontrados.push('gestante_pos_2h');
+    else encontrados.push('gestante');
   }
-  if (/\bdengue\b/.test(text)) return 'dengue';
-  if (/\batleta\b/.test(text)) return 'atleta';
+  if (/hipoglicemia|desidratacao grave/.test(text)) encontrados.push('hipoglicemia_desidratacao_grave');
+  if (/\bdengue\b/.test(text)) encontrados.push('dengue');
+  if (/\batleta\b/.test(text)) encontrados.push('atleta');
   if (/diabetes|\bdm\b/.test(text)) {
-    if (/jejum/.test(text)) return 'diabetes_jejum';
-    if (/\b2h\b|2 horas/.test(text)) return 'diabetes_pos_2h';
+    if (/jejum/.test(text)) encontrados.push('diabetes_jejum');
+    else if (/\b2h\b|2 horas/.test(text)) encontrados.push('diabetes_pos_2h');
   }
-  if (/jejum/.test(text)) return 'jejum';
-  if (/\b1h\b|1 hora/.test(text)) return 'pos_1h';
-  if (/\b2h\b|2 horas/.test(text)) return 'pos_2h';
-  if (/aleator/.test(text)) return 'aleatoria';
-  return 'geral';
+  if (!encontrados.some(ctx => ctx === 'gestante_jejum' || ctx === 'diabetes_jejum') && /jejum/.test(text)) encontrados.push('jejum');
+  if (/\b1h\b|1 hora/.test(text) && !encontrados.includes('gestante_pos_1h')) encontrados.push('pos_1h');
+  if (/\b2h\b|2 horas/.test(text) && !encontrados.some(ctx => ctx === 'gestante_pos_2h' || ctx === 'diabetes_pos_2h')) encontrados.push('pos_2h');
+  if (/aleator/.test(text)) encontrados.push('aleatoria');
+  return encontrados.length ? [...new Set(encontrados)] : ['geral'];
 }
 
 export function contextosDoParametro(refs: readonly RegraReferenciaClinica[]): string[] {
-  return [...new Set(refs.map(contextoDaReferencia))].filter(Boolean);
+  return [...new Set(refs.flatMap(contextosDaReferencia))].filter(Boolean);
+}
+
+export function contextosAplicaveisAoPaciente(
+  refs: readonly RegraReferenciaClinica[], pessoa: PerfilReferencia,
+): string[] {
+  return contextosDoParametro(refs.filter(ref =>
+    idadeCompativel(ref, pessoa.dataNascimento, pessoa.dataAvaliacao)
+    && sexoCompativel(ref, pessoa.sexo)));
 }
 
 export function interpretarRegra(ref: RegraReferenciaClinica): InterpretacaoClinica {
@@ -148,22 +168,24 @@ export function classificarReferenciaNumerica(
 ): ClassificacaoReferencia {
   if (valor === '' || valor === undefined || valor === null) return { status: 'neutro' };
   const numero = Number(valor);
-  if (!Number.isFinite(numero) || numero < 0) return { status: 'neutro', motivo: 'Valor inválido.' };
-  const candidatas = referencias.filter(r =>
+  if (!Number.isFinite(numero) || numero < 0) return { status: 'neutro', codigoMotivo: 'valor-invalido', motivo: 'Valor inválido.' };
+  const aplicaveis = referencias.filter(r =>
     idadeCompativel(r, pessoa.dataNascimento, pessoa.dataAvaliacao)
-    && sexoCompativel(r, pessoa.sexo) && noIntervalo(r, numero));
-  if (!candidatas.length) return { status: 'neutro', motivo: 'Nenhuma referência aprovada corresponde a este valor, idade e sexo.' };
-  const contextos = [...new Set(candidatas.map(contextoDaReferencia))];
-  if (!contexto && contextos.some(c => c !== 'geral')) {
-    return { status: 'neutro', motivo: 'Informe o contexto clínico para interpretar este resultado.' };
+    && sexoCompativel(r, pessoa.sexo));
+  if (!aplicaveis.length) return { status: 'neutro', codigoMotivo: 'sem-referencia-aplicavel', motivo: 'Nenhuma referência aprovada está cadastrada para este parâmetro, idade e sexo.' };
+  const contextos = contextosDoParametro(aplicaveis);
+  if (!contexto && !(contextos.length === 1 && contextos[0] === 'geral')) {
+    return { status: 'neutro', codigoMotivo: 'contexto-nao-selecionado', motivo: 'Contexto clínico não selecionado. Escolha um dos contextos disponíveis para interpretar este resultado.' };
   }
-  let selecionadas = candidatas.filter(r => contextoDaReferencia(r) === (contexto || 'geral'));
-  if (!selecionadas.length && contexto && contexto !== 'geral') {
-    if (!referencias.some(r => contextoDaReferencia(r) === contexto)) {
-      selecionadas = candidatas.filter(r => contextoDaReferencia(r) === 'geral');
-    }
+  const contextoAplicado = contexto || 'geral';
+  const referenciasContexto = aplicaveis.filter(r => contextosDaReferencia(r).includes(contextoAplicado));
+  if (!referenciasContexto.length) {
+    return { status: 'neutro', codigoMotivo: 'contexto-sem-referencia', motivo: `Contexto selecionado sem referência cadastrada: ${tituloContextoClinico(contextoAplicado)} não possui faixa aprovada para este parâmetro, idade e sexo.` };
   }
-  if (!selecionadas.length) return { status: 'neutro', motivo: 'Não há referência para o contexto informado.' };
+  const selecionadas = referenciasContexto.filter(r => noIntervalo(r, numero));
+  if (!selecionadas.length) {
+    return { status: 'neutro', codigoMotivo: 'fora-das-faixas', motivo: `Valor fora das faixas cadastradas para ${tituloContextoClinico(contextoAplicado)}. O resultado não foi classificado.` };
+  }
   const resultados = selecionadas.map(r => ({
     regra: r, interpretacao: interpretarRegra(r),
     nome: normalizarNomeClinico(r.nomeAlteracao || ''),
@@ -172,17 +194,18 @@ export function classificarReferenciaNumerica(
   const assinaturas = new Set(resultados.map(r =>
     r.interpretacao === 'normal' ? 'normal' : [r.interpretacao, r.nome, r.nhb].join('|')));
   if (assinaturas.size > 1) {
-    return { status: 'neutro', motivo: 'Referências sobrepostas com interpretações diferentes. Solicite revisão à Gestão de Conteúdos.' };
+    return { status: 'neutro', codigoMotivo: 'referencias-conflitantes', motivo: 'Referências sobrepostas com interpretações diferentes. Solicite revisão à Gestão de Conteúdos.' };
   }
   const escolhido = resultados[0];
   // Nunca classificar como normal se há outra faixa compatível sinalizando
   // alteração: gestação/jejum e limites de urgência podem se sobrepor.
-  if (escolhido.interpretacao === 'normal' && candidatas.some(r =>
-    !selecionadas.includes(r) && interpretarRegra(r) === 'alterado')) {
-    return { status: 'neutro', motivo: 'Há uma faixa de alerta também aplicável. A classificação exige revisão clínica.' };
+  if (escolhido.interpretacao === 'normal' && aplicaveis.some(r =>
+    noIntervalo(r, numero) &&
+    !selecionadas.includes(r) && !contextosDaReferencia(r).includes(contextoAplicado) && interpretarRegra(r) === 'alterado')) {
+    return { status: 'neutro', codigoMotivo: 'referencias-conflitantes', motivo: 'Há uma faixa de alerta também aplicável. A classificação exige revisão clínica.' };
   }
   if (escolhido.interpretacao === 'indeterminado' || escolhido.interpretacao === 'informativo') {
-    return { status: 'neutro', motivo: escolhido.interpretacao === 'informativo' ? 'Resultado informativo: acompanhar a evolução e o contexto clínico, sem inferir diagnóstico.' : 'Interpretação não definida na Gestão de Conteúdos.' };
+    return { status: 'neutro', codigoMotivo: 'interpretacao-nao-definida', motivo: escolhido.interpretacao === 'informativo' ? 'Resultado informativo: acompanhar a evolução e o contexto clínico, sem inferir diagnóstico.' : 'Interpretação não definida na Gestão de Conteúdos.' };
   }
   if (escolhido.interpretacao === 'normal') return { status: 'normal' };
   return { status: 'alterado', nomeAlteracao: escolhido.regra.nomeAlteracao || 'Alteração',
