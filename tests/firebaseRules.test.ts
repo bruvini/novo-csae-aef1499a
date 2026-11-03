@@ -8,6 +8,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
   arrayUnion,
   collection,
   deleteDoc,
@@ -731,4 +732,77 @@ test('linha do tempo mantém compatibilidade com eventos legados sem campos de a
   await assertSucceeds(updateDoc(doc(admin, 'timelineEvents', 'legado'), {
     subtitulo: 'Marco histórico', updatedAt: serverTimestamp(), atualizadoPor: 'admin-timeline',
   }));
+});
+
+test('historiasPortal permite ler registros antigos somente a usuários autorizados', async () => {
+  await seedProfile('admin-historia', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('enfermeira-historia');
+  const admin = environment.authenticatedContext('admin-historia').firestore();
+  const profissional = environment.authenticatedContext('enfermeira-historia').firestore();
+  const visitante = environment.unauthenticatedContext().firestore();
+  await environment.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'historiasPortal', 'marco-2022'), {
+      titulo: 'Onde tudo começou: uma ideia, um desafio e a vontade de inovar',
+      descricao: 'O Portal CSAE começou em agosto de 2022 com o apoio da comissão.',
+      dataOrdenacao: '2022-08', dataReferencia: '08/2022',
+      criadoEm: new Date('2026-10-26T21:25:00Z'),
+      atualizadoEm: new Date('2026-10-26T21:25:00Z'),
+      criadoPorUid: 'admin-historia', atualizadoPorUid: 'admin-historia',
+      curtidasPor: ['admin-historia'],
+    });
+  });
+  const hist = doc(admin, 'historiasPortal', 'marco-2022');
+  await assertSucceeds(getDocs(collection(profissional, 'historiasPortal')));
+  await assertSucceeds(getDoc(doc(profissional, hist.path)));
+  await assertFails(getDoc(doc(visitante, hist.path)));
+  await assertFails(getDocs(collection(visitante, 'historiasPortal')));
+  await assertSucceeds(updateDoc(hist, {
+    titulo: 'Origem do Portal CSAE', atualizadoEm: serverTimestamp(),
+    atualizadoPorUid: 'admin-historia',
+  }));
+  await assertFails(updateDoc(doc(profissional, hist.path), { descricao: 'Conteúdo indevido' }));
+  await assertFails(updateDoc(hist, { criadoPorUid: 'outro', atualizadoEm: serverTimestamp(), atualizadoPorUid: 'admin-historia' }));
+});
+
+test('curtidas do histórico são isoladas por UID e preservam o documento original', async () => {
+  await seedProfile('enfermeira-historia');
+  await seedProfile('outra-enfermeira');
+  const enfermeira = environment.authenticatedContext('enfermeira-historia').firestore();
+  const outro = environment.authenticatedContext('outra-enfermeira').firestore();
+  await environment.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'historiasPortal', 'marco'), {
+      titulo: 'História original', descricao: 'Um acontecimento importante do portal.',
+      dataOrdenacao: '2022-08', dataReferencia: '08/2022',
+      curtidasPor: ['outra-enfermeira'],
+    });
+  });
+  const docRef = doc(enfermeira, 'historiasPortal', 'marco');
+  await assertSucceeds(updateDoc(docRef, { curtidasPor: arrayUnion('enfermeira-historia') }));
+  assert.deepEqual((await getDoc(docRef)).data()?.curtidasPor, ['outra-enfermeira', 'enfermeira-historia']);
+  await assertFails(updateDoc(docRef, { curtidasPor: arrayUnion('falso-uid') }));
+  await assertFails(updateDoc(docRef, { curtidasPor: [] }));
+  await assertFails(updateDoc(docRef, { descricao: 'Alteração indevida', curtidasPor: arrayUnion('enfermeira-historia') }));
+  await assertSucceeds(updateDoc(docRef, { curtidasPor: arrayRemove('enfermeira-historia') }));
+  await assertFails(deleteDoc(doc(outro, 'historiasPortal', 'marco')));
+});
+
+test('somente admin cria histórias e atualização de endereço não altera identidade ou vínculo', async () => {
+  await seedProfile('admin-historia', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('titular-endereco');
+  const admin = environment.authenticatedContext('admin-historia').firestore();
+  const titular = environment.authenticatedContext('titular-endereco').firestore();
+  const novo = {
+    titulo: 'Um novo capítulo do portal',
+    descricao: 'Marco institucional para registrar a história do CSAE.',
+    dataOrdenacao: '2026-11', dataReferencia: '11/2026',
+    subtitulo: '', foto: '', legendaFoto: '', autoriaFoto: '',
+    curtidasPor: [], criadoEm: serverTimestamp(), atualizadoEm: serverTimestamp(),
+    criadoPorUid: 'admin-historia', atualizadoPorUid: 'admin-historia',
+  };
+  await assertFails(setDoc(doc(titular, 'historiasPortal', 'evento-novo'), novo));
+  await assertSucceeds(setDoc(doc(admin, 'historiasPortal', 'evento-novo'), novo));
+  await assertSucceeds(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosPessoais.rua': 'Rua Atualizada' }));
+  await assertFails(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosPessoais.cpf': '11111111111' }));
+  await assertFails(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosProfissionais.atuaSMS': false }));
+  await assertFails(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosProfissionais.matricula': '123' }));
 });

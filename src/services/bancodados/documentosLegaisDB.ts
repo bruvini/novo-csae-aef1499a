@@ -62,13 +62,25 @@ const PENDENCIAS = [
   /deverá constar expressamente/i, /minuta para/i,
   /\[PREENCHER:[^\]]+\]/i,
 ];
-export function pendenciasParaPublicacao(conteudo: ConteudoDocumentoLegal): string[] {
+export interface PendenciaLegalDetalhada {
+  secao: string;
+  trecho: string;
+}
+
+export function localizarPendenciasLegais(conteudo: ConteudoDocumentoLegal): PendenciaLegalDetalhada[] {
   const itens = [conteudo.introducao, ...conteudo.secoes.map((s) => s.corpo)];
   return itens.flatMap((texto, indice) =>
-    PENDENCIAS.some((regex) => regex.test(texto))
-      ? [indice === 0 ? "Introdução" : `Seção ${indice}`]
-      : [],
+    PENDENCIAS.flatMap((regex) => {
+      const ocorrencia = regex.exec(texto);
+      return ocorrencia
+        ? [{ secao: indice === 0 ? "Introdução" : `Seção ${indice}`, trecho: ocorrencia[0] }]
+        : [];
+    }),
   );
+}
+
+export function pendenciasParaPublicacao(conteudo: ConteudoDocumentoLegal): string[] {
+  return [...new Set(localizarPendenciasLegais(conteudo).map((item) => item.secao))];
 }
 
 const revision = (tipo: LegalDocumentKind, id: string, data: Record<string, unknown>): RevisaoDocumentoLegal =>

@@ -171,9 +171,14 @@ service cloud.firestore {
         && request.resource.data.gestorConteudos == resource.data.gestorConteudos
         && request.resource.data.tipoUsuario == resource.data.tipoUsuario
         && request.resource.data.statusAcesso == resource.data.statusAcesso
-        && changed.hasOnly(['dadosPessoais', 'dadosProfissionais', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
-        && (!changed.hasAny(['dadosPessoais']) || validPersonalData(request.resource.data.dadosPessoais))
-        && (!changed.hasAny(['dadosProfissionais']) || validProfessionalData(request.resource.data.dadosProfissionais))
+        && changed.hasOnly(['dadosPessoais', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
+        // Atualização cadastral direta limitada a endereço; dados de identidade e
+        // vínculo exigem conferência da gestão. Evita autoalteração de COREN/lotação.
+        && (!changed.hasAny(['dadosPessoais']) || (
+          validPersonalData(request.resource.data.dadosPessoais)
+          && request.resource.data.dadosPessoais.diff(resource.data.dadosPessoais)
+            .affectedKeys().hasOnly(['rua', 'numero', 'bairro', 'cidade', 'uf', 'cep'])
+        ))
         && (!changed.hasAny(['totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
           || (request.resource.data.totalAcessos == (('totalAcessos' in resource.data) ? resource.data.totalAcessos : 0) + 1
             && request.resource.data.ultimoAcesso == request.time));

@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  criarVersaoLegal, listarVersoesLegais, pendenciasParaPublicacao,
+  criarVersaoLegal, listarVersoesLegais, localizarPendenciasLegais, pendenciasParaPublicacao,
   publicarVersaoLegal, salvarRevisaoLegal, validarConteudoLegal,
   type ConteudoDocumentoLegal, type EstadoDocumentoLegal, type RevisaoDocumentoLegal,
 } from "@/services/bancodados/documentosLegaisDB";
@@ -63,6 +63,7 @@ export default function GestaoDocumentosLegais() {
   const rascunho = historico.find((item) => item.id === estado?.rascunhoId);
   const erros = editor ? validarConteudoLegal(editor) : [];
   const pendencias = editor ? pendenciasParaPublicacao(editor) : [];
+  const pendenciasDetalhadas = editor ? localizarPendenciasLegais(editor) : [];
   const temAlteracoes = !!(editor && rascunho && JSON.stringify(editor) !== JSON.stringify(rascunho.conteudo));
 
   const executar = async (acao: "criar" | "salvar" | "publicar") => {
@@ -157,7 +158,15 @@ export default function GestaoDocumentosLegais() {
                 <Button variant="outline" disabled={salvando || editor.secoes.length >= 25} onClick={() => setEditor({ ...editor, secoes: [...editor.secoes, { titulo: "", corpo: "" }] })}>Adicionar seção</Button>
                 {erros.length > 0 && <div role="alert" className="text-sm text-red-700">{erros.join(" ")}</div>}
                 {pendencias.length > 0 && <div role="alert" className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                  <ShieldAlert className="h-5 w-5 shrink-0" /><span>Revise os trechos de validação pendente: {pendencias.join(", ")}. O sistema bloqueará a publicação enquanto permanecerem.</span>
+                  <ShieldAlert className="h-5 w-5 shrink-0" />
+                  <div className="space-y-2">
+                    <p>Há trechos por confirmar. Edite-os, salve uma nova revisão e confirme a publicação novamente:</p>
+                    <ul className="list-disc space-y-1 pl-5">
+                      {pendenciasDetalhadas.map((item, indice) =>
+                        <li key={indice}><strong>{item.secao}:</strong> <span className="break-words">“{item.trecho}”</span></li>
+                      )}
+                    </ul>
+                  </div>
                 </div>}
                 <div className="flex flex-col gap-3 border-t pt-4">
                   <Button className="self-start" disabled={salvando || !temAlteracoes || erros.length > 0} onClick={() => void executar("salvar")}>
@@ -167,6 +176,7 @@ export default function GestaoDocumentosLegais() {
                     <Checkbox checked={confirmado} onCheckedChange={(checked) => setConfirmado(checked === true)} disabled={salvando} />
                     <span>Confirmo que a versão foi revisada e aprovada pela equipe responsável, inclusive as questões jurídicas e de proteção de dados. Estou ciente de que a publicação terá efeito imediato no rodapé.</span>
                   </label>
+                  {temAlteracoes && <p className="text-xs text-amber-800">Existem alterações não salvas. Clique em “Salvar nova revisão” antes de publicar.</p>}
                   <Button variant="default" className="self-start" disabled={salvando || !confirmado || temAlteracoes || erros.length > 0 || pendencias.length > 0} onClick={() => void executar("publicar")}>
                     <Send className="mr-2 h-4 w-4"/> Publicar versão {rascunho?.versao}.0
                   </Button>
