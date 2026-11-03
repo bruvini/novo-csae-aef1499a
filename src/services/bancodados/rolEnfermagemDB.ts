@@ -48,7 +48,10 @@ export interface Diagnostico {
   dataCadastro: Timestamp;
 }
 
-export const getDiagnosticos = (callback: (diagnosticos: Diagnostico[]) => void) => {
+export const getDiagnosticos = (
+  callback: (diagnosticos: Diagnostico[]) => void,
+  onError?: (error: Error) => void,
+) => {
   const q = query(
     collection(db, 'rolEnfermagem'),
     orderBy('dataCadastro', 'desc')
@@ -61,6 +64,9 @@ export const getDiagnosticos = (callback: (diagnosticos: Diagnostico[]) => void)
     })) as Diagnostico[];
     
     callback(diagnosticos);
+  }, (error) => {
+    if (onError) onError(error);
+    else console.error('Erro ao carregar diagnósticos:', error);
   });
 };
 
