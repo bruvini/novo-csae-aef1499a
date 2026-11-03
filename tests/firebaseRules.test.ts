@@ -603,3 +603,84 @@ test('eventos de login exigem identidade, timestamp e incremento atômico e são
   const revogado = environment.authenticatedContext('outro').firestore();
   await assertFails(getDocs(collection(revogado, 'eventosAcesso')));
 });
+
+
+test('documentos legais: publicação pública, revisão imutável e duplicação fiel', async () => {
+  await seedProfile('admin-legal', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('enfermeira-legal');
+  await seedProfile('gestora-conteudo', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const admin = environment.authenticatedContext('admin-legal').firestore();
+  const nurse = environment.authenticatedContext('enfermeira-legal').firestore();
+  const contentManager = environment.authenticatedContext('gestora-conteudo').firestore();
+  const guest = environment.unauthenticatedContext().firestore();
+  const stateRef = (db: typeof admin) => doc(db, 'documentosLegais', 'terms');
+  const revisionRef = (db: typeof admin, id: string) => doc(db, 'documentosLegais', 'terms', 'revisoes', id);
+  const texto = { introducao: 'Este documento organiza o uso.', secoes: [{ titulo: 'Uso', corpo: 'Apenas perfis autorizados.' }] };
+
+  const snapshot = (id: string, versao: number, revisao: number, situacao: string, operacao: string, anteriorId: string, conteudo = texto) => ({
+    tipo: 'terms', versao, revisao, situacao, operacao, anteriorId, conteudo,
+    autorUid: 'admin-legal', criadoEm: serverTimestamp(),
+  });
+
+  const primeiraversao = writeBatch(admin);
+  primeiraversao.set(stateRef(admin), { publicadaId: '', rascunhoId: 'v1-r0', sequencia: 1, ultimaAcao: 'criada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  primeiraversao.set(revisionRef(admin, 'v1-r0'), snapshot('v1-r0', 1, 0, 'rascunho', 'criada', ''));
+  await assertSucceeds(primeiraversao.commit());
+
+  await assertSucceeds(getDoc(stateRef(guest)));
+  await assertFails(getDoc(revisionRef(guest, 'v1-r0')));
+  await assertFails(getDoc(revisionRef(nurse, 'v1-r0')));
+  await assertFails(getDocs(collection(guest, 'documentosLegais', 'terms', 'revisoes')));
+  await assertFails(setDoc(revisionRef(contentManager, 'ilegal'), snapshot('ilegal', 1, 1, 'publicada', 'publicada', 'v1-r0')));
+  await assertFails(updateDoc(revisionRef(admin, 'v1-r0'), { conteudo: { introducao: 'mudou' } }));
+  await assertFails(deleteDoc(revisionRef(admin, 'v1-r0')));
+
+  const publicar1 = writeBatch(admin);
+  publicar1.set(revisionRef(admin, 'v1-r1'), snapshot('v1-r1', 1, 1, 'publicada', 'publicada', 'v1-r0'));
+  publicar1.update(stateRef(admin), { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  await assertSucceeds(publicar1.commit());
+  await assertSucceeds(getDoc(revisionRef(guest, 'v1-r1')));
+  await assertFails(getDoc(revisionRef(guest, 'v1-r0')));
+  await assertFails(getDocs(collection(guest, 'documentosLegais', 'terms', 'revisoes')));
+
+  const duplicar = writeBatch(admin);
+  duplicar.set(revisionRef(admin, 'v2-r0'), snapshot('v2-r0', 2, 0, 'rascunho', 'criada', 'v1-r1'));
+  duplicar.update(stateRef(admin), { publicadaId: 'v1-r1', rascunhoId: 'v2-r0', sequencia: 2, ultimaAcao: 'criada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  await assertSucceeds(duplicar.commit());
+  // O usuário continua vendo a versão 1 enquanto a 2 é editada.
+  await assertSucceeds(getDoc(revisionRef(guest, 'v1-r1')));
+  await assertFails(getDoc(revisionRef(guest, 'v2-r0')));
+
+  const textoEditado = { ...texto, introducao: 'Texto revisado em uma nova versão.' };
+  const editar2 = writeBatch(admin);
+  editar2.set(revisionRef(admin, 'v2-r1'), snapshot('v2-r1', 2, 1, 'rascunho', 'editada', 'v2-r0', textoEditado));
+  editar2.update(stateRef(admin), { rascunhoId: 'v2-r1', ultimaAcao: 'editada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  await assertSucceeds(editar2.commit());
+  const versaoAnterior = await getDoc(revisionRef(admin, 'v2-r0'));
+  assert.equal(versaoAnterior.data()?.conteudo.introducao, texto.introducao);
+
+  const publicar2 = writeBatch(admin);
+  publicar2.set(revisionRef(admin, 'v2-r2'), snapshot('v2-r2', 2, 2, 'publicada', 'publicada', 'v2-r1', textoEditado));
+  publicar2.update(stateRef(admin), { publicadaId: 'v2-r2', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  await assertSucceeds(publicar2.commit());
+  assert.equal((await getDoc(revisionRef(guest, 'v2-r2'))).data()?.conteudo.introducao, textoEditado.introducao);
+  await assertFails(getDoc(revisionRef(guest, 'v1-r1')));
+  await assertSucceeds(getDocs(collection(admin, 'documentosLegais', 'terms', 'revisoes')));
+});
+
+test('documentos legais: não permite publicar texto diferente do rascunho nem pular auditoria', async () => {
+  await seedProfile('admin-legal', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  const admin = environment.authenticatedContext('admin-legal').firestore();
+  const state = doc(admin, 'documentosLegais', 'privacy');
+  const first = doc(admin, 'documentosLegais', 'privacy', 'revisoes', 'v1-r0');
+  const conteudo = { introducao: 'Informações de privacidade.', secoes: [{ titulo: 'Dados', corpo: 'Condições do tratamento.' }] };
+  const batch = writeBatch(admin);
+  batch.set(state, { publicadaId: '', rascunhoId: 'v1-r0', sequencia: 1, ultimaAcao: 'criada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  batch.set(first, { tipo: 'privacy', versao: 1, revisao: 0, situacao: 'rascunho', operacao: 'criada', anteriorId: '', conteudo, autorUid: 'admin-legal', criadoEm: serverTimestamp() });
+  await assertSucceeds(batch.commit());
+  await assertFails(updateDoc(state, { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() }));
+  const invalid = writeBatch(admin);
+  invalid.set(doc(admin, 'documentosLegais', 'privacy', 'revisoes', 'v1-r1'), { tipo: 'privacy', versao: 1, revisao: 1, situacao: 'publicada', operacao: 'publicada', anteriorId: 'v1-r0', conteudo: { ...conteudo, introducao: 'Texto trocado sem revisão' }, autorUid: 'admin-legal', criadoEm: serverTimestamp() });
+  invalid.update(state, { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
+  await assertFails(invalid.commit());
+});

@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, Download } from 'lucide-react';
+import { Database, Download, FileText } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import GestaoDocumentosLegais from '@/components/gestao-conteudos/GestaoDocumentosLegais';
 import TabelaSubconjuntos from '@/components/gestao-conteudos/TabelaSubconjuntos';
 import TabelaDiagnosticos from '@/components/gestao-conteudos/TabelaDiagnosticos';
 import TabelaSinaisVitais from '@/components/gestao-conteudos/TabelaSinaisVitais';
@@ -17,6 +19,7 @@ import { useSearchParams } from 'react-router-dom';
 
 const GestaoConteudos = () => {
   const [exportarAberto, setExportarAberto] = useState(false);
+  const { sessionData } = useAuth();
   const [parametros, definirParametros] = useSearchParams();
   const aba = parametros.get('aba') || 'exame-fisico';
   return (
@@ -75,6 +78,11 @@ const GestaoConteudos = () => {
                 <TabsTrigger value="sugestoes" className="rounded-none border-b-2 border-transparent data-[state=active]:border-csae-green-600 data-[state=active]:bg-white h-12 px-6">
                   Sugestões de Intervenções
                 </TabsTrigger>
+                {sessionData?.ehAdmin && (
+                  <TabsTrigger value="documentos-legais" className="rounded-none border-b-2 border-transparent data-[state=active]:border-csae-green-600 data-[state=active]:bg-white h-12 px-6">
+                    <FileText className="mr-2 h-4 w-4" /> Documentos Legais
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <div className="p-6">
@@ -110,6 +118,11 @@ const GestaoConteudos = () => {
                 <TabsContent value="sugestoes" className="mt-0">
                   <SugestoesIntervencoes />
                 </TabsContent>
+                {sessionData?.ehAdmin && (
+                  <TabsContent value="documentos-legais" className="mt-0">
+                    <GestaoDocumentosLegais />
+                  </TabsContent>
+                )}
               </div>
             </Tabs>
           </CardContent>

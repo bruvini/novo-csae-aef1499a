@@ -28,3 +28,11 @@ Minuta técnica de 03/11/2026. **Não publicar como documento vigente sem revis�
 - Criar campos e histórico de aceite com regras Firestore restritivas, validações de emulador e trilha de auditoria imutável ou serviço seguro no backend.
 - Registrar comunicação das alterações e, conforme `GOVERNANCE.md`, changelog no Firestore na publicação real.
 - Validar acessibilidade, legibilidade no celular, testes e revisão jurídica antes do deploy de produção.
+
+## Decisões de implementação (03/11/2026)
+- Responsável institucional indicado pela equipe: Elizimara Ferreira Siqueira, enfermeira responsável técnica na SMS Florianópolis e coordenadora da CSAE. **Não** confundir essa função com a qualificação formal de controlador LGPD, a confirmar pela instituição.
+- O portal armazena nome, data de nascimento, sexo e histórico clínico do paciente no Firestore, por conta do profissional. Gera texto para **cópia e colagem** no prontuário utilizado na SMS; não é apresentado como prontuário oficial substitutivo.
+- O PDF do termo de responsabilidade do cadastro é disponibilizado ao usuário; o portal guarda apenas o registro estruturado de aceite e data, sem cópia do PDF no servidor.
+- Os documentos legais passam a usar `documentosLegais/{terms|privacy}` e snapshots imutáveis `revisoes/*`: criar rascunho sempre duplica a última versão publicada, cada salvamento gera revisão e publicação aponta a versão vigente.
+- Os textos iniciais não são publicados automaticamente; os trechos pendentes bloqueiam a publicação, que exige confirmação expressa do administrador de revisão pela equipe do portal.
+- É necessário validar canal do encarregado, retenção, bases legais e localização/contratos Firebase antes da primeira publicação. Também revisar necessidade de uma ciência/versionamento de aceite dos usuários após aprovação.
