@@ -144,6 +144,27 @@ const ModalDetalhesUsuario: React.FC<ModalDetalhesUsuarioProps> = ({
               <span className="font-medium">Status de Acesso:</span>
               <p className="text-gray-700">{usuario.statusAcesso || 'Não informado'}</p>
             </div>
+            {usuario.motivoRevogacao && (
+              <div className="md:col-span-2 rounded border border-rose-200 bg-rose-50 p-3">
+                <span className="font-medium text-rose-900">Justificativa de revogação:</span>
+                <p className="mt-1 text-rose-800">{usuario.motivoRevogacao}</p>
+              </div>
+            )}
+            {usuario.historicoRevisoesResidencia?.length ? (
+              <div className="md:col-span-2 rounded-lg border p-3 text-sm">
+                <h4 className="mb-2 font-semibold">Histórico da revisão de residência</h4>
+                <ol className="space-y-2">
+                  {[...usuario.historicoRevisoesResidencia].reverse().map((evento, i) => (
+                    <li key={i} className="border-t pt-2">
+                      <strong>{evento.acao}</strong> · {formatarData(evento.decididoEm)}
+                      <p>{evento.motivo}</p>
+                      {evento.proximoPrazo && <p>Próxima revisão: {evento.proximoPrazo}</p>}
+                      <p className="text-xs text-slate-500">Administrador: {evento.revisorUid}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
             {usuario.motivoRecusa && (
               <div className="md:col-span-2 bg-red-50 p-3 rounded border border-red-100">
                 <span className="font-medium text-red-700 flex items-center gap-1">Motivo da Recusa:</span>

@@ -103,7 +103,7 @@ service cloud.firestore {
     function validProfileDocument(data) {
       return data is map
         && data.keys().hasAll(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro'])
-        && data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao', 'versaoPermissoes', 'historicoRevisoes', 'analisadoPor', 'analisadoPorUid', 'dataAtualizacaoDadosPessoais', 'dadosProfissionaisPropostos', 'dataRevisaoCadastral', 'revisadoPorUid', 'resultadoRevisaoCadastral'])
+        && data.keys().hasOnly(['uid', 'email', 'dadosPessoais', 'dadosProfissionais', 'termoResponsabilidadeAceito', 'termoResponsabilidadeData', 'ehAdmin', 'gestorConteudos', 'tipoUsuario', 'statusAcesso', 'dataCadastro', 'paginasPermitidas', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao', 'versaoPermissoes', 'historicoRevisoes', 'analisadoPor', 'analisadoPorUid', 'dataAtualizacaoDadosPessoais', 'dadosProfissionaisPropostos', 'dataRevisaoCadastral', 'revisadoPorUid', 'resultadoRevisaoCadastral', 'revisaoResidenciaEm', 'dataRevisaoResidencia', 'revisadoResidenciaPorUid', 'motivoRevogacao', 'historicoRevisoesResidencia'])
         && data.uid is string
         && boundedString(data.email, 254)
         && validPersonalData(data.dadosPessoais)
@@ -128,7 +128,12 @@ service cloud.firestore {
         && (!('dataRevisaoCadastral' in data) || data.dataRevisaoCadastral is timestamp)
         && (!('revisadoPorUid' in data) || boundedString(data.revisadoPorUid, 128))
         && (!('resultadoRevisaoCadastral' in data) || data.resultadoRevisaoCadastral in ['Aprovada', 'Recusada'])
-        && (!('historicoRevisoes' in data) || (data.historicoRevisoes is list && data.historicoRevisoes.size() <= 100));
+        && (!('historicoRevisoes' in data) || (data.historicoRevisoes is list && data.historicoRevisoes.size() <= 100))
+        && (!('revisaoResidenciaEm' in data) || (data.revisaoResidenciaEm is string && data.revisaoResidenciaEm.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && (!('dataRevisaoResidencia' in data) || data.dataRevisaoResidencia is timestamp)
+        && (!('revisadoResidenciaPorUid' in data) || boundedString(data.revisadoResidenciaPorUid, 128))
+        && (!('motivoRevogacao' in data) || boundedString(data.motivoRevogacao, 600))
+        && (!('historicoRevisoesResidencia' in data) || (data.historicoRevisoesResidencia is list && data.historicoRevisoesResidencia.size() <= 60));
     }
 
     function isPendingSelfRegistration(uid) {
@@ -278,6 +283,107 @@ service cloud.firestore {
              && request.resource.data.dataRecusa == request.time));
     }
 
+
+    function residentReviewBase() {
+      return request.auth.uid != resource.data.uid
+        && resource.data.ehAdmin == false
+        && resource.data.statusAcesso in ['Aprovado', 'Liberado']
+        && resource.data.dadosProfissionais.formacao == 'Residente de Enfermagem'
+        && resource.data.dadosProfissionais.dataInicioResidencia is string
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.dataRevisaoResidencia == request.time
+        && request.resource.data.revisadoResidenciaPorUid == request.auth.uid;
+    }
+
+    function residentHistorySafe(action, result) {
+      let oldList = ('historicoRevisoesResidencia' in resource.data)
+        ? resource.data.historicoRevisoesResidencia : [];
+      let newList = request.resource.data.historicoRevisoesResidencia;
+      let last = newList[newList.size() - 1];
+      return newList is list && oldList is list
+        && newList.size() == oldList.size() + 1 && newList.size() <= 60
+        && newList.hasAll(oldList)
+        && last is map
+        && last.keys().hasAll(['acao','revisorUid','decididoEm','inicioResidencia','marcoDoisAnos',
+          'statusResultante','motivo','proximoPrazo','diasProrrogados','vinculoSMS','lotacao','matricula'])
+        && last.acao == action && last.statusResultante == result
+        && last.revisorUid == request.auth.uid
+        && last.inicioResidencia == resource.data.dadosProfissionais.dataInicioResidencia
+        && last.marcoDoisAnos is string
+        && last.decididoEm is timestamp
+        && boundedString(last.motivo, 600)
+        && boundedString(last.proximoPrazo, 10)
+        && last.diasProrrogados is int
+        && last.vinculoSMS is bool
+        && boundedString(last.lotacao, 140)
+        && boundedString(last.matricula, 40);
+    }
+
+    function adminExtendResident() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let entries = request.resource.data.historicoRevisoesResidencia;
+      let last = entries[entries.size() - 1];
+      return changed.hasOnly(['revisaoResidenciaEm','historicoRevisoesResidencia',
+        'dataRevisaoResidencia','revisadoResidenciaPorUid'])
+        && residentReviewBase()
+        && request.resource.data.revisaoResidenciaEm is string
+        && request.resource.data.revisaoResidenciaEm.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && residentHistorySafe('Prorrogado','Liberado')
+        && last.proximoPrazo == request.resource.data.revisaoResidenciaEm
+        && last.diasProrrogados >= 1 && last.diasProrrogados <= 730
+        && last.vinculoSMS == resource.data.dadosProfissionais.atuaSMS
+        && last.lotacao == resource.data.dadosProfissionais.get('lotacao','')
+        && last.matricula == resource.data.dadosProfissionais.get('matricula','');
+    }
+
+
+    function adminRevokeResident() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let old = resource.data.get('historicoRevisoesResidencia', []);
+      let events = request.resource.data.historicoRevisoesResidencia;
+      return changed.hasOnly(['statusAcesso','historicoRevisoesResidencia',
+        'dataRevisaoResidencia','revisadoResidenciaPorUid',
+        'motivoRevogacao','dataRevogacao','revogadoPorUid'])
+        && residentReviewBase()
+        && request.resource.data.statusAcesso == 'Revogado'
+        && request.resource.data.motivoRevogacao ==
+          'Fim da residência e não inclusão no quadro de profissionais da rede.'
+        && request.resource.data.dataRevogacao == request.time
+        && request.resource.data.revogadoPorUid == request.auth.uid
+        && events is list && events.size() == old.size() + 1 && events.hasAll(old)
+        && events[events.size()-1].acao == 'Revogado'
+        && events[events.size()-1].revisorUid == request.auth.uid;
+    }
+
+
+    function adminConvertResident() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let professional = request.resource.data.dadosProfissionais;
+      let result = professional.atuaSMS ? 'Liberado' : 'Revogado';
+      let old = resource.data.get('historicoRevisoesResidencia', []);
+      let events = request.resource.data.historicoRevisoesResidencia;
+      return changed.hasOnly(['dadosProfissionais','statusAcesso','historicoRevisoesResidencia',
+        'dataRevisaoResidencia','revisadoResidenciaPorUid',
+        'motivoRevogacao','dataRevogacao','revogadoPorUid'])
+        && residentReviewBase()
+        && professional.diff(resource.data.dadosProfissionais).affectedKeys()
+          .hasOnly(['formacao','atuaSMS','lotacao','matricula'])
+        && professional.formacao == 'Enfermeiro'
+        && request.resource.data.statusAcesso == result
+        && (professional.atuaSMS
+           ? (boundedString(professional.lotacao, 140) && professional.lotacao.size() > 0
+             && boundedString(professional.matricula, 40) && professional.matricula.size() > 0)
+           : (professional.get('lotacao', '') == '' && professional.get('matricula', '') == ''
+             && request.resource.data.motivoRevogacao is string
+             && request.resource.data.dataRevogacao == request.time
+             && request.resource.data.revogadoPorUid == request.auth.uid))
+        && events is list && events.size() == old.size() + 1 && events.hasAll(old)
+        && events[events.size()-1].acao == 'Convertido'
+        && events[events.size()-1].statusResultante == result
+        && events[events.size()-1].revisorUid == request.auth.uid;
+    }
+
     function ownPatient() {
       return isApproved() && hasPage('ProcessoEnfermagem') && resource.data.uidUsuario == request.auth.uid;
     }
@@ -384,7 +490,12 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
-      allow update: if (isActiveAdmin() && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+      allow update: if (isActiveAdmin() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+          && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
+        || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+          && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+      ))
         || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
           || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
       allow delete: if false;
