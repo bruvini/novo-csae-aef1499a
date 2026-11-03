@@ -21,6 +21,15 @@ ENTRIES = (
         "para ferramentas e 40% para atualizações; em telas pequenas, adapta as seções automaticamente. "
         "Permissões dos módulos e notificações foram preservadas.",
     ),
+    (
+        "portal-historia-indicadores-legais-20261103",
+        "Nossa História restaurada e indicadores do portal aprimorados",
+        "A página pública Nossa História foi recuperada com linha do tempo e gestão de acontecimentos "
+        "para administradores, preservando a coleção antiga de eventos. O painel inicial passou a "
+        "exibir quatro indicadores de mesmo tamanho, números maiores e tempo de uso em uma linha. "
+        "Os modelos iniciais de Termos de Uso e Política de Privacidade foram atualizados para "
+        "facilitar sua revisão pela equipe, sem publicação automática.",
+    ),
 )
 
 def main() -> None:
