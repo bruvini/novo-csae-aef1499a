@@ -685,3 +685,50 @@ test('documentos legais: não permite publicar texto diferente do rascunho nem p
   invalid.update(state, { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
   await assertFails(invalid.commit());
 });
+
+test('linha do tempo antiga volta a ser pública, mas somente administradores podem editar', async () => {
+  await seedProfile('admin-timeline', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('enfermeiro-timeline');
+  const admin = environment.authenticatedContext('admin-timeline').firestore();
+  const nurse = environment.authenticatedContext('enfermeiro-timeline').firestore();
+  const guest = environment.unauthenticatedContext().firestore();
+  const id = 'marco-2022';
+  const evt = {
+    dataEvento: new Date('2022-10-01T15:00:00Z'), titulo: 'Lançamento do portal',
+    subtitulo: 'Primeiro piloto', textoRedacao: 'Um capítulo do Portal CSAE Floripa.',
+    foto: 'https://example.com/foto.jpg', legendaFoto: 'Equipe', autoriaFoto: 'Acervo da equipe',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    criadoPor: 'admin-timeline', atualizadoPor: 'admin-timeline',
+  };
+  await assertFails(setDoc(doc(guest, 'timelineEvents', id), evt));
+  await assertFails(setDoc(doc(nurse, 'timelineEvents', id), evt));
+  await assertSucceeds(setDoc(doc(admin, 'timelineEvents', id), evt));
+  await assertSucceeds(getDocs(collection(guest, 'timelineEvents')));
+  await assertSucceeds(getDoc(doc(guest, 'timelineEvents', id)));
+  await assertFails(updateDoc(doc(nurse, 'timelineEvents', id), { titulo: 'Editado' }));
+  await assertFails(deleteDoc(doc(guest, 'timelineEvents', id)));
+  await assertFails(updateDoc(doc(admin, 'timelineEvents', id), { createdAt: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(admin, 'timelineEvents', id), {
+    titulo: 'Lançamento revisado', updatedAt: serverTimestamp(), atualizadoPor: 'admin-timeline',
+  }));
+  await assertSucceeds(deleteDoc(doc(admin, 'timelineEvents', id)));
+  await assertFails(getDoc(doc(guest, 'usuarios', 'enfermeiro-timeline')));
+});
+
+test('linha do tempo mantém compatibilidade com eventos legados sem campos de auditoria', async () => {
+  await seedProfile('admin-timeline', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  const admin = environment.authenticatedContext('admin-timeline').firestore();
+  const guest = environment.unauthenticatedContext().firestore();
+  await environment.withSecurityRulesDisabled(async ctx => {
+    await setDoc(doc(ctx.firestore(), 'timelineEvents', 'legado'), {
+      dataEvento: new Date('2018-08-01T12:00:00Z'),
+      titulo: 'Projeto inicial', subtitulo: 'História do portal',
+      textoRedacao: 'O trabalho iniciou antes da versão 2.0.',
+      foto: 'https://example.com/2018.png', legendaFoto: 'Reunião', autoriaFoto: 'Equipe',
+    });
+  });
+  await assertSucceeds(getDoc(doc(guest, 'timelineEvents', 'legado')));
+  await assertSucceeds(updateDoc(doc(admin, 'timelineEvents', 'legado'), {
+    subtitulo: 'Marco histórico', updatedAt: serverTimestamp(), atualizadoPor: 'admin-timeline',
+  }));
+});

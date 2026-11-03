@@ -1,130 +1,138 @@
 /**
- * Minutas para revisão jurídica e institucional.
- * Não declaram consentimento LGPD nem substituem o Termo de Responsabilidade
- * já aceito no fluxo de cadastro. Não publicar sem validar as pendências.
+ * Minutas editoriais iniciais. Criar rascunho pelo painel NÃO publica os textos.
+ * Identificar controlador, canal oficial e regras de retenção antes da 1ª publicação.
  */
 export type LegalDocumentKind = "terms" | "privacy";
 
-export interface LegalSection {
-  title: string;
-  paragraphs: string[];
-}
-
+export interface LegalSection { title: string; paragraphs: string[]; }
 export interface LegalDocument {
-  title: string;
-  version: string;
-  updatedAt: string;
-  status: string;
-  introduction: string;
-  sections: LegalSection[];
+  title: string; version: string; updatedAt: string; status: string;
+  introduction: string; sections: LegalSection[];
 }
 
 export const LEGAL_DOCUMENTS: Record<LegalDocumentKind, LegalDocument> = {
-  terms: {
-    title: "Termos de Uso",
-    version: "0.1 — minuta",
-    updatedAt: "03/11/2026",
-    status: "Minuta para validação institucional e jurídica; ainda não constitui documento vigente.",
-    introduction: "O Portal CSAE Floripa 2.0 apoia a organização e a documentação do Processo de Enfermagem. Estas condições descrevem o uso previsto da plataforma e precisam de aprovação pela gestão responsável antes de sua publicação definitiva.",
-    sections: [
+  "terms": {
+    "title": "Termos de Uso",
+    "version": "0.2 — minuta",
+    "updatedAt": "03/11/2026",
+    "status": "Minuta para validação da equipe do Portal CSAE; não é uma versão publicada.",
+    "introduction": "Bem-vindo ao Portal CSAE Floripa 2.0. Estes Termos de Uso orientam o acesso e a utilização da plataforma de apoio ao Processo de Enfermagem, desenvolvida para apoiar as atividades autorizadas na rede municipal de saúde de Florianópolis. Ao utilizar a ferramenta, o profissional deve observar as regras institucionais, o sigilo profissional e a legislação aplicável. O documento deve ser revisado pela equipe responsável antes de sua primeira publicação.",
+    "sections": [
       {
-        title: "1. Finalidade e público autorizado",
-        paragraphs: [
-          "O portal destina-se, nesta implantação, a usuários com vínculo e finalidade de acesso aprovados pela equipe gestora. Solicitar cadastro não garante autorização; a manutenção do acesso depende da elegibilidade e das atribuições profissionais.",
-          "O uso fora da finalidade institucional, inclusive a eventual abertura a estudantes, profissionais externos ou outras redes de saúde, depende de definição e autorização específicas."
+        "title": "1. Finalidade da plataforma",
+        "paragraphs": [
+          "O Portal CSAE oferece recursos digitais de apoio à organização das etapas do Processo de Enfermagem, incluindo avaliação, diagnóstico, planejamento, implementação e evolução, de acordo com as funcionalidades disponíveis em cada versão.",
+          "A ferramenta é um recurso de apoio ao trabalho profissional. Não substitui a avaliação clínica individualizada, o julgamento clínico, os protocolos aplicáveis, a supervisão necessária nem o prontuário eletrônico oficial utilizado pela instituição."
         ]
       },
       {
-        title: "2. Responsabilidade profissional e documentação clínica",
-        paragraphs: [
-          "A ferramenta oferece recursos para avaliação, diagnóstico, planejamento, implementação e evolução de enfermagem, conforme a Resolução Cofen nº 736/2024. O conteúdo apresentado não substitui a avaliação individualizada, o julgamento clínico, os protocolos aplicáveis nem as responsabilidades legais do profissional.",
-          "A ferramenta gera uma evolução para cópia à área de transferência e inserção manual no prontuário institucional. O usuário deve revisar integralmente o texto e confirmar seu registro no sistema oficial. O Portal CSAE não substitui o prontuário adotado pela Secretaria Municipal de Saúde nem envia automaticamente a evolução ao prontuário."
+        "title": "2. Acesso e elegibilidade",
+        "paragraphs": [
+          "O acesso depende de cadastro individual, verificação dos dados e aprovação pela equipe gestora. A disponibilização de uma conta não garante acesso permanente: a autorização pode ser revista em caso de alteração do vínculo, perda de elegibilidade ou necessidade de segurança.",
+          "O uso é restrito aos perfis e finalidades autorizados. Contas de estudantes, residentes e profissionais com diferentes permissões devem seguir as limitações correspondentes às suas atribuições."
         ]
       },
       {
-        title: "3. Credenciais e proteção dos pacientes",
-        paragraphs: [
-          "O acesso é pessoal. O usuário deve manter suas credenciais sob sigilo, não compartilhar a conta, comunicar suspeitas de acesso indevido e utilizar somente informações necessárias à assistência ou à finalidade expressamente autorizada.",
-          "É vedada a divulgação não autorizada de informações identificáveis de pacientes, inclusive por capturas de tela, vídeos, mensagens, exportações ou demonstrações públicas."
+        "title": "3. Responsabilidades dos usuários",
+        "paragraphs": [
+          "Cada usuário é responsável pela correção e adequação das informações inseridas, pela guarda de suas credenciais e pelo uso da plataforma somente para atividades autorizadas. É proibido compartilhar senhas, acessar registros sem justificativa assistencial ou divulgar dados de pacientes a pessoas não autorizadas.",
+          "Antes de utilizar a evolução gerada, o profissional deve revisar seu conteúdo, confirmar sua compatibilidade com a assistência efetivamente prestada e copiar o texto para o prontuário institucional conforme o fluxo de registro vigente."
         ]
       },
       {
-        title: "4. Conteúdo institucional e contribuições",
-        paragraphs: [
-          "Protocolos, classificações, textos, materiais de apoio e componentes do portal podem estar sujeitos a direitos autorais e a condições de uso próprias de seus titulares. O acesso à plataforma não concede licença para reproduzir ou distribuir materiais protegidos fora da finalidade autorizada.",
-          "Sugestões de intervenções e outros conteúdos enviados por usuários estão sujeitos à análise da equipe competente. As condições de autoria, revisão e incorporação dessas contribuições precisam ser formalizadas antes da publicação definitiva destes termos."
+        "title": "4. Proteção de dados e sigilo",
+        "paragraphs": [
+          "O uso de informações de pacientes exige observância do sigilo profissional, das normas institucionais e da Lei Geral de Proteção de Dados Pessoais (LGPD). Não é permitido utilizar dados reais para demonstrações públicas, apresentações, publicações ou testes não autorizados.",
+          "O Termo de Responsabilidade e Sigilo apresentado no cadastro permanece independente destes Termos de Uso. O tratamento de dados pessoais pela plataforma é descrito na Política de Privacidade."
         ]
       },
       {
-        title: "5. Disponibilidade, suspensão e atualizações",
-        paragraphs: [
-          "O acesso pode ser revisto em razão de mudança do vínculo, descumprimento de regras, necessidade de segurança ou decisão administrativa fundamentada. Manutenções e alterações tecnológicas podem afetar temporariamente a disponibilidade.",
-          "Alterações materiais destes termos devem ser comunicadas aos usuários por meio apropriado. Novos aceites, quando necessários, exigirão fluxo próprio e registro da versão correspondente."
+        "title": "5. Conteúdo clínico e propriedade intelectual",
+        "paragraphs": [
+          "Textos, classificações, protocolos, imagens e componentes tecnológicos disponibilizados podem possuir titulares e condições próprias de utilização. O acesso ao portal não autoriza a extração, reprodução integral, distribuição ou exploração de conteúdos protegidos fora das finalidades permitidas.",
+          "Os usuários podem encaminhar sugestões e intervenções autorais pelos canais previstos. A análise e eventual incorporação ao catálogo dependem de avaliação da equipe responsável e das condições específicas de contribuição aplicáveis, sem presumir cessão automática de direitos autorais."
         ]
       },
       {
-        title: "6. Relação com o termo de sigilo e a privacidade",
-        paragraphs: [
-          "Estes Termos de Uso não substituem o Termo de Responsabilidade e Sigilo atualmente apresentado durante o cadastro. O tratamento de dados pessoais é descrito separadamente na Política de Privacidade, que deve ser disponibilizada de forma acessível.",
-          "Dúvidas sobre suporte clínico podem ser dirigidas ao contato institucional divulgado no rodapé; solicitações relativas a proteção de dados deverão utilizar o canal oficial a ser confirmado pela instituição responsável."
+        "title": "6. Atualizações e disponibilidade",
+        "paragraphs": [
+          "A equipe responsável poderá realizar manutenções, correções e melhorias, que podem ocasionar indisponibilidades temporárias. Sempre que possível, alterações relevantes serão comunicadas pelos canais da plataforma.",
+          "Acesso e funcionalidades poderão ser suspensos em situações justificadas de segurança, uso indevido ou decisão administrativa relacionada à finalidade institucional, respeitadas as obrigações aplicáveis aos registros assistenciais."
+        ]
+      },
+      {
+        "title": "7. Dúvidas e versões do documento",
+        "paragraphs": [
+          "As dúvidas sobre o uso da ferramenta podem ser encaminhadas pelos canais de suporte divulgados no portal. Questões sobre dados pessoais devem seguir o canal oficial indicado na Política de Privacidade.",
+          "Novas versões destes termos terão identificação e data de publicação. Alterações substanciais poderão exigir comunicação e confirmação específica dos usuários, quando cabível."
         ]
       }
     ]
   },
-  privacy: {
-    title: "Política de Privacidade",
-    version: "0.1 — minuta",
-    updatedAt: "03/11/2026",
-    status: "Minuta para validação do controlador, do encarregado e dos fluxos de tratamento; ainda não constitui documento vigente.",
-    introduction: "Esta minuta descreve os tratamentos identificados no código do Portal CSAE Floripa 2.0. As bases legais, os prazos de retenção, os responsáveis e os destinatários precisam ser confirmados antes da publicação oficial.",
-    sections: [
+  "privacy": {
+    "title": "Política de Privacidade",
+    "version": "0.2 — minuta",
+    "updatedAt": "03/11/2026",
+    "status": "Minuta para validação institucional e jurídica; não é uma versão publicada.",
+    "introduction": "Esta Política de Privacidade apresenta, em linguagem acessível, como o Portal CSAE Floripa 2.0 trata informações pessoais de profissionais e pacientes. A plataforma é utilizada como apoio à documentação do Processo de Enfermagem e à gestão de acessos. A versão oficial somente deverá ser publicada após a identificação dos responsáveis e a confirmação das condições de tratamento indicadas abaixo.",
+    "sections": [
       {
-        title: "1. Quem responde pelo tratamento",
-        paragraphs: [
-          "A responsável técnico-assistencial indicada pela equipe é Elizimara Ferreira Siqueira, Enfermeira Responsável Técnica da Secretaria Municipal de Saúde de Florianópolis e coordenadora da Comissão Permanente de Sistematização da Assistência de Enfermagem. Essa função não equivale automaticamente à condição de controladora de dados na LGPD. A identificação formal do controlador institucional, de eventuais operadores, do encarregado e do canal oficial para exercício de direitos está pendente de validação pela instituição e deve constar expressamente na versão aprovada."
+        "title": "1. Responsáveis e contato",
+        "paragraphs": [
+          "A coordenação técnico-assistencial do portal é exercida pela equipe vinculada à Comissão Permanente de Sistematização da Assistência de Enfermagem da Secretaria Municipal de Saúde de Florianópolis, com referência à Enfermeira Responsável Técnica Elizimara Ferreira Siqueira. A função de responsável técnica não equivale, por si só, à condição jurídica de controlador da LGPD.",
+          "[PREENCHER: identificação formal do controlador dos dados pessoais, do encarregado e do canal institucional para solicitações relacionadas à privacidade.]"
         ]
       },
       {
-        title: "2. Informações coletadas",
-        paragraphs: [
-          "O cadastro solicita identificação e contato, incluindo nome, CPF, RG, endereço e e-mail, além de informações profissionais, vínculo institucional, formação, registro no COREN e dados da residência quando aplicável. A autenticação é realizada com Firebase Authentication.",
-          "O cadastro do paciente solicita nome completo, data de nascimento e sexo; não solicita CPF, CNS nem número do prontuário nesse formulário. A aplicação armazena também as informações clínicas e assistenciais registradas nas etapas do Processo de Enfermagem, que podem conter outros dados identificáveis inseridos livremente pelo profissional. Dados de saúde são dados pessoais sensíveis.",
-          "Também são tratados registros de acesso e autorizações, solicitações de suporte, sugestões de melhoria ou intervenções, respostas de avaliações de uso e informações técnicas de funcionamento. A aplicação inicializa Firebase Analytics; é necessário auditar seus eventos e configurações antes de descrever integralmente o monitoramento."
+        "title": "2. Quais dados são tratados",
+        "paragraphs": [
+          "Para identificação e autorização de acesso, são cadastrados dados como nome, CPF, RG, endereço, e-mail e informações profissionais, incluindo formação, COREN, vínculo, lotação e dados da residência quando aplicável. A autenticação utiliza recursos do Firebase Authentication.",
+          "Na criação de um paciente, a plataforma solicita nome completo, data de nascimento e sexo. As informações clínicas e os registros inseridos durante o Processo de Enfermagem também são armazenados e podem conter outros dados pessoais sensíveis descritos livremente pelo profissional.",
+          "O sistema também pode tratar registros de acesso, aprovações de usuários, chamados de suporte, avaliações da ferramenta, sugestões e métricas técnicas de utilização. A aplicação inclui Firebase Analytics e demais serviços que precisam ser inventariados na configuração institucional."
         ]
       },
       {
-        title: "3. Para que os dados são utilizados",
-        paragraphs: [
-          "Os dados cadastrais e profissionais apoiam a verificação de elegibilidade, a autorização de acesso e a administração da conta. Os dados clínicos são utilizados para elaborar o Processo de Enfermagem e gerar um texto que o profissional revisa e copia manualmente ao prontuário institucional; os registros também permanecem associados à sua conta para consulta e continuidade na plataforma.",
-          "Registros de utilização e suporte podem apoiar segurança, auditoria, atendimento às solicitações, manutenção, melhoria da ferramenta e indicadores internos, observados os limites de acesso e as finalidades institucionais."
+        "title": "3. Finalidades do tratamento",
+        "paragraphs": [
+          "As informações cadastrais e profissionais permitem verificar a elegibilidade, autenticar usuários, administrar permissões e oferecer suporte. Os dados clínicos são utilizados para registrar as etapas do Processo de Enfermagem, consultar atendimentos anteriores e gerar uma evolução que o profissional revisa e copia manualmente para o prontuário institucional.",
+          "Informações operacionais e agregadas podem ser utilizadas para segurança, auditoria, manutenção, avaliação de uso e melhoria do portal, respeitando as permissões e as finalidades autorizadas."
         ]
       },
       {
-        title: "4. Bases legais e dados sensíveis",
-        paragraphs: [
-          "As hipóteses legais da LGPD devem ser definidas por finalidade e por categoria de dado pela instituição responsável. Aceitar os Termos de Uso não equivale a consentimento genérico para qualquer tratamento de dados de saúde.",
-          "Qualquer uso de informações identificáveis para pesquisa, demonstração, treinamento ou divulgação exige avaliação própria de finalidade, necessidade, base legal e salvaguardas."
+        "title": "4. Bases legais e proteção especial aos dados de saúde",
+        "paragraphs": [
+          "O tratamento deverá observar hipóteses legais adequadas a cada finalidade, conforme os artigos 7º, 11 e 23 da LGPD e os instrumentos institucionais aplicáveis. Dados relacionados à saúde recebem proteção específica por sua natureza sensível.",
+          "O aceite de Termos de Uso ou do Termo de Responsabilidade não equivale a consentimento genérico ou irrestrito do paciente para todas as formas de tratamento. Dados reais não devem ser reutilizados para publicidade, testes, demonstrações ou pesquisa sem fundamento legal e autorizações apropriadas."
         ]
       },
       {
-        title: "5. Infraestrutura, acesso e compartilhamentos",
-        paragraphs: [
-          "O código utiliza serviços Google Firebase, incluindo Authentication, Cloud Firestore, Storage, Hosting e Analytics. É necessário confirmar a região de armazenamento, os contratos aplicáveis, as transferências internacionais e os demais destinatários efetivos antes da versão final.",
-          "Na interface, os registros assistenciais ficam associados ao enfermeiro que cadastrou o paciente; os administradores consultam dados de cadastro e autorização dos profissionais. A ausência de pesquisa administrativa de pacientes na interface não impede, por si só, acesso técnico de pessoas autorizadas ao console do Firebase. O código também prevê leitura ampliada para rotinas de BI autorizadas. Regras e permissões não representam garantia absoluta e precisam de auditoria institucional."
+        "title": "5. Acesso, fornecedores e compartilhamento",
+        "paragraphs": [
+          "A plataforma utiliza serviços do Google Firebase, incluindo autenticação, banco de dados Firestore, armazenamento, Hosting e componentes de análise. Registros assistenciais são associados à conta do profissional que os cadastrou. As permissões podem prever acessos técnicos ou administrativos específicos e relatórios agregados de gestão.",
+          "A ausência de uma função de busca administrativa de pacientes na interface não impede necessariamente acessos técnicos realizados por pessoas com autorização ao ambiente de infraestrutura. Qualquer compartilhamento deverá observar as finalidades, as competências e as regras de segurança aplicáveis.",
+          "[PREENCHER: regiões de armazenamento, eventuais transferências internacionais, fornecedores e categorias de destinatários autorizados.]"
         ]
       },
       {
-        title: "6. Retenção, exclusão e direitos dos titulares",
-        paragraphs: [
-          "No cadastro, o portal registra o aceite do Termo de Responsabilidade e Sigilo e a data, mas não armazena uma cópia do PDF gerado para o usuário. Os prazos de conservação e as regras de eliminação ou anonimização de cadastros, registros assistenciais, auditoria, PDFs e backups ainda precisam ser definidos conforme as obrigações legais e administrativas aplicáveis.",
-          "Os titulares poderão exercer os direitos previstos na LGPD por canal oficial que deverá constar na versão aprovada. Solicitações de eliminação serão avaliadas considerando as hipóteses de conservação legalmente permitidas."
+        "title": "6. Conservação e eliminação dos dados",
+        "paragraphs": [
+          "O portal mantém dados de cadastro e registros clínicos durante os períodos necessários às finalidades autorizadas e às obrigações legais e administrativas aplicáveis. A saída ou o descredenciamento de um usuário não implica necessariamente a eliminação imediata dos registros assistenciais.",
+          "O Termo de Responsabilidade e Sigilo é gerado em PDF para o usuário no cadastro; a plataforma mantém o registro estruturado do aceite e da data, mas não armazena uma cópia desse PDF como arquivo institucional.",
+          "[PREENCHER: prazos e critérios de conservação, exportação, eliminação e gestão de cópias de segurança para cada categoria de dado.]"
         ]
       },
       {
-        title: "7. Segurança, incidentes e atualizações",
-        paragraphs: [
-          "O uso de credenciais pessoais, perfis de acesso e regras do banco de dados integra as medidas de proteção identificadas. A instituição deverá validar também seus procedimentos de resposta a incidentes, atendimento aos titulares, revisão de permissões e gestão de fornecedores.",
-          "Esta minuta não é uma declaração de conformidade ou auditoria concluída. A data, a versão vigente e eventuais mudanças relevantes serão informadas no documento após sua aprovação."
+        "title": "7. Direitos dos titulares",
+        "paragraphs": [
+          "Os titulares podem solicitar informações sobre o tratamento de seus dados e exercer os direitos previstos na LGPD, observadas as limitações legais pertinentes aos registros assistenciais, à atuação do poder público e à preservação de direitos de terceiros.",
+          "As solicitações deverão ser encaminhadas ao canal oficial do controlador informado nesta política. Pedidos de correção, acesso ou eliminação serão analisados conforme a legislação e os procedimentos institucionais."
+        ]
+      },
+      {
+        "title": "8. Segurança e atualizações",
+        "paragraphs": [
+          "A plataforma adota autenticação individual e controles de permissão nas regras do banco de dados. Nenhuma medida técnica elimina completamente os riscos, e incidentes devem ser tratados pelos responsáveis segundo os procedimentos de segurança e comunicação aplicáveis.",
+          "Alterações relevantes nesta política serão identificadas por número de versão e data de publicação. As versões anteriores poderão ser mantidas para fins de rastreabilidade institucional."
         ]
       }
     ]

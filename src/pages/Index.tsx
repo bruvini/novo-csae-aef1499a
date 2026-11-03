@@ -228,7 +228,8 @@ const Index = () => {
           </a>
           {" "}— Todos os direitos reservados.
         </p>
-        <div className="mt-2 text-csae-green-800">
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-csae-green-800">
+          <Link to="/timeline" className="underline underline-offset-4 hover:text-csae-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600">Nossa História</Link>
           <LegalDocumentLinks linkClassName="underline underline-offset-4 hover:text-csae-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600" />
         </div>
       </footer>

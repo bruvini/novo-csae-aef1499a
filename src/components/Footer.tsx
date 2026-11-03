@@ -1,5 +1,6 @@
 import React from 'react';
 import { Instagram, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { LegalDocumentLinks } from '@/components/legal/LegalDocumentLinks';
 
 const Footer = () => {
@@ -35,6 +36,7 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:justify-end">
+            <Link to="/timeline" className={`${linkExterno} font-semibold`}>Nossa História</Link>
             <span className="font-semibold uppercase tracking-wide text-csae-green-400">Transparência</span>
             <LegalDocumentLinks className="contents" linkClassName={`${linkExterno} text-left`} />
           </div>
