@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contagensSugestoes, filtrarSugestoes, indiceSemelhantes, sugestoesSemelhantes, taxaAprovacao } from './sugestoesIntervencoes';
+import { contagensSugestoes, filtrarOcorrenciasGrupo, filtrarSugestoes, indiceSemelhantes, selecionarPendentesGrupo, sugestoesSemelhantes, taxaAprovacao } from './sugestoesIntervencoes';
 import type { IntervencaoAutoral } from '../services/bancodados/intervencoesAutoraisDB';
 import { encontrarResultado, identificadorSugestao, incorporarIntervencao, normalizarAcao } from './intervencoesAutorais';
 import type { Diagnostico } from '../services/bancodados/rolEnfermagemDB';
@@ -34,6 +34,25 @@ test('índice de texto e filtros operam sobre 1.300 registros sem limitar as con
   assert.equal(indiceSemelhantes(massa).get(normalizarAcao('Orientar caminhada')), 2);
   assert.equal(contagensSugestoes(massa).aprovada, 25);
   assert.equal(filtrarSugestoes(massa, { status: 'aguardando', texto: '', autor: 'Nome Completo', diagnostico: '', resultado: '', ordem: 'recentes' }).length, 1275);
+});
+
+test('grupo de 64 ocorrências mantém seleção entre páginas e filtros clínicos', () => {
+  const grupo = Array.from({ length: 64 }, (_, index): IntervencaoAutoral => ({
+    id: `ocorrencia-${index}`, textoIntervencao: 'Orientar caminhada', tituloResultadoVinculado: index % 2 ? 'Mobilidade preservada' : 'Deambulação segura',
+    tituloResultadoOrigem: index % 2 ? 'Mobilidade preservada' : 'Deambulação segura', tituloDiagnosticoOrigem: index < 40 ? 'Mobilidade física prejudicada' : 'Risco de queda',
+    autorId: `autor-${index % 5}`, autorNome: `Profissional ${index % 5}`, status: index === 63 ? 'aprovada' : 'aguardando',
+  }));
+  const pendentes = selecionarPendentesGrupo(grupo);
+  const paginaUmIds = pendentes.slice(0, 25);
+  const paginaDoisIds = pendentes.slice(25, 40);
+  const selecionados = [...paginaUmIds, ...paginaDoisIds];
+  assert.equal(grupo.length, 64);
+  assert.equal(selecionados.length, 40);
+  assert.equal(new Set(selecionados).size, 40);
+  assert.equal(filtrarOcorrenciasGrupo(grupo, { diagnostico: 'mobilidade', resultado: '', autor: '', status: 'aguardando' }).length, 40);
+  assert.equal(filtrarOcorrenciasGrupo(grupo, { diagnostico: '', resultado: 'deambulação segura', autor: '', status: '' }).length, 32);
+  assert.equal(filtrarOcorrenciasGrupo(grupo, { diagnostico: '', resultado: '', autor: 'profissional 2', status: 'aguardando' }).length, 13);
+  assert.equal(filtrarOcorrenciasGrupo(grupo, { diagnostico: '', resultado: '', autor: '', status: 'aprovada' }).length, 1);
 });
 
 test('identificador de sugestão é estável e varia com processo e texto', async () => {

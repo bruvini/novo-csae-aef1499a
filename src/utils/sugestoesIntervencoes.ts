@@ -72,6 +72,22 @@ export function resumoAprovacaoOriginais(items: IntervencaoAutoral[]) {
 
 export interface GrupoSugestoes { chave: string; tipo: 'exata' | 'normalizada' | 'similar'; ocorrencias: IntervencaoAutoral[]; autores: number; diagnosticos: string[]; resultados: string[] }
 
+export interface FiltrosOcorrenciasGrupo { diagnostico: string; resultado: string; autor: string; status: string }
+
+export function filtrarOcorrenciasGrupo(items: IntervencaoAutoral[], filtros: FiltrosOcorrenciasGrupo) {
+  const contem = (texto: string | undefined, busca: string) => !busca || normalizarAcao(texto || '').includes(normalizarAcao(busca));
+  return items.filter(item =>
+    contem(item.tituloDiagnosticoOrigem, filtros.diagnostico)
+    && contem(item.tituloResultadoOrigem || item.tituloResultadoVinculado, filtros.resultado)
+    && contem(item.autorNomeResolvido || item.autorNome, filtros.autor)
+    && (!filtros.status || situacaoSugestao(item) === filtros.status)
+  );
+}
+
+export function selecionarPendentesGrupo(items: IntervencaoAutoral[]) {
+  return items.filter(item => !item.divisao && situacaoSugestao(item) === 'aguardando').map(item => item.id).filter((id): id is string => !!id);
+}
+
 export function agruparSugestoes(items: IntervencaoAutoral[]): GrupoSugestoes[] {
   const porTexto = new Map<string, IntervencaoAutoral[]>();
   for (const item of items) {

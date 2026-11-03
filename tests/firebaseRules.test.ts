@@ -274,6 +274,45 @@ test('aprovação em grupo só ativa a biblioteca depois de auditar todas as dec
   assert.deepEqual((await getDoc(operation)).data()?.concluidasIds.sort(), [...ids].sort());
   await assertSucceeds(getDoc(doc(autorA, 'intervencoesBiblioteca', libraryId)));
 });
+
+test('gestor pode vincular sugestões pendentes a publicação existente sem alterar seu conteúdo clínico', async () => {
+  await seedProfile('autor-link');
+  await seedProfile('gestor-link', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const autor = environment.authenticatedContext('autor-link').firestore();
+  const gestor = environment.authenticatedContext('gestor-link').firestore();
+  const ids = ['s-link-1', 's-link-2'];
+  for (const id of ids) await assertSucceeds(setDoc(doc(autor, 'intervencoesAutorais', id), {
+    textoIntervencao: 'Orientar mobilidade', tituloResultadoVinculado: 'Mobilidade', tituloResultadoOrigem: 'Mobilidade',
+    diagnosticoOrigemId: 'd-link', tituloDiagnosticoOrigem: 'Mobilidade prejudicada', autorId: 'autor-link', autorNome: 'Autor',
+    dataCriacao: serverTimestamp(), identificadorSugestao: id, status: 'aguardando',
+  }));
+  const libraryId = 'publicacao-existente';
+  const operationId = 'grupo-vincular-teste';
+  const destinos = [{ diagnosticoId: 'd-link', tituloDiagnostico: 'Mobilidade prejudicada', tituloResultado: 'Mobilidade', resultadoIndice: 0 }];
+  const preparacao = { acaoPrescrita: 'Orientar mobilidade', acaoEnfermeiro: 'Oriento mobilidade', destinos, modoDisponibilidade: 'resultados_especificos', materiaisDeApoio: [] };
+  await environment.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), 'intervencoesBiblioteca', libraryId), {
+    ...preparacao, status: 'disponivel', versao: 1, sugestoesOrigemIds: ['s-original'], criadoPorUid: 'gestor-link',
+    criadoPorNome: 'Gestor', criadoEm: serverTimestamp(), publicadoEm: serverTimestamp(),
+  }));
+  const operation = doc(gestor, 'operacoesDecisoesIntervencoes', operationId);
+  await assertSucceeds(setDoc(operation, { tipo: 'vincular', status: 'preparando', sugestaoIds: ids, concluidasIds: [], intervencaoBibliotecaId: libraryId, criadoPorUid: 'gestor-link', criadoPorNome: 'Gestor', criadoEm: serverTimestamp() }));
+  for (const id of ids) {
+    const batch = writeBatch(gestor);
+    const auditId = `audit-${id}`;
+    batch.update(doc(gestor, 'intervencoesBiblioteca', libraryId), { sugestoesOrigemIds: arrayUnion(id) });
+    batch.update(doc(gestor, 'intervencoesAutorais', id), { status: 'aprovada', preparacao, intervencaoBibliotecaId: libraryId, grupoOperacaoId: operationId, avaliadorId: 'gestor-link', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: auditId });
+    batch.set(doc(gestor, 'decisoesIntervencoes', auditId), { sugestaoId: id, statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'vincular_grupo', avaliadorId: 'gestor-link', destinos, justificativa: '', grupoOperacaoId: operationId, idsAfetados: ids, intervencaoBibliotecaId: libraryId, dataHora: serverTimestamp() });
+    batch.update(operation, { concluidasIds: arrayUnion(id) });
+    await assertSucceeds(batch.commit());
+  }
+  await assertSucceeds(updateDoc(operation, { status: 'concluida', concluidaEm: serverTimestamp() }));
+  const updatedLibrary = (await getDoc(doc(gestor, 'intervencoesBiblioteca', libraryId))).data();
+  assert.equal(updatedLibrary?.acaoPrescrita, 'Orientar mobilidade');
+  assert.deepEqual(updatedLibrary?.destinos, destinos);
+  assert.deepEqual(updatedLibrary?.sugestoesOrigemIds.sort(), ['s-original', ...ids].sort());
+  const usuarioComum = environment.authenticatedContext('autor-link').firestore();
+  await assertFails(updateDoc(doc(usuarioComum, 'intervencoesBiblioteca', libraryId), { sugestoesOrigemIds: arrayUnion('indevida') }));
+});
 test('novo cadastro só cria o próprio perfil como pendente, sem permissões elevadas', async () => {
   const db = environment.authenticatedContext('novo', { email: 'novo@example.test' }).firestore();
   const data = profile('novo', 'Aguardando');
