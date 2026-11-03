@@ -352,10 +352,7 @@ service cloud.firestore {
         && request.resource.data.revogadoPorUid == request.auth.uid
         && residentHistorySafe('Revogado','Revogado')
         && last.motivo == request.resource.data.motivoRevogacao
-        && last.proximoPrazo == '' && last.diasProrrogados == 0
-        && last.vinculoSMS == resource.data.dadosProfissionais.atuaSMS
-        && last.lotacao == resource.data.dadosProfissionais.get('lotacao','')
-        && last.matricula == resource.data.dadosProfissionais.get('matricula','');
+        && last.proximoPrazo == '' && last.diasProrrogados == 0;
     }
 
 
@@ -375,7 +372,7 @@ service cloud.firestore {
         && professional.formacao == 'Enfermeiro'
         && request.resource.data.statusAcesso == resultingStatus
         && (professional.atuaSMS
-          ? (professional.lotacao.matches('^(Abraão|Agronômica|Alto Ribeirão|Armação|Balneário|Barra da Lagoa|Cachoeira do Bom Jesus|Caieira da Barra do Sul|Campeche|Canasvieiras|Canto da Lagoa|Capivari|CAPS - Pontal do Coral|CAPSAD - Continente|CAPSAD - Ilha|CAPSI - Infantil|Capoeiras|Carianos|Centro|Coloninha|Coqueiros|Córrego Grande|Costa da Lagoa|Costeira do Pirajubaé|Distrito Sanitário Centro|Distrito Sanitário Continente|Distrito Sanitário Norte|Distrito Sanitário Sul|Estreito|Fazenda do Rio Tavares|Secretaria Municipal de Saúde de Florianópolis|Ingleses|Itacorubi|Jardim Atlântico|João Paulo|Jurerê|Lagoa da Conceição|Monte Cristo|Monte Serrat|Morro das Pedras|Novo Continente|Pantanal|Pântano do Sul|Policlínica Centro|Policlínica Continente|Policlínica da Mulher e da Criança|Policlínica Norte|Policlínica Sul|Ponta das Canas|Prainha|Ratones|Ribeirão da Ilha|Rio Tavares|Rio Vemelho|Saco dos Limões|Saco Grande|Santinho|Santo Antônio de Lisboa|Sapé|Tapera|Trindade|Upa Continente|Upa Norte|Upa Sul|Vargem Grande|Vargem Pequena|Vila Aparecida)$')
+          ? ((boundedString(professional.lotacao, 140) && professional.lotacao.size() >= 1)
               && boundedString(professional.matricula, 40) && professional.matricula.size() >= 1)
           : (professional.get('lotacao','') == '' && professional.get('matricula','') == ''
               && request.resource.data.dataRevogacao == request.time
