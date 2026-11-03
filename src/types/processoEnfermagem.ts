@@ -66,7 +66,7 @@ export interface IntervencaoSelecionada {
   origemCatalogoChave?: string;
   acaoPrescrita: string;
   acaoEnfermeiro?: string;
-  tipo: 'padrao' | 'autoral' | 'transversal';
+  tipo: 'padrao' | 'autoral' | 'transversal' | 'biblioteca';
   origemBibliotecaId?: string;
   versaoBiblioteca?: number;
   sugestoesOrigemIds?: string[];

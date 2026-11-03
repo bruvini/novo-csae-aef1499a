@@ -138,7 +138,8 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
       const existe = anteriores.some(item => item.origemBibliotecaId === intervencao.id && item.versaoBiblioteca === intervencao.versao);
       if (checked && existe) return diag;
       if (!checked) return { ...diag, intervencoesSelecionadas: anteriores.filter(item => !(item.origemBibliotecaId === intervencao.id && item.versaoBiblioteca === intervencao.versao)) };
-      const instantanea = criarIntervencaoConsulta({ acaoPrescrita: intervencao.acaoPrescrita, acaoEnfermeiro: intervencao.acaoEnfermeiro, materiaisDeApoio: intervencao.materiaisDeApoio }, 'transversal', 'biblioteca|' + intervencao.id + '|v' + intervencao.versao);
+      const tipo = intervencao.modoDisponibilidade === 'transversal' ? 'transversal' : 'biblioteca';
+      const instantanea = criarIntervencaoConsulta({ acaoPrescrita: intervencao.acaoPrescrita, acaoEnfermeiro: intervencao.acaoEnfermeiro, materiaisDeApoio: intervencao.materiaisDeApoio }, tipo, 'biblioteca|' + intervencao.id + '|v' + intervencao.versao);
       return { ...diag, intervencoesSelecionadas: [...anteriores, { ...instantanea, origemBibliotecaId: intervencao.id, versaoBiblioteca: intervencao.versao, sugestoesOrigemIds: intervencao.sugestoesOrigemIds, resultadoVinculadoId: diag.resultadoPlanejadoId }] };
     });
     setDiagnosticosPrivorizados(updated);
@@ -578,7 +579,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                                     ))}
                                 </div>
                               )}
-                              {diagnostico.intervencoesSelecionadas?.filter(i => i.tipo === 'transversal').length > 0 && <div className="space-y-2"><h5 className="font-medium text-sm">Intervenções transversais selecionadas para esta consulta:</h5>{diagnostico.intervencoesSelecionadas.filter(item => item.tipo === 'transversal').map(item => <div key={item.intervencaoId} className="flex items-center justify-between rounded border border-sky-200 bg-sky-50 p-2 text-sm"><span>{item.acaoPrescrita} · versão {item.versaoBiblioteca}</span><Button variant="ghost" size="sm" aria-label={'Remover ' + item.acaoPrescrita} onClick={() => handleRemoverIntervencaoAutoral(diagnostico.diagnosticoId, item)}><Trash2 className="h-4 w-4" /></Button></div>)}</div>}
+                              {diagnostico.intervencoesSelecionadas?.filter(i => i.tipo === 'transversal' || i.tipo === 'biblioteca').length > 0 && <div className="space-y-2"><h5 className="font-medium text-sm">Intervenções da biblioteca selecionadas para esta consulta:</h5>{diagnostico.intervencoesSelecionadas.filter(item => item.tipo === 'transversal' || item.tipo === 'biblioteca').map(item => <div key={item.intervencaoId} className="flex items-center justify-between rounded border border-sky-200 bg-sky-50 p-2 text-sm"><span>{item.acaoPrescrita} · {item.tipo === 'transversal' ? 'transversal' : 'vinculada a resultado'} · versão {item.versaoBiblioteca}</span><Button variant="ghost" size="sm" aria-label={'Remover ' + item.acaoPrescrita} onClick={() => handleRemoverIntervencaoAutoral(diagnostico.diagnosticoId, item)}><Trash2 className="h-4 w-4" /></Button></div>)}</div>}
                             </div>
                           </div>
                       </AccordionContent>
