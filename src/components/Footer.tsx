@@ -14,11 +14,11 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-csae-green-900 text-white py-8 mt-auto" role="contentinfo">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-white/10">
+    <footer className="bg-csae-green-900 text-white py-5 mt-auto" role="contentinfo">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-5 pb-5 border-b border-white/10">
           {/* Logo e Missão */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="md:col-span-2 space-y-3">
             <div className="flex items-center space-x-3">
               <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
                 <img src="/logo_csae.png" alt="Logo CSAE" className="h-6 w-auto brightness-0 invert" />
@@ -34,9 +34,9 @@ const Footer = () => {
           </div>
 
           {/* Social & Contact */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-widest text-csae-green-400">Conectar</h4>
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1.5">
               <a
                 href="https://www.instagram.com/enfermagemfloripa/"
                 target="_blank"
@@ -85,9 +85,9 @@ const Footer = () => {
           </div>
 
           {/* Legal */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-widest text-csae-green-400">Transparência</h4>
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1.5">
               <button
                 type="button"
                 onClick={handleTransparenciaClick}
@@ -107,7 +107,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-6 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div className="pt-4 flex flex-col md:flex-row justify-between items-center gap-2">
           <a
             href="https://www.pmf.sc.gov.br/entidades/saude/index.php?cms=csae+++apresentacao&menu=9&submenuid=1478"
             target="_blank"

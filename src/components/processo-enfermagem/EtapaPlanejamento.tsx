@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
-import { Info, HelpCircle, GripVertical, Plus, Trash2 } from 'lucide-react';
+import { Info, HelpCircle, GripVertical, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoPlanejado, IntervencaoSelecionada, PlanejamentoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico, type Intervencao as IntervencaoCatalogo } from '@/services/bancodados/rolEnfermagemDB';
@@ -21,6 +21,7 @@ import { revisarSeparacao, sinalizarIntervencoesMultiplas } from '@/utils/indivi
 import { criarIntervencaoConsulta } from '@/utils/materiaisApoioProcesso';
 import { listarIntervencoesBiblioteca, type IntervencaoBiblioteca } from '@/services/bancodados/intervencoesAutoraisDB';
 import { obterDisponibilidadePorResultado } from '@/utils/intervencoesBiblioteca';
+import { combinarIntervencoesPlanejamento, resolverDiagnosticoPlanejamento, type EstadoCatalogoPlanejamento } from '@/utils/planejamentoCatalogo';
 
 interface EtapaPlanejamentoProps {
   processo: ProcessoEnfermagem;
@@ -35,9 +36,12 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
 }) => {
   const [diagnosticosPriorizados, setDiagnosticosPrivorizados] = useState<DiagnosticoPlanejado[]>([]);
   const [diagnosticosDetalhados, setDiagnosticosDetalhados] = useState<Diagnostico[]>([]);
+  const [estadoCatalogoDiagnosticos, setEstadoCatalogoDiagnosticos] = useState<EstadoCatalogoPlanejamento>('carregando');
+  const [tentativaCatalogo, setTentativaCatalogo] = useState(0);
   const [intervencoesBiblioteca, setIntervencoesBiblioteca] = useState<IntervencaoBiblioteca[]>([]);
-  const [buscaTransversal, setBuscaTransversal] = useState('');
+  const [buscaIntervencoes, setBuscaIntervencoes] = useState<Record<string, string>>({});
   const [bibliotecaCarregando, setBibliotecaCarregando] = useState(true);
+  const [bibliotecaErro, setBibliotecaErro] = useState(false);
   const [novaIntervencao, setNovaIntervencao] = useState<{ [key: string]: string }>({});
   const [revisaoId, setRevisaoId] = useState<string | null>(null);
   const [acoesCandidatas, setAcoesCandidatas] = useState<string[]>([]);
@@ -47,20 +51,24 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
 
   useEffect(() => {
     // Carregar diagnósticos detalhados do Firestore
+    setEstadoCatalogoDiagnosticos('carregando');
     const unsubscribe = getDiagnosticos((data) => {
       setDiagnosticosDetalhados(data);
-    });
+      setEstadoCatalogoDiagnosticos('carregado');
+    }, () => setEstadoCatalogoDiagnosticos('erro'));
 
     return () => unsubscribe && unsubscribe();
-  }, []);
+  }, [tentativaCatalogo]);
 
   useEffect(() => {
     let ativo = true;
+    setBibliotecaCarregando(true);
+    setBibliotecaErro(false);
     void listarIntervencoesBiblioteca().then(dados => { if (ativo) setIntervencoesBiblioteca(dados); })
-      .catch(error => console.error('Erro ao carregar intervenções transversais:', error))
+      .catch(error => { console.error('Erro ao carregar intervenções aprovadas:', error); if (ativo) setBibliotecaErro(true); })
       .finally(() => { if (ativo) setBibliotecaCarregando(false); });
     return () => { ativo = false; };
-  }, []);
+  }, [tentativaCatalogo]);
 
   useEffect(() => {
     // Alinhar cada diagnóstico escolhido à sua linha de planejamento.
@@ -215,7 +223,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   const obterIntervencoesDaBiblioteca = (diagnostico: DiagnosticoPlanejado) => {
     if (!diagnostico.resultadoEsperadoSelecionado || diagnostico.resultadoIndiceSelecionado === undefined) return [];
     return obterDisponibilidadePorResultado(intervencoesBiblioteca, diagnostico.diagnosticoId, diagnostico.resultadoIndiceSelecionado, diagnostico.resultadoEsperadoSelecionado)
-      .filter(intervencao => (intervencao.acaoPrescrita + ' ' + intervencao.acaoEnfermeiro).toLocaleLowerCase('pt-BR').includes(buscaTransversal.toLocaleLowerCase('pt-BR')));
+      .filter(intervencao => (intervencao.acaoPrescrita + ' ' + intervencao.acaoEnfermeiro).toLocaleLowerCase('pt-BR').includes((buscaIntervencoes[diagnostico.diagnosticoId] || '').toLocaleLowerCase('pt-BR')));
   };
 
   if (processo.diagnostico.diagnosticosSelecionados.length === 0) {
@@ -365,7 +373,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
 
               <Accordion type="multiple" className="w-full">
                 {diagnosticosPriorizados.map((diagnostico) => {
-                  const diagnosticoDetalhado = getDiagnosticoDetalhado(diagnostico.diagnosticoId);
+                  const resolucao = resolverDiagnosticoPlanejamento(diagnostico.diagnosticoId, diagnosticosDetalhados, estadoCatalogoDiagnosticos);
                   const isPositivo = isDiagnosticoPositivo(diagnostico.naturezaDiagnostico, diagnostico.isPositivo);
                   const isIncompleto = isPositivo ? false : !diagnostico.resultadoEsperadoSelecionado;
                   
@@ -390,12 +398,12 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
-                        {diagnosticoDetalhado && diagnosticoDetalhado.resultadosEsperados.length > 0 ? (
+                        {resolucao.estado === 'com_resultados' ? (
                           <RadioGroup
-                            value={diagnostico.resultadoIndiceSelecionado !== undefined ? String(diagnostico.resultadoIndiceSelecionado) : String(diagnosticoDetalhado.resultadosEsperados.findIndex(item => item.tituloResultado === diagnostico.resultadoEsperadoSelecionado))}
-                            onValueChange={(value) => { const resultadoIndice = Number(value); const resultado = diagnosticoDetalhado.resultadosEsperados[resultadoIndice]; if (resultado) handleResultadoChange(diagnostico.diagnosticoId, resultado.tituloResultado, resultadoIndice); }}
+                            value={diagnostico.resultadoIndiceSelecionado !== undefined ? String(diagnostico.resultadoIndiceSelecionado) : String(resolucao.diagnostico.resultadosEsperados.findIndex(item => item.tituloResultado === diagnostico.resultadoEsperadoSelecionado))}
+                            onValueChange={(value) => { const resultadoIndice = Number(value); const resultado = resolucao.diagnostico.resultadosEsperados[resultadoIndice]; if (resultado) handleResultadoChange(diagnostico.diagnosticoId, resultado.tituloResultado, resultadoIndice); }}
                           >
-                            {diagnosticoDetalhado.resultadosEsperados.map((resultado, index) => (
+                            {resolucao.diagnostico.resultadosEsperados.map((resultado, index) => (
                               <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
                                 <RadioGroupItem value={String(index)} id={`${diagnostico.diagnosticoId}-${index}`} />
                                 <div className="flex-1">
@@ -409,10 +417,18 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                               </div>
                             ))}
                           </RadioGroup>
+                        ) : resolucao.estado === 'carregando' ? (
+                          <p role="status" className="text-sm text-muted-foreground">Carregando resultados esperados homologados...</p>
+                        ) : resolucao.estado === 'erro' ? (
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-destructive"><span>Não foi possível carregar o catálogo de diagnósticos.</span><Button type="button" variant="outline" size="sm" onClick={() => setTentativaCatalogo(value => value + 1)}><RefreshCw className="mr-2 h-4 w-4" />Tentar novamente</Button></div>
+                        ) : resolucao.estado === 'nao_encontrado' ? (
+                          <p role="status" className="text-sm text-muted-foreground">Este diagnóstico não foi encontrado no catálogo. Verifique se a seleção foi atualizada e tente novamente.</p>
+                        ) : resolucao.estado === 'sem_resultados' ? (
+                          <p role="status" className="text-sm text-muted-foreground">Este diagnóstico não possui resultados esperados cadastrados.</p>
                         ) : isPositivo ? (
                           <p className="text-sm text-muted-foreground">Não há resultados esperados homologados para este diagnóstico. A ausência no catálogo não define sua natureza clínica.</p>
                         ) : (
-                          <p className="text-muted-foreground">Carregando resultados esperados homologados...</p>
+                          <p className="text-sm text-muted-foreground">Resultados esperados indisponíveis para este diagnóstico.</p>
                         )}
                       </AccordionContent>
                     </AccordionItem>
@@ -437,6 +453,14 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                   const intervencoes = diagnostico.resultadoEsperadoSelecionado
                     ? getIntervencoesDoResultado(diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado, diagnostico.resultadoIndiceSelecionado)
                     : [];
+                  const intervencoesAprovadas = obterIntervencoesDaBiblioteca(diagnostico);
+                  const termoIntervencao = (buscaIntervencoes[diagnostico.diagnosticoId] || '').trim().toLocaleLowerCase('pt-BR');
+                  const opcoesIntervencao = combinarIntervencoesPlanejamento(intervencoes, intervencoesAprovadas).filter(opcao => {
+                    const texto = opcao.origem === 'catalogo'
+                      ? `${opcao.intervencao.acaoPrescrita} ${opcao.intervencao.acaoEnfermeiro}`
+                      : `${opcao.intervencao.acaoPrescrita} ${opcao.intervencao.acaoEnfermeiro}`;
+                    return texto.toLocaleLowerCase('pt-BR').includes(termoIntervencao);
+                  });
                   
                   const semIntervencoes = !diagnostico.intervencoesSelecionadas || diagnostico.intervencoesSelecionadas.length === 0;
                   const semResultado = !diagnostico.resultadoEsperadoSelecionado;
@@ -480,32 +504,26 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                               </Alert>
                             ) : null}
 
-                            {intervencoes.length > 0 && (
-                              <div className="space-y-3">
-                                <h4 className="font-medium">Intervenções Padrão:</h4>
-                                {intervencoes.map((intervencao, index) => (
-                                  <div key={index} className="flex items-start space-x-2 p-3 border rounded-lg bg-white">
-                                    <Checkbox
-                                      id={`${diagnostico.diagnosticoId}-int-${index}`}
-                                      checked={diagnostico.intervencoesSelecionadas?.some(i => i.origemCatalogoChave === `${diagnostico.diagnosticoId}|${diagnostico.resultadoEsperadoSelecionado}|${index}` || (!i.origemCatalogoChave && i.tipo === 'padrao' && i.acaoPrescrita === intervencao.acaoPrescrita)) || false}
-                                      onCheckedChange={(checked) =>
-                                        handleIntervencaoChange(diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado || '', index, intervencao, checked === true)
-                                      }
-                                    />
-                                    <Label htmlFor={`${diagnostico.diagnosticoId}-int-${index}`} className="flex-1 cursor-pointer">
-                                      {intervencao.acaoPrescrita}
-                                    </Label>
-                                  </div>
-                                ))}
+                            <div className="space-y-3">
+                              <h4 className="font-medium">Intervenções de Enfermagem</h4>
+                              <p className="text-xs text-muted-foreground">Selecione individualmente as ações pertinentes a este resultado e ao contexto clínico. Intervenções transversais não são prescritas automaticamente.</p>
+                              <Input aria-label={`Pesquisar intervenções para ${diagnostico.tituloDiagnostico}`} placeholder="Pesquisar intervenções" value={buscaIntervencoes[diagnostico.diagnosticoId] || ''} onChange={event => setBuscaIntervencoes(previous => ({ ...previous, [diagnostico.diagnosticoId]: event.target.value }))} />
+                              {bibliotecaCarregando && <p role="status" className="text-sm text-muted-foreground">Carregando intervenções aprovadas…</p>}
+                              {bibliotecaErro && <div role="alert" className="flex flex-wrap items-center gap-2 text-sm text-destructive"><span>Não foi possível carregar todas as intervenções aprovadas.</span><Button type="button" variant="outline" size="sm" onClick={() => setTentativaCatalogo(value => value + 1)}>Tentar novamente</Button></div>}
+                              <div className="space-y-2">
+                                {opcoesIntervencao.map(opcao => {
+                                  const id = `${diagnostico.diagnosticoId}-${opcao.chave}`;
+                                  if (opcao.origem === 'catalogo') {
+                                    const intervencao = opcao.intervencao;
+                                    const selecionada = diagnostico.intervencoesSelecionadas?.some(item => item.origemCatalogoChave === `${diagnostico.diagnosticoId}|${diagnostico.resultadoEsperadoSelecionado}|${opcao.indiceCatalogo}` || (!item.origemCatalogoChave && item.tipo === 'padrao' && item.acaoPrescrita === intervencao.acaoPrescrita)) || false;
+                                    return <div key={id} className="flex items-start gap-2 rounded-lg border bg-white p-3"><Checkbox id={id} checked={selecionada} onCheckedChange={checked => handleIntervencaoChange(diagnostico.diagnosticoId, diagnostico.resultadoEsperadoSelecionado || '', opcao.indiceCatalogo, intervencao, checked === true)} /><Label htmlFor={id} className="flex-1 cursor-pointer"><span className="block font-medium">{intervencao.acaoPrescrita}</span>{intervencao.acaoEnfermeiro && <span className="mt-1 block text-sm text-muted-foreground">{intervencao.acaoEnfermeiro}</span>}</Label></div>;
+                                  }
+                                  const item = opcao.intervencao;
+                                  const selecionada = diagnostico.intervencoesSelecionadas?.some(selecionada => selecionada.origemBibliotecaId === item.id && selecionada.versaoBiblioteca === item.versao) || false;
+                                  return <div key={id} className="flex items-start gap-2 rounded-lg border bg-white p-3"><Checkbox id={id} checked={selecionada} onCheckedChange={checked => handleIntervencaoBiblioteca(diagnostico.diagnosticoId, item, checked === true)} /><Label htmlFor={id} className="flex-1 cursor-pointer"><span className="block font-medium">{item.acaoPrescrita}</span>{item.acaoEnfermeiro && <span className="mt-1 block text-sm text-muted-foreground">{item.acaoEnfermeiro}</span>}<span className="mt-1 block text-xs text-muted-foreground">{item.modoDisponibilidade === 'transversal' ? 'Intervenção transversal aprovada' : 'Intervenção aprovada para este resultado'}</span>{item.materiaisDeApoio.length > 0 && <span className="block text-xs text-muted-foreground">{item.materiaisDeApoio.length} material(is) de apoio</span>}</Label></div>;
+                                })}
                               </div>
-                            )}
-
-                            <div className="space-y-3 rounded-lg border border-sky-200 bg-sky-50/40 p-3">
-                              <h4 className="font-medium">Intervenções aprovadas da biblioteca</h4>
-                              <p className="text-xs text-muted-foreground">Escolha individualmente as ações pertinentes ao resultado esperado e ao contexto clínico desta consulta. Intervenções transversais não são prescritas automaticamente.</p>
-                              <Input aria-label="Pesquisar intervenções aprovadas" placeholder="Pesquisar na biblioteca de intervenções" value={buscaTransversal} onChange={event => setBuscaTransversal(event.target.value)} />
-                              {bibliotecaCarregando ? <p className="text-sm">Carregando biblioteca…</p> : obterIntervencoesDaBiblioteca(diagnostico).map(item => <label key={item.id} className="flex items-start gap-2 rounded border bg-white p-2"><Checkbox checked={diagnostico.intervencoesSelecionadas?.some(selecionada => selecionada.origemBibliotecaId === item.id && selecionada.versaoBiblioteca === item.versao) || false} onCheckedChange={checked => handleIntervencaoBiblioteca(diagnostico.diagnosticoId, item, checked === true)} /><span><strong>{item.acaoPrescrita}</strong><br /><span className="text-muted-foreground">{item.acaoEnfermeiro}</span><span className="block text-xs">{item.modoDisponibilidade === 'transversal' ? 'Disponível transversalmente; exige seleção clínica.' : 'Aprovada para este resultado.'}</span>{item.materiaisDeApoio.length > 0 && <span className="block text-xs">{item.materiaisDeApoio.length} material(is) de apoio</span>}</span></label>)}
-                              {!bibliotecaCarregando && !obterIntervencoesDaBiblioteca(diagnostico).length && <p className="text-sm text-muted-foreground">Nenhuma intervenção aprovada está disponível para o resultado selecionado.</p>}
+                              {!opcoesIntervencao.length && !bibliotecaCarregando && !bibliotecaErro && <p className="text-sm text-muted-foreground">Nenhuma intervenção disponível para o resultado selecionado.</p>}
                             </div>
 
                             {/* Intervenções Autorais */}

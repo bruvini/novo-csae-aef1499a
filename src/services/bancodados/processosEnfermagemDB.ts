@@ -13,6 +13,7 @@ import {
   SessaoDeTrabalho,
 } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
+import { removerProcessoPorId } from '@/utils/planejamentoCatalogo';
 
 type DadosEtapasProcesso = Pick<
   ProcessoEnfermagem,
@@ -349,17 +350,14 @@ export async function excluirProcesso(
 ): Promise<void> {
   try {
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
-    const pacienteDoc = await getDoc(pacienteRef);
-
-    if (!pacienteDoc.exists()) return;
-
-    const dadosPaciente = pacienteDoc.data() as Paciente;
-    const processos = dadosPaciente.processosEnfermagem || [];
-    
-    const processosAtualizados = processos.filter(p => p.idProcesso !== processoId);
-
-    await updateDoc(pacienteRef, {
-      processosEnfermagem: processosAtualizados,
+    await runTransaction(db, async transacao => {
+      const pacienteDoc = await transacao.get(pacienteRef);
+      if (!pacienteDoc.exists()) return;
+      const dadosPaciente = pacienteDoc.data() as Paciente;
+      const processos = dadosPaciente.processosEnfermagem || [];
+      const processosAtualizados = removerProcessoPorId(processos, processoId);
+      if (processosAtualizados.length === processos.length) return;
+      transacao.update(pacienteRef, { processosEnfermagem: processosAtualizados });
     });
 
     console.log('Processo excluído com sucesso');

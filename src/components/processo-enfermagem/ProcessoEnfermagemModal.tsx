@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -98,6 +97,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   const [loadFailed, setLoadFailed] = useState(false);
   useEffect(() => { if (!isOpen) setIsInitializing(true); }, [isOpen]);
   const conteudoRef = useRef<HTMLDivElement>(null);
+  const exclusaoEmAndamentoRef = useRef(false);
   useLayoutEffect(() => { if (conteudoRef.current) conteudoRef.current.scrollTop = 0; }, [etapaAtual]);
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [historicoModalOpen, setHistoricoModalOpen] = useState(false);
@@ -491,8 +491,9 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleDeleteProcess = async () => {
-    if (!processo.id || !paciente.id) return;
+    if (exclusaoEmAndamentoRef.current || isSaving || !processo.id || !paciente.id || processo.pacienteId !== paciente.id) return;
 
+    exclusaoEmAndamentoRef.current = true;
     setIsSaving(true);
     try {
       await excluirProcesso(paciente.id, processo.id);
@@ -515,6 +516,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         variant: "destructive",
       });
     } finally {
+      exclusaoEmAndamentoRef.current = false;
       setIsSaving(false);
     }
   };
@@ -581,12 +583,12 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={() => handleSaveAndClose()}>
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !showDeleteAlert) void handleSaveAndClose(); }}>
         <DialogContent 
           className="w-11/12 max-w-7xl h-[90vh] flex flex-col"
           onInteractOutside={(e) => {
             e.preventDefault();
-            handleSaveAndClose();
+            if (!showDeleteAlert) void handleSaveAndClose();
           }}
         >
           {/* Header fixo */}
@@ -694,14 +696,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteProcess}
+            <Button
+              type="button"
+              onClick={() => void handleDeleteProcess()}
               disabled={isSaving}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Excluir
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
