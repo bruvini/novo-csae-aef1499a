@@ -57,6 +57,7 @@ export async function criarProcessoEnfermagem(
       enfermeiroId,
       status: 'em_andamento' as const,
       etapaAtual: 1,
+      etapaMaximaAlcancada: 1,
       dataInicio: agora,
       sessoesDeTrabalho: [
         {
@@ -273,7 +274,8 @@ export async function salvarProgressoProcesso(
   pacienteId: string,
   processoId: string,
   etapaAtual: number,
-  dadosEtapas: DadosEtapasProcesso
+  dadosEtapas: DadosEtapasProcesso,
+  etapaMaximaAlcancada = etapaAtual,
 ): Promise<void> {
   try {
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
@@ -296,6 +298,11 @@ export async function salvarProgressoProcesso(
       processos[processoIndex] = sanitizarParaFirestore({
         ...processos[processoIndex],
         etapaAtual,
+        etapaMaximaAlcancada: Math.max(
+          processos[processoIndex].etapaMaximaAlcancada ?? processos[processoIndex].etapaAtual ?? 1,
+          etapaMaximaAlcancada,
+          etapaAtual,
+        ),
         ...dadosEtapas,
       });
 
@@ -332,6 +339,7 @@ export async function concluirProcesso(
         continuidadeConfirmada: true,
         dataConclusao: Timestamp.now(),
         etapaAtual: 5,
+        etapaMaximaAlcancada: 6,
         ...dadosEtapas,
       });
       transacao.update(pacienteRef, { processosEnfermagem: processos });

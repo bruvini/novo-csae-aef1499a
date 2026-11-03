@@ -251,11 +251,12 @@ export function calcularEtapasCompletadas(
       Array.isArray(item.quemExecuta) ? item.quemExecuta.length > 0 : Boolean(item.quemExecuta)
     );
   });
-  const implementacaoVisitada = processo.etapaAtual >= 4 || Object.keys(implementacao).length > 0;
+  const etapaMaximaAlcancada = obterEtapaMaximaAlcancada(processo);
+  const implementacaoVisitada = etapaMaximaAlcancada >= 4 || Object.keys(implementacao).length > 0;
   if (planejamentoOk && implementacaoVisitada && implementacaoOk) concluidas.push(4);
 
   // A documentação da Evolução é opcional por decisão clínica desta entrega.
-  const evolucaoVisitada = processo.etapaAtual >= 5 || Boolean(
+  const evolucaoVisitada = etapaMaximaAlcancada >= 5 || Boolean(
     processo.evolucao?.julgamentoClinico?.trim() || processo.evolucao?.resumoGerado?.trim()
     || Object.keys(processo.evolucao?.respostasIntervencoes || {}).length
     || Object.keys(processo.evolucao?.avaliacoesResultados || {}).length
@@ -270,6 +271,13 @@ export function calcularEtapasCompletadas(
   if (concluidas.includes(5) && processo.evolucao?.resumoGerado?.trim()) concluidas.push(6);
 
   return concluidas;
+}
+
+/** Usa o maior estágio persistido e oferece compatibilidade para processos legados. */
+export function obterEtapaMaximaAlcancada(processo: ProcessoEnfermagem): number {
+  const etapaPersistida = processo.etapaMaximaAlcancada ?? processo.etapaAtual ?? 1;
+  if (!Number.isFinite(etapaPersistida)) return 1;
+  return Math.min(6, Math.max(1, Math.floor(etapaPersistida)));
 }
 
 /**

@@ -33,6 +33,7 @@ import {
 import { encaminharSugestoes, identificadorSugestao, reprocessarSugestoesPendentes, type IntervencaoAutoral } from '@/services/bancodados/intervencoesAutoraisDB';
 import {
   calcularEtapasCompletadas,
+  obterEtapaMaximaAlcancada,
   isEtapaAcessivel,
   getMotivoBloqueio,
   executarAvancoAposSalvar,
@@ -77,6 +78,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       enfermeiroId: enfermeiroId,
       status: 'em_andamento',
       etapaAtual: 1,
+      etapaMaximaAlcancada: 1,
       dataInicio: null,
       sessoesDeTrabalho: [],
       avaliacao: {
@@ -142,9 +144,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
           const atualizado = await buscarProcessoPorId(paciente.id, processoAtual.id);
           if (!atualizado) throw new Error('Processo não encontrado após iniciar sessão.');
           if (ativo) {
-            processoAtualRef.current = atualizado;
-            setProcesso(atualizado);
-            setEtapaAtual(atualizado.etapaAtual);
+            const processoComProgresso = { ...atualizado, etapaMaximaAlcancada: obterEtapaMaximaAlcancada(atualizado) };
+            processoAtualRef.current = processoComProgresso;
+            setProcesso(processoComProgresso);
+            setEtapaAtual(processoComProgresso.etapaAtual);
           }
           return;
         }
@@ -182,9 +185,10 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       const docCarregado = await buscarProcessoPorId(paciente.id, novoId);
       if (!isActive()) return;
       if (docCarregado) {
-        processoAtualRef.current = docCarregado;
-        setProcesso(docCarregado);
-        setEtapaAtual(docCarregado.etapaAtual || 1);
+        const processoComProgresso = { ...docCarregado, etapaMaximaAlcancada: obterEtapaMaximaAlcancada(docCarregado) };
+        processoAtualRef.current = processoComProgresso;
+        setProcesso(processoComProgresso);
+        setEtapaAtual(processoComProgresso.etapaAtual || 1);
       } else {
         throw new Error('Processo recém-criado não encontrado.');
       }
@@ -228,8 +232,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
         return; // Aborta navegação
       }
 
-      await executarAvancoAposSalvar(handleSalvarProgresso, () => {
-        const atualizado = { ...processoAtualRef.current, etapaAtual: etapa };
+      await executarAvancoAposSalvar(() => handleSalvarProgresso(etapa), () => {
+        const atualizado = { ...processoAtualRef.current, etapaAtual: etapa, etapaMaximaAlcancada: Math.max(obterEtapaMaximaAlcancada(processoAtualRef.current), etapa) };
         processoAtualRef.current = atualizado;
         setProcesso(atualizado);
         setEtapaAtual(etapa);
@@ -237,7 +241,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       return;
     }
 
-    const atualizado = { ...processoAtualRef.current, etapaAtual: etapa };
+    const atualizado = { ...processoAtualRef.current, etapaAtual: etapa, etapaMaximaAlcancada: Math.max(obterEtapaMaximaAlcancada(processoAtualRef.current), etapa) };
     processoAtualRef.current = atualizado;
     setProcesso(atualizado);
     setEtapaAtual(etapa);
@@ -335,7 +339,7 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
     setProcesso(atualizado);
   };
 
-  const handleSalvarProgresso = async (): Promise<boolean> => {
+  const handleSalvarProgresso = async (etapaParaSalvar = etapaAtual): Promise<boolean> => {
     if (!processo.id || !paciente.id) return false;
 
     setIsSaving(true);
@@ -344,14 +348,15 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
       await salvarProgressoProcesso(
         paciente.id,
         atual.id,
-        etapaAtual,
+        etapaParaSalvar,
         {
           avaliacao: atual.avaliacao,
           diagnostico: atual.diagnostico,
           planejamento: atual.planejamento,
           implementacao: atual.implementacao,
           evolucao: atual.evolucao,
-        }
+        },
+        Math.max(obterEtapaMaximaAlcancada(atual), etapaParaSalvar),
       );
 
       return true;
