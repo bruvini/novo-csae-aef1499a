@@ -35,7 +35,7 @@ import {
   Info,
   Search
 } from 'lucide-react';
-import { ProcessoEnfermagem, DiagnosticoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, DiagnosticoEnfermagem, PlanejamentoEnfermagem, ImplementacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { buscarSubconjuntos, SubconjuntoEnfermagem } from '@/services/bancodados/subconjuntosDB';
@@ -47,6 +47,8 @@ interface EtapaDiagnosticoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
   onUpdateDiagnostico: (novoDiagnostico: DiagnosticoEnfermagem) => void;
+  onUpdatePlanejamento: (planejamento: PlanejamentoEnfermagem) => void;
+  onUpdateImplementacao: (implementacao: ImplementacaoEnfermagem) => void;
 }
 
 interface DiagnosticoPorSubconjunto {
@@ -56,7 +58,9 @@ interface DiagnosticoPorSubconjunto {
 const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   processo,
   paciente,
-  onUpdateDiagnostico
+  onUpdateDiagnostico,
+  onUpdatePlanejamento,
+  onUpdateImplementacao,
 }) => {
   const [showNHBs, setShowNHBs] = useState(true);
   const [showProtocolos, setShowProtocolos] = useState(false);
@@ -156,6 +160,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       // Remove o diagnóstico
       novosDiagnosticos = selecionadosAtuais.filter(d => d.id !== diagnostico.id);
     } else {
+      const revisaoAssociada = processo.diagnostico?.reavaliacoesAnteriores?.find(item =>
+        item.decisao === 'manter' && item.diagnosticoOrigemId === diagnostico.id
+        || item.decisao === 'substituir' && item.novoDiagnosticoId === diagnostico.id
+      );
       // Adiciona o diagnóstico
       novosDiagnosticos = [
         ...selecionadosAtuais,
@@ -163,6 +171,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
           id: diagnostico.id,
             tituloDiagnostico: diagnostico.tituloDiagnostico,
             ...(diagnostico.naturezaDiagnostico ? { naturezaDiagnostico: diagnostico.naturezaDiagnostico } : {}),
+            ...(revisaoAssociada ? { acompanhamentoId: revisaoAssociada.acompanhamentoId } : {}),
         }
       ];
     }
@@ -249,6 +258,9 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
               ...(decisao === 'substituir' && novo ? { novoDiagnosticoId: novo.id, novoTituloDiagnostico: novo.tituloDiagnostico } : {}),
             };
             const destinoId = decisao === 'manter' ? cuidado.diagnosticoOrigemId : decisao === 'substituir' ? novo?.id : undefined;
+            const diagnosticoAnterior = processo.diagnostico.diagnosticosSelecionados.find(item =>
+              item.acompanhamentoId === cuidado.acompanhamentoId || item.id === cuidado.diagnosticoOrigemId
+            );
             const selecionados = (processo.diagnostico.diagnosticosSelecionados || []).filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId && item.id !== destinoId);
             if (destinoId) {
               const detalhe = diagnosticos.find(item => item.id === destinoId);
@@ -259,6 +271,20 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
               diagnosticosSelecionados: selecionados,
               reavaliacoesAnteriores: [...decisoes.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), revisao],
             });
+            if (decisao === 'encerrar') {
+              const idsRemovidos = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id].filter((id): id is string => Boolean(id)));
+              const titulosRemovidos = new Set([
+                cuidado.tituloDiagnostico,
+                diagnosticoAnterior?.tituloDiagnostico,
+                ...processo.planejamento.diagnosticosPlanejados.filter(item => idsRemovidos.has(item.diagnosticoId)).map(item => item.tituloDiagnostico),
+              ].filter((titulo): titulo is string => Boolean(titulo)));
+              onUpdatePlanejamento({ diagnosticosPlanejados: processo.planejamento.diagnosticosPlanejados.filter(item =>
+                !idsRemovidos.has(item.diagnosticoId) && item.acompanhamentoId !== cuidado.acompanhamentoId
+              ) });
+              const implementacaoAtualizada = { ...processo.implementacao };
+              titulosRemovidos.forEach(titulo => { delete implementacaoAtualizada[titulo]; });
+              onUpdateImplementacao(implementacaoAtualizada);
+            }
           };
           return <div key={cuidado.acompanhamentoId} className="rounded border p-3 space-y-2">
             <p className="font-medium">{cuidado.tituloDiagnostico} · {formatarDataConsulta(cuidado.dataOrigem)}</p>

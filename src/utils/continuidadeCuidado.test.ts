@@ -62,6 +62,12 @@ test('07 substituição usa o ID real e mantém a identidade longitudinal', () =
   assert.equal(item.diagnosticoOrigemId, 'substituto');
   assert.equal(item.acompanhamentoId, 'linha1');
 });
+test('07a diagnóstico reavaliado não ganha uma segunda linha legada sem acompanhamentoId', () => {
+  const revisado = comReavaliacao(processo('p2', 'concluido', [diagnostico('d1')]), [decisao('linha1', 'd1', 'manter')]);
+  const itens = diagnosticosAnterioresDisponiveis([revisado], 'current');
+  assert.equal(itens.length, 1);
+  assert.equal(itens[0].acompanhamentoId, 'linha1');
+});
 test('08 encerramento remove a linha das pendências', () => {
   const atual = comReavaliacao(processo('p2', 'concluido'), [decisao('linha1', 'd1', 'encerrar')]);
   assert.deepEqual(diagnosticosAnterioresDisponiveis([processo('p1', 'concluido', [diagnostico('d1', 'Dor', 'linha1')]), atual], 'current'), []);

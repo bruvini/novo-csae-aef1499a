@@ -24,7 +24,12 @@ export function diagnosticosAnterioresDisponiveis(
       });
     }
 
+    const diagnosticosComDecisao = new Set((processo.diagnostico?.reavaliacoesAnteriores || [])
+      .filter(decisao => decisao.decisao !== 'encerrar')
+      .map(decisao => decisao.decisao === 'substituir' ? decisao.novoDiagnosticoId : decisao.diagnosticoOrigemId)
+      .filter((id): id is string => Boolean(id)));
     for (const diagnostico of processo.diagnostico?.diagnosticosSelecionados || []) {
+      if (diagnosticosComDecisao.has(diagnostico.id)) continue;
       const plano = processo.planejamento?.diagnosticosPlanejados?.find(item => item.diagnosticoId === diagnostico.id);
       const acompanhamentoId = diagnostico.acompanhamentoId || plano?.acompanhamentoId || idAcompanhamentoLegado(processo.id, diagnostico.id);
       if (atuais.has(acompanhamentoId)) continue;

@@ -536,6 +536,8 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
             processo={processo}
             paciente={paciente}
             onUpdateDiagnostico={handleUpdateDiagnostico}
+            onUpdatePlanejamento={handleUpdatePlanejamento}
+            onUpdateImplementacao={handleUpdateImplementacao}
           />
         );
       case 3:
