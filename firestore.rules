@@ -501,7 +501,7 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
-      allow update: if (isActiveAdmin() && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe() || adminExtendResident() || adminConvertResident() || adminRevokeResident()))
+      allow update: if (isActiveAdmin() && (adminExtendResident() || adminRevokeResident() || adminConvertResident() || adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
         || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
           || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
       allow delete: if false;
