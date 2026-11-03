@@ -299,7 +299,7 @@ test('gestor pode vincular sugestões pendentes a publicação existente sem alt
   for (const id of ids) {
     const batch = writeBatch(gestor);
     const auditId = `audit-${id}`;
-    batch.update(doc(gestor, 'intervencoesBiblioteca', libraryId), { sugestoesOrigemIds: arrayUnion(id) });
+    batch.update(doc(gestor, 'intervencoesBiblioteca', libraryId), { sugestoesOrigemIds: arrayUnion(id), ultimaOperacaoVinculoId: operationId });
     batch.update(doc(gestor, 'intervencoesAutorais', id), { status: 'aprovada', preparacao, intervencaoBibliotecaId: libraryId, grupoOperacaoId: operationId, avaliadorId: 'gestor-link', avaliadorNome: 'Gestor', dataDecisao: serverTimestamp(), ultimaDecisaoId: auditId });
     batch.set(doc(gestor, 'decisoesIntervencoes', auditId), { sugestaoId: id, statusAnterior: 'aguardando', statusNovo: 'aprovada', tipo: 'vincular_grupo', avaliadorId: 'gestor-link', destinos, justificativa: '', grupoOperacaoId: operationId, idsAfetados: ids, intervencaoBibliotecaId: libraryId, dataHora: serverTimestamp() });
     batch.update(operation, { concluidasIds: arrayUnion(id) });
