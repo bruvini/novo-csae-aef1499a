@@ -153,10 +153,10 @@ service cloud.firestore {
     function adminProfileUpdateIsSafe() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let privilegedFields = ['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'statusAcesso'];
-      return validProfileDocument(request.resource.data)
+      return changed.hasOnly(['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'statusAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
-        && changed.hasOnly(['ehAdmin', 'tipoUsuario', 'gestorConteudos', 'paginasPermitidas', 'statusAcesso', 'dataAprovacao', 'dataRecusa', 'dataRecusaAcesso', 'dataLiberacaoAcesso', 'motivoRecusa', 'dataRevogacao', 'revogadoPorUid', 'dataRestauracao', 'dataAtualizacaoPrivilegios', 'alteracaoCadastralPendente', 'dataAlteracaoCadastral', 'dadosProfissionaisAnteriores', 'justificativaRecusaAlteracao'])
+        && validProfileDocument(request.resource.data)
         && (!(changed.hasAny(privilegedFields)) || resource.data.uid != request.auth.uid)
         && (!(request.resource.data.statusAcesso in ['Liberado', 'Aprovado']) || request.resource.data.ehAdmin is bool)
         && (!changed.hasAny(['dataAprovacao']) || request.resource.data.dataAprovacao == request.time)
@@ -172,14 +172,14 @@ service cloud.firestore {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isApproved()
         && resource.data.uid == request.auth.uid
-        && validProfileDocument(request.resource.data)
+        && changed.hasOnly(['dadosPessoais', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
         && request.resource.data.ehAdmin == resource.data.ehAdmin
         && request.resource.data.gestorConteudos == resource.data.gestorConteudos
         && request.resource.data.tipoUsuario == resource.data.tipoUsuario
         && request.resource.data.statusAcesso == resource.data.statusAcesso
-        && changed.hasOnly(['dadosPessoais', 'totalAcessos', 'ultimoAcesso', 'historicoAcesso'])
+        && validProfileDocument(request.resource.data)
         // Atualização cadastral direta limitada a endereço; dados de identidade e
         // vínculo exigem conferência da gestão. Evita autoalteração de COREN/lotação.
         && (!changed.hasAny(['dadosPessoais']) || (
@@ -199,8 +199,8 @@ service cloud.firestore {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let personalChanged = request.resource.data.dadosPessoais.diff(resource.data.dadosPessoais).affectedKeys();
       return isApproved() && resource.data.uid == request.auth.uid
-        && validProfileDocument(request.resource.data)
         && changed.hasOnly(['dadosPessoais', 'dataAtualizacaoDadosPessoais'])
+        && validPersonalData(request.resource.data.dadosPessoais)
         && personalChanged.hasOnly(['rua', 'numero', 'bairro', 'cidade', 'uf', 'cep', 'cpf', 'rg'])
         && (request.resource.data.dataAtualizacaoDadosPessoais == request.time)
         && (!personalChanged.hasAny(['cpf','rg'])
@@ -217,7 +217,7 @@ service cloud.firestore {
         && changed.hasOnly(['email'])
         && request.auth.token.email_verified == true
         && request.resource.data.email == request.auth.token.email
-        && validProfileDocument(request.resource.data);
+        && boundedString(request.resource.data.email, 254);
     }
 
     // Proposta profissional não altera o perfil vigente: bloqueia o acesso
@@ -231,7 +231,6 @@ service cloud.firestore {
         && !('dadosProfissionaisPropostos' in resource.data
           && 'alteracaoCadastralPendente' in resource.data
           && resource.data.alteracaoCadastralPendente == true)
-        && validProfileDocument(request.resource.data)
         && changed.hasOnly([
           'dadosProfissionaisPropostos', 'statusAcesso',
           'alteracaoCadastralPendente', 'dataAlteracaoCadastral'
@@ -250,7 +249,6 @@ service cloud.firestore {
       return isActiveAdmin() && request.auth.uid != resource.data.uid
         && resource.data.statusAcesso == 'AguardandoRevisaoCadastro'
         && resource.data.alteracaoCadastralPendente == true
-        && validProfileDocument(request.resource.data)
         && changed.hasOnly([
           'dadosProfissionais', 'dadosProfissionaisAnteriores',
           'alteracaoCadastralPendente', 'statusAcesso', 'dataAprovacao',
@@ -258,6 +256,7 @@ service cloud.firestore {
           'dataRevisaoCadastral', 'revisadoPorUid', 'resultadoRevisaoCadastral',
           'historicoRevisoes'
         ])
+        && validProfessionalData(request.resource.data.dadosProfissionais)
         && request.resource.data.dataRevisaoCadastral == request.time
         && request.resource.data.revisadoPorUid == request.auth.uid
         && request.resource.data.alteracaoCadastralPendente == false
