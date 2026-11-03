@@ -553,6 +553,18 @@ service cloud.firestore {
             && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoEnfermeiro == data.preparacao.acaoEnfermeiro
             && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.destinos == data.preparacao.destinos
             && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.modoDisponibilidade == (('modoDisponibilidade' in data.preparacao) ? data.preparacao.modoDisponibilidade : 'resultados_especificos'))
+          || (data.status == 'aprovada' && audit.tipo == 'vincular_grupo'
+            && 'preparacao' in data && 'intervencaoBibliotecaId' in data && 'grupoOperacaoId' in data
+            && audit.grupoOperacaoId == data.grupoOperacaoId && audit.intervencaoBibliotecaId == data.intervencaoBibliotecaId
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.status == 'preparando'
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.tipo == 'vincular'
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.sugestaoIds == audit.idsAfetados
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.status == 'disponivel'
+            && interventionId in getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.sugestoesOrigemIds
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoPrescrita == data.preparacao.acaoPrescrita
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoEnfermeiro == data.preparacao.acaoEnfermeiro
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.destinos == data.preparacao.destinos
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.modoDisponibilidade == (('modoDisponibilidade' in data.preparacao) ? data.preparacao.modoDisponibilidade : 'resultados_especificos'))
           || (data.status == 'rejeitada' && audit.tipo == 'rejeitar_grupo'
             && 'grupoOperacaoId' in data && audit.grupoOperacaoId == data.grupoOperacaoId
             && 'categoriaRejeicao' in data && 'justificativaRejeicao' in data && data.justificativaRejeicao.size() > 0
@@ -663,7 +675,7 @@ service cloud.firestore {
     function validLibrary(data, libraryId) {
       return data is map
         && data.keys().hasAll(['acaoPrescrita', 'acaoEnfermeiro', 'materiaisDeApoio', 'modoDisponibilidade', 'destinos', 'status', 'versao', 'sugestoesOrigemIds', 'criadoPorUid', 'criadoPorNome', 'criadoEm', 'publicadoEm'])
-        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'materiaisDeApoio', 'modoDisponibilidade', 'destinos', 'status', 'versao', 'sugestoesOrigemIds', 'grupoOperacaoId', 'criadoPorUid', 'criadoPorNome', 'criadoEm', 'publicadoEm'])
+        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'materiaisDeApoio', 'modoDisponibilidade', 'destinos', 'status', 'versao', 'sugestoesOrigemIds', 'grupoOperacaoId', 'ultimaOperacaoVinculoId', 'criadoPorUid', 'criadoPorNome', 'criadoEm', 'publicadoEm'])
         && boundedString(data.acaoPrescrita, 1000) && data.acaoPrescrita.size() > 0
         && boundedString(data.acaoEnfermeiro, 1000) && data.acaoEnfermeiro.size() > 0
         && data.materiaisDeApoio is list && data.materiaisDeApoio.size() <= 20
@@ -672,6 +684,7 @@ service cloud.firestore {
         && ((data.modoDisponibilidade == 'transversal' && data.destinos.size() == 0)
           || (data.modoDisponibilidade == 'resultados_especificos' && data.destinos.size() > 0))
         && data.status in ['disponivel', 'preparando'] && data.versao == 1
+        && !('ultimaOperacaoVinculoId' in data)
         && data.sugestoesOrigemIds is list && data.sugestoesOrigemIds.size() >= 1 && data.sugestoesOrigemIds.size() <= 100
         && data.criadoPorUid == request.auth.uid && boundedString(data.criadoPorNome, 160) && data.criadoPorNome.size() > 0
         && data.criadoEm == request.time
@@ -698,6 +711,20 @@ service cloud.firestore {
         && operation.concluidasIds.hasAll(operation.sugestaoIds);
     }
 
+    function validLibraryLink(libraryId) {
+      let data = request.resource.data;
+      let operation = getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.ultimaOperacaoVinculoId)).data;
+      return resource.data.status == 'disponivel' && data.status == 'disponivel'
+        && data.diff(resource.data).affectedKeys().hasOnly(['sugestoesOrigemIds', 'ultimaOperacaoVinculoId'])
+        && data.sugestoesOrigemIds is list && data.sugestoesOrigemIds.size() == resource.data.sugestoesOrigemIds.size() + 1
+        && data.sugestoesOrigemIds.size() <= 1000
+        && data.sugestoesOrigemIds.hasAll(resource.data.sugestoesOrigemIds)
+        && operation.sugestaoIds.hasAny(data.sugestoesOrigemIds)
+        && operation.status == 'preparando' && operation.tipo == 'vincular'
+        && operation.intervencaoBibliotecaId == libraryId
+        && boundedString(data.ultimaOperacaoVinculoId, 128);
+    }
+
     function validDecision(data) {
       return data is map
         && data.keys().hasAll(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
@@ -705,16 +732,16 @@ service cloud.firestore {
         && boundedString(data.sugestaoId, 128)
         && data.statusAnterior in ['aguardando', 'aprovada', 'rejeitada']
         && data.statusNovo in ['aguardando', 'aprovada', 'rejeitada']
-        && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar', 'publicar_grupo', 'rejeitar_grupo']
+        && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar', 'publicar_grupo', 'rejeitar_grupo', 'vincular_grupo']
         && (data.tipo == 'avaliar' || data.statusAnterior == 'aguardando')
         && (data.tipo != 'avaliar' || data.statusAnterior == data.statusNovo)
         && (data.tipo != 'desmembrar' || data.statusNovo == 'aguardando')
         && (data.tipo == 'avaliar' ? ('avaliacaoQualidade' in data && validQualityEvaluation(data.avaliacaoQualidade)) : !('avaliacaoQualidade' in data))
         && (!(data.tipo in ['avaliar', 'desmembrar']) || (data.destinos.size() == 0 && data.justificativa == ''))
-        && (data.tipo in ['publicar_grupo', 'rejeitar_grupo']
+        && (data.tipo in ['publicar_grupo', 'rejeitar_grupo', 'vincular_grupo']
           ? ('grupoOperacaoId' in data && boundedString(data.grupoOperacaoId, 128) && data.idsAfetados is list && data.idsAfetados.size() >= 2 && data.idsAfetados.size() <= 100 && data.sugestaoId in data.idsAfetados)
           : (!('grupoOperacaoId' in data) && !('idsAfetados' in data)))
-        && (data.tipo in ['publicar', 'publicar_grupo'] ? ('intervencaoBibliotecaId' in data && boundedString(data.intervencaoBibliotecaId, 128)) : !('intervencaoBibliotecaId' in data))
+        && (data.tipo in ['publicar', 'publicar_grupo', 'vincular_grupo'] ? ('intervencaoBibliotecaId' in data && boundedString(data.intervencaoBibliotecaId, 128)) : !('intervencaoBibliotecaId' in data))
         && data.avaliadorId == request.auth.uid
         && data.destinos is list && data.destinos.size() <= 1000
         && boundedString(data.justificativa, 2000)
@@ -732,7 +759,7 @@ service cloud.firestore {
     match /intervencoesBiblioteca/{libraryId} {
       allow get, list: if canManageContent() || (isApproved() && resource.data.status == 'disponivel' && hasPage('ProcessoEnfermagem'));
       allow create: if canManageContent() && validLibrary(request.resource.data, libraryId);
-      allow update: if canManageContent() && validLibraryActivation(libraryId);
+      allow update: if canManageContent() && (validLibraryActivation(libraryId) || validLibraryLink(libraryId));
       allow delete: if false;
     }
 
@@ -741,14 +768,16 @@ service cloud.firestore {
       allow create: if canManageContent()
         && request.resource.data.keys().hasAll(['tipo', 'status', 'sugestaoIds', 'concluidasIds', 'criadoPorUid', 'criadoPorNome', 'criadoEm'])
         && request.resource.data.keys().hasOnly(['tipo', 'status', 'sugestaoIds', 'concluidasIds', 'intervencaoBibliotecaId', 'categoria', 'justificativa', 'criadoPorUid', 'criadoPorNome', 'criadoEm'])
-        && request.resource.data.tipo in ['publicar', 'rejeitar'] && request.resource.data.status == 'preparando'
+        && request.resource.data.tipo in ['publicar', 'rejeitar', 'vincular'] && request.resource.data.status == 'preparando'
         && request.resource.data.sugestaoIds is list && request.resource.data.sugestaoIds.size() >= 2 && request.resource.data.sugestaoIds.size() <= 100
         && request.resource.data.concluidasIds is list && request.resource.data.concluidasIds.size() == 0
         && request.resource.data.criadoPorUid == request.auth.uid && boundedString(request.resource.data.criadoPorNome, 160)
         && request.resource.data.criadoEm == request.time
         && (request.resource.data.tipo == 'publicar'
           ? ('intervencaoBibliotecaId' in request.resource.data && !('categoria' in request.resource.data) && !('justificativa' in request.resource.data))
-          : (!('intervencaoBibliotecaId' in request.resource.data) && request.resource.data.categoria in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'] && boundedString(request.resource.data.justificativa, 2000) && request.resource.data.justificativa.size() > 0));
+          : request.resource.data.tipo == 'vincular'
+            ? ('intervencaoBibliotecaId' in request.resource.data && !('categoria' in request.resource.data) && !('justificativa' in request.resource.data) && get(/databases/$(database)/documents/intervencoesBiblioteca/$(request.resource.data.intervencaoBibliotecaId)).data.status == 'disponivel')
+            : (!('intervencaoBibliotecaId' in request.resource.data) && request.resource.data.categoria in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'] && boundedString(request.resource.data.justificativa, 2000) && request.resource.data.justificativa.size() > 0));
       allow update: if canManageContent()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['concluidasIds', 'status', 'concluidaEm'])
         && request.resource.data.concluidasIds is list && request.resource.data.concluidasIds.size() <= resource.data.sugestaoIds.size()
