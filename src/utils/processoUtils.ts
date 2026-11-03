@@ -189,6 +189,26 @@ export function obterPendenciasPlanejamento(
   });
 }
 
+export function continuidadeDoProcesso(processo: ProcessoEnfermagem): { completa: boolean; somenteEncerramento: boolean } {
+  const abordados = processo.avaliacao?.cuidadosAnterioresAbordados || [];
+  const decisoes = processo.diagnostico?.reavaliacoesAnteriores || [];
+  const completa = abordados.every(cuidado => {
+    const decisao = decisoes.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+    if (!decisao) return false;
+    if (decisao.decisao === 'encerrar') return true;
+    const diagnosticoNecessarioId = decisao.decisao === 'substituir'
+      ? decisao.novoDiagnosticoId
+      : decisao.diagnosticoOrigemId;
+    return Boolean(diagnosticoNecessarioId
+      && processo.diagnostico?.diagnosticosSelecionados.some(item => item.id === diagnosticoNecessarioId));
+  });
+  const somenteEncerramento = abordados.length > 0
+    && completa
+    && processo.diagnostico?.diagnosticosSelecionados.length === 0
+    && abordados.every(cuidado => decisoes.find(item => item.acompanhamentoId === cuidado.acompanhamentoId)?.decisao === 'encerrar');
+  return { completa, somenteEncerramento };
+}
+
 /**
  * Calcula quais etapas do processo de enfermagem estão concluídas.
  * Fonte única de verdade para validação de progresso.
@@ -201,10 +221,13 @@ export function calcularEtapasCompletadas(
 
   if (validarAvaliacao(processo, requisitosDescricao).completa) concluidas.push(1);
 
+  const continuidade = continuidadeDoProcesso(processo);
+
   // A etapa de diagnóstico só fica concluída quando a avaliação também está válida.
   if (
     concluidas.includes(1)
-    && (processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0
+    && continuidade.completa
+    && ((processo.diagnostico?.diagnosticosSelecionados?.length ?? 0) > 0 || continuidade.somenteEncerramento)
   ) concluidas.push(2);
 
   // Etapa 3: verificar os diagnósticos selecionados, não apenas os registros já
@@ -212,8 +235,8 @@ export function calcularEtapasCompletadas(
   const diagnosticosPlanejados = processo.planejamento?.diagnosticosPlanejados ?? [];
   const planejamentoOk =
     concluidas.includes(2) &&
-    diagnosticosPlanejados.length > 0 &&
-    obterPendenciasPlanejamento(processo.diagnostico, diagnosticosPlanejados).length === 0;
+    (diagnosticosPlanejados.length > 0 && obterPendenciasPlanejamento(processo.diagnostico, diagnosticosPlanejados).length === 0
+      || continuidade.somenteEncerramento);
   if (planejamentoOk) concluidas.push(3);
 
   // A prescrição pode ficar para uma consulta futura. Somente ações marcadas
@@ -238,7 +261,10 @@ export function calcularEtapasCompletadas(
     || Object.keys(processo.evolucao?.avaliacoesResultados || {}).length
     || processo.evolucao?.observacoesCompartilhadas?.length
   );
-  if (concluidas.includes(4) && evolucaoVisitada) concluidas.push(5);
+  const evolucaoValida = continuidade.somenteEncerramento
+    ? Boolean(processo.evolucao?.julgamentoClinico?.trim())
+    : evolucaoVisitada;
+  if (concluidas.includes(4) && evolucaoValida) concluidas.push(5);
 
   // Etapa 6 — Resumo gerado
   if (concluidas.includes(5) && processo.evolucao?.resumoGerado?.trim()) concluidas.push(6);
@@ -312,9 +338,13 @@ export function getMotivoBloqueio(
       if (!validarAvaliacao(processo, requisitosDescricao).completa) {
         return 'Para avançar, revise as informações obrigatórias da Avaliação de Enfermagem.';
       }
+      const continuidade = continuidadeDoProcesso(processo);
+      if (!continuidade.completa) return 'Registre uma decisão clínica para cada cuidado anterior abordado na Avaliação.';
+      if (continuidade.somenteEncerramento) return null;
       return 'Selecione pelo menos um diagnóstico de enfermagem na etapa anterior.';
     }
     case 4: {
+      if (continuidadeDoProcesso(processo).somenteEncerramento) return null;
       const pendencias = obterPendenciasPlanejamento(processo.diagnostico, processo.planejamento?.diagnosticosPlanejados ?? []);
       if (pendencias.length) {
         return `Revise o planejamento: ${pendencias.join('; ')}.`;
@@ -323,6 +353,9 @@ export function getMotivoBloqueio(
     }
     case 5:
     case 6: {
+      if (continuidadeDoProcesso(processo).somenteEncerramento && !processo.evolucao?.julgamentoClinico?.trim()) {
+        return 'Registre a síntese clínica obrigatória da reavaliação na Evolução de Enfermagem.';
+      }
       if (numeroEtapa === 6 && !calcularEtapasCompletadas(processo, requisitosDescricao).includes(5)) {
         return 'Conclua a Evolução de Enfermagem antes de abrir o resumo final.';
       }

@@ -21,6 +21,7 @@ import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } 
 import { ExameResultadoInput } from './ExameResultadoInput';
 import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
+import { diagnosticosAnterioresDisponiveis, formatarDataConsulta } from '@/utils/continuidadeCuidado';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
@@ -56,6 +57,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   // Mantemos a lista de NHBs local para exibição imediata
   const [nhbsAfetadas, setNhbsAfetadas] = useState<{ parametro: string; nhb: string }[]>([]);
+  const historicoPaciente = (paciente.processosEnfermagem || []).map(item => ({ ...item, id: item.idProcesso }) as unknown as ProcessoEnfermagem);
+  const cuidadosAnteriores = diagnosticosAnterioresDisponiveis(historicoPaciente, processo.id);
+  const consultasAnteriores = new Map<string, typeof cuidadosAnteriores>();
+  cuidadosAnteriores.forEach(cuidado => consultasAnteriores.set(cuidado.processoOrigemId, [...(consultasAnteriores.get(cuidado.processoOrigemId) || []), cuidado]));
 
   // Effect 1: Carrega dados estáticos do Firestore — executa APENAS uma vez (montagem)
   useEffect(() => {
@@ -501,6 +506,26 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   return (
     <div className="h-full">
+      {cuidadosAnteriores.length > 0 && <Card className="mb-4"><CardHeader><CardTitle>Acompanhamento de Cuidados Anteriores</CardTitle></CardHeader>
+        <CardContent><Accordion type="single" collapsible className="space-y-2">
+          {[...consultasAnteriores.entries()].map(([consultaId, cuidados]) => <AccordionItem key={consultaId} value={consultaId}>
+            <AccordionTrigger>{formatarDataConsulta(cuidados[0].dataOrigem)}</AccordionTrigger>
+            <AccordionContent className="space-y-3">{cuidados.map(cuidado => <details key={cuidado.acompanhamentoId} className="rounded border p-3">
+              <summary className="cursor-pointer font-medium">{cuidado.tituloDiagnostico}</summary>
+              <div className="mt-2 space-y-2"><p><strong>Diagnóstico:</strong> {cuidado.tituloDiagnostico}</p>
+                <p><strong>Resultado esperado:</strong> {cuidado.resultadoEsperado || 'Não registrado'}</p>
+                <p><strong>Intervenções:</strong> {cuidado.intervencoes?.length ? cuidado.intervencoes.join('; ') : 'Não registradas'}</p>
+                <label className="flex items-center gap-2"><Checkbox checked={(processo.avaliacao?.cuidadosAnterioresAbordados || []).some(item => item.acompanhamentoId === cuidado.acompanhamentoId)} onCheckedChange={checked => {
+                  const atuais = processo.avaliacao?.cuidadosAnterioresAbordados || [];
+                  const selecionados = checked === true
+                    ? [...atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), cuidado]
+                    : atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId);
+                  onUpdateAvaliacao({ ...processo.avaliacao, cuidadosAnterioresAbordados: selecionados });
+                }} />Abordei este cuidado na consulta atual.</label>
+              </div>
+            </details>)}</AccordionContent>
+          </AccordionItem>)}
+        </Accordion></CardContent></Card>}
       <Tabs defaultValue="coleta-dados" className="w-full h-full flex flex-col">
         <TabsList className="grid w-full grid-cols-2 shrink-0">
           <TabsTrigger value="coleta-dados">Coleta de Dados</TabsTrigger>

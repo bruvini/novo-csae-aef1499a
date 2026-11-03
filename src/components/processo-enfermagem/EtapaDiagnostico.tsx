@@ -35,16 +35,20 @@ import {
   Info,
   Search
 } from 'lucide-react';
-import { ProcessoEnfermagem, DiagnosticoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, DiagnosticoEnfermagem, PlanejamentoEnfermagem, ImplementacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getDiagnosticos, Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { buscarSubconjuntos, SubconjuntoEnfermagem } from '@/services/bancodados/subconjuntosDB';
 import { cn } from '@/lib/utils';
+import { diagnosticosAnterioresDisponiveis, formatarDataConsulta } from '@/utils/continuidadeCuidado';
+import { DecisaoReavaliacaoDiagnostico } from '@/types/processoEnfermagem';
 
 interface EtapaDiagnosticoProps {
   processo: ProcessoEnfermagem;
   paciente: Paciente;
   onUpdateDiagnostico: (novoDiagnostico: DiagnosticoEnfermagem) => void;
+  onUpdatePlanejamento: (planejamento: PlanejamentoEnfermagem) => void;
+  onUpdateImplementacao: (implementacao: ImplementacaoEnfermagem) => void;
 }
 
 interface DiagnosticoPorSubconjunto {
@@ -54,7 +58,9 @@ interface DiagnosticoPorSubconjunto {
 const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   processo,
   paciente,
-  onUpdateDiagnostico
+  onUpdateDiagnostico,
+  onUpdatePlanejamento,
+  onUpdateImplementacao,
 }) => {
   const [showNHBs, setShowNHBs] = useState(true);
   const [showProtocolos, setShowProtocolos] = useState(false);
@@ -68,6 +74,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   // Verificar se há dados da avaliação - uso seguro com fallback
   const hasAvaliacaoData = ((processo.avaliacao?.coletaDeDadosSubjetivos ?? '').trim() !== '');
   const nhbsAfetadas = processo.avaliacao?.nhbsAfetadas ?? [];
+  const historicoPaciente = (paciente.processosEnfermagem || []).map(item => ({ ...item, id: item.idProcesso }) as unknown as ProcessoEnfermagem);
+  const cuidadosAbordados = diagnosticosAnterioresDisponiveis(historicoPaciente, processo.id).filter(cuidado =>
+    (processo.avaliacao?.cuidadosAnterioresAbordados || []).some(item => item.acompanhamentoId === cuidado.acompanhamentoId)
+  );
 
   useEffect(() => {
     setLoading(true);
@@ -150,6 +160,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       // Remove o diagnóstico
       novosDiagnosticos = selecionadosAtuais.filter(d => d.id !== diagnostico.id);
     } else {
+      const revisaoAssociada = processo.diagnostico?.reavaliacoesAnteriores?.find(item =>
+        item.decisao === 'manter' && item.diagnosticoOrigemId === diagnostico.id
+        || item.decisao === 'substituir' && item.novoDiagnosticoId === diagnostico.id
+      );
       // Adiciona o diagnóstico
       novosDiagnosticos = [
         ...selecionadosAtuais,
@@ -157,11 +171,13 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
           id: diagnostico.id,
             tituloDiagnostico: diagnostico.tituloDiagnostico,
             ...(diagnostico.naturezaDiagnostico ? { naturezaDiagnostico: diagnostico.naturezaDiagnostico } : {}),
+            ...(revisaoAssociada ? { acompanhamentoId: revisaoAssociada.acompanhamentoId } : {}),
         }
       ];
     }
 
     onUpdateDiagnostico({
+      ...processo.diagnostico,
       diagnosticosSelecionados: novosDiagnosticos
     });
   };
@@ -173,6 +189,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
     );
 
     onUpdateDiagnostico({
+      ...processo.diagnostico,
       diagnosticosSelecionados: novosDiagnosticos
     });
   };
@@ -228,6 +245,64 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
 
   return (
     <div className="space-y-6">
+      {cuidadosAbordados.length > 0 && <Card className="border-amber-300"><CardHeader><CardTitle>Reavaliação de Diagnósticos Anteriores</CardTitle></CardHeader><CardContent className="space-y-4">
+        {cuidadosAbordados.map(cuidado => {
+          const decisoes = processo.diagnostico.reavaliacoesAnteriores || [];
+          const atual = decisoes.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+          const decidir = (decisao: DecisaoReavaliacaoDiagnostico['decisao'], novo?: Diagnostico) => {
+            const revisao: DecisaoReavaliacaoDiagnostico = {
+              acompanhamentoId: cuidado.acompanhamentoId,
+              processoOrigemId: cuidado.processoOrigemId,
+              diagnosticoOrigemId: cuidado.diagnosticoOrigemId,
+              decisao,
+              ...(decisao === 'substituir' && novo ? { novoDiagnosticoId: novo.id, novoTituloDiagnostico: novo.tituloDiagnostico } : {}),
+            };
+            const destinoId = decisao === 'manter' ? cuidado.diagnosticoOrigemId : decisao === 'substituir' ? novo?.id : undefined;
+            const diagnosticoAnterior = processo.diagnostico.diagnosticosSelecionados.find(item =>
+              item.acompanhamentoId === cuidado.acompanhamentoId || item.id === cuidado.diagnosticoOrigemId
+            );
+            const idsOrigem = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id]);
+            const selecionados = (processo.diagnostico.diagnosticosSelecionados || []).filter(item =>
+              item.acompanhamentoId !== cuidado.acompanhamentoId
+              && !idsOrigem.has(item.id)
+              && item.id !== destinoId
+            );
+            if (destinoId) {
+              const detalhe = diagnosticos.find(item => item.id === destinoId);
+              selecionados.push({ id: destinoId, tituloDiagnostico: decisao === 'manter' ? cuidado.tituloDiagnostico : novo!.tituloDiagnostico, acompanhamentoId: cuidado.acompanhamentoId, ...(detalhe?.naturezaDiagnostico ? { naturezaDiagnostico: detalhe.naturezaDiagnostico } : {}) });
+            }
+            onUpdateDiagnostico({
+              ...processo.diagnostico,
+              diagnosticosSelecionados: selecionados,
+              reavaliacoesAnteriores: [...decisoes.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), revisao],
+            });
+            if (decisao === 'encerrar') {
+              const idsRemovidos = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id].filter((id): id is string => Boolean(id)));
+              const titulosRemovidos = new Set([
+                cuidado.tituloDiagnostico,
+                diagnosticoAnterior?.tituloDiagnostico,
+                ...processo.planejamento.diagnosticosPlanejados.filter(item => idsRemovidos.has(item.diagnosticoId)).map(item => item.tituloDiagnostico),
+              ].filter((titulo): titulo is string => Boolean(titulo)));
+              onUpdatePlanejamento({ diagnosticosPlanejados: processo.planejamento.diagnosticosPlanejados.filter(item =>
+                !idsRemovidos.has(item.diagnosticoId) && item.acompanhamentoId !== cuidado.acompanhamentoId
+              ) });
+              const implementacaoAtualizada = { ...processo.implementacao };
+              titulosRemovidos.forEach(titulo => { delete implementacaoAtualizada[titulo]; });
+              onUpdateImplementacao(implementacaoAtualizada);
+            }
+          };
+          return <div key={cuidado.acompanhamentoId} className="rounded border p-3 space-y-2">
+            <p className="font-medium">{cuidado.tituloDiagnostico} · {formatarDataConsulta(cuidado.dataOrigem)}</p>
+            <p className="text-sm text-muted-foreground">Resultado anterior: {cuidado.resultadoEsperado || 'Não registrado'}</p>
+            <details><summary className="cursor-pointer text-sm">Intervenções anteriores</summary><p>{cuidado.intervencoes?.join('; ') || 'Não registradas'}</p></details>
+            <div className="flex flex-wrap gap-2">{(['manter', 'substituir', 'encerrar'] as const).map(value => <Button key={value} size="sm" variant={atual?.decisao === value ? 'default' : 'outline'} onClick={() => decidir(value)}>{value === 'manter' ? 'Manter diagnóstico' : value === 'substituir' ? 'Substituir diagnóstico' : 'Encerrar acompanhamento'}</Button>)}</div>
+            {atual?.decisao === 'substituir' && <div className="space-y-2"><Input aria-label="Pesquisar diagnóstico substituto" placeholder="Pesquisar diagnóstico substituto" value={termoBusca} onChange={event => setTermoBusca(event.target.value)} />
+              <select aria-label="Diagnóstico substituto" className="w-full rounded border p-2" value={atual.novoDiagnosticoId || ''} onChange={event => decidir('substituir', diagnosticos.find(item => item.id === event.target.value))}>
+                <option value="">Selecione no Rol de Enfermagem</option>{diagnosticos.filter(item => item.id !== cuidado.diagnosticoOrigemId && item.tituloDiagnostico.toLowerCase().includes(termoBusca.toLowerCase())).map(item => <option key={item.id} value={item.id}>{item.tituloDiagnostico}</option>)}
+              </select></div>}
+          </div>;
+        })}
+      </CardContent></Card>}
       {/* Bloco Introdutório */}
       <div className="space-y-4">
         <div className="bg-muted/50 rounded-lg p-4">

@@ -15,6 +15,7 @@ import {
   EvolucaoEnfermagem,
 } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
+import { formatarDataConsulta } from '@/utils/continuidadeCuidado';
 import { useToast } from '@/hooks/use-toast';
 import { getSinaisVitais, SinalVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame } from '@/services/bancodados/examesDB';
@@ -235,6 +236,20 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
     if (diagnosticosSelecionados.length > 0) {
       linhas.push('DIAGNÓSTICOS DE ENFERMAGEM SELECIONADOS:');
       diagnosticosSelecionados.forEach((diagnostico) => linhas.push(`• ${diagnostico.tituloDiagnostico}`));
+      linhas.push('');
+    }
+
+    const cuidadosAbordados = processo.avaliacao?.cuidadosAnterioresAbordados || [];
+    const reavaliacoes = (processo.diagnostico?.reavaliacoesAnteriores || []).filter(item => cuidadosAbordados.some(cuidado => cuidado.acompanhamentoId === item.acompanhamentoId));
+    if (reavaliacoes.length > 0) {
+      linhas.push('REAVALIAÇÃO DE DIAGNÓSTICOS ANTERIORES:');
+      reavaliacoes.forEach(item => {
+        const cuidado = cuidadosAbordados.find(registro => registro.acompanhamentoId === item.acompanhamentoId);
+        const data = formatarDataConsulta(cuidado?.dataOrigem, false);
+        const decisao = item.decisao === 'manter' ? 'mantido' : item.decisao === 'substituir' ? 'substituído' : 'encerrado';
+        const atual = item.decisao === 'manter' ? cuidado?.tituloDiagnostico : item.decisao === 'substituir' ? item.novoTituloDiagnostico : undefined;
+        linhas.push(`• ${data}: ${cuidado?.tituloDiagnostico || 'Diagnóstico anterior'} — ${decisao}${atual && atual !== cuidado?.tituloDiagnostico ? ` por ${atual}` : ''}.`);
+      });
       linhas.push('');
     }
 
@@ -498,6 +513,14 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
               </span>
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4 space-y-3">
+              {(processo.diagnostico?.reavaliacoesAnteriores || []).filter(item => (processo.avaliacao?.cuidadosAnterioresAbordados || []).some(cuidado => cuidado.acompanhamentoId === item.acompanhamentoId)).length > 0 && <InfoCard>
+                <SectionHeader label="Reavaliação de Diagnósticos Anteriores" />
+                {(processo.diagnostico?.reavaliacoesAnteriores || []).filter(item => (processo.avaliacao?.cuidadosAnterioresAbordados || []).some(cuidado => cuidado.acompanhamentoId === item.acompanhamentoId)).map(item => {
+                  const cuidado = (processo.avaliacao?.cuidadosAnterioresAbordados || []).find(registro => registro.acompanhamentoId === item.acompanhamentoId);
+                  const rotulo = item.decisao === 'manter' ? 'mantido' : item.decisao === 'substituir' ? `substituído por ${item.novoTituloDiagnostico || 'diagnóstico selecionado'}` : 'acompanhamento encerrado';
+                  return <p key={item.acompanhamentoId} className="text-sm py-1">{formatarDataConsulta(cuidado?.dataOrigem, false)} · {cuidado?.tituloDiagnostico} — {rotulo}</p>;
+                })}
+              </InfoCard>}
               {Object.entries(diagnosticosPorSubconjunto).map(([grupo, titulos]) => (
                 <InfoCard key={grupo}>
                   <SectionHeader label={grupo} />

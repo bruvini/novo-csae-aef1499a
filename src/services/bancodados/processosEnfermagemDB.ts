@@ -290,6 +290,7 @@ export async function salvarProgressoProcesso(
       if (processoIndex === -1) {
         throw new Error('Processo de enfermagem não encontrado ao salvar o progresso.');
       }
+      if (processos[processoIndex].status !== 'em_andamento') return;
 
       processos[processoIndex] = sanitizarParaFirestore({
         ...processos[processoIndex],
@@ -316,26 +317,23 @@ export async function concluirProcesso(
     await finalizarSessaoAtual(pacienteId, processoId);
 
     const pacienteRef = doc(db, 'pacientesProcessoEnfermagem', pacienteId);
-    const pacienteDoc = await getDoc(pacienteRef);
-
-    if (!pacienteDoc.exists()) return;
-
-    const dadosPaciente = pacienteDoc.data() as Paciente;
-    const processos = dadosPaciente.processosEnfermagem || [];
-    
-    const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
-    if (processoIndex === -1) return;
-
-    processos[processoIndex] = sanitizarParaFirestore({
-      ...processos[processoIndex],
-      status: 'concluido' as const,
-      dataConclusao: Timestamp.now(),
-      etapaAtual: 5,
-      ...dadosEtapas,
-    });
-
-    await updateDoc(pacienteRef, {
-      processosEnfermagem: processos,
+    await runTransaction(db, async transacao => {
+      const pacienteDoc = await transacao.get(pacienteRef);
+      if (!pacienteDoc.exists()) throw new Error('Registro do paciente não encontrado ao concluir o processo.');
+      const dadosPaciente = pacienteDoc.data() as Paciente;
+      const processos = [...(dadosPaciente.processosEnfermagem || [])];
+      const processoIndex = processos.findIndex(p => p.idProcesso === processoId);
+      if (processoIndex === -1) throw new Error('Processo de enfermagem não encontrado ao concluir.');
+      if (processos[processoIndex].status === 'concluido') return;
+      processos[processoIndex] = sanitizarParaFirestore({
+        ...processos[processoIndex],
+        status: 'concluido' as const,
+        continuidadeConfirmada: true,
+        dataConclusao: Timestamp.now(),
+        etapaAtual: 5,
+        ...dadosEtapas,
+      });
+      transacao.update(pacienteRef, { processosEnfermagem: processos });
     });
 
     console.log('Processo concluído com sucesso');

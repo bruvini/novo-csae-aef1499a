@@ -58,6 +58,8 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
   const diagnosticosPlanjados = processo.planejamento?.diagnosticosPlanejados || [];
   
   if (diagnosticosPlanjados.length === 0) {
+    const somenteEncerramento = (processo.avaliacao?.cuidadosAnterioresAbordados || []).length > 0
+      && (processo.avaliacao?.cuidadosAnterioresAbordados || []).every(cuidado => processo.diagnostico?.reavaliacoesAnteriores?.find(item => item.acompanhamentoId === cuidado.acompanhamentoId)?.decisao === 'encerrar');
     return (
       <Card className="h-full">
         <CardHeader>
@@ -69,7 +71,7 @@ const EtapaImplementacao: React.FC<EtapaImplementacaoProps> = ({
         <CardContent>
           <Alert>
             <AlertDescription>
-              Para acessar a etapa de Implementação, é necessário completar o planejamento na etapa anterior.
+              {somenteEncerramento ? 'Esta consulta não tem novas intervenções planejadas. Nenhuma ação de implementação é necessária.' : 'Para acessar a etapa de Implementação, é necessário completar o planejamento na etapa anterior.'}
             </AlertDescription>
           </Alert>
         </CardContent>
