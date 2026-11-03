@@ -261,7 +261,12 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
             const diagnosticoAnterior = processo.diagnostico.diagnosticosSelecionados.find(item =>
               item.acompanhamentoId === cuidado.acompanhamentoId || item.id === cuidado.diagnosticoOrigemId
             );
-            const selecionados = (processo.diagnostico.diagnosticosSelecionados || []).filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId && item.id !== destinoId);
+            const idsOrigem = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id]);
+            const selecionados = (processo.diagnostico.diagnosticosSelecionados || []).filter(item =>
+              item.acompanhamentoId !== cuidado.acompanhamentoId
+              && !idsOrigem.has(item.id)
+              && item.id !== destinoId
+            );
             if (destinoId) {
               const detalhe = diagnosticos.find(item => item.id === destinoId);
               selecionados.push({ id: destinoId, tituloDiagnostico: decisao === 'manter' ? cuidado.tituloDiagnostico : novo!.tituloDiagnostico, acompanhamentoId: cuidado.acompanhamentoId, ...(detalhe?.naturezaDiagnostico ? { naturezaDiagnostico: detalhe.naturezaDiagnostico } : {}) });
