@@ -141,13 +141,16 @@ const TabelaSinaisVitais = () => {
     setValoresReferencia(valoresReferencia.filter((_, i) => i !== index));
   };
 
-  const atualizarValorReferencia = (index: number, campo: keyof ValorReferenciaVital, valor: any) => {
+  const atualizarValorReferencia = (
+    index: number, campo: keyof ValorReferenciaVital,
+    valor: ValorReferenciaVital[keyof ValorReferenciaVital] | undefined,
+  ) => {
     const novosValores = [...valoresReferencia];
     if (campo === 'idadeUnidade' && valor === 'not-specified') {
       valor = '';
     }
-    const atualizado = { ...novosValores[index], [campo]: valor };
-    if (valor === undefined) delete atualizado[campo];
+    const atualizado = { ...novosValores[index], [campo]: valor } as ValorReferenciaVital;
+    if (valor === undefined) delete (atualizado as Partial<ValorReferenciaVital>)[campo];
     novosValores[index] = atualizado;
     setValoresReferencia(novosValores);
   };
@@ -366,6 +369,7 @@ const TabelaSinaisVitais = () => {
                       {CONTEXTOS_CLINICOS.map(c => <SelectItem key={c.id} value={c.id}>{c.titulo}</SelectItem>)}
                     </SelectContent>
                   </Select>
+                  <p className="mt-1 text-[11px] text-muted-foreground">Use “Avaliação geral” somente para uma faixa aprovada para uso geral. Faixas de protocolos específicos devem manter seu próprio contexto.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Interpretação explícita</label>

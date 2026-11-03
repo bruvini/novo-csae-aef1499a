@@ -20,7 +20,7 @@ import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassifi
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { ExameResultadoInput } from './ExameResultadoInput';
 import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
-import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosDoParametro, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
+import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosAplicaveisAoPaciente, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
 import { diagnosticosAnterioresDisponiveis, formatarDataConsulta } from '@/utils/continuidadeCuidado';
 
 // Tipos auxiliares de validação
@@ -191,7 +191,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         if (val !== undefined && val !== '') {
           const v = componenteEhClassificatorio(ex.tipoExame, comp)
             ? getImagemValidation(comp.componenteAnalisado, String(val))
-            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab', contextos);
+            : getNumericValidation(comp.componenteAnalisado, val, 'exameLab', contextos, comp.resultados);
           if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: comp.componenteAnalisado, nhb: v.nhb });
         }
       });
@@ -317,12 +317,13 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
   const getNumericValidation = (
     parametro: string, value: string | number, type: 'sinal' | 'exameLab',
     contextos = processo.avaliacao?.contextosParametros || {},
+    referenciasOverride?: readonly (ValorReferenciaVital | ResultadoExame)[],
   ): ValidationStatus => {
-    const refs = type === 'sinal'
+    const refs = referenciasOverride || (type === 'sinal'
       ? sinaisVitais.find(s => s.sinalVitalNome === parametro)?.valoresDeReferencia || []
       : exames.find(e => e.tipoExame === 'Laboratorial'
           && e.componentes.some(c => c.componenteAnalisado === parametro))
-          ?.componentes.find(c => c.componenteAnalisado === parametro)?.resultados || [];
+          ?.componentes.find(c => c.componenteAnalisado === parametro)?.resultados || []);
     return classificarReferenciaNumerica(value, refs,
       { dataNascimento: paciente.dataNascimento.toDate(), sexo: paciente.sexo },
       contextos[parametro]);
@@ -343,16 +344,20 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     parametro: string,
     referencias: readonly (ValorReferenciaVital | ResultadoExame)[],
   ) => {
-    const contexts = contextosDoParametro(referencias.filter(ref =>
-      idadeCompativel(ref, paciente.dataNascimento.toDate())
-      && sexoCompativel(ref, paciente.sexo)));
-    if (contexts.length <= 1 && contexts[0] === 'geral') return null;
+    const contexts = contextosAplicaveisAoPaciente(referencias, {
+      dataNascimento: paciente.dataNascimento.toDate(), sexo: paciente.sexo,
+    });
     const atual = processo.avaliacao?.contextosParametros?.[parametro] || '';
-    const opcoes = [...new Set(['geral', ...contexts])];
+    if (contexts.length === 1 && contexts[0] === 'geral' && (!atual || atual === 'geral')) return null;
+    if (contexts.length === 0) return (
+      <p role="status" className="text-[10px] text-amber-700">Nenhum contexto possui referência cadastrada aplicável a este paciente.</p>
+    );
+    const contextoAtualAplicavel = contexts.includes(atual);
     return (
       <div className="space-y-1">
-        <label className="text-[10px] font-semibold text-gray-600">Contexto da aferição (necessário para classificar)</label>
-        <Select value={atual || undefined} onValueChange={(next) => {
+        <label className="text-[10px] font-semibold text-gray-600">Contexto da aferição</label>
+        {atual && !contextoAtualAplicavel && <p role="status" className="text-[10px] text-amber-700">O contexto salvo anteriormente não tem referência aplicável agora. Selecione um contexto disponível.</p>}
+        <Select value={contextoAtualAplicavel ? atual : undefined} onValueChange={(next) => {
           const contextosNovos = { ...(processo.avaliacao?.contextosParametros || {}), [parametro]: next };
           const novaLista = calculateAllNhbs(
             processo.avaliacao?.exameFisico || {},
@@ -362,7 +367,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
           const atualValor = processo.avaliacao?.exameFisico?.[parametro];
           if (atualValor !== undefined && atualValor !== '') {
             const tipo = sinaisVitais.some(v => v.sinalVitalNome === parametro) ? 'sinal' : 'exameLab';
-            const res = getNumericValidation(parametro, atualValor, tipo, contextosNovos);
+            const res = getNumericValidation(parametro, atualValor, tipo, contextosNovos, referencias);
             setParametroValidation(parametro, res.status, res.nomeAlteracao, res.nhb, res.motivo);
           }
           onUpdateAvaliacao({ ...processo.avaliacao, contextosParametros: contextosNovos, nhbsAfetadas: novaLista });
@@ -371,7 +376,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
             <SelectValue placeholder="Selecionar contexto" />
           </SelectTrigger>
           <SelectContent>
-            {opcoes.map(ctx => (
+            {contexts.map(ctx => (
               <SelectItem key={ctx} value={ctx}>
                 {CONTEXTOS_CLINICOS.find(c => c.id === ctx)?.titulo || ctx}
               </SelectItem>
@@ -487,11 +492,12 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     if (v.status === 'neutro' && v.motivo) {
       return <p role="status" className="mt-1 text-[11px] text-amber-700">{v.motivo}</p>;
     }
+    if (v.status === 'normal') return <p role="status" className="mt-1.5 text-[11px] font-medium text-emerald-700">Classificação normal conforme a referência cadastrada.</p>;
     if (v.status !== 'alterado') return null;
     return (
       <div className="flex items-center gap-1.5 text-red-600 mt-1.5">
         <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-        <p className="text-[11px] font-bold leading-tight">{v.nomeAlteracao}</p>
+        <p className="text-[11px] font-bold leading-tight">Alteração identificada: {v.nomeAlteracao}</p>
       </div>
     );
   };
@@ -987,7 +993,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                     if (componenteEhClassificatorio(exame.tipoExame, componente)) {
                                       updateResultadoClassificatorio(parametro, valor);
                                     } else {
-                                      updateAvaliacaoAtomic(parametro, valor, getNumericValidation(parametro, valor, 'exameLab'));
+                                      updateAvaliacaoAtomic(parametro, valor, getNumericValidation(parametro, valor, 'exameLab', undefined, componente.resultados));
                                     }
                                   }}
                                   onValorTextoChange={(resultado, valor) => updateValorTextoExame(parametro, resultado, valor)}
