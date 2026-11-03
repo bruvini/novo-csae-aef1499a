@@ -490,7 +490,12 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
-      allow update: if (isActiveAdmin() && (adminExtendResident() || adminRevokeResident() || adminConvertResident() || adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+      allow update: if (isActiveAdmin() && (
+        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+          && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
+        || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+          && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+      ))
         || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
           || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
       allow delete: if false;
