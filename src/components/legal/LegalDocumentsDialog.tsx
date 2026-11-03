@@ -41,7 +41,7 @@ export function LegalDocumentsDialog({ documentType, onClose }: LegalDocumentsDi
                 {TITULOS[documentType]}
               </DialogTitle>
               <DialogDescription className="text-sm text-csae-green-100">
-                {versao ? `Versão ${versao.versao}.0 · Publicada em ${formatarData(versao.criadoEm)}` : "Consulta à versão vigente"}
+                {versao ? `Versão ${versao.versao}.0 · Publicada em ${formatarData(versao.publicadoEm ?? versao.criadoEm)}` : "Consulta à versão vigente"}
               </DialogDescription>
             </DialogHeader>
             <ScrollArea className="min-h-0 flex-1 overflow-auto bg-slate-50">

@@ -112,7 +112,7 @@ export default function GestaoDocumentosLegais() {
               <CardContent className="space-y-2 text-sm">
                 {publicado ? (
                   <><p className="font-semibold">Versão {publicado.versao}.0</p>
-                    <p>Publicada em {dataHora(publicado.criadoEm)}</p>
+                    <p>Publicada em {dataHora(publicado.publicadoEm ?? publicado.criadoEm)}</p>
                     <p>Responsável pela publicação (UID): {publicado.autorUid}</p>
                     <Button variant="outline" size="sm" onClick={() => setVisualizacao(publicado)}>Consultar versão vigente</Button></>
                 ) : <p>Não existe versão oficial publicada.</p>}

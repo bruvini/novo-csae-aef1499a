@@ -814,7 +814,7 @@ service cloud.firestore {
     function validLegalSnapshot(data, tipo) {
       return data is map
         && data.keys().hasAll(['tipo', 'versao', 'revisao', 'situacao', 'operacao', 'anteriorId', 'conteudo', 'autorUid', 'criadoEm'])
-        && data.keys().hasOnly(['tipo', 'versao', 'revisao', 'situacao', 'operacao', 'anteriorId', 'conteudo', 'autorUid', 'criadoEm'])
+        && data.keys().hasOnly(['tipo', 'versao', 'revisao', 'situacao', 'operacao', 'anteriorId', 'conteudo', 'autorUid', 'criadoEm', 'publicadoEm'])
         && data.tipo == tipo
         && data.versao is int && data.versao >= 1 && data.versao <= 100000
         && data.revisao is int && data.revisao >= 0
@@ -828,7 +828,10 @@ service cloud.firestore {
         && data.conteudo.secoes is list
         && data.conteudo.secoes.size() >= 1 && data.conteudo.secoes.size() <= 25
         && data.autorUid == request.auth.uid
-        && data.criadoEm == request.time;
+        && data.criadoEm == request.time
+        && (data.situacao == 'publicada'
+          ? ('publicadoEm' in data && data.publicadoEm == request.time)
+          : !('publicadoEm' in data));
     }
 
     function canCreateLegalVersion(tipo, data) {

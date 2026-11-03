@@ -21,6 +21,7 @@ export interface RevisaoDocumentoLegal {
   conteudo: ConteudoDocumentoLegal;
   autorUid: string;
   criadoEm: Timestamp;
+  publicadoEm?: Timestamp;
 }
 
 export interface EstadoDocumentoLegal {
@@ -173,7 +174,7 @@ export async function publicarVersaoLegal(tipo: LegalDocumentKind, autorUid: str
     tx.set(revisaoRef(tipo, id), {
       tipo, versao: rascunho.versao, revisao: rascunho.revisao + 1,
       situacao: "publicada", operacao: "publicada", anteriorId: estado.rascunhoId,
-      conteudo: rascunho.conteudo, autorUid, criadoEm: serverTimestamp(),
+      conteudo: rascunho.conteudo, autorUid, criadoEm: serverTimestamp(), publicadoEm: serverTimestamp(),
     });
     tx.update(stateRef, { publicadaId: id, rascunhoId: "", ultimaAcao: "publicada", atualizadoPor: autorUid, atualizadoEm: serverTimestamp() });
   });

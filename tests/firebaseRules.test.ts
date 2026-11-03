@@ -620,6 +620,7 @@ test('documentos legais: publicação pública, revisão imutável e duplicaçã
   const snapshot = (id: string, versao: number, revisao: number, situacao: string, operacao: string, anteriorId: string, conteudo = texto) => ({
     tipo: 'terms', versao, revisao, situacao, operacao, anteriorId, conteudo,
     autorUid: 'admin-legal', criadoEm: serverTimestamp(),
+    ...(situacao === 'publicada' ? { publicadoEm: serverTimestamp() } : {}),
   });
 
   const primeiraversao = writeBatch(admin);
@@ -680,7 +681,7 @@ test('documentos legais: não permite publicar texto diferente do rascunho nem p
   await assertSucceeds(batch.commit());
   await assertFails(updateDoc(state, { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() }));
   const invalid = writeBatch(admin);
-  invalid.set(doc(admin, 'documentosLegais', 'privacy', 'revisoes', 'v1-r1'), { tipo: 'privacy', versao: 1, revisao: 1, situacao: 'publicada', operacao: 'publicada', anteriorId: 'v1-r0', conteudo: { ...conteudo, introducao: 'Texto trocado sem revisão' }, autorUid: 'admin-legal', criadoEm: serverTimestamp() });
+  invalid.set(doc(admin, 'documentosLegais', 'privacy', 'revisoes', 'v1-r1'), { tipo: 'privacy', versao: 1, revisao: 1, situacao: 'publicada', operacao: 'publicada', anteriorId: 'v1-r0', conteudo: { ...conteudo, introducao: 'Texto trocado sem revisão' }, autorUid: 'admin-legal', criadoEm: serverTimestamp(), publicadoEm: serverTimestamp() });
   invalid.update(state, { publicadaId: 'v1-r1', rascunhoId: '', ultimaAcao: 'publicada', atualizadoPor: 'admin-legal', atualizadoEm: serverTimestamp() });
   await assertFails(invalid.commit());
 });
