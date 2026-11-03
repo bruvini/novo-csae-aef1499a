@@ -89,3 +89,12 @@ jobs:
             --manifest scripts/data/revisao-referencias-2026-11-03.json \
             --apply --confirm-project csaefloripa \
             --approve-sha256 "$SHA_APROVADO" --confirm-text "$FRASE_APROVADA"
+
+      - name: Arquivar evidências e backup do lote
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-csae-clinica-20261103-${{ github.run_id }}
+          path: ~/csae-auditoria-clinica/*.json
+          retention-days: 30
+          if-no-files-found: ignore
