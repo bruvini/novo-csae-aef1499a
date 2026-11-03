@@ -129,6 +129,8 @@ export interface ProcessoEnfermagem {
   enfermeiroId: string;
   status: 'em_andamento' | 'concluido';
   etapaAtual: number; // de 1 a 6
+  /** Maior etapa visitada, preservada quando o usuário volta para revisar etapas anteriores. */
+  etapaMaximaAlcancada?: number;
   dataInicio: Timestamp;
   dataConclusao?: Timestamp;
   sessoesDeTrabalho: SessaoDeTrabalho[]; // NOVO CAMPO: um array para registrar todas as sessões

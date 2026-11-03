@@ -2,11 +2,11 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Circle, Search, FileText, Target, Play, TrendingUp } from 'lucide-react';
+import { CheckCircle, Circle, CircleDot, Search, FileText, Target, Play, TrendingUp } from 'lucide-react';
 import { ETAPAS_PROCESSO } from '@/types/processoEnfermagem';
 import { ProcessoEnfermagem } from '@/types/processoEnfermagem';
 import { cn } from '@/lib/utils';
-import { getMotivoBloqueio, isEtapaAcessivel, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
+import { getMotivoBloqueio, isEtapaAcessivel, obterEtapaMaximaAlcancada, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 
 interface StepperProcessoProps {
   etapaAtual: number;
@@ -32,9 +32,16 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
   processo,
   requisitosDescricao = [],
 }) => {
-  const progressoAtual = (etapaAtual / 6) * 100;
-
-
+  const etapaMaximaAlcancada = processo ? obterEtapaMaximaAlcancada(processo) : etapaAtual;
+  const etapasAlcancadasValidas = ETAPAS_PROCESSO.filter(etapa => etapa.numero <= etapaMaximaAlcancada && isEtapaAcessivel(
+    etapa.numero,
+    etapaAtual,
+    etapasCompletadas,
+    processo!,
+    requisitosDescricao,
+  ));
+  const maiorAvancoValido = Math.max(etapaAtual, ...etapasAlcancadasValidas.map(etapa => etapa.numero));
+  const progressoAtual = (maiorAvancoValido / 6) * 100;
 
   return (
     <TooltipProvider>
@@ -44,7 +51,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
             Progresso do Processo de Enfermagem
           </h3>
           <span className="text-sm text-gray-600">
-            Etapa {etapaAtual} de 6
+            Etapa {etapaAtual} de 6 · avanço válido até {maiorAvancoValido}
           </span>
         </div>
 
@@ -69,6 +76,8 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
               processo!,
               requisitosDescricao
             );
+            const isAlcancada = etapa.numero <= etapaMaximaAlcancada && isAcessivel;
+            const statusEtapa = isAtual ? 'Etapa atual' : isCompletada ? 'Concluída' : isAlcancada ? 'Alcançada e válida' : isAcessivel ? 'Disponível para avançar' : 'Bloqueada';
 
             return (
               <Tooltip key={etapa.numero}>
@@ -79,15 +88,20 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
                     className={cn(
                       "flex-1 sm:flex-none flex items-center gap-2 h-auto py-2 px-3",
                       isAtual && "csae-btn-primary",
+                      isAlcancada && !isAtual && !isCompletada && "border-csae-green-600/50 bg-csae-green-50 text-csae-green-900",
                       !isAcessivel && "opacity-50 cursor-not-allowed"
                     )}
                     onClick={() => isAcessivel && onEtapaChange(etapa.numero)}
                     disabled={!isAcessivel}
+                    aria-current={isAtual ? 'step' : undefined}
+                    aria-label={`${etapa.numero}. ${etapa.nome}: ${statusEtapa}`}
                   >
-                    {isCompletada ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : isAtual ? (
+                    {isAtual ? (
                       <IconeComponent className="w-4 h-4" />
+                    ) : isCompletada ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : isAlcancada ? (
+                      <CircleDot className="w-4 h-4" />
                     ) : (
                       <Circle className="w-4 h-4" />
                     )}
@@ -103,6 +117,7 @@ const StepperProcesso: React.FC<StepperProcessoProps> = ({
                   <div className="space-y-1">
                     <p className="font-bold text-sm flex items-center gap-2">
                        {etapa.numero}. {etapa.nome}
+                       <span className="text-[10px] text-muted-foreground">{statusEtapa}</span>
                        {!isAcessivel && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full uppercase">Bloqueado</span>}
                     </p>
                     {motivoBloqueio ? (

@@ -7,6 +7,7 @@ import {
   getMotivoBloqueio,
   isAchadoDoCatalogoAprovado,
   isEtapaAcessivel,
+  obterEtapaMaximaAlcancada,
   obterRegistrosExameFisico,
   CatalogoAchadosAprovados,
   RequisitoDescricaoAvaliacao,
@@ -154,6 +155,40 @@ test('falha de salvamento não permite avanço; sucesso executa a transição um
   const erro = await executarAvancoAposSalvar(async () => { throw new Error('offline'); }, () => { avancos += 1; });
   assert.equal(erro, false);
   assert.equal(avancos, 1);
+});
+
+test('preserva as etapas acessadas ao retornar para Avaliação e bloqueia dependências invalidadas', () => {
+  const processo = criarProcesso({
+    coletaDeDadosSubjetivos: 'Entrevista realizada.',
+    exameFisico: { 'Pressão Arterial': '120/80' },
+  });
+  processo.etapaAtual = 1;
+  processo.etapaMaximaAlcancada = 4;
+  processo.diagnostico.diagnosticosSelecionados = [{ id: 'diagnostico-1', tituloDiagnostico: 'Promoção da saúde', naturezaDiagnostico: 'promocao_saude' }];
+  processo.planejamento.diagnosticosPlanejados = [{
+    diagnosticoId: 'diagnostico-1', tituloDiagnostico: 'Promoção da saúde', ordemPrioridade: 1,
+    naturezaDiagnostico: 'promocao_saude', intervencoesSelecionadas: [{
+      intervencaoId: 'intervencao-1', acaoPrescrita: 'Orientar autocuidado', acaoEnfermeiro: 'Orientei autocuidado',
+      tipo: 'padrao',
+    }],
+  }];
+
+  assert.equal(obterEtapaMaximaAlcancada(processo), 4);
+  assert.equal(isEtapaAcessivel(4, processo.etapaAtual, calcularEtapasCompletadas(processo), processo), true);
+  assert.equal(calcularEtapasCompletadas(processo).includes(4), true);
+
+  processo.planejamento.diagnosticosPlanejados = [];
+  assert.equal(obterEtapaMaximaAlcancada(processo), 4);
+  assert.equal(isEtapaAcessivel(4, processo.etapaAtual, calcularEtapasCompletadas(processo), processo), false);
+  assert.equal(processo.diagnostico.diagnosticosSelecionados[0].id, 'diagnostico-1');
+});
+
+test('processos legados sem etapa máxima usam a etapa atualmente persistida', () => {
+  const processo = criarProcesso();
+  processo.etapaAtual = 4;
+  assert.equal(obterEtapaMaximaAlcancada(processo), 4);
+  processo.etapaMaximaAlcancada = 9;
+  assert.equal(obterEtapaMaximaAlcancada(processo), 6);
 });
 
 test('dados multi-select e descrições permanecem disponíveis para reabertura e histórico', () => {

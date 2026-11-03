@@ -9,6 +9,7 @@ export interface ProcessoEnfermagem {
   status: 'em_andamento' | 'concluido';
   statusProcesso?: 'Em andamento' | 'Concluído'; // Para compatibilidade
   etapaAtual?: number;
+  etapaMaximaAlcancada?: number;
   enfermeiroId?: string;
   pacienteId?: string;
   sessoesDeTrabalho?: any[];
