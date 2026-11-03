@@ -16,6 +16,8 @@ import ModalConfirmacaoAprovacao from '@/components/gestao-usuarios/ModalConfirm
 import ModalEdicaoPrivilegios from '@/components/gestao-usuarios/ModalEdicaoPrivilegios';
 import ModalConfirmacaoExclusao from '@/components/gestao-usuarios/ModalConfirmacaoExclusao';
 import ModalMotivoRecusa from '@/components/gestao-usuarios/ModalMotivoRecusa';
+import RevisoesProfissionais from '@/components/gestao-usuarios/RevisoesProfissionais';
+import ResidentesParaRevisao from '@/components/gestao-usuarios/ResidentesParaRevisao';
 import {
   buscarUsuariosGestao,
   aprovarUsuario,
@@ -35,6 +37,7 @@ const GestaoUsuarios = () => {
   const [usuariosAprovados, setUsuariosAprovados] = useState<Usuario[]>([]);
   const [usuariosRecusados, setUsuariosRecusados] = useState<Usuario[]>([]);
   const [usuariosRevogados, setUsuariosRevogados] = useState<Usuario[]>([]);
+  const [usuariosEmRevisao, setUsuariosEmRevisao] = useState<Usuario[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroCarregamento, setErroCarregamento] = useState(false);
   
@@ -57,6 +60,7 @@ const GestaoUsuarios = () => {
       setUsuariosAprovados(usuarios.aprovados);
       setUsuariosRecusados(usuarios.recusados);
       setUsuariosRevogados(usuarios.revogados);
+      setUsuariosEmRevisao(usuarios.revisoes);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       setErroCarregamento(true);
@@ -97,6 +101,11 @@ const GestaoUsuarios = () => {
   const aprovadosFiltrados = useMemo(() => filtrarUsuarios(usuariosAprovados), [usuariosAprovados, filtrarUsuarios]);
   const recusadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRecusados), [usuariosRecusados, filtrarUsuarios]);
   const revogadosFiltrados = useMemo(() => filtrarUsuarios(usuariosRevogados), [usuariosRevogados, filtrarUsuarios]);
+  const revisoesFiltradas = useMemo(() => filtrarUsuarios(usuariosEmRevisao), [usuariosEmRevisao, filtrarUsuarios]);
+  const todosPerfis = useMemo(() => [
+    ...usuariosAguardando, ...usuariosAprovados, ...usuariosRecusados,
+    ...usuariosRevogados, ...usuariosEmRevisao,
+  ], [usuariosAguardando, usuariosAprovados, usuariosRecusados, usuariosRevogados, usuariosEmRevisao]);
 
   const metricasUsuarios = useMemo(() => calcularIndicadoresUsuarios({
     aguardando: usuariosAguardando,
@@ -241,6 +250,7 @@ const GestaoUsuarios = () => {
                   <SelectContent>
                     <SelectItem value="todos">Todas Formações</SelectItem>
                     <SelectItem value="Enfermeiro">Enfermeiro</SelectItem>
+                    <SelectItem value="Residente de Enfermagem">Residente de Enfermagem</SelectItem>
                     <SelectItem value="Técnico de Enfermagem">Técnico</SelectItem>
                   </SelectContent>
                 </Select>
@@ -248,7 +258,8 @@ const GestaoUsuarios = () => {
             </Card>
 
             <Tabs defaultValue="aguardando" className="space-y-6">
-              <TabsList className="bg-slate-100 p-1 rounded-lg w-full max-w-4xl grid grid-cols-4 h-12">
+              <div className="w-full overflow-x-auto pb-1">
+              <TabsList className="grid h-auto min-h-12 w-max min-w-full grid-cols-6 gap-1 rounded-lg bg-slate-100 p-1">
                 <TabsTrigger value="aguardando" className="rounded-md flex items-center gap-2 font-semibold">
                   <UserMinus className="w-4 h-4" />
                   Aguardando
@@ -277,7 +288,15 @@ const GestaoUsuarios = () => {
                     {usuariosRevogados.length}
                   </span>
                 </TabsTrigger>
+                <TabsTrigger value="revisoes" className="min-w-[145px] gap-1 rounded-md text-xs font-semibold sm:text-sm">
+                  Alterações profissionais
+                  <span className="rounded-full bg-amber-100 px-1.5 text-amber-800">{usuariosEmRevisao.length}</span>
+                </TabsTrigger>
+                <TabsTrigger value="residentes" className="min-w-[145px] gap-1 rounded-md text-xs font-semibold sm:text-sm">
+                  Residentes para revisão
+                </TabsTrigger>
               </TabsList>
+              </div>
               
               <TabsContent value="aguardando" className="anim-fade-in">
                 <TabelaUsuarios 
@@ -312,6 +331,12 @@ const GestaoUsuarios = () => {
                   onDetalhes={handleDetalhes}
                   onRestaurar={handleRestaurar}
                 />
+              </TabsContent>
+              <TabsContent value="revisoes" className="anim-fade-in">
+                <RevisoesProfissionais usuarios={revisoesFiltradas} onAtualizar={carregarUsuarios} />
+              </TabsContent>
+              <TabsContent value="residentes" className="anim-fade-in">
+                <ResidentesParaRevisao usuarios={todosPerfis} />
               </TabsContent>
             </Tabs>
           </>

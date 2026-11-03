@@ -806,3 +806,69 @@ test('somente admin cria histórias e atualização de endereço não altera ide
   await assertFails(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosProfissionais.atuaSMS': false }));
   await assertFails(updateDoc(doc(titular, 'usuarios', 'titular-endereco'), { 'dadosProfissionais.matricula': '123' }));
 });
+
+test('profissional não altera diretamente formação e abre revisão com suspensão atômica', async () => {
+  await seedProfile('revisado', 'Liberado', { dadosProfissionais: { formacao: 'Residente de Enfermagem', atuaSMS: true, dataInicioResidencia: '2024-02-01' } });
+  const self = environment.authenticatedContext('revisado').firestore();
+  const perfil = doc(self, 'usuarios', 'revisado');
+  await assertFails(updateDoc(perfil, { 'dadosProfissionais.formacao': 'Enfermeiro' }));
+  await assertFails(updateDoc(perfil, { statusAcesso: 'AguardandoRevisaoCadastro' }));
+  await assertSucceeds(updateDoc(perfil, {
+    dadosProfissionaisPropostos: { formacao: 'Enfermeiro', atuaSMS: true },
+    statusAcesso: 'AguardandoRevisaoCadastro',
+    alteracaoCadastralPendente: true,
+    dataAlteracaoCadastral: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(perfil, { 'dadosProfissionais.formacao': 'Enfermeiro' }));
+  await assertSucceeds(getDoc(perfil)); // acesso aos próprios dados durante revisão
+});
+
+test('administrador decide revisão profissional e não aprova a própria alteração', async () => {
+  await seedProfile('admin', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('revisado', 'AguardandoRevisaoCadastro', {
+    dadosProfissionais: { formacao: 'Residente de Enfermagem', atuaSMS: true, dataInicioResidencia: '2024-02-01' },
+    dadosProfissionaisPropostos: { formacao: 'Enfermeiro', atuaSMS: true },
+    alteracaoCadastralPendente: true, dataAlteracaoCadastral: new Date('2026-10-01T00:00:00Z'),
+  });
+  const admin = environment.authenticatedContext('admin').firestore();
+  const docRef = doc(admin, 'usuarios', 'revisado');
+  await assertFails(updateDoc(docRef, { dadosProfissionais: { formacao: 'Enfermeiro', atuaSMS: true } }));
+  await assertSucceeds(updateDoc(docRef, {
+    dadosProfissionais: { formacao: 'Enfermeiro', atuaSMS: true },
+    dadosProfissionaisAnteriores: { formacao: 'Residente de Enfermagem', atuaSMS: true, dataInicioResidencia: '2024-02-01' },
+    alteracaoCadastralPendente: false,
+    statusAcesso: 'Liberado',
+    dataAprovacao: serverTimestamp(),
+    dataRevisaoCadastral: serverTimestamp(),
+    revisadoPorUid: 'admin',
+    resultadoRevisaoCadastral: 'Aprovada',
+    historicoRevisoes: [{
+      dadosAnteriores: { formacao: 'Residente de Enfermagem', atuaSMS: true, dataInicioResidencia: '2024-02-01' },
+      dadosPropostos: { formacao: 'Enfermeiro', atuaSMS: true }, decisao: 'Aprovada',
+      motivo: '', revisadoEm: new Date(), revisadoPorUid: 'admin',
+      solicitadoEm: new Date('2026-10-01T00:00:00Z'),
+    }],
+  }));
+  assert.equal((await getDoc(docRef)).data()?.statusAcesso, 'Liberado');
+});
+
+test('usuário atualiza documentos pessoais com autenticação recente, sem mudar privilégios', async () => {
+  await seedProfile('conta');
+  const habitual = environment.authenticatedContext('conta').firestore();
+  const recently = environment.authenticatedContext('conta', { auth_time: Math.floor(Date.now()/1000) }).firestore();
+  const perfil = doc(habitual, 'usuarios', 'conta');
+  await assertFails(updateDoc(perfil, { 'dadosPessoais.cpf': '12345678901', dataAtualizacaoDadosPessoais: serverTimestamp() }));
+  await assertSucceeds(updateDoc(doc(recently, 'usuarios', 'conta'), {
+    'dadosPessoais.cpf': '12345678901', dataAtualizacaoDadosPessoais: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(doc(recently, 'usuarios', 'conta'), { ehAdmin: true }));
+});
+
+test('e-mail só sincroniza no perfil após confirmação no Firebase Auth', async () => {
+  await seedProfile('conta');
+  const naoVerificado = environment.authenticatedContext('conta', { email: 'novo@exemplo.com', email_verified: false }).firestore();
+  const verificado = environment.authenticatedContext('conta', { email: 'novo@exemplo.com', email_verified: true }).firestore();
+  await assertFails(updateDoc(doc(naoVerificado, 'usuarios', 'conta'), { email: 'novo@exemplo.com' }));
+  await assertSucceeds(updateDoc(doc(verificado, 'usuarios', 'conta'), { email: 'novo@exemplo.com' }));
+  await assertFails(updateDoc(doc(verificado, 'usuarios', 'conta'), { email: 'qualquer@exemplo.com' }));
+});

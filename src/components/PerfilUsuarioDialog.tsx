@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import SegurancaConta from "@/components/SegurancaConta";
+import SolicitacaoProfissional from "@/components/SolicitacaoProfissional";
 
 interface Props { open: boolean; onOpenChange: (open: boolean) => void }
 type Endereco = Pick<Usuario["dadosPessoais"], "rua" | "numero" | "bairro" | "cidade" | "uf" | "cep">;
@@ -91,12 +94,18 @@ export default function PerfilUsuarioDialog({ open, onOpenChange }: Props) {
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Meus dados cadastrais</DialogTitle>
-          <DialogDescription>Consulte seus dados e mantenha seu endereço atualizado. Alterações de identidade e vínculo passam por verificação da equipe.</DialogDescription>
+          <DialogDescription>Consulte seu perfil, atualize os dados pessoais e gerencie solicitações de alteração profissional.</DialogDescription>
         </DialogHeader>
         {carregando ? <p role="status">Carregando perfil...</p> : erro ? (
           <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{erro}</p>
         ) : perfil ? (
-          <div className="space-y-6">
+          <Tabs defaultValue="endereco" className="space-y-5">
+            <TabsList className="grid h-auto w-full grid-cols-3">
+              <TabsTrigger value="endereco">Endereço</TabsTrigger>
+              <TabsTrigger value="seguranca">Segurança</TabsTrigger>
+              <TabsTrigger value="profissionais">Profissionais</TabsTrigger>
+            </TabsList>
+            <TabsContent value="endereco" className="space-y-6">
             <section className="space-y-2">
               <h3 className="font-semibold text-csae-green-800">Identificação</h3>
               <dl className="grid gap-3 rounded-xl bg-gray-50 p-4 text-sm sm:grid-cols-2">
@@ -114,7 +123,7 @@ export default function PerfilUsuarioDialog({ open, onOpenChange }: Props) {
                 <div><dt className="text-gray-500">Lotação</dt><dd className="font-medium">{perfil.dadosProfissionais.lotacao || "Não informada"}</dd></div>
                 <div><dt className="text-gray-500">Matrícula</dt><dd className="font-medium">{perfil.dadosProfissionais.matricula || "Não informada"}</dd></div>
               </dl>
-              <p className="text-xs leading-relaxed text-gray-600">Para corrigir nome, CPF, RG, e-mail, formação, COREN, lotação, matrícula ou vínculo, solicite revisão à equipe do portal pela Central de Ajuda. Esses dados são utilizados na aprovação de acesso.</p>
+              <p className="text-xs leading-relaxed text-gray-600">Você pode alterar CPF, RG e e-mail na aba Segurança. Alterações profissionais devem ser enviadas para análise na aba Profissionais.</p>
             </section>
             <form onSubmit={(event) => void salvar(event)} className="space-y-4">
               <h3 className="font-semibold text-csae-green-800">Endereço residencial</h3>
@@ -132,7 +141,16 @@ export default function PerfilUsuarioDialog({ open, onOpenChange }: Props) {
                 <Button type="submit" disabled={salvando}>{salvando ? "Salvando..." : "Salvar endereço"}</Button>
               </div>
             </form>
-          </div>
+            </TabsContent>
+            <TabsContent value="seguranca">
+              <SegurancaConta user={user!} perfil={perfil} onIdentityChange={(cpf, rg) =>
+                setPerfil(p => p ? { ...p, dadosPessoais: { ...p.dadosPessoais, cpf, rg } } : p)
+              }/>
+            </TabsContent>
+            <TabsContent value="profissionais">
+              <SolicitacaoProfissional perfil={perfil} />
+            </TabsContent>
+          </Tabs>
         ) : <p className="text-sm text-gray-600">Dados cadastrais indisponíveis.</p>}
       </DialogContent>
     </Dialog>

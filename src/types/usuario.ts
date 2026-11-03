@@ -42,7 +42,7 @@ export interface Usuario {
   ehAdmin: boolean;
   gestorConteudos: boolean;
   tipoUsuario: 'Comum' | 'Admin' | 'Administrador';
-  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado' | 'Rejeitado' | 'Revogado';
+  statusAcesso: 'Aguardando' | 'Liberado' | 'Recusado' | 'Aprovado' | 'Rejeitado' | 'Revogado' | 'AguardandoRevisaoCadastro';
   paginasPermitidas?: string[]; // Array de IDs de páginas permitidas
   totalAcessos?: number;
   ultimoAcesso?: Timestamp;
@@ -56,4 +56,21 @@ export interface Usuario {
   dataLiberacaoAcesso?: Timestamp;
   motivoRecusa?: string;
   historicoAcesso?: HistoricoAcesso[];
+  dadosProfissionaisPropostos?: DadosProfissionais;
+  dadosProfissionaisAnteriores?: DadosProfissionais;
+  alteracaoCadastralPendente?: boolean;
+  dataAlteracaoCadastral?: Timestamp;
+  dataRevisaoCadastral?: Timestamp;
+  revisadoPorUid?: string;
+  resultadoRevisaoCadastral?: 'Aprovada' | 'Recusada';
+  justificativaRecusaAlteracao?: string;
+  historicoRevisoes?: Array<{
+    dadosAnteriores: DadosProfissionais;
+    dadosPropostos: DadosProfissionais;
+    decisao: 'Aprovada' | 'Recusada';
+    motivo: string;
+    solicitadoEm?: Timestamp;
+    revisadoEm: Timestamp;
+    revisadoPorUid: string;
+  }>;
 }

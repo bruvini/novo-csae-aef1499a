@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  criarVersaoLegal, listarVersoesLegais, localizarPendenciasLegais, pendenciasParaPublicacao,
+  conteudosLegaisIguais, criarVersaoLegal, listarVersoesLegais, localizarPendenciasLegais, pendenciasParaPublicacao,
   publicarVersaoLegal, salvarRevisaoLegal, validarConteudoLegal,
   type ConteudoDocumentoLegal, type EstadoDocumentoLegal, type RevisaoDocumentoLegal,
 } from "@/services/bancodados/documentosLegaisDB";
@@ -64,7 +64,7 @@ export default function GestaoDocumentosLegais() {
   const erros = editor ? validarConteudoLegal(editor) : [];
   const pendencias = editor ? pendenciasParaPublicacao(editor) : [];
   const pendenciasDetalhadas = editor ? localizarPendenciasLegais(editor) : [];
-  const temAlteracoes = !!(editor && rascunho && JSON.stringify(editor) !== JSON.stringify(rascunho.conteudo));
+  const temAlteracoes = !!(editor && rascunho && !conteudosLegaisIguais(editor, rascunho.conteudo));
 
   const executar = async (acao: "criar" | "salvar" | "publicar") => {
     if (!user) return;

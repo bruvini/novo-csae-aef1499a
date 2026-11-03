@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, runTransaction } from 'firebase/firestore';
+import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, reload, getIdToken, setPersistence, browserSessionPersistence } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, runTransaction, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -131,7 +131,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return;
       }
 
-      // Processar documento do usuário
+      // Sincronizar o e-mail confirmado pelo Firebase Authentication (unicidade no Auth).
+      const authUser = auth.currentUser;
+      if (authUser?.uid === uid) {
+        await reload(authUser);
+        if (authUser.emailVerified && authUser.email &&
+          authUser.email.toLowerCase() !== userDoc.email.toLowerCase()) {
+          await getIdToken(authUser, true);
+          const novoEmail = authUser.email.toLowerCase();
+          await updateDoc(doc(db, 'usuarios', userDoc.id), { email: novoEmail });
+          userDoc.email = novoEmail;
+        }
+      }
       await handleUserDocument(userDoc, uid);
       
     } catch (error) {
@@ -158,6 +169,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const status = (userDoc.statusAcesso || '').toLowerCase();
     console.log('Status normalizado:', status);
     
+    if (status === 'aguardandorevisaocadastro') {
+      toast({
+        title: "Atualização profissional em análise",
+        description: "Sua conta está temporariamente suspensa até a decisão da equipe.",
+        variant: "default",
+      });
+      await signOut(auth);
+      setUser(null);
+      setSessionData(null);
+      localStorage.removeItem('csae_session');
+      navigate('/login');
+      return;
+    }
+
     if (status === 'aguardando') {
       console.log('Status: aguardando - perfil em análise');
       toast({
