@@ -15,6 +15,7 @@ import PainelEstatistico from "./pages/PainelEstatistico";
 import DebugUsers from "./pages/DebugUsers";
 import CentralAjuda from "./pages/CentralAjuda";
 import GestaoSuporte from "./pages/GestaoSuporte";
+import Timeline from "./pages/Timeline";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -37,6 +38,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/registrar" element={<Register />} />
               <Route path="/waiting-approval" element={<WaitingApproval />} />
+              <Route path="/timeline" element={<Timeline />} />
               
               {/* Authenticated Routes */}
               <Route 

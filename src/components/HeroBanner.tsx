@@ -48,7 +48,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
       <div className="relative z-20 flex w-full flex-col justify-center px-6 py-8 lg:px-12 lg:py-10">
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Left Column - Content */}
-          <div className="flex-1 text-white text-center lg:text-left max-w-2xl">
+          <div className="w-full min-w-0 text-center text-white lg:w-[64%] lg:flex-none lg:text-left">
 
             
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-[1.1] mb-4 tracking-tight">
@@ -60,29 +60,29 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
               Transformando o cuidado com ferramentas tecnológicas desenvolvidas especialmente para a rede municipal de Florianópolis.
             </p>
             
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 max-w-2xl mx-auto lg:mx-0 pt-4 border-t border-white/10">
-              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Profissionais Ativos</p>
-                <p className="text-2xl font-black text-white mt-auto">
+            <div className="mx-auto grid w-full min-w-0 grid-cols-2 gap-3 border-t border-white/10 pt-4 md:grid-cols-4 lg:mx-0">
+              <div className="flex h-full min-h-[120px] min-w-0 flex-col justify-between rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4">
+                <p className="mb-3 min-h-9 text-[10px] font-black uppercase leading-relaxed tracking-wider text-csae-green-100 sm:text-[11px]">Profissionais Ativos</p>
+                <p className="mt-auto whitespace-nowrap text-[clamp(1.125rem,2vw,2rem)] font-black leading-none tabular-nums text-white">
                   {loading ? '---' : stats?.profissionaisAprovados || 0}
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Processos Realizados</p>
-                <p className="text-2xl font-black text-white mt-auto">
+              <div className="flex h-full min-h-[120px] min-w-0 flex-col justify-between rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4">
+                <p className="mb-3 min-h-9 text-[10px] font-black uppercase leading-relaxed tracking-wider text-csae-green-100 sm:text-[11px]">Processos Realizados</p>
+                <p className="mt-auto whitespace-nowrap text-[clamp(1.125rem,2vw,2rem)] font-black leading-none tabular-nums text-white">
                   {loading ? '---' : totalProcessos}
                 </p>
               </div>
               
-              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Logins registrados</p>
-                <p className="text-2xl font-black text-white mt-auto">
+              <div className="flex h-full min-h-[120px] min-w-0 flex-col justify-between rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4">
+                <p className="mb-3 min-h-9 text-[10px] font-black uppercase leading-relaxed tracking-wider text-csae-green-100 sm:text-[11px]">Logins registrados</p>
+                <p className="mt-auto whitespace-nowrap text-[clamp(1.125rem,2vw,2rem)] font-black leading-none tabular-nums text-white">
                   {loading ? '---' : stats?.totalAcessosPlataforma || 0}
                 </p>
               </div>
-              <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors flex flex-col justify-between h-full" title="Soma do tempo efetivamente registrado nas sessões encerradas do Processo de Enfermagem. Não inclui períodos sem atividade registrada.">
-                <p className="text-[10px] text-csae-green-200 uppercase font-black tracking-widest mb-2 leading-relaxed">Tempo de uso do PE</p>
-                <p className="text-xl sm:text-2xl font-black text-white mt-auto">
+              <div className="flex h-full min-h-[120px] min-w-0 flex-col justify-between rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm transition-colors hover:bg-white/15 sm:p-4" title="Soma do tempo efetivamente registrado nas sessões encerradas do Processo de Enfermagem. Não inclui períodos sem atividade registrada.">
+                <p className="mb-3 min-h-9 text-[10px] font-black uppercase leading-relaxed tracking-wider text-csae-green-100 sm:text-[11px]">Tempo de uso do PE</p>
+                <p className="mt-auto whitespace-nowrap text-[clamp(1.125rem,2vw,2rem)] font-black leading-none tabular-nums text-white">
                   {loading ? '---' : formatarTempoRegistrado(stats?.totalTempoProcessosMinutos ?? 0)}
                 </p>
               </div>
@@ -90,7 +90,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
           </div>
 
           {/* Right Column - transparent spacer so left content doesn't overlap the image */}
-          <div className="hidden lg:block lg:w-5/12 flex-shrink-0" aria-hidden="true" />
+          <div className="hidden lg:block lg:flex-1" aria-hidden="true" />
         </div>
       </div>
     </section>

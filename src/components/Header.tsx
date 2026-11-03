@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { LogOut, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones } from 'lucide-react';
+import { LogOut, Home, Heart, Database, Users, BarChart as BarChartIcon, LifeBuoy, Headphones, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ const Header = () => {
 
   const navigationItems = [
     { title: 'Dashboard', url: '/dashboard', icon: Home },
+    { title: 'Nossa História', url: '/timeline', icon: BookOpen },
     { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart },
     { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
     { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },

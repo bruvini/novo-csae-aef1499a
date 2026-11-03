@@ -60,6 +60,7 @@ const PENDENCIAS = [
   /a ser confirmado/i, /ainda precisam ser definid/i,
   /precisam ser confirmad/i, /precisa ser confirmado/i,
   /deverá constar expressamente/i, /minuta para/i,
+  /\[PREENCHER:[^\]]+\]/i,
 ];
 export function pendenciasParaPublicacao(conteudo: ConteudoDocumentoLegal): string[] {
   const itens = [conteudo.introducao, ...conteudo.secoes.map((s) => s.corpo)];

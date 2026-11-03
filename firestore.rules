@@ -789,6 +789,43 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Nossa História: coleção e campos preservados desde a versão antiga.
+    // Leitura pública somente de conteúdos editoriais, nunca de dados clínicos.
+    function validTimelineEvent(data) {
+      return data is map
+        && data.keys().hasAll(['dataEvento', 'titulo', 'subtitulo', 'textoRedacao', 'foto', 'legendaFoto', 'autoriaFoto'])
+        && data.keys().hasOnly(['dataEvento', 'titulo', 'subtitulo', 'textoRedacao', 'foto', 'legendaFoto', 'autoriaFoto', 'createdAt', 'updatedAt', 'criadoPor', 'atualizadoPor'])
+        && data.dataEvento is timestamp
+        && boundedString(data.titulo, 180) && data.titulo.size() >= 3
+        && boundedString(data.subtitulo, 240) && data.subtitulo.size() >= 3
+        && boundedString(data.textoRedacao, 12000) && data.textoRedacao.size() >= 10
+        && boundedString(data.foto, 2000)
+        && (data.foto == '' || data.foto.matches('https://.*'))
+        && boundedString(data.legendaFoto, 300)
+        && boundedString(data.autoriaFoto, 160)
+        && (!('createdAt' in data) || data.createdAt is timestamp)
+        && (!('updatedAt' in data) || data.updatedAt is timestamp)
+        && (!('criadoPor' in data) || boundedString(data.criadoPor, 128))
+        && (!('atualizadoPor' in data) || boundedString(data.atualizadoPor, 128));
+    }
+
+    match /timelineEvents/{eventId} {
+      allow get, list: if true;
+      allow create: if isActiveAdmin() && validTimelineEvent(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.criadoPor == request.auth.uid
+        && request.resource.data.atualizadoPor == request.auth.uid;
+      allow update: if isActiveAdmin() && validTimelineEvent(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'dataEvento', 'titulo', 'subtitulo', 'textoRedacao', 'foto',
+          'legendaFoto', 'autoriaFoto', 'updatedAt', 'atualizadoPor'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.atualizadoPor == request.auth.uid;
+      allow delete: if isActiveAdmin();
+    }
+
     // Documentos legais: versões como snapshots imutáveis.
     // O público só lê o snapshot que o ponteiro indica como vigente.
     function legalStatePath(tipo) {
