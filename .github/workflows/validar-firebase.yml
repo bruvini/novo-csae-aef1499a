@@ -76,6 +76,8 @@ jobs:
         run: npx tsx --test tests/dashboardLayout.test.ts
       - name: Verificar script do changelog desta publicação
         run: python3 -m py_compile scripts/release/registrar_changelog_documentos_legais.py
+      - name: Testar verificador do Firebase Hosting
+        run: python3 -m unittest discover -s tests -p test_verificar_hosting.py
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal
