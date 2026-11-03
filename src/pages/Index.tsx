@@ -10,6 +10,7 @@ import { Loader2, LogIn, ArrowRight, KeyRound, Eye, EyeOff } from "lucide-react"
 import { auth } from "@/services/firebase";
 import { sendPasswordResetEmail } from "firebase/auth";
 import LoginNetworkBackground from "@/components/LoginNetworkBackground";
+import { LegalDocumentLinks } from "@/components/legal/LegalDocumentLinks";
 
 const Index = () => {
   const [email, setEmail] = useState("");
@@ -227,6 +228,9 @@ const Index = () => {
           </a>
           {" "}— Todos os direitos reservados.
         </p>
+        <div className="mt-2 text-csae-green-800">
+          <LegalDocumentLinks linkClassName="underline underline-offset-4 hover:text-csae-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600" />
+        </div>
       </footer>
     </div>
   );

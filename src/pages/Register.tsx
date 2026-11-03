@@ -11,6 +11,7 @@ import { collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 
 import { createUserWithEmailAndPassword, inMemoryPersistence, setPersistence, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { registrationAuth, registrationDb } from "@/services/firebase";
 import TermoResponsabilidadeModal from "@/components/TermoResponsabilidadeModal";
+import { LegalDocumentLinks } from "@/components/legal/LegalDocumentLinks";
 import {
   registrationSchema,
   RegistrationSchema,
@@ -342,6 +343,9 @@ const Register = () => {
             <p className="text-sm text-gray-400 font-medium tracking-wide italic">
               "Enfermagem: Ciência, Arte e Tecnologia para Florianópolis."
             </p>
+            <div className="mt-3 text-xs text-csae-green-800">
+              <LegalDocumentLinks linkClassName="underline underline-offset-4 hover:text-csae-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-csae-green-600" />
+            </div>
           </footer>
         </div>
       </main>
