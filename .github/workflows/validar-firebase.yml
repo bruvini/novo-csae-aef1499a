@@ -72,6 +72,8 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -p 'test_atualizar_nhb_hepatobiliar_v4.py'
       - name: Testar apresentação da história e indicadores
         run: npx tsx --test tests/timelinePresentation.test.ts
+      - name: Testar versionamento legal e revisão de perfis/residentes
+        run: npx tsx --test tests/legalDocuments.test.ts tests/gestaoIdentidade.test.ts
       - name: Testar integridade das minutas legais
         run: npx tsx --test tests/legalDocuments.test.ts
       - name: Validar layout responsivo do Dashboard

@@ -39,6 +39,16 @@ ENTRIES = (
         "dos dados cadastrais e atualização segura do endereço. Documentos Legais passaram a "
         "identificar o trecho exato que impede a publicação da minuta.",
     ),
+    (
+        "revisao-cadastral-residentes-documentos-20261103",
+        "Revisão de dados profissionais e acompanhamento de residentes",
+        "A gestão de usuários ganhou fila exclusiva para alterações profissionais submetidas "
+        "à aprovação ou recusa justificada, com suspensão da conta durante a avaliação. "
+        "O painel identifica residentes que atingiram dois anos desde o início, sem revogação "
+        "automática. O perfil permite manutenção de dados pessoais, autenticação e senha. "
+        "O editor dos documentos legais passou a comparar o conteúdo sem depender da ordem "
+        "dos campos no Firestore.",
+    ),
 )
 
 def main() -> None:

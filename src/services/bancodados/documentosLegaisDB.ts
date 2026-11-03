@@ -10,6 +10,8 @@ export interface ConteudoDocumentoLegal {
   secoes: Array<{ titulo: string; corpo: string }>;
 }
 
+export { conteudosLegaisIguais } from "@/utils/documentosLegaisCompare";
+
 export interface RevisaoDocumentoLegal {
   id: string;
   tipo: LegalDocumentKind;

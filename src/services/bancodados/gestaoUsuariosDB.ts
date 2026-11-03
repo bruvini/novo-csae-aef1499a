@@ -22,15 +22,20 @@ export interface UsuariosGestao {
   aprovados: Usuario[];
   recusados: Usuario[];
   revogados: Usuario[];
+  revisoes: Usuario[];
 }
 
 export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
   try {
     const querySnapshot = await getDocs(collection(db, 'usuarios'));
-    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [], revogados: [] };
+    const usuarios: UsuariosGestao = { aguardando: [], aprovados: [], recusados: [], revogados: [], revisoes: [] };
 
     querySnapshot.forEach((doc) => {
       const data = { ...doc.data(), id: doc.id } as Usuario;
+      if ((data.statusAcesso || '').toLowerCase() === 'aguardandorevisaocadastro') {
+        usuarios.revisoes.push(data);
+        return;
+      }
       if ((data.statusAcesso || '').toLowerCase() === 'revogado') {
         usuarios.revogados.push(data);
         return;
@@ -48,6 +53,7 @@ export async function buscarUsuariosGestao(): Promise<UsuariosGestao> {
       aprovados: ordenarPerfisPorDataCadastro(usuarios.aprovados),
       recusados: ordenarPerfisPorDataCadastro(usuarios.recusados),
       revogados: ordenarPerfisPorDataCadastro(usuarios.revogados),
+      revisoes: ordenarPerfisPorDataCadastro(usuarios.revisoes),
     };
   } catch (error) {
     console.error("Falha na leitura dos perfis da Gestão de Usuários.");
