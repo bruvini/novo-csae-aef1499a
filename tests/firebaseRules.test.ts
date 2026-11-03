@@ -872,3 +872,123 @@ test('e-mail só sincroniza no perfil após confirmação no Firebase Auth', asy
   await assertSucceeds(updateDoc(doc(verificado, 'usuarios', 'conta'), { email: 'novo@exemplo.com' }));
   await assertFails(updateDoc(doc(verificado, 'usuarios', 'conta'), { email: 'qualquer@exemplo.com' }));
 });
+
+const dadosResidente = {
+  formacao: 'Residente de Enfermagem', atuaSMS: true, numeroCoren: '12345',
+  ufCoren: 'SC', dataInicioResidencia: '2024-02-29', lotacao: 'Centro', matricula: '1000',
+};
+
+function decisaoResidente(
+  acao: 'Convertido' | 'Revogado' | 'Prorrogado',
+  resultado: 'Liberado' | 'Revogado',
+  overrides: Record<string, unknown> = {},
+) {
+  return {
+    acao, statusResultante: resultado, revisorUid: 'admin-residencia',
+    decididoEm: new Date(), inicioResidencia: '2024-02-29',
+    marcoDoisAnos: '2026-03-01', motivo: 'Decisão administrativa registrada',
+    proximoPrazo: '', diasProrrogados: 0, vinculoSMS: true,
+    lotacao: 'Centro', matricula: '1000',
+    ...overrides,
+  };
+}
+async function seedRevisaoResidencia() {
+  await seedProfile('admin-residencia', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('residente', 'Liberado', { dadosProfissionais: dadosResidente });
+}
+
+test('revisão de residente: só admin prorroga, preserva histórico e permite nova prorrogação', async () => {
+  await seedRevisaoResidencia();
+  const admin = environment.authenticatedContext('admin-residencia').firestore();
+  const user = environment.authenticatedContext('residente').firestore();
+  const refAdmin = doc(admin, 'usuarios', 'residente');
+  const entry = decisaoResidente('Prorrogado', 'Liberado', {
+    proximoPrazo: '2026-12-03', diasProrrogados: 30,
+  });
+  const first = {
+    historicoRevisoesResidencia: [entry],
+    revisaoResidenciaEm: '2026-12-03',
+    dataRevisaoResidencia: serverTimestamp(), revisadoResidenciaPorUid: 'admin-residencia',
+  };
+  await assertFails(updateDoc(doc(user, 'usuarios', 'residente'), first));
+  await assertSucceeds(updateDoc(refAdmin, first));
+  const oldEntry = (await getDoc(refAdmin)).data()?.historicoRevisoesResidencia[0];
+  const second = decisaoResidente('Prorrogado', 'Liberado', {
+    proximoPrazo: '2027-01-17', diasProrrogados: 45,
+  });
+  await assertSucceeds(updateDoc(refAdmin, {
+    historicoRevisoesResidencia: [oldEntry, second],
+    revisaoResidenciaEm: '2027-01-17',
+    dataRevisaoResidencia: serverTimestamp(), revisadoResidenciaPorUid: 'admin-residencia',
+  }));
+  const final = (await getDoc(refAdmin)).data();
+  assert.equal(final?.historicoRevisoesResidencia?.length, 2);
+  assert.equal(final?.dadosProfissionais.dataInicioResidencia, '2024-02-29');
+  assert.equal(final?.statusAcesso, 'Liberado');
+});
+
+test('revisão de residente: conversão SMS ativa altera formação, lotação e matrícula', async () => {
+  await seedRevisaoResidencia();
+  const admin = environment.authenticatedContext('admin-residencia').firestore();
+  const user = environment.authenticatedContext('residente').firestore();
+  const target = doc(admin, 'usuarios', 'residente');
+  const next = { ...dadosResidente, formacao: 'Enfermeiro', lotacao: 'Trindade', matricula: '7777' };
+  const log = decisaoResidente('Convertido', 'Liberado', { lotacao: 'Trindade', matricula: '7777' });
+  await assertFails(updateDoc(doc(user, 'usuarios', 'residente'), { dadosProfissionais: next }));
+  await assertFails(updateDoc(target, { dadosProfissionais: next }));
+  await assertSucceeds(updateDoc(target, {
+    dadosProfissionais: next, statusAcesso: 'Liberado',
+    historicoRevisoesResidencia: [log],
+    dataRevisaoResidencia: serverTimestamp(), revisadoResidenciaPorUid: 'admin-residencia',
+  }));
+  const saved = (await getDoc(target)).data();
+  assert.equal(saved?.dadosProfissionais.formacao, 'Enfermeiro');
+  assert.equal(saved?.dadosProfissionais.dataInicioResidencia, '2024-02-29');
+  assert.equal(saved?.dadosProfissionais.lotacao, 'Trindade');
+});
+
+test('revisão de residente: conversão fora SMS e revogação bloqueiam acesso sem apagar paciente', async () => {
+  await seedRevisaoResidencia();
+  await environment.withSecurityRulesDisabled(async (ctx) => {
+    await setDoc(doc(ctx.firestore(), 'pacientesProcessoEnfermagem', 'paciente-antigo'), {
+      uidUsuario: 'residente', nomeCompleto: 'Paciente de teste', processosEnfermagem: [],
+    });
+  });
+  const admin = environment.authenticatedContext('admin-residencia').firestore();
+  const user = environment.authenticatedContext('residente').firestore();
+  const target = doc(admin, 'usuarios', 'residente');
+  const next = { ...dadosResidente, formacao: 'Enfermeiro', atuaSMS: false, lotacao: '', matricula: '' };
+  await assertSucceeds(updateDoc(target, {
+    dadosProfissionais: next, statusAcesso: 'Revogado',
+    motivoRevogacao: 'Conclusão da residência, sem vínculo ativo com a SMS. Formação atualizada; acesso revogado.',
+    dataRevogacao: serverTimestamp(), revogadoPorUid: 'admin-residencia',
+    historicoRevisoesResidencia: [decisaoResidente('Convertido', 'Revogado', {
+      vinculoSMS: false, lotacao: '', matricula: '',
+    })],
+    dataRevisaoResidencia: serverTimestamp(), revisadoResidenciaPorUid: 'admin-residencia',
+  }));
+  await assertFails(getDoc(doc(user, 'pacientesProcessoEnfermagem', 'paciente-antigo')));
+  await environment.withSecurityRulesDisabled(async ctx => {
+    assert.equal((await getDoc(doc(ctx.firestore(), 'pacientesProcessoEnfermagem', 'paciente-antigo'))).exists(), true);
+  });
+  assert.equal((await getDoc(target)).data()?.statusAcesso, 'Revogado');
+});
+
+test('revisão de residente: revogação exige motivo padrão e histórico de auditoria', async () => {
+  await seedRevisaoResidencia();
+  const admin = environment.authenticatedContext('admin-residencia').firestore();
+  const ref = doc(admin, 'usuarios', 'residente');
+  const base = {
+    statusAcesso: 'Revogado',
+    dataRevogacao: serverTimestamp(), revogadoPorUid: 'admin-residencia',
+    historicoRevisoesResidencia: [decisaoResidente('Revogado', 'Revogado', {
+      motivo: 'Fim da residência e não inclusão no quadro de profissionais da rede.',
+    })],
+    dataRevisaoResidencia: serverTimestamp(), revisadoResidenciaPorUid: 'admin-residencia',
+  };
+  await assertFails(updateDoc(ref, { ...base, motivoRevogacao: 'Motivo arbitrário' }));
+  await assertSucceeds(updateDoc(ref, {
+    ...base, motivoRevogacao: 'Fim da residência e não inclusão no quadro de profissionais da rede.',
+  }));
+  assert.equal((await getDoc(ref)).data()?.statusAcesso, 'Revogado');
+});

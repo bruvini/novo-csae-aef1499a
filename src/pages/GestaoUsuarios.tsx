@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, RotateCcw, UserMinus, UserCheck, UserX, Users, Clock3, Activity } from 'lucide-react';
 import { IndicadoresResumo } from '@/components/IndicadoresResumo';
 import { calcularIndicadoresUsuarios, formatarDuracaoHoras } from '@/utils/indicadoresAdministrativos';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { residentesParaRevisao } from '@/utils/revisaoCadastral';
 import AuthenticatedLayout from '@/components/AuthenticatedLayout';
 import TabelaUsuarios from '@/components/gestao-usuarios/TabelaUsuarios';
 import ModalDetalhesUsuario from '@/components/gestao-usuarios/ModalDetalhesUsuario';
@@ -31,6 +32,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const GestaoUsuarios = () => {
   const { toast } = useToast();
+  const [parametros, atualizarParametros] = useSearchParams();
+  const abasPermitidas = ['aguardando', 'aprovados', 'recusados', 'revogados', 'revisoes', 'residentes'];
+  const abaAtual = abasPermitidas.includes(parametros.get('aba') ?? '') ? parametros.get('aba')! : 'aguardando';
   const { sessionData } = useAuth();
   const isAdmin = sessionData?.ehAdmin === true;
   const [usuariosAguardando, setUsuariosAguardando] = useState<Usuario[]>([]);
@@ -106,6 +110,8 @@ const GestaoUsuarios = () => {
     ...usuariosAguardando, ...usuariosAprovados, ...usuariosRecusados,
     ...usuariosRevogados, ...usuariosEmRevisao,
   ], [usuariosAguardando, usuariosAprovados, usuariosRecusados, usuariosRevogados, usuariosEmRevisao]);
+
+  const residentesPendentes = useMemo(() => residentesParaRevisao(usuariosAprovados).length, [usuariosAprovados]);
 
   const metricasUsuarios = useMemo(() => calcularIndicadoresUsuarios({
     aguardando: usuariosAguardando,
@@ -257,7 +263,11 @@ const GestaoUsuarios = () => {
               </CardContent>
             </Card>
 
-            <Tabs defaultValue="aguardando" className="space-y-6">
+            <Tabs value={abaAtual} onValueChange={aba => {
+              const proximo = new URLSearchParams(parametros);
+              proximo.set('aba', aba);
+              atualizarParametros(proximo);
+            }} className="space-y-6">
               <div className="w-full overflow-x-auto pb-1">
               <TabsList className="grid h-auto min-h-12 w-max min-w-full grid-cols-6 gap-1 rounded-lg bg-slate-100 p-1">
                 <TabsTrigger value="aguardando" className="rounded-md flex items-center gap-2 font-semibold">
@@ -294,6 +304,7 @@ const GestaoUsuarios = () => {
                 </TabsTrigger>
                 <TabsTrigger value="residentes" className="min-w-[145px] gap-1 rounded-md text-xs font-semibold sm:text-sm">
                   Residentes para revisão
+                  {residentesPendentes > 0 && <span className="rounded-full bg-amber-100 px-1.5 text-amber-800">{residentesPendentes}</span>}
                 </TabsTrigger>
               </TabsList>
               </div>
@@ -336,7 +347,7 @@ const GestaoUsuarios = () => {
                 <RevisoesProfissionais usuarios={revisoesFiltradas} onAtualizar={carregarUsuarios} />
               </TabsContent>
               <TabsContent value="residentes" className="anim-fade-in">
-                <ResidentesParaRevisao usuarios={todosPerfis} />
+                <ResidentesParaRevisao usuarios={todosPerfis} onAtualizar={carregarUsuarios} />
               </TabsContent>
             </Tabs>
           </>

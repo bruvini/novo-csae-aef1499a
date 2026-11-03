@@ -2,20 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Database, Users, BarChart, Clock, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { buscarUsuariosAguardando } from '@/services/bancodados';
+import { buscarUsuariosGestao } from '@/services/bancodados';
+import { residentesParaRevisao } from '@/utils/revisaoCadastral';
 import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 
 const NavigationCards = () => {
   const { sessionData } = useAuth();
   const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
   const [usuariosAguardandoCount, setUsuariosAguardandoCount] = useState<number | null>(null);
+  const [residentesPendentes, setResidentesPendentes] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCount = async () => {
       if (sessionData?.ehAdmin) {
         try {
-          const usuarios = await buscarUsuariosAguardando();
-          setUsuariosAguardandoCount(usuarios.length);
+          const usuarios = await buscarUsuariosGestao();
+          setUsuariosAguardandoCount(usuarios.aguardando.length);
+          setResidentesPendentes(residentesParaRevisao(usuarios.aprovados).length);
         } catch (error) {
           console.error("Erro ao buscar contagem de usuários:", error);
         }
@@ -102,6 +105,14 @@ const NavigationCards = () => {
         <p className="mt-1 text-sm text-gray-500">
           Acesse os módulos do sistema
         </p>
+        {sessionData?.ehAdmin === true && residentesPendentes !== null && (
+          <Link to="/gestao-usuarios?aba=residentes"
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
+            <Clock className="h-4 w-4" aria-hidden="true" />
+            <strong>{residentesPendentes}</strong>
+            {residentesPendentes === 1 ? "residente aguarda revisão" : "residentes aguardam revisão"}
+          </Link>
+        )}
       </div>
 
       {/* Grades de aplicativos: duas colunas em telas estreitas, três quando há espaço. */}

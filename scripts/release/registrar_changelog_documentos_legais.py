@@ -49,6 +49,16 @@ ENTRIES = (
         "O editor dos documentos legais passou a comparar o conteúdo sem depender da ordem "
         "dos campos no Firestore.",
     ),
+    (
+        "revisao-residentes-decisao-20261103",
+        "Revisão de residentes com conversão, revogação e prorrogação",
+        "A Gestão de Usuários passou a oferecer três decisões para residentes ativos "
+        "após o biênio: converter o perfil para Enfermeiro com revisão do vínculo SMS, "
+        "revogar o acesso com justificativa padronizada ou prorrogar a residência "
+        "por um período em dias corridos. As decisões ficam registradas para auditoria, "
+        "sem eliminar históricos clínicos. O Dashboard passou a sinalizar as revisões "
+        "pendentes, inclusive após novas prorrogações.",
+    ),
 )
 
 def main() -> None:

@@ -33,3 +33,21 @@ test('Módulos restritos, solicitações aguardando e notificações são preser
   assert.match(navigation, /itensNovosSuporte/);
   assert.match(navigation, /notificationCount/);
 });
+
+test('Dashboard exibe contador administrativo e link direto de residentes para revisão', () => {
+  assert.match(navigation, /residentesParaRevisao\(usuarios\.aprovados\)\.length/);
+  assert.match(navigation, /residentesPendentes/);
+  assert.match(navigation, /gestao-usuarios\?aba=residentes/);
+});
+
+test('Gestão de Usuários preserva abas existentes e oferece fluxo de revisão de residentes', () => {
+  const gestao = readFileSync('src/pages/GestaoUsuarios.tsx', 'utf8');
+  const residentes = readFileSync('src/components/gestao-usuarios/ResidentesParaRevisao.tsx', 'utf8');
+  assert.match(gestao, /abaAtual/);
+  assert.match(gestao, /onAtualizar=\{carregarUsuarios\}/);
+  assert.match(residentes, /decidirRevisaoResidencia/);
+  assert.match(residentes, /Confirmar prorrogação/);
+  assert.match(residentes, /Converter e revogar acesso/);
+  assert.match(residentes, /lotacoesSMS/);
+  assert.match(residentes, /MOTIVO_REVOGACAO_RESIDENCIA/);
+});

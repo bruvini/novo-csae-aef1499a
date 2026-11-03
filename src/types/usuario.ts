@@ -31,6 +31,21 @@ export interface HistoricoAcesso {
   ip?: string;
 }
 
+export interface RevisaoResidenciaHistorico {
+  acao: 'Convertido' | 'Revogado' | 'Prorrogado';
+  revisorUid: string;
+  decididoEm: Timestamp;
+  marcoDoisAnos: string;
+  inicioResidencia: string;
+  statusResultante: 'Liberado' | 'Revogado';
+  motivo: string;
+  proximoPrazo: string;
+  diasProrrogados: number;
+  vinculoSMS: boolean;
+  lotacao: string;
+  matricula: string;
+}
+
 export interface Usuario {
   id?: string; // ID do Firestore
   uid: string; // UID do Auth
@@ -56,6 +71,12 @@ export interface Usuario {
   dataLiberacaoAcesso?: Timestamp;
   motivoRecusa?: string;
   historicoAcesso?: HistoricoAcesso[];
+  // Próxima verificação é independente do marco original e não o sobrescreve.
+  revisaoResidenciaEm?: string;
+  dataRevisaoResidencia?: Timestamp;
+  revisadoResidenciaPorUid?: string;
+  motivoRevogacao?: string;
+  historicoRevisoesResidencia?: RevisaoResidenciaHistorico[];
   dadosProfissionaisPropostos?: DadosProfissionais;
   dadosProfissionaisAnteriores?: DadosProfissionais;
   alteracaoCadastralPendente?: boolean;
