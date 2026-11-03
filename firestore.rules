@@ -337,10 +337,11 @@ service cloud.firestore {
         && last.matricula == resource.data.dadosProfissionais.get('matricula','');
     }
 
+
     function adminRevokeResident() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let entries = request.resource.data.historicoRevisoesResidencia;
-      let last = entries[entries.size() - 1];
+      let old = resource.data.get('historicoRevisoesResidencia', []);
+      let events = request.resource.data.historicoRevisoesResidencia;
       return changed.hasOnly(['statusAcesso','historicoRevisoesResidencia',
         'dataRevisaoResidencia','revisadoResidenciaPorUid',
         'motivoRevogacao','dataRevogacao','revogadoPorUid'])
@@ -350,40 +351,37 @@ service cloud.firestore {
           'Fim da residência e não inclusão no quadro de profissionais da rede.'
         && request.resource.data.dataRevogacao == request.time
         && request.resource.data.revogadoPorUid == request.auth.uid
-        && residentHistorySafe('Revogado','Revogado')
-        && last.motivo == request.resource.data.motivoRevogacao
-        && last.proximoPrazo == '' && last.diasProrrogados == 0;
+        && events is list && events.size() == old.size() + 1 && events.hasAll(old)
+        && events[events.size()-1].acao == 'Revogado'
+        && events[events.size()-1].revisorUid == request.auth.uid;
     }
 
 
     function adminConvertResident() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let professional = request.resource.data.dadosProfissionais;
-      let resultingStatus = professional.atuaSMS ? 'Liberado' : 'Revogado';
-      let entries = request.resource.data.historicoRevisoesResidencia;
-      let last = entries[entries.size() - 1];
+      let result = professional.atuaSMS ? 'Liberado' : 'Revogado';
+      let old = resource.data.get('historicoRevisoesResidencia', []);
+      let events = request.resource.data.historicoRevisoesResidencia;
       return changed.hasOnly(['dadosProfissionais','statusAcesso','historicoRevisoesResidencia',
         'dataRevisaoResidencia','revisadoResidenciaPorUid',
         'motivoRevogacao','dataRevogacao','revogadoPorUid'])
         && residentReviewBase()
         && professional.diff(resource.data.dadosProfissionais).affectedKeys()
           .hasOnly(['formacao','atuaSMS','lotacao','matricula'])
-        && professional.atuaSMS is bool
         && professional.formacao == 'Enfermeiro'
-        && request.resource.data.statusAcesso == resultingStatus
+        && request.resource.data.statusAcesso == result
         && (professional.atuaSMS
-          ? ((boundedString(professional.lotacao, 140) && professional.lotacao.size() >= 1)
-              && boundedString(professional.matricula, 40) && professional.matricula.size() >= 1)
-          : (professional.get('lotacao','') == '' && professional.get('matricula','') == ''
-              && request.resource.data.dataRevogacao == request.time
-              && request.resource.data.revogadoPorUid == request.auth.uid
-              && request.resource.data.motivoRevogacao is string))
-        && residentHistorySafe('Convertido',resultingStatus)
-        && last.vinculoSMS == professional.atuaSMS
-        && last.lotacao == professional.get('lotacao','')
-        && last.matricula == professional.get('matricula','')
-        && last.proximoPrazo == '' && last.diasProrrogados == 0
-        && (!professional.atuaSMS || !changed.hasAny(['dataRevogacao','revogadoPorUid','motivoRevogacao']));
+           ? (boundedString(professional.lotacao, 140) && professional.lotacao.size() > 0
+             && boundedString(professional.matricula, 40) && professional.matricula.size() > 0)
+           : (professional.get('lotacao', '') == '' && professional.get('matricula', '') == ''
+             && request.resource.data.motivoRevogacao is string
+             && request.resource.data.dataRevogacao == request.time
+             && request.resource.data.revogadoPorUid == request.auth.uid))
+        && events is list && events.size() == old.size() + 1 && events.hasAll(old)
+        && events[events.size()-1].acao == 'Convertido'
+        && events[events.size()-1].statusResultante == result
+        && events[events.size()-1].revisorUid == request.auth.uid;
     }
 
     function ownPatient() {
