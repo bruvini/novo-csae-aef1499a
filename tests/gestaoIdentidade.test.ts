@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { conteudosLegaisIguais } from "../src/services/bancodados/documentosLegaisDB";
+import { conteudosLegaisIguais } from "../src/utils/documentosLegaisCompare";
 import { verificarPrazoResidencia, residentesParaRevisao } from "../src/utils/revisaoCadastral";
 import type { Usuario } from "../src/types/usuario";
 
