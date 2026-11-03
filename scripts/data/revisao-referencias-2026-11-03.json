@@ -1,0 +1,1262 @@
+{
+  "schemaVersion": 1,
+  "projetoFirebase": "csaefloripa",
+  "situacao": "AGUARDANDO_HOMOLOGACAO",
+  "origemExportacao": "catalogo-clinico-2026-11-03.json",
+  "fonteSha256": "7efeda6bd8c9d6d4ef9a690b9ba1ad4b2c8437256983f72dacb3908e49e1d4e3",
+  "geradoEm": "2026-11-03",
+  "documentos": [
+    {
+      "colecao": "SinaisVitais",
+      "id": "frequencia-cardiaca-fc-09c0fe7869",
+      "campo": "valoresDeReferencia",
+      "sha256Anterior": "fe732fa8495a7ab976f1613d3f325929606592816c4ba76f1d11cf6447a0bad1",
+      "sha256Proposto": "ba601e60582b57da53b0441868ceb4e13173883e3f68f7fab0f09f7a97b38d84",
+      "conteudoProposto": [
+        {
+          "nomeAlteracao": "Frequência cardíaca abaixo do intervalo adulto em repouso",
+          "valorMinimo": null,
+          "valorMaximo": 59,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 18,
+          "idadeMaxima": null,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Não equivale a diagnóstico isolado de bradicardia patológica."
+        },
+        {
+          "criterioCondicao": "Em repouso",
+          "subconjuntoNHBVinculado": "",
+          "idadeMaxima": null,
+          "idadeUnidade": "anos",
+          "idadeMinima": 18,
+          "criterioSexo": "Ambos",
+          "valorMaximo": 100,
+          "valorMinimo": 60,
+          "nomeAlteracao": "Frequência Cardíaca Normal",
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal"
+        },
+        {
+          "idadeMaxima": null,
+          "nomeAlteracao": "Taquicardia — sinal de gravidade. Interconsulta médica imediata",
+          "subconjuntoNHBVinculado": "Oxigenação",
+          "idadeMinima": 18,
+          "idadeUnidade": "anos",
+          "criterioSexo": "Ambos",
+          "valorMinimo": 101,
+          "criterioCondicao": "Especialmente relevante em hipoglicemia grave e desidratação",
+          "valorMaximo": null,
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "alterado"
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — Recém-nascido, 0–27 dias",
+          "valorMinimo": null,
+          "valorMaximo": 69,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 0,
+          "idadeMaxima": 27,
+          "idadeUnidade": "dias",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; Recém-nascido, 0–27 dias; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — Recém-nascido, 0–27 dias",
+          "valorMinimo": 70,
+          "valorMaximo": 170,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 0,
+          "idadeMaxima": 27,
+          "idadeUnidade": "dias",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; Recém-nascido, 0–27 dias; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — Recém-nascido, 0–27 dias",
+          "valorMinimo": 171,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 0,
+          "idadeMaxima": 27,
+          "idadeUnidade": "dias",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; Recém-nascido, 0–27 dias; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 11 meses",
+          "valorMinimo": null,
+          "valorMaximo": 79,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 11,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 11 meses; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 11 meses",
+          "valorMinimo": 80,
+          "valorMaximo": 160,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 11,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 11 meses; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 11 meses",
+          "valorMinimo": 161,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 11,
+          "idadeMaxima": 11,
+          "idadeUnidade": "meses",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 11 meses; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 2 anos",
+          "valorMinimo": null,
+          "valorMaximo": 79,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 2,
+          "idadeMaxima": 2,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 2 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 2 anos",
+          "valorMinimo": 80,
+          "valorMaximo": 130,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 2,
+          "idadeMaxima": 2,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 2 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 2 anos",
+          "valorMinimo": 131,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 2,
+          "idadeMaxima": 2,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 2 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 4 anos",
+          "valorMinimo": null,
+          "valorMaximo": 79,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 4,
+          "idadeMaxima": 4,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 4 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 4 anos",
+          "valorMinimo": 80,
+          "valorMaximo": 120,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 4,
+          "idadeMaxima": 4,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 4 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 4 anos",
+          "valorMinimo": 121,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 4,
+          "idadeMaxima": 4,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 4 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 6 anos",
+          "valorMinimo": null,
+          "valorMaximo": 74,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 6,
+          "idadeMaxima": 6,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 6 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 6 anos",
+          "valorMinimo": 75,
+          "valorMaximo": 115,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 6,
+          "idadeMaxima": 6,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 6 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 6 anos",
+          "valorMinimo": 116,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 6,
+          "idadeMaxima": 6,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 6 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 8 anos",
+          "valorMinimo": null,
+          "valorMaximo": 69,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 8,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 8 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 8 anos",
+          "valorMinimo": 70,
+          "valorMaximo": 110,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 8,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 8 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 8 anos",
+          "valorMinimo": 111,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 8,
+          "idadeMaxima": 8,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 8 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC abaixo da faixa pediátrica — 10 anos",
+          "valorMinimo": null,
+          "valorMaximo": 69,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 10,
+          "idadeMaxima": 10,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 10 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC dentro da faixa pediátrica — 10 anos",
+          "valorMinimo": 70,
+          "valorMaximo": 110,
+          "interpretacaoClinica": "normal",
+          "subconjuntoNHBVinculado": "",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 10,
+          "idadeMaxima": 10,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 10 anos; não extrapolar para idades intermediárias."
+        },
+        {
+          "nomeAlteracao": "FC acima da faixa pediátrica — 10 anos",
+          "valorMinimo": 111,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação vascular",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": 10,
+          "idadeMaxima": 10,
+          "idadeUnidade": "anos",
+          "criterioCondicao": "Idade pontual do Quadro 2.3 do Volume 5; 10 anos; não extrapolar para idades intermediárias."
+        }
+      ],
+      "justificativa": "Faixas pediátricas pontuais e bradicardia adulta; impedir aplicação de limite adulto em crianças. NHB vascular sujeita à homologação.",
+      "fonte": "Protocolo 5, Quadro 2.3; intervalo adulto preexistente",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "SinaisVitais",
+      "id": "temperatura-corporal-54027ea915",
+      "campo": "valoresDeReferencia",
+      "sha256Anterior": "60f2672aa32e1551ec3eea52d6409066d905bcdd52112ddadfa96e086be8448b",
+      "sha256Proposto": "8e12df213c9d7fcefbdc1b9d33244b6863f9bc58eaf13d89d3999f97fc8e7f8b",
+      "conteudoProposto": [
+        {
+          "nomeAlteracao": "Temperatura axilar abaixo da faixa cadastrada (não é diagnóstico isolado)",
+          "valorMinimo": null,
+          "valorMaximo": 35.4,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Regulação térmica",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": null,
+          "idadeMaxima": null,
+          "idadeUnidade": "",
+          "criterioCondicao": "Referência de normotermia do próprio catálogo; revisar método e contexto."
+        },
+        {
+          "idadeMaxima": null,
+          "subconjuntoNHBVinculado": "",
+          "idadeMinima": null,
+          "nomeAlteracao": "Normotermia",
+          "idadeUnidade": "",
+          "criterioSexo": "Ambos",
+          "valorMinimo": 35.5,
+          "valorMaximo": 37.9,
+          "criterioCondicao": "Aferição axilar em repouso",
+          "interpretacaoClinica": "normal"
+        },
+        {
+          "idadeMaxima": null,
+          "criterioCondicao": "Sinal de gravidade em hipoglicemia/desidratação (P1); compõe caso suspeito de dengue entre 2–7 dias (P2)",
+          "idadeMinima": null,
+          "subconjuntoNHBVinculado": "Regulação térmica",
+          "nomeAlteracao": "Febre",
+          "criterioSexo": "Ambos",
+          "idadeUnidade": "",
+          "valorMinimo": 38,
+          "valorMaximo": null,
+          "interpretacaoClinica": "alterado"
+        }
+      ],
+      "justificativa": "Sinalizar o intervalo abaixo de 35,5 °C sem atribuir automaticamente etiologia.",
+      "fonte": "Normotermia preexistente no catálogo; limiar <35,5 depende de homologação",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "SinaisVitais",
+      "id": "saturacao-de-oxigenio-spo2-51df781d33",
+      "campo": "valoresDeReferencia",
+      "sha256Anterior": "d0dea7abd987fc31b50541abb0503989428686f3942d62e68cfae30c7a0ea1a8",
+      "sha256Proposto": "97594d8558274c4c98fbfc4892f95409e8c816abcb47ed9fbb56ace2782b87e5",
+      "conteudoProposto": [
+        {
+          "nomeAlteracao": "Normal",
+          "criterioSexo": "Ambos",
+          "idadeMinima": null,
+          "idadeMaxima": null,
+          "criterioCondicao": "Em repouso",
+          "valorMaximo": 100,
+          "subconjuntoNHBVinculado": "",
+          "idadeUnidade": "",
+          "valorMinimo": 95,
+          "contextoClinico": "geral",
+          "interpretacaoClinica": "normal"
+        },
+        {
+          "nomeAlteracao": "SpO₂ abaixo da referência geral; verificar condições da medida e contexto clínico",
+          "valorMinimo": null,
+          "valorMaximo": 94,
+          "interpretacaoClinica": "alterado",
+          "subconjuntoNHBVinculado": "Oxigenação",
+          "criterioSexo": "Ambos",
+          "contextoClinico": "geral",
+          "idadeMinima": null,
+          "idadeMaxima": null,
+          "idadeUnidade": "",
+          "criterioCondicao": "Critério complementar derivado do intervalo geral preexistente; não definir conduta por medida isolada."
+        },
+        {
+          "valorMinimo": null,
+          "subconjuntoNHBVinculado": "Oxigenação",
+          "nomeAlteracao": "SpO2 Abaixo da Meta em Gestante Asmática",
+          "criterioCondicao": "Gestante com asma — abaixo da meta de controle (alvo ≥ 94%)",
+          "valorMaximo": 93,
+          "criterioSexo": "Feminino",
+          "idadeUnidade": "",
+          "idadeMinima": null,
+          "idadeMaxima": null,
+          "contextoClinico": "gestante",
+          "interpretacaoClinica": "alterado"
+        }
+      ],
+      "justificativa": "Cobrir SpO₂ <95% sem confundir com meta distinta em gestante com asma.",
+      "fonte": "Catálogo: intervalo geral 95–100%; Protocolo 3 para gestante asmática",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "protocolo-csae-v1-056a653e4ea4e10a844b",
+      "campo": "componentes",
+      "sha256Anterior": "3beec3efa4e9ac19b20283565d9243a77c8d8bd85139b92663130d4c2627846a",
+      "sha256Proposto": "d5e2a1788efca3bab5c826141d9293ca34579bc751feef26bcc668fa3a3b65e8",
+      "conteudoProposto": [
+        {
+          "componenteAnalisado": "Albumina Sérica",
+          "resultados": [
+            {
+              "nomeAlteracao": "Albumina abaixo do intervalo do protocolo",
+              "valorMinimo": null,
+              "valorMaximo": 3.49,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Nutrição",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Albumina dentro do intervalo do protocolo",
+              "valorMinimo": 3.5,
+              "valorMaximo": 5.2,
+              "interpretacaoClinica": "normal",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Albumina acima do intervalo do protocolo",
+              "valorMinimo": 5.21,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            }
+          ],
+          "unidadeMedida": "g/dL"
+        }
+      ],
+      "justificativa": "Substitui classificação indeterminada por faixas existentes no protocolo; NHB Nutrição necessita validação clínica.",
+      "fonte": "Protocolo 6, tabela de exames para cuidado da ferida, p. 23–24; B12 também no Protocolo 8",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "protocolo-csae-v1-2b46d10f20a2415c30b4",
+      "campo": "componentes",
+      "sha256Anterior": "0f03f17d56829f1ffe7a6a401cc201a50a846890a0613d599973db00435aa1f1",
+      "sha256Proposto": "2af13a9a71c4f1eb06ca70e7312775d343bcef844cfa1d6f4c4b799731190024",
+      "conteudoProposto": [
+        {
+          "resultados": [
+            {
+              "nomeAlteracao": "Vitamina B12 abaixo da referência do protocolo",
+              "valorMinimo": null,
+              "valorMaximo": 299,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Nutrição",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Vitamina B12 dentro da referência do protocolo",
+              "valorMinimo": 300,
+              "valorMaximo": 900,
+              "interpretacaoClinica": "normal",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Vitamina B12 acima da referência do protocolo",
+              "valorMinimo": 901,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            }
+          ],
+          "componenteAnalisado": "Vitamina B12",
+          "unidadeMedida": "pg/mL"
+        }
+      ],
+      "justificativa": "Substitui classificação indeterminada por faixas existentes no protocolo; NHB Nutrição necessita validação clínica.",
+      "fonte": "Protocolo 6, tabela de exames para cuidado da ferida, p. 23–24; B12 também no Protocolo 8",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "protocolo-csae-v1-757a337639cf211b7b8b",
+      "campo": "componentes",
+      "sha256Anterior": "5f429c8dbe4158f1c0cf3184b4ccdb43310e17db99687dad3a7da6c55b32b3f4",
+      "sha256Proposto": "d6c0a7edf11e8278bd3d907f7c3b413d669754c777490337f3b0fb7a559213a1",
+      "conteudoProposto": [
+        {
+          "componenteAnalisado": "Zinco Sérico",
+          "resultados": [
+            {
+              "nomeAlteracao": "Zinco abaixo da referência do protocolo",
+              "valorMinimo": null,
+              "valorMaximo": 69.9,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Nutrição",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Zinco dentro da referência do protocolo",
+              "valorMinimo": 70,
+              "valorMaximo": 120,
+              "interpretacaoClinica": "normal",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Zinco acima da referência do protocolo",
+              "valorMinimo": 120.1,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            }
+          ],
+          "unidadeMedida": "µg/dL"
+        }
+      ],
+      "justificativa": "Substitui classificação indeterminada por faixas existentes no protocolo; NHB Nutrição necessita validação clínica.",
+      "fonte": "Protocolo 6, tabela de exames para cuidado da ferida, p. 23–24; B12 também no Protocolo 8",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "protocolo-csae-v1-ce59ca012e8f6b7129db",
+      "campo": "componentes",
+      "sha256Anterior": "94000c528866eadd9975d48ada01718e337b72a95e401f8add4837b57c7e3241",
+      "sha256Proposto": "b349a15dc4cb36800d5ad0427651a9f8a201586cda1715c4cfabce525cd7d28f",
+      "conteudoProposto": [
+        {
+          "componenteAnalisado": "25-OH Vitamina D",
+          "resultados": [
+            {
+              "nomeAlteracao": "Deficiência de vitamina D conforme Volume 6",
+              "valorMinimo": null,
+              "valorMaximo": 19.99,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Nutrição",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Zona sem classificação explícita no Volume 6 — avaliar",
+              "valorMinimo": 20,
+              "valorMaximo": 20.99,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Insuficiência de vitamina D conforme Volume 6",
+              "valorMinimo": 21,
+              "valorMaximo": 29.99,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Nutrição",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Suficiência de vitamina D conforme Volume 6",
+              "valorMinimo": 30,
+              "valorMaximo": 100,
+              "interpretacaoClinica": "normal",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            },
+            {
+              "nomeAlteracao": "Acima da faixa de suficiência do Volume 6 — não inferir intoxicação",
+              "valorMinimo": 100.01,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Referência para avaliação clínica no cuidado à pessoa com ferida; faixas numéricas apresentadas na precisão habitual do exame. Associação NHB Nutrição requer validação."
+            }
+          ],
+          "unidadeMedida": "ng/mL"
+        }
+      ],
+      "justificativa": "Substitui classificação indeterminada por faixas existentes no protocolo; NHB Nutrição necessita validação clínica.",
+      "fonte": "Protocolo 6, tabela de exames para cuidado da ferida, p. 23–24; B12 também no Protocolo 8",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "hemograma-completo-81dd0b7182",
+      "campo": "componentes",
+      "sha256Anterior": "58c41f5d3e0673e4bc77eae5f23da7c36445b07c70a0524dc2d021837992a34e",
+      "sha256Proposto": "06b5f47b7ae1df43ba4be7168dc06566bd7093fca9e58447be93b7e948901855",
+      "conteudoProposto": [
+        {
+          "unidadeMedida": "g/dL",
+          "componenteAnalisado": "Hemoglobina (Hb)",
+          "resultados": [
+            {
+              "idadeMaxima": null,
+              "nomeAlteracao": "Normal (Gestante — sem anemia)",
+              "idadeMinima": null,
+              "subconjuntoNHBVinculado": "",
+              "idadeUnidade": "",
+              "valorMinimo": 11,
+              "criterioSexo": "Feminino",
+              "valorMaximo": null,
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "normal"
+            },
+            {
+              "valorMaximo": 10.9,
+              "criterioSexo": "Feminino",
+              "subconjuntoNHBVinculado": "Oxigenação",
+              "valorMinimo": 8,
+              "idadeUnidade": "",
+              "nomeAlteracao": "Anemia leve a moderada em gestante (critério do Volume 3)",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "alterado"
+            },
+            {
+              "valorMinimo": null,
+              "idadeUnidade": "",
+              "idadeMaxima": null,
+              "idadeMinima": null,
+              "subconjuntoNHBVinculado": "Oxigenação",
+              "valorMaximo": 7.9,
+              "criterioSexo": "Feminino",
+              "nomeAlteracao": "Anemia grave em gestante (critério do Volume 3)",
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "alterado"
+            }
+          ]
+        },
+        {
+          "resultados": [
+            {
+              "valorMaximo": 38,
+              "criterioSexo": "Ambos",
+              "nomeAlteracao": "Sem hemoconcentração pelo corte fixo para dengue; não indica hematócrito normal",
+              "valorMinimo": null,
+              "idadeUnidade": "anos",
+              "idadeMaxima": 12,
+              "subconjuntoNHBVinculado": "",
+              "idadeMinima": null,
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "informativo",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            },
+            {
+              "idadeMinima": null,
+              "idadeMaxima": 12,
+              "criterioSexo": "Ambos",
+              "valorMinimo": 38.1,
+              "subconjuntoNHBVinculado": "Hidratação",
+              "idadeUnidade": "anos",
+              "valorMaximo": null,
+              "nomeAlteracao": "Hemoconcentração (critério de encaminhamento - criança)",
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            },
+            {
+              "subconjuntoNHBVinculado": "",
+              "nomeAlteracao": "Sem hemoconcentração pelo corte fixo para dengue; não indica hematócrito normal",
+              "valorMinimo": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "anos",
+              "idadeMinima": 13,
+              "criterioSexo": "Feminino",
+              "valorMaximo": 44,
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "informativo",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            },
+            {
+              "idadeUnidade": "anos",
+              "nomeAlteracao": "Hemoconcentração (critério de encaminhamento - mulher)",
+              "valorMaximo": null,
+              "idadeMinima": 13,
+              "idadeMaxima": null,
+              "valorMinimo": 44.1,
+              "subconjuntoNHBVinculado": "Hidratação",
+              "criterioSexo": "Feminino",
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            },
+            {
+              "valorMinimo": null,
+              "idadeMinima": 13,
+              "idadeUnidade": "anos",
+              "idadeMaxima": null,
+              "nomeAlteracao": "Sem hemoconcentração pelo corte fixo para dengue; não indica hematócrito normal",
+              "criterioSexo": "Masculino",
+              "valorMaximo": 50,
+              "subconjuntoNHBVinculado": "",
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "informativo",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            },
+            {
+              "idadeUnidade": "anos",
+              "subconjuntoNHBVinculado": "Hidratação",
+              "valorMaximo": null,
+              "idadeMinima": 13,
+              "idadeMaxima": null,
+              "nomeAlteracao": "Hemoconcentração (critério de encaminhamento - homem)",
+              "valorMinimo": 50.1,
+              "criterioSexo": "Masculino",
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Triagem da dengue na ausência do hematócrito basal; aumento >10% frente ao basal também é critério no Volume 2."
+            }
+          ],
+          "componenteAnalisado": "Hematócrito",
+          "unidadeMedida": "%"
+        },
+        {
+          "componenteAnalisado": "Plaquetas",
+          "unidadeMedida": "por mm³",
+          "resultados": [
+            {
+              "idadeUnidade": "",
+              "valorMaximo": null,
+              "valorMinimo": 100000,
+              "nomeAlteracao": "Não atingiu critério <100.000/mm³ para alerta de dengue; não implica contagem normal",
+              "criterioSexo": "Ambos",
+              "idadeMaxima": null,
+              "subconjuntoNHBVinculado": "",
+              "idadeMinima": null,
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "informativo",
+              "criterioCondicao": "Critério de alerta em dengue; queda abrupta ante valor basal também exige avaliação."
+            },
+            {
+              "subconjuntoNHBVinculado": "Regulação vascular",
+              "valorMinimo": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "idadeMinima": null,
+              "criterioSexo": "Ambos",
+              "valorMaximo": 99999,
+              "nomeAlteracao": "Plaquetas abaixo de 100.000/mm³ — critério de alerta no protocolo de dengue",
+              "contextoClinico": "dengue",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Critério de alerta em dengue; queda abrupta ante valor basal também exige avaliação."
+            }
+          ]
+        },
+        {
+          "resultados": [
+            {
+              "subconjuntoNHBVinculado": "Regulação - crescimento celular e desenvolvimento funcional",
+              "contextoClinico": "geral",
+              "valorMaximo": 4499,
+              "idadeUnidade": "anos",
+              "valorMinimo": null,
+              "nomeAlteracao": "Leucopenia — revisão clínica",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Adultos, comparação com intervalo MedlinePlus 4.500–11.000 células/µL",
+              "idadeMinima": 18,
+              "criterioSexo": "Ambos",
+              "idadeMaxima": null
+            },
+            {
+              "idadeMinima": 18,
+              "idadeMaxima": null,
+              "criterioSexo": "Ambos",
+              "subconjuntoNHBVinculado": "",
+              "criterioCondicao": "Adultos, comparação com intervalo MedlinePlus 4.500–11.000 células/µL",
+              "nomeAlteracao": "Leucócitos dentro da referência adulta",
+              "idadeUnidade": "anos",
+              "valorMinimo": 4500,
+              "contextoClinico": "geral",
+              "interpretacaoClinica": "normal",
+              "valorMaximo": 11000
+            },
+            {
+              "valorMaximo": null,
+              "contextoClinico": "geral",
+              "valorMinimo": 11001,
+              "criterioSexo": "Ambos",
+              "subconjuntoNHBVinculado": "Regulação - crescimento celular e desenvolvimento funcional",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Adultos, comparação com intervalo MedlinePlus 4.500–11.000 células/µL",
+              "idadeUnidade": "anos",
+              "nomeAlteracao": "Leucocitose — revisão clínica",
+              "idadeMinima": 18,
+              "idadeMaxima": null
+            }
+          ],
+          "unidadeMedida": "células/µL",
+          "componenteAnalisado": "Leucócitos Totais"
+        }
+      ],
+      "justificativa": "Diferencia critério de dengue de normalidade laboratorial e torna contexto obstétrico obrigatório para Hb; não reclassifica adultos sem fonte laboratorial validada.",
+      "fonte": "Protocolos 2 (dengue, seção 9.3), 3 (hemoglobina no pré-natal)",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "tsh-gestante-valores-por-trimestre-e1ec205bc5",
+      "campo": "componentes",
+      "sha256Anterior": "bf359f9285b9a4233a5dc413728e2012353bbf309b37196eb9fc7a3aecfa94fb",
+      "sha256Proposto": "494b85b376f9a3c2477a3761e29113311863e33f945a1d13f931a6cefa58b693",
+      "conteudoProposto": [
+        {
+          "componenteAnalisado": "TSH — 1º Trimestre",
+          "unidadeMedida": "mU/L",
+          "resultados": [
+            {
+              "nomeAlteracao": "TSH abaixo do intervalo gestacional do protocolo — TSH — 1º Trimestre",
+              "valorMinimo": null,
+              "valorMaximo": 0.09,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "criterioSexo": "Feminino",
+              "contextoClinico": "gestante",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Classificação bioquímica, sem diagnóstico etiológico isolado."
+            },
+            {
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Feminino",
+              "valorMaximo": 2.5,
+              "idadeMaxima": null,
+              "idadeMinima": null,
+              "nomeAlteracao": "Normal (1º Tri)",
+              "idadeUnidade": "",
+              "valorMinimo": 0.1,
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "normal"
+            },
+            {
+              "criterioSexo": "Feminino",
+              "valorMinimo": 2.51,
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "nomeAlteracao": "TSH Elevado (1º Tri) — possível hipotireoidismo; encaminhar médico",
+              "valorMaximo": null,
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "idadeUnidade": "",
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "alterado"
+            }
+          ]
+        },
+        {
+          "componenteAnalisado": "TSH — 2º Trimestre",
+          "resultados": [
+            {
+              "nomeAlteracao": "TSH abaixo do intervalo gestacional do protocolo — TSH — 2º Trimestre",
+              "valorMinimo": null,
+              "valorMaximo": 0.19,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "criterioSexo": "Feminino",
+              "contextoClinico": "gestante",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Classificação bioquímica, sem diagnóstico etiológico isolado."
+            },
+            {
+              "valorMaximo": 3,
+              "idadeUnidade": "",
+              "valorMinimo": 0.2,
+              "nomeAlteracao": "Normal (2º Tri)",
+              "idadeMinima": null,
+              "criterioSexo": "Feminino",
+              "idadeMaxima": null,
+              "subconjuntoNHBVinculado": "",
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "normal"
+            },
+            {
+              "valorMinimo": 3.01,
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Feminino",
+              "valorMaximo": null,
+              "nomeAlteracao": "TSH Elevado (2º Tri) — encaminhar avaliação médica",
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "alterado"
+            }
+          ],
+          "unidadeMedida": "mU/L"
+        },
+        {
+          "resultados": [
+            {
+              "nomeAlteracao": "TSH abaixo do intervalo gestacional do protocolo — TSH — 3º Trimestre",
+              "valorMinimo": null,
+              "valorMaximo": 0.29,
+              "interpretacaoClinica": "alterado",
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "criterioSexo": "Feminino",
+              "contextoClinico": "gestante",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Classificação bioquímica, sem diagnóstico etiológico isolado."
+            },
+            {
+              "criterioSexo": "Feminino",
+              "valorMinimo": 0.3,
+              "subconjuntoNHBVinculado": "",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "valorMaximo": 3,
+              "nomeAlteracao": "Normal (3º Tri)",
+              "idadeUnidade": "",
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "normal"
+            },
+            {
+              "valorMaximo": null,
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "nomeAlteracao": "TSH Elevado (3º Tri) — encaminhar avaliação médica",
+              "criterioSexo": "Feminino",
+              "valorMinimo": 3.01,
+              "idadeUnidade": "",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "contextoClinico": "gestante",
+              "interpretacaoClinica": "alterado"
+            }
+          ],
+          "unidadeMedida": "mU/L",
+          "componenteAnalisado": "TSH — 3º Trimestre"
+        }
+      ],
+      "justificativa": "Preserva limites por trimestre e cobre valores abaixo dos mínimos definidos no protocolo.",
+      "fonte": "Protocolo 3, Quadro de exames laboratoriais do pré-natal, p. 118–119",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "glicose-de-jejum-glicemia-de-jejum-fc946d2f9b",
+      "campo": "componentes",
+      "sha256Anterior": "db7a67e90055e07be7107f0c42760de3c163d371d53afb01aed3450ddd9f6e04",
+      "sha256Proposto": "9c64c43967f1cdd33cf0445199fea20222fc8831b30efdcd7e5493e3c186c93d",
+      "conteudoProposto": [
+        {
+          "resultados": [
+            {
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "nomeAlteracao": "Glicose de Jejum Normal",
+              "idadeMaxima": null,
+              "idadeMinima": null,
+              "subconjuntoNHBVinculado": "",
+              "valorMaximo": 109,
+              "idadeUnidade": "",
+              "contextoClinico": "jejum",
+              "interpretacaoClinica": "normal",
+              "criterioCondicao": "Glicose de jejum laboratorial; avaliação geral (não gestacional)"
+            },
+            {
+              "valorMaximo": 125,
+              "criterioSexo": "Ambos",
+              "nomeAlteracao": "Glicemia de Jejum Alterada (Pré-Diabetes) — repetir em 1 semana",
+              "valorMinimo": 110,
+              "idadeUnidade": "",
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "idadeMaxima": null,
+              "idadeMinima": null,
+              "contextoClinico": "jejum",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Glicose de jejum laboratorial; avaliação geral (não gestacional)"
+            },
+            {
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "valorMaximo": null,
+              "criterioSexo": "Ambos",
+              "valorMinimo": 126,
+              "idadeUnidade": "",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "nomeAlteracao": "Hiperglicemia de Jejum (Suspeita de DM) — confirmar e encaminhar médico",
+              "contextoClinico": "jejum",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Glicose de jejum laboratorial; avaliação geral (não gestacional)"
+            },
+            {
+              "criterioSexo": "Feminino",
+              "valorMinimo": null,
+              "subconjuntoNHBVinculado": "",
+              "idadeMaxima": null,
+              "idadeMinima": null,
+              "valorMaximo": 91,
+              "nomeAlteracao": "Normal para Rastreio de DMG (Gestante)",
+              "idadeUnidade": "",
+              "contextoClinico": "gestante_jejum",
+              "interpretacaoClinica": "normal",
+              "criterioCondicao": "Glicose de jejum laboratorial; gestação confirmada"
+            },
+            {
+              "criterioSexo": "Feminino",
+              "valorMinimo": 92,
+              "idadeMinima": null,
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "idadeMaxima": null,
+              "nomeAlteracao": "Rastreio Positivo para DMG (Gestante)",
+              "valorMaximo": 125,
+              "idadeUnidade": "",
+              "contextoClinico": "gestante_jejum",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Glicose de jejum laboratorial; gestação confirmada"
+            },
+            {
+              "valorMaximo": null,
+              "nomeAlteracao": "DM Diagnosticado na Gravidez (Gestante)",
+              "criterioSexo": "Feminino",
+              "idadeMinima": null,
+              "idadeUnidade": "",
+              "idadeMaxima": null,
+              "valorMinimo": 126,
+              "subconjuntoNHBVinculado": "Regulação hormonal",
+              "contextoClinico": "gestante_jejum",
+              "interpretacaoClinica": "alterado",
+              "criterioCondicao": "Glicose de jejum laboratorial; gestação confirmada"
+            }
+          ],
+          "unidadeMedida": "mg/dL",
+          "componenteAnalisado": "Glicose"
+        }
+      ],
+      "justificativa": "Distinção explícita de contexto de gestação; 110/126 e 92/126 mantidos conforme os volumes respectivos.",
+      "fonte": "Protocolos 1 e 3; função de contexto do motor do repositório",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "tipagem-sanguinea-com-fator-rh-a08f93b239",
+      "campo": "componentes",
+      "sha256Anterior": "cab41841bf500afe6404d084acda815cec60042fdd1334502af73fe8c3bed0a3",
+      "sha256Proposto": "7d24ab7351cdc3bb0bcf3051dc38fa3e9a742b61f9fff451435e7e07738549b6",
+      "conteudoProposto": [
+        {
+          "resultados": [
+            {
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "subconjuntoNHBVinculado": "",
+              "resultadoClassificatorio": "Rh Positivo",
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "nomeAlteracao": "Rh Positivo — característica imuno-hematológica",
+              "valorMinimo": null,
+              "valorMaximo": null,
+              "interpretacaoClinica": "informativo"
+            },
+            {
+              "idadeUnidade": "",
+              "nomeAlteracao": "Rh Negativo — característica imuno-hematológica; interpretação obstétrica depende do contexto",
+              "valorMaximo": null,
+              "subconjuntoNHBVinculado": "",
+              "resultadoClassificatorio": "Rh Negativo",
+              "valorMinimo": null,
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "criterioSexo": "Ambos",
+              "interpretacaoClinica": "informativo"
+            }
+          ],
+          "unidadeMedida": "Qualitativo",
+          "componenteAnalisado": "Fator Rh"
+        }
+      ],
+      "justificativa": "Fator Rh não é por si só alteração de NHB nem diagnóstico; não inferir gestação a partir do sexo.",
+      "fonte": "Princípio de interpretação de tipagem sanguínea; validar aplicação obstétrica do Protocolo 3",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    },
+    {
+      "colecao": "ExamesLabImagem",
+      "id": "creatinina-serica-clearance-de-creatinina-9eac0f0276",
+      "campo": "componentes",
+      "sha256Anterior": "36bdac8575d7fd9d74f859b922fac2198574eb50ebdd7b18ae49b67716dd34d5",
+      "sha256Proposto": "d253bc6889c5bf6c99b917e6858b4c3921e61fcf231f441a54601417dadfc4dd",
+      "conteudoProposto": [
+        {
+          "componenteAnalisado": "Creatinina Sérica",
+          "resultados": [
+            {
+              "criterioSexo": "Ambos",
+              "valorMinimo": null,
+              "nomeAlteracao": "Utilizada somente para cálculo do Clearance (Cockcroft-Gault). Não há limiar isolado no protocolo.",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "valorMaximo": null,
+              "subconjuntoNHBVinculado": "",
+              "idadeUnidade": ""
+            }
+          ],
+          "unidadeMedida": "mg/dL"
+        },
+        {
+          "unidadeMedida": "mL/min",
+          "resultados": [
+            {
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "nomeAlteracao": "Clearance Normal — elegível para renovação de receita pelo enfermeiro",
+              "idadeMinima": null,
+              "valorMinimo": 90,
+              "subconjuntoNHBVinculado": "",
+              "valorMaximo": null,
+              "criterioSexo": "Ambos",
+              "interpretacaoClinica": "normal"
+            },
+            {
+              "nomeAlteracao": "Clearance 60–89 mL/min — abaixo de 90, sem alcançar o corte <60 do protocolo",
+              "valorMinimo": 60,
+              "valorMaximo": 89,
+              "interpretacaoClinica": "informativo",
+              "subconjuntoNHBVinculado": "",
+              "criterioSexo": "Ambos",
+              "contextoClinico": "geral",
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioCondicao": "Classificar considerando método, idade e contexto. Não inferir DRC a partir de valor isolado."
+            },
+            {
+              "valorMinimo": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "idadeMinima": null,
+              "nomeAlteracao": "Clearance Reduzido / Insuficiência Renal — NÃO renovar; encaminhar médico",
+              "criterioSexo": "Ambos",
+              "valorMaximo": 59,
+              "subconjuntoNHBVinculado": "Eliminações",
+              "interpretacaoClinica": "alterado"
+            },
+            {
+              "valorMinimo": null,
+              "idadeMinima": null,
+              "idadeMaxima": null,
+              "idadeUnidade": "",
+              "criterioSexo": "Ambos",
+              "nomeAlteracao": "Queda Significativa do Clearance Renal — repetir em 2 semanas; encaminhar médico",
+              "valorMaximo": null,
+              "subconjuntoNHBVinculado": "Eliminações",
+              "interpretacaoClinica": "informativo"
+            }
+          ],
+          "componenteAnalisado": "Clearance de Creatinina (Cockcroft-Gault)"
+        }
+      ],
+      "justificativa": "Completa faixa 60–89 sem extrapolar corte de alerta <60; não inventa intervalo isolado para creatinina sérica.",
+      "fonte": "Protocolo 1, seção de monitoramento laboratorial e Cockcroft-Gault",
+      "validacaoClinica": "PENDENTE_VALIDACAO_CLINICA"
+    }
+  ]
+}

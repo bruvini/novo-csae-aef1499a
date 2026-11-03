@@ -1,0 +1,100 @@
+name: Revisão clínica CSAE — lote 2026-11-03
+
+on:
+  workflow_dispatch:
+    inputs:
+      operacao:
+        description: "Validar sem Firebase, simular leitura remota ou aplicar após homologação"
+        type: choice
+        required: true
+        default: validar
+        options:
+          - validar
+          - simular
+          - aplicar
+      manifesto_sha256:
+        description: "SHA-256 exato do JSON de lote, obrigatório para aplicar"
+        required: false
+        type: string
+      confirmacao:
+        description: "Frase literal de homologação, obrigatória para aplicar"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validar-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compilar script e validar manifesto sem conexão
+        run: |
+          python -m py_compile scripts/aplicar-revisao-referencias-20261103.py
+          python -m unittest discover -s scripts/tests -p 'test_revisao_referencias_20261103.py'
+          python scripts/aplicar-revisao-referencias-20261103.py \
+            --manifest scripts/data/revisao-referencias-2026-11-03.json
+
+  simular-remoto:
+    needs: validar-offline
+    if: ${{ inputs.operacao == 'simular' || inputs.operacao == 'aplicar' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Preparar cliente Firestore
+        run: python -m pip install --disable-pip-version-check google-cloud-firestore
+      - name: Comparar somente leitura com Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT_CSAE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CSAE }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_CSAE" || { echo "Secret não configurada"; exit 1; }
+          python scripts/aplicar-revisao-referencias-20261103.py \
+            --manifest scripts/data/revisao-referencias-2026-11-03.json --remote
+
+  aplicar-clinico:
+    needs: [validar-offline, simular-remoto]
+    if: ${{ inputs.operacao == 'aplicar' }}
+    runs-on: ubuntu-latest
+    environment: csae-clinico-producao
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verificar autorização explícita e SHA do manifesto
+        env:
+          SHA_APROVADO: ${{ inputs.manifesto_sha256 }}
+          FRASE_APROVADA: ${{ inputs.confirmacao }}
+        run: |
+          sha_real="$(sha256sum scripts/data/revisao-referencias-2026-11-03.json | cut -d ' ' -f1)"
+          test -n "$SHA_APROVADO" && test "$SHA_APROVADO" = "$sha_real" || { echo "SHA diferente"; exit 1; }
+          test "$FRASE_APROVADA" = "HOMOLOGO LOTE CLINICO CSAE 2026-11-03" || { echo "Frase não confirmada"; exit 1; }
+      - name: Preparar cliente Firestore
+        run: python -m pip install --disable-pip-version-check google-cloud-firestore
+      - name: Aplicar lote com precondições transacionais e backup privado
+        env:
+          FIREBASE_SERVICE_ACCOUNT_CSAE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_CSAE }}
+          SHA_APROVADO: ${{ inputs.manifesto_sha256 }}
+          FRASE_APROVADA: ${{ inputs.confirmacao }}
+        run: |
+          test -n "$FIREBASE_SERVICE_ACCOUNT_CSAE" || { echo "Secret não configurada"; exit 1; }
+          python scripts/aplicar-revisao-referencias-20261103.py \
+            --manifest scripts/data/revisao-referencias-2026-11-03.json \
+            --apply --confirm-project csaefloripa \
+            --approve-sha256 "$SHA_APROVADO" --confirm-text "$FRASE_APROVADA"
+
+      - name: Arquivar evidências e backup do lote
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-csae-clinica-20261103-${{ github.run_id }}
+          path: ~/csae-auditoria-clinica/*.json
+          retention-days: 30
+          if-no-files-found: ignore
