@@ -789,11 +789,6 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    match /{document=**} {
-      allow read, write: if false;
-    }
-  }
-
     // Documentos legais: versões como snapshots imutáveis.
     // O público só lê o snapshot que o ponteiro indica como vigente.
     function legalStatePath(tipo) {
@@ -918,4 +913,9 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
 }
