@@ -463,7 +463,7 @@ service cloud.firestore {
     function validSuggestion(data) {
       return data is map
         && data.keys().hasAll(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'dataCriacao'])
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'divisao', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'divisao', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade', 'intervencaoBibliotecaId', 'grupoOperacaoId'])
         && boundedString(data.textoIntervencao, 2000) && data.textoIntervencao.size() > 0
         && boundedString(data.tituloResultadoVinculado, 500)
         && boundedString(data.autorId, 128) && data.autorId.size() > 0
@@ -482,45 +482,26 @@ service cloud.firestore {
         && (!('avaliadorId' in data) || boundedString(data.avaliadorId, 128))
         && (!('avaliadorNome' in data) || boundedString(data.avaliadorNome, 160))
         && (!('dataDecisao' in data) || data.dataDecisao is timestamp)
-        && (!('ultimaDecisaoId' in data) || boundedString(data.ultimaDecisaoId, 128));
+        && (!('ultimaDecisaoId' in data) || boundedString(data.ultimaDecisaoId, 128))
+        && (!('intervencaoBibliotecaId' in data) || boundedString(data.intervencaoBibliotecaId, 128))
+        && (!('grupoOperacaoId' in data) || boundedString(data.grupoOperacaoId, 128));
     }
 
     function validPreparation(data) {
       return data is map
         && data.keys().hasAll(['acaoPrescrita', 'acaoEnfermeiro', 'destinos'])
-        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'destinos', 'referenciaDeliberacao', 'dataDeliberacao', 'documentoHomologacao', 'responsavelValidacao'])
+        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'destinos', 'modoDisponibilidade', 'materiaisDeApoio', 'referenciaDeliberacao', 'dataDeliberacao', 'documentoHomologacao', 'responsavelValidacao'])
         && boundedString(data.acaoPrescrita, 1000) && data.acaoPrescrita.size() > 0
         && boundedString(data.acaoEnfermeiro, 1000) && data.acaoEnfermeiro.size() > 0
-        && data.destinos is list && data.destinos.size() > 0 && data.destinos.size() <= 5
-        && validDestination(data.destinos[0])
-        && (data.destinos.size() < 2 || validDestination(data.destinos[1]))
-        && (data.destinos.size() < 3 || validDestination(data.destinos[2]))
-        && (data.destinos.size() < 4 || validDestination(data.destinos[3]))
-        && (data.destinos.size() < 5 || validDestination(data.destinos[4]))
+        && data.destinos is list && data.destinos.size() <= 1000
+        && (!('modoDisponibilidade' in data) || data.modoDisponibilidade in ['resultados_especificos', 'transversal'])
+        && ((('modoDisponibilidade' in data) && data.modoDisponibilidade == 'transversal' && data.destinos.size() == 0)
+          || ((!('modoDisponibilidade' in data) || data.modoDisponibilidade == 'resultados_especificos') && data.destinos.size() > 0))
+        && (!('materiaisDeApoio' in data) || (data.materiaisDeApoio is list && data.materiaisDeApoio.size() <= 20))
         && (!('referenciaDeliberacao' in data) || boundedString(data.referenciaDeliberacao, 300))
         && (!('dataDeliberacao' in data) || boundedString(data.dataDeliberacao, 20))
         && (!('documentoHomologacao' in data) || boundedString(data.documentoHomologacao, 300))
         && (!('responsavelValidacao' in data) || boundedString(data.responsavelValidacao, 160));
-    }
-
-    function validDestination(dest) {
-      return dest is map && dest.keys().hasAll(['diagnosticoId', 'tituloDiagnostico', 'tituloResultado'])
-        && dest.keys().hasOnly(['diagnosticoId', 'tituloDiagnostico', 'tituloResultado'])
-        && boundedString(dest.diagnosticoId, 128) && dest.diagnosticoId.size() > 0
-        && boundedString(dest.tituloDiagnostico, 300) && dest.tituloDiagnostico.size() > 0
-        && boundedString(dest.tituloResultado, 500) && dest.tituloResultado.size() > 0;
-    }
-
-    function destinationPublished(dest, suggestionId) {
-      return getAfter(/databases/$(database)/documents/rolEnfermagem/$(dest.diagnosticoId)).data.ultimaSugestaoPublicada == suggestionId;
-    }
-
-    function allDestinationsPublished(destinos, suggestionId) {
-      return destinationPublished(destinos[0], suggestionId)
-        && (destinos.size() < 2 || destinationPublished(destinos[1], suggestionId))
-        && (destinos.size() < 3 || destinationPublished(destinos[2], suggestionId))
-        && (destinos.size() < 4 || destinationPublished(destinos[3], suggestionId))
-        && (destinos.size() < 5 || destinationPublished(destinos[4], suggestionId));
     }
 
     function validSuggestionUpdate(interventionId) {
@@ -533,8 +514,8 @@ service cloud.firestore {
       // expressões do Emulator em operações atômicas com o catálogo.
       return oldStatus == 'aguardando'
         && !('divisao' in previous)
-        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade'])
-        && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId'])
+        && data.keys().hasOnly(['textoIntervencao', 'tituloResultadoVinculado', 'autorId', 'autorNome', 'autorNomeResolvido', 'origemStatus', 'dataCriacao', 'tituloResultadoOrigem', 'diagnosticoOrigemId', 'tituloDiagnosticoOrigem', 'identificadorSugestao', 'status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'derivacao', 'tipoRegistro', 'avaliacaoQualidade', 'intervencaoBibliotecaId', 'grupoOperacaoId'])
+        && data.diff(previous).affectedKeys().hasOnly(['status', 'preparacao', 'categoriaRejeicao', 'justificativaRejeicao', 'avaliadorId', 'avaliadorNome', 'dataDecisao', 'ultimaDecisaoId', 'intervencaoBibliotecaId', 'grupoOperacaoId'])
         && data.status in ['aguardando', 'aprovada', 'rejeitada']
         && (!('preparacao' in data) || validPreparation(data.preparacao))
         && (!('categoriaRejeicao' in data) || data.categoriaRejeicao in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'])
@@ -553,12 +534,32 @@ service cloud.firestore {
             && 'categoriaRejeicao' in data && 'justificativaRejeicao' in data
             && data.justificativaRejeicao.size() > 0)
           || (data.status == 'aprovada' && audit.tipo == 'publicar'
-            && 'preparacao' in data
-            && allDestinationsPublished(data.preparacao.destinos, interventionId)
-            && boundedString(data.preparacao.referenciaDeliberacao, 300) && data.preparacao.referenciaDeliberacao.size() > 0
-            && boundedString(data.preparacao.dataDeliberacao, 20) && data.preparacao.dataDeliberacao.size() > 0
-            && boundedString(data.preparacao.documentoHomologacao, 300) && data.preparacao.documentoHomologacao.size() > 0
-            && boundedString(data.preparacao.responsavelValidacao, 160) && data.preparacao.responsavelValidacao.size() > 0));
+            && 'preparacao' in data && 'intervencaoBibliotecaId' in data
+            && audit.intervencaoBibliotecaId == data.intervencaoBibliotecaId
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.status == 'disponivel'
+            && interventionId in getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.sugestoesOrigemIds
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoPrescrita == data.preparacao.acaoPrescrita
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoEnfermeiro == data.preparacao.acaoEnfermeiro
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.destinos == data.preparacao.destinos
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.modoDisponibilidade == (('modoDisponibilidade' in data.preparacao) ? data.preparacao.modoDisponibilidade : 'resultados_especificos'))
+          || (data.status == 'aprovada' && audit.tipo == 'publicar_grupo'
+            && 'preparacao' in data && 'intervencaoBibliotecaId' in data && 'grupoOperacaoId' in data
+            && audit.grupoOperacaoId == data.grupoOperacaoId
+            && audit.intervencaoBibliotecaId == data.intervencaoBibliotecaId
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.status == 'preparando'
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.sugestaoIds == audit.idsAfetados
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.status == 'preparando'
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoPrescrita == data.preparacao.acaoPrescrita
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.acaoEnfermeiro == data.preparacao.acaoEnfermeiro
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.destinos == data.preparacao.destinos
+            && getAfter(/databases/$(database)/documents/intervencoesBiblioteca/$(data.intervencaoBibliotecaId)).data.modoDisponibilidade == (('modoDisponibilidade' in data.preparacao) ? data.preparacao.modoDisponibilidade : 'resultados_especificos'))
+          || (data.status == 'rejeitada' && audit.tipo == 'rejeitar_grupo'
+            && 'grupoOperacaoId' in data && audit.grupoOperacaoId == data.grupoOperacaoId
+            && 'categoriaRejeicao' in data && 'justificativaRejeicao' in data && data.justificativaRejeicao.size() > 0
+            && audit.justificativa == data.justificativaRejeicao
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.status == 'preparando'
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.categoria == data.categoriaRejeicao
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.justificativa == data.justificativaRejeicao));
     }
 
     function splitChildAfter(childId, originalId, index) {
@@ -659,21 +660,63 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    function validLibrary(data, libraryId) {
+      return data is map
+        && data.keys().hasAll(['acaoPrescrita', 'acaoEnfermeiro', 'materiaisDeApoio', 'modoDisponibilidade', 'destinos', 'status', 'versao', 'sugestoesOrigemIds', 'criadoPorUid', 'criadoPorNome', 'criadoEm', 'publicadoEm'])
+        && data.keys().hasOnly(['acaoPrescrita', 'acaoEnfermeiro', 'materiaisDeApoio', 'modoDisponibilidade', 'destinos', 'status', 'versao', 'sugestoesOrigemIds', 'grupoOperacaoId', 'criadoPorUid', 'criadoPorNome', 'criadoEm', 'publicadoEm'])
+        && boundedString(data.acaoPrescrita, 1000) && data.acaoPrescrita.size() > 0
+        && boundedString(data.acaoEnfermeiro, 1000) && data.acaoEnfermeiro.size() > 0
+        && data.materiaisDeApoio is list && data.materiaisDeApoio.size() <= 20
+        && data.modoDisponibilidade in ['resultados_especificos', 'transversal']
+        && data.destinos is list && data.destinos.size() <= 1000
+        && ((data.modoDisponibilidade == 'transversal' && data.destinos.size() == 0)
+          || (data.modoDisponibilidade == 'resultados_especificos' && data.destinos.size() > 0))
+        && data.status in ['disponivel', 'preparando'] && data.versao == 1
+        && data.sugestoesOrigemIds is list && data.sugestoesOrigemIds.size() >= 1 && data.sugestoesOrigemIds.size() <= 100
+        && data.criadoPorUid == request.auth.uid && boundedString(data.criadoPorNome, 160) && data.criadoPorNome.size() > 0
+        && data.criadoEm == request.time
+        && (data.status == 'preparando'
+          ? ('grupoOperacaoId' in data && data.publicadoEm == null
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.intervencaoBibliotecaId == libraryId
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.sugestaoIds == data.sugestoesOrigemIds
+            && getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data.criadoPorUid == request.auth.uid)
+          : (data.publicadoEm == request.time
+            && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(data.sugestoesOrigemIds[0])).data.intervencaoBibliotecaId == libraryId
+            && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(data.sugestoesOrigemIds[0])).data.status == 'aprovada'
+            && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(data.sugestoesOrigemIds[0])).data.preparacao.acaoPrescrita == data.acaoPrescrita
+            && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(data.sugestoesOrigemIds[0])).data.preparacao.acaoEnfermeiro == data.acaoEnfermeiro
+            && getAfter(/databases/$(database)/documents/intervencoesAutorais/$(data.sugestoesOrigemIds[0])).data.preparacao.destinos == data.destinos));
+    }
+
+    function validLibraryActivation(libraryId) {
+      let data = request.resource.data;
+      let operation = getAfter(/databases/$(database)/documents/operacoesDecisoesIntervencoes/$(data.grupoOperacaoId)).data;
+      return resource.data.status == 'preparando' && data.status == 'disponivel'
+        && data.diff(resource.data).affectedKeys().hasOnly(['status', 'publicadoEm'])
+        && data.publicadoEm == request.time && operation.status == 'concluida'
+        && operation.intervencaoBibliotecaId == libraryId
+        && operation.concluidasIds.hasAll(operation.sugestaoIds);
+    }
+
     function validDecision(data) {
       return data is map
         && data.keys().hasAll(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'dataHora'])
-        && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'avaliacaoQualidade', 'dataHora'])
+        && data.keys().hasOnly(['sugestaoId', 'statusAnterior', 'statusNovo', 'tipo', 'avaliadorId', 'destinos', 'justificativa', 'avaliacaoQualidade', 'intervencaoBibliotecaId', 'grupoOperacaoId', 'idsAfetados', 'dataHora'])
         && boundedString(data.sugestaoId, 128)
         && data.statusAnterior in ['aguardando', 'aprovada', 'rejeitada']
         && data.statusNovo in ['aguardando', 'aprovada', 'rejeitada']
-        && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar']
+        && data.tipo in ['preparar', 'publicar', 'rejeitar', 'desmembrar', 'avaliar', 'publicar_grupo', 'rejeitar_grupo']
         && (data.tipo == 'avaliar' || data.statusAnterior == 'aguardando')
         && (data.tipo != 'avaliar' || data.statusAnterior == data.statusNovo)
         && (data.tipo != 'desmembrar' || data.statusNovo == 'aguardando')
         && (data.tipo == 'avaliar' ? ('avaliacaoQualidade' in data && validQualityEvaluation(data.avaliacaoQualidade)) : !('avaliacaoQualidade' in data))
         && (!(data.tipo in ['avaliar', 'desmembrar']) || (data.destinos.size() == 0 && data.justificativa == ''))
+        && (data.tipo in ['publicar_grupo', 'rejeitar_grupo']
+          ? ('grupoOperacaoId' in data && boundedString(data.grupoOperacaoId, 128) && data.idsAfetados is list && data.idsAfetados.size() >= 2 && data.idsAfetados.size() <= 100 && data.sugestaoId in data.idsAfetados)
+          : (!('grupoOperacaoId' in data) && !('idsAfetados' in data)))
+        && (data.tipo in ['publicar', 'publicar_grupo'] ? ('intervencaoBibliotecaId' in data && boundedString(data.intervencaoBibliotecaId, 128)) : !('intervencaoBibliotecaId' in data))
         && data.avaliadorId == request.auth.uid
-        && data.destinos is list && data.destinos.size() <= 5
+        && data.destinos is list && data.destinos.size() <= 1000
         && boundedString(data.justificativa, 2000)
         && data.dataHora == request.time;
     }
@@ -684,6 +727,37 @@ service cloud.firestore {
       // recursão de getAfter entre as duas regras.
       allow create: if canManageContent() && validDecision(request.resource.data);
       allow update, delete: if false;
+    }
+
+    match /intervencoesBiblioteca/{libraryId} {
+      allow get, list: if canManageContent() || (isApproved() && resource.data.status == 'disponivel' && hasPage('ProcessoEnfermagem'));
+      allow create: if canManageContent() && validLibrary(request.resource.data, libraryId);
+      allow update: if canManageContent() && validLibraryActivation(libraryId);
+      allow delete: if false;
+    }
+
+    match /operacoesDecisoesIntervencoes/{operationId} {
+      allow read: if canManageContent();
+      allow create: if canManageContent()
+        && request.resource.data.keys().hasAll(['tipo', 'status', 'sugestaoIds', 'concluidasIds', 'criadoPorUid', 'criadoPorNome', 'criadoEm'])
+        && request.resource.data.keys().hasOnly(['tipo', 'status', 'sugestaoIds', 'concluidasIds', 'intervencaoBibliotecaId', 'categoria', 'justificativa', 'criadoPorUid', 'criadoPorNome', 'criadoEm'])
+        && request.resource.data.tipo in ['publicar', 'rejeitar'] && request.resource.data.status == 'preparando'
+        && request.resource.data.sugestaoIds is list && request.resource.data.sugestaoIds.size() >= 2 && request.resource.data.sugestaoIds.size() <= 100
+        && request.resource.data.concluidasIds is list && request.resource.data.concluidasIds.size() == 0
+        && request.resource.data.criadoPorUid == request.auth.uid && boundedString(request.resource.data.criadoPorNome, 160)
+        && request.resource.data.criadoEm == request.time
+        && (request.resource.data.tipo == 'publicar'
+          ? ('intervencaoBibliotecaId' in request.resource.data && !('categoria' in request.resource.data) && !('justificativa' in request.resource.data))
+          : (!('intervencaoBibliotecaId' in request.resource.data) && request.resource.data.categoria in ['Já existente no catálogo', 'Outra categoria profissional', 'Não contemplada nos protocolos municipais', 'Fundamentação insuficiente', 'Incompatível com diagnóstico', 'Incompatível com resultado', 'Risco à segurança do paciente', 'Redação incompleta', 'Duplicada', 'Fora do Processo de Enfermagem', 'Outro motivo'] && boundedString(request.resource.data.justificativa, 2000) && request.resource.data.justificativa.size() > 0));
+      allow update: if canManageContent()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['concluidasIds', 'status', 'concluidaEm'])
+        && request.resource.data.concluidasIds is list && request.resource.data.concluidasIds.size() <= resource.data.sugestaoIds.size()
+        && request.resource.data.concluidasIds.hasAll(resource.data.concluidasIds)
+        && request.resource.data.concluidasIds.hasOnly(resource.data.sugestaoIds)
+        && (request.resource.data.status == 'preparando'
+          ? !('status' in resource.data) || resource.data.status == 'preparando'
+          : request.resource.data.status == 'concluida' && request.resource.data.concluidasIds.hasAll(resource.data.sugestaoIds) && request.resource.data.concluidaEm == request.time);
+      allow delete: if false;
     }
 
     match /{document=**} {
