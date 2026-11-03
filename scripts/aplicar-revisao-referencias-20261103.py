@@ -54,6 +54,19 @@ def load_and_validate(path):
                 raise ValueError('Alteração sem NHB; homologar ou corrigir previamente')
     return data, hashlib.sha256(raw).hexdigest()
 
+def mensagem_permissao_firestore(fase, conta=''):
+    """Explica um 403 da API sem expor o JSON de credenciais nem alterar dados."""
+    principal = (' para ' + conta) if conta else ''
+    return (f'PERMISSAO_FIRESTORE_403 durante {fase}{principal}. '
+            'Confirme no IAM de csaefloripa as permissões datastore.databases.get '
+            '(iniciar transação), datastore.entities.get (ler) e '
+            'datastore.entities.update (gravar). O papel roles/datastore.user '
+            'inclui essas permissões. Verifique se o vínculo é para a conta '
+            'do secret FIREBASE_SERVICE_ACCOUNT_CSAE, sem condições restritivas. '
+            'Firestore Security Rules não resolvem esse erro de credencial '
+            'de servidor. Nenhum sucesso de gravação foi confirmado.')
+
+
 def save_private(payload, prefix):
     base=pathlib.Path.home()/'csae-auditoria-clinica';base.mkdir(parents=True,exist_ok=True,mode=0o700)
     os.chmod(base,0o700)
@@ -72,6 +85,8 @@ def client_from_env():
         except ValueError:obj=json.loads(base64.b64decode(value,validate=True).decode('utf-8'))
         if obj.get('project_id')!=EXPECTED_PROJECT:raise RuntimeError('Secret pertence a outro projeto')
         creds=service_account.Credentials.from_service_account_info(obj)
+        # E-mail da identidade (não a chave privada) para conferir o principal IAM.
+        print('Conta de serviço autenticada:', obj.get('client_email', '(sem client_email)'))
         db=firestore.Client(project=EXPECTED_PROJECT,credentials=creds)
     else:db=firestore.Client(project=EXPECTED_PROJECT)
     if db.project!=EXPECTED_PROJECT:raise RuntimeError('Cliente Firebase em projeto diferente')
@@ -116,11 +131,14 @@ def main():
         return
     backup=save_private({'projeto':EXPECTED_PROJECT,'manifestoSha256':raw_sha,'documentos':before},'backup_lote_clinico')
     print('BACKUP PRIVADO ANTERIOR À ESCRITA:',backup)
+    fase={'valor':'inicialização da transação (BeginTransaction)'}
     @firestore.transactional
     def commit(tx):
         # Todas as leituras devem ocorrer ANTES das escritas numa transação Firestore.
+        fase['valor']='leitura dos documentos dentro da transação'
         currents=[ref.get(transaction=tx) for ref in refs]
         actions=[]
+        fase['valor']='validação de pré-condições e preparação da escrita'
         for x,ref,snap in zip(manifest['documentos'],refs,currents):
             if not snap.exists:raise RuntimeError('Documento apagado durante transação: '+ref.path)
             current_hash=digest((snap.to_dict() or {}).get(x['campo']))
@@ -128,8 +146,16 @@ def main():
             if current_hash!=x['sha256Anterior']:raise RuntimeError('Concorrência: '+ref.path)
             actions.append((x,ref))
         for x,ref in actions:tx.update(ref,{x['campo']:x['conteudoProposto']})
+        fase['valor']='confirmação das atualizações na transação (Commit)'
         return [ref.path for _,ref in actions]
-    updated=commit(db.transaction())
+    from google.api_core.exceptions import PermissionDenied
+    try:
+        updated=commit(db.transaction())
+    except PermissionDenied as exc:
+        raise RuntimeError(mensagem_permissao_firestore(
+            fase['valor'],
+            db._credentials.service_account_email if hasattr(db._credentials, 'service_account_email') else ''
+        )) from exc
     check={s.reference.path:s for s in db.get_all(refs)}
     for x,ref in zip(manifest['documentos'],refs):
         if digest((check[ref.path].to_dict() or {}).get(x['campo']))!=x['sha256Proposto']:
