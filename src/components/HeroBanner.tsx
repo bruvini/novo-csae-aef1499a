@@ -45,7 +45,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ stats, loading = false }) => {
         </span>
       </div>
 
-      <div className="container relative mx-auto px-6 py-8 lg:px-12 lg:py-10 z-20 flex flex-col justify-center">
+      <div className="relative z-20 flex w-full flex-col justify-center px-6 py-8 lg:px-12 lg:py-10">
         <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
           {/* Left Column - Content */}
           <div className="flex-1 text-white text-center lg:text-left max-w-2xl">

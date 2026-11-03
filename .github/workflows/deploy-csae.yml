@@ -50,6 +50,15 @@ jobs:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CSAE }}'
           project_id: csaefloripa
           create_credentials_file: true
+      - name: Configurar Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v3
+      - name: Verificar permissão de consulta às APIs
+        shell: bash
+        run: |
+          if ! gcloud services describe firestore.googleapis.com --project csaefloripa --format='value(state)'; then
+            echo '::error::A conta de deploy precisa do papel Service Usage Viewer (roles/serviceusage.serviceUsageViewer) no projeto csaefloripa.'
+            exit 1
+          fi
       - name: Publicar regras do Firestore (sem alterar dados)
         run: npx --yes firebase-tools@14 deploy --project csaefloripa --only firestore:rules --non-interactive
       - name: Publicar Firebase Hosting (sem Storage ou Auth)

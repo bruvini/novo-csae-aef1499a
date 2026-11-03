@@ -14,12 +14,13 @@ O deploy necessita da aplicação e das regras Firestore **na mesma liberação*
 2. Conceda somente os papéis:
    - `Firebase Hosting Admin` — `roles/firebasehosting.admin`;
    - `Firebase Rules Admin` — `roles/firebaserules.admin`;
-   - `API Keys Viewer` — `roles/serviceusage.apiKeysViewer`.
-3. Não conceder `Owner`, `Editor`, `Firebase Admin`, `Cloud Datastore User` ou permissões de leitura de dados clínicos à automação.
-4. Em **Chaves → Adicionar chave → Criar nova chave → JSON**, guarde a chave em local seguro. Nunca enviá-la ao chat, nem colocá-la no repositório.
-5. Em https://github.com/bruvini/novo-csae-aef1499a/settings/secrets/actions, use **New repository secret** e crie `FIREBASE_SERVICE_ACCOUNT_CSAE`, com **todo o conteúdo do JSON**.
-6. Recomenda-se criar o ambiente `production` em GitHub **Settings → Environments**, com revisores obrigatórios autorizados para aprovar execuções antes do deploy. O fluxo usa esse ambiente.
-7. Depois, em https://github.com/bruvini/novo-csae-aef1499a/actions, escolha **Publicar Portal CSAE (Firebase)** → **Run workflow** → branch `main`.
+   - `Service Usage Viewer` — `roles/serviceusage.serviceUsageViewer` (permite consultar o estado da API do Firestore).
+3. Se você já criou a conta com `API Keys Viewer`, adicione `Service Usage Viewer` à mesma conta. **Não gere outra chave JSON e não altere a secret** para resolver o erro 403 de `serviceusage.services.get`.
+4. Não conceder `Owner`, `Editor`, `Firebase Admin`, `Cloud Datastore User` ou permissões de leitura de dados clínicos à automação.
+5. Em **Chaves → Adicionar chave → Criar nova chave → JSON**, guarde a chave em local seguro. Nunca enviá-la ao chat, nem colocá-la no repositório.
+6. Em https://github.com/bruvini/novo-csae-aef1499a/settings/secrets/actions, use **New repository secret** e crie `FIREBASE_SERVICE_ACCOUNT_CSAE`, com **todo o conteúdo do JSON**.
+7. Recomenda-se criar o ambiente `production` em GitHub **Settings → Environments**, com revisores obrigatórios autorizados para aprovar execuções antes do deploy. O fluxo usa esse ambiente.
+8. Depois, em https://github.com/bruvini/novo-csae-aef1499a/actions, escolha **Publicar Portal CSAE (Firebase)** → **Run workflow** → branch `main`.
 
 O workflow testa regras, aplicação, minutas, TypeScript e build, autentica a conta do projeto, publica primeiro as regras Firestore e depois o Hosting, e verifica os assets do build em `csaefloripa.web.app` e `csae.com.br`. Não publica regras Storage, não acessa pacientes, não altera cadastros e não publica os textos jurídicos como vigentes.
 
@@ -37,7 +38,7 @@ python3 -m venv .venv-csae-release
 .venv-csae-release/bin/python scripts/release/registrar_changelog_documentos_legais.py
 ```
 
-O script usa ID fixo e `create` para evitar duplicações e não consulta registros de pacientes. Também é possível cadastrar manualmente, usando o mesmo título, descrição e data/hora da liberação, pelo console do Firestore.
+O script registra as duas atualizações (documentos legais e novo Dashboard) com IDs fixos e `create` para evitar duplicações; não consulta registros de pacientes. Também é possível cadastrar manualmente, usando o mesmo título, descrição e data/hora da liberação, pelo console do Firestore.
 
 ## Atenção
 

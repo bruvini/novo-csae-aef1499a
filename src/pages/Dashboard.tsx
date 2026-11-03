@@ -90,21 +90,21 @@ const Dashboard = () => {
   }
 
   return (
-    <AuthenticatedLayout>
-      <div className="space-y-8 pb-12">
+    <AuthenticatedLayout fullWidth>
+      <div className="w-full min-w-0 space-y-8 pb-12">
         {/* Banner de Boas-vindas Dinâmico */}
         <HeroBanner stats={stats} loading={statsLoading} />
 
         {/* ── Grid: Navigation (60%) + Changelog (40%) ── */}
-        <div className="grid lg:grid-cols-5 gap-8">
+        <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-8">
           {/* Coluna esquerda — Ferramentas */}
-          <div className="lg:col-span-3">
+          <div className="min-w-0 lg:col-span-3">
             <NavigationCards />
           </div>
 
           {/* Coluna direita — Atualizações Recentes */}
-          <div className="lg:col-span-2 self-start">
-            <Card className="border-none shadow-sm bg-white">
+          <div className="min-w-0 self-start lg:col-span-2">
+            <Card className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg font-bold text-csae-green-900">
                   <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
@@ -137,7 +137,7 @@ const Dashboard = () => {
                     Nenhuma atualização registrada.
                   </p>
                 ) : (
-                  <div className="max-h-[420px] overflow-y-auto pr-4">
+                  <div className="max-h-[580px] overflow-y-auto pr-2 sm:pr-4">
                     <div className="relative pl-6">
                       {/* Timeline line */}
                       <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
