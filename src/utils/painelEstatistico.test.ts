@@ -88,7 +88,11 @@ test('série diária limitada a 30 dias preserva o acumulado desde o primeiro pr
   });
   const diaria = agregarRegistrosProducao(registros).temporalAvancado.diario;
   assert.equal(diaria.length, 30);
-  assert.equal(diaria[0].acumulado, 34);
+  // O recorte é calculado até a data corrente em São Paulo. Um número fixo
+  // deixava o teste inválido a cada dia, mesmo com a agregação correta.
+  const primeiroDiaVisivel = diaria[0].name.split('/').reverse().join('-');
+  const esperadoPrimeiroDia = registros.filter((item) => item.dataReferencia.slice(0, 10) <= primeiroDiaVisivel).length;
+  assert.equal(diaria[0].acumulado, esperadoPrimeiroDia);
   assert.equal(diaria.at(-1)?.acumulado, 40);
 });
 
