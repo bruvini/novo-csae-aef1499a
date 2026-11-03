@@ -831,6 +831,79 @@ service cloud.firestore {
       allow delete: if isActiveAdmin();
     }
 
+    // História institucional real: eventos antigos vivem em historiasPortal.
+    // Apenas profissionais aprovados leem o registro completo porque curtidasPor
+    // e criadoPorUid identificam usuários; não é uma projeção pública anônima.
+    function validHistoriaCreate(data) {
+      return data is map
+        && data.keys().hasAll([
+          'titulo', 'descricao', 'dataOrdenacao', 'dataReferencia', 'curtidasPor',
+          'criadoEm', 'atualizadoEm', 'criadoPorUid', 'atualizadoPorUid'
+        ])
+        && data.keys().hasOnly([
+          'titulo', 'descricao', 'subtitulo', 'foto', 'legendaFoto', 'autoriaFoto',
+          'dataOrdenacao', 'dataReferencia', 'curtidasPor',
+          'criadoEm', 'atualizadoEm', 'criadoPorUid', 'atualizadoPorUid'
+        ])
+        && boundedString(data.titulo, 180) && data.titulo.size() >= 3
+        && boundedString(data.descricao, 12000) && data.descricao.size() >= 10
+        && data.dataOrdenacao is string
+        && data.dataOrdenacao.matches('[0-9]{4}-(0[1-9]|1[0-2])')
+        && data.dataReferencia is string
+        && data.dataReferencia.matches('(0[1-9]|1[0-2])/[0-9]{4}')
+        && (!('subtitulo' in data) || boundedString(data.subtitulo, 240))
+        && (!('foto' in data) || (boundedString(data.foto, 2000) && (data.foto == '' || data.foto.matches('https://.*'))))
+        && (!('legendaFoto' in data) || boundedString(data.legendaFoto, 300))
+        && (!('autoriaFoto' in data) || boundedString(data.autoriaFoto, 160))
+        && data.curtidasPor is list && data.curtidasPor.size() == 0
+        && data.criadoEm == request.time
+        && data.atualizadoEm == request.time
+        && data.criadoPorUid == request.auth.uid
+        && data.atualizadoPorUid == request.auth.uid;
+    }
+
+    function validHistoriaEdit(data) {
+      return data.diff(resource.data).affectedKeys().hasOnly([
+          'titulo', 'descricao', 'subtitulo', 'foto', 'legendaFoto', 'autoriaFoto',
+          'dataOrdenacao', 'dataReferencia', 'atualizadoEm', 'atualizadoPorUid'
+        ])
+        && boundedString(data.titulo, 180) && data.titulo.size() >= 3
+        && boundedString(data.descricao, 12000) && data.descricao.size() >= 10
+        && data.dataOrdenacao is string
+        && data.dataOrdenacao.matches('[0-9]{4}-(0[1-9]|1[0-2])')
+        && data.dataReferencia is string
+        && data.dataReferencia.matches('(0[1-9]|1[0-2])/[0-9]{4}')
+        && (!('subtitulo' in data) || boundedString(data.subtitulo, 240))
+        && (!('foto' in data) || (boundedString(data.foto, 2000) && (data.foto == '' || data.foto.matches('https://.*'))))
+        && (!('legendaFoto' in data) || boundedString(data.legendaFoto, 300))
+        && (!('autoriaFoto' in data) || boundedString(data.autoriaFoto, 160))
+        && data.atualizadoEm == request.time
+        && data.atualizadoPorUid == request.auth.uid;
+    }
+
+    function validHistoriaLike(data) {
+      let prev = resource.data.curtidasPor;
+      let next = data.curtidasPor;
+      return isApproved()
+        && prev is list && next is list
+        && next.size() <= 10000
+        && data.diff(resource.data).affectedKeys().hasOnly(['curtidasPor'])
+        && ((! (request.auth.uid in prev)
+          && request.auth.uid in next
+          && next.size() == prev.size() + 1 && next.hasAll(prev))
+        || ((request.auth.uid in prev)
+          && !(request.auth.uid in next)
+          && prev.size() == next.size() + 1 && prev.hasAll(next)));
+    }
+
+    match /historiasPortal/{storyId} {
+      allow get, list: if isApproved();
+      allow create: if isActiveAdmin() && validHistoriaCreate(request.resource.data);
+      allow update: if (isActiveAdmin() && validHistoriaEdit(request.resource.data))
+        || validHistoriaLike(request.resource.data);
+      allow delete: if isActiveAdmin();
+    }
+
     // Documentos legais: versões como snapshots imutáveis.
     // O público só lê o snapshot que o ponteiro indica como vigente.
     function legalStatePath(tipo) {
