@@ -74,6 +74,8 @@ jobs:
         run: npx tsx --test tests/legalDocuments.test.ts
       - name: Validar layout responsivo do Dashboard
         run: npx tsx --test tests/dashboardLayout.test.ts
+      - name: Verificar script do changelog desta publicação
+        run: python3 -m py_compile scripts/release/registrar_changelog_documentos_legais.py
       - name: Checar tipagem
         run: npx tsc -b
       - name: Compilar o portal

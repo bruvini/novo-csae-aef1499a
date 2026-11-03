@@ -38,7 +38,7 @@ python3 -m venv .venv-csae-release
 .venv-csae-release/bin/python scripts/release/registrar_changelog_documentos_legais.py
 ```
 
-O script usa ID fixo e `create` para evitar duplicações e não consulta registros de pacientes. Também é possível cadastrar manualmente, usando o mesmo título, descrição e data/hora da liberação, pelo console do Firestore.
+O script registra as duas atualizações (documentos legais e novo Dashboard) com IDs fixos e `create` para evitar duplicações; não consulta registros de pacientes. Também é possível cadastrar manualmente, usando o mesmo título, descrição e data/hora da liberação, pelo console do Firestore.
 
 ## Atenção
 
