@@ -86,6 +86,18 @@ class TestClinica(unittest.TestCase):
         self.assertTrue(all(r["interpretacaoClinica"]=="informativo" and
                             not r["subconjuntoNHBVinculado"] for r in rows))
 
+    def test_diagnostico_403_informa_fase_e_iam_sem_expor_secret(self):
+        for fase in ("inicialização da transação (BeginTransaction)",
+                     "confirmação das atualizações na transação (Commit)"):
+            mensagem = mod.mensagem_permissao_firestore(
+                fase, "conta-csae@csaefloripa.iam.gserviceaccount.com")
+            self.assertIn("PERMISSAO_FIRESTORE_403", mensagem)
+            self.assertIn(fase, mensagem)
+            self.assertIn("roles/datastore.user", mensagem)
+            self.assertIn("datastore.entities.update", mensagem)
+            self.assertIn("conta-csae@csaefloripa.iam.gserviceaccount.com", mensagem)
+            self.assertNotIn("private_key", mensagem)
+
     def test_aplicar_sem_aprovacao_aborta_antes_de_acesso_remoto(self):
         p=subprocess.run([sys.executable,str(SCRIPT),"--manifest",str(MANIFEST),
             "--apply","--confirm-project","csaefloripa"],text=True,capture_output=True)
