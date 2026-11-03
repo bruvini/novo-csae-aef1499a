@@ -78,7 +78,7 @@ const IntervencaoItem: React.FC<IntervencaoItemProps> = ({ intervencao, materiai
               {intervencao.acaoPrescrita}
             </label>
             <Badge variant={intervencao.tipo === 'padrao' ? 'secondary' : 'outline'}>
-              {intervencao.tipo === 'padrao' ? 'Padrão' : intervencao.tipo === 'transversal' ? 'Transversal (selecionada pelo enfermeiro)' : 'Autoral'}
+              {intervencao.tipo === 'padrao' ? 'Padrão' : intervencao.tipo === 'transversal' ? 'Transversal (selecionada pelo enfermeiro)' : intervencao.tipo === 'biblioteca' ? 'Biblioteca aprovada (vínculo específico)' : 'Autoral'}
             </Badge>
           </div>
 
