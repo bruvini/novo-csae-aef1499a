@@ -1,0 +1,36 @@
+name: Verificar publicacao CSAE (somente leitura)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Conferir build nos dois dominios
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Obter versao da main
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci --legacy-peer-deps
+      - name: Compilar build para comparacao
+        run: npm run build
+      - name: Testar verificador localmente
+        run: python3 -m unittest discover -s tests -p test_verificar_hosting.py
+      - name: Confirmar o Hosting e o dominio personalizado
+        run: python3 scripts/release/verificar_hosting.py
+      - name: Resumo da verificacao
+        if: success()
+        run: |
+          echo "### Publicacao confirmada" >> "$GITHUB_STEP_SUMMARY"
+          echo "Os dois dominios apresentam o build da main." >> "$GITHUB_STEP_SUMMARY"
+          echo "Nenhum deploy ou alteracao de dados foi efetuado nesta verificacao." >> "$GITHUB_STEP_SUMMARY"

@@ -45,3 +45,19 @@ O script registra as duas atualizações (documentos legais e novo Dashboard) co
 Chaves JSON são credenciais de longa duração. Depois da implantação, prefira migrar a integração para **Workload Identity Federation** (OIDC), com confiança restrita ao repositório e à branch `main`. Caso uma chave seja exposta, revogue-a no Google Cloud e substitua o secret no GitHub.
 
 Não rodar `scripts/publicar-csae-cloudshell.sh` sem atualização: ele contém hashes fixos de uma versão antiga, faz modificações clínicas fora do escopo deste deploy e não foi concebido para esta mudança.
+
+## Verificação de publicação (sem novo deploy)
+O Firebase Hosting pode responder com um HTML antigo por alguns instantes após liberar
+uma versão. A validação de `scripts/release/verificar_hosting.py` agora aguarda até
+150 segundos por propagação nos dois domínios, repetindo apenas leituras HTTP sem
+alterar dados nem permissões.
+
+Se o deploy já mostrou `release complete`, **não repita a publicação automaticamente**.
+Use o workflow manual **Verificar publicacao CSAE (somente leitura)** em
+`.github/workflows/verificar-csae-hosting.yml` na branch `main`.
+Ele recompila o código de referência e confere os recursos JS/CSS hospedados,
+sem pedir a chave Firebase nem executar deploy.
+
+Se o HTML continuar divergente após as tentativas, inspecione os recursos observados
+no log e a vinculação do domínio personalizado no console do Firebase Hosting.
+Não declare o build confirmado se somente o CLI de deploy terminou.
