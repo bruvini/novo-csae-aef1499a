@@ -1,16 +1,8 @@
 import React from 'react';
 import { Instagram, Mail } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { LegalDocumentLinks } from '@/components/legal/LegalDocumentLinks';
 
 const Footer = () => {
-  const { toast } = useToast();
-
-  const handleTransparenciaClick = () => {
-    toast({
-      title: 'Conteúdo em atualização',
-      description: 'Estamos atualizando estas informações para disponibilizá-las de forma completa e transparente em breve.',
-    });
-  };
 
   const linkExterno = 'text-csae-green-100/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-csae-green-400 rounded';
   const contato = 'inline-flex min-w-0 items-center gap-1.5 text-xs text-csae-green-100/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-csae-green-400 rounded';
@@ -44,8 +36,7 @@ const Footer = () => {
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs md:justify-end">
             <span className="font-semibold uppercase tracking-wide text-csae-green-400">Transparência</span>
-            <button type="button" onClick={handleTransparenciaClick} className={`${linkExterno} text-left`}>Termos &amp; LGPD</button>
-            <button type="button" onClick={handleTransparenciaClick} className={`${linkExterno} text-left`}>Política de Privacidade</button>
+            <LegalDocumentLinks className="contents" linkClassName={`${linkExterno} text-left`} />
           </div>
         </div>
 

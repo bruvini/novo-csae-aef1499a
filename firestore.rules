@@ -789,6 +789,134 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Documentos legais: versões como snapshots imutáveis.
+    // O público só lê o snapshot que o ponteiro indica como vigente.
+    function legalStatePath(tipo) {
+      return /databases/$(database)/documents/documentosLegais/$(tipo);
+    }
+
+    function legalRevisionPath(tipo, id) {
+      return /databases/$(database)/documents/documentosLegais/$(tipo)/revisoes/$(id);
+    }
+
+    function validLegalState(data) {
+      return data is map
+        && data.keys().hasAll(['publicadaId', 'rascunhoId', 'sequencia', 'ultimaAcao', 'atualizadoPor', 'atualizadoEm'])
+        && data.keys().hasOnly(['publicadaId', 'rascunhoId', 'sequencia', 'ultimaAcao', 'atualizadoPor', 'atualizadoEm'])
+        && boundedString(data.publicadaId, 100)
+        && boundedString(data.rascunhoId, 100)
+        && data.sequencia is int && data.sequencia >= 1 && data.sequencia <= 100000
+        && data.ultimaAcao in ['criada', 'editada', 'publicada']
+        && data.atualizadoPor == request.auth.uid
+        && data.atualizadoEm == request.time;
+    }
+
+    function validLegalSnapshot(data, tipo) {
+      return data is map
+        && data.keys().hasAll(['tipo', 'versao', 'revisao', 'situacao', 'operacao', 'anteriorId', 'conteudo', 'autorUid', 'criadoEm'])
+        && data.keys().hasOnly(['tipo', 'versao', 'revisao', 'situacao', 'operacao', 'anteriorId', 'conteudo', 'autorUid', 'criadoEm', 'publicadoEm'])
+        && data.tipo == tipo
+        && data.versao is int && data.versao >= 1 && data.versao <= 100000
+        && data.revisao is int && data.revisao >= 0
+        && data.situacao in ['rascunho', 'publicada']
+        && data.operacao in ['criada', 'editada', 'publicada']
+        && boundedString(data.anteriorId, 100)
+        && data.conteudo is map
+        && data.conteudo.keys().hasAll(['introducao', 'secoes'])
+        && data.conteudo.keys().hasOnly(['introducao', 'secoes'])
+        && boundedString(data.conteudo.introducao, 20000)
+        && data.conteudo.secoes is list
+        && data.conteudo.secoes.size() >= 1 && data.conteudo.secoes.size() <= 25
+        && data.autorUid == request.auth.uid
+        && data.criadoEm == request.time
+        && (data.situacao == 'publicada'
+          ? ('publicadoEm' in data && data.publicadoEm == request.time)
+          : !('publicadoEm' in data));
+    }
+
+    function canCreateLegalVersion(tipo, data) {
+      let revision = getAfter(legalRevisionPath(tipo, data.rascunhoId)).data;
+      return resource.data.rascunhoId == ''
+        && resource.data.publicadaId != ''
+        && data.publicadaId == resource.data.publicadaId
+        && data.sequencia == resource.data.sequencia + 1
+        && data.ultimaAcao == 'criada'
+        && revision.operacao == 'criada' && revision.situacao == 'rascunho'
+        && revision.versao == data.sequencia && revision.revisao == 0
+        && revision.anteriorId == resource.data.publicadaId
+        && revision.conteudo == get(legalRevisionPath(tipo, resource.data.publicadaId)).data.conteudo;
+    }
+
+    function canEditLegalDraft(tipo, data) {
+      let previous = get(legalRevisionPath(tipo, resource.data.rascunhoId)).data;
+      let next = getAfter(legalRevisionPath(tipo, data.rascunhoId)).data;
+      return resource.data.rascunhoId != ''
+        && data.rascunhoId != resource.data.rascunhoId
+        && data.publicadaId == resource.data.publicadaId
+        && data.sequencia == resource.data.sequencia
+        && data.ultimaAcao == 'editada'
+        && previous.situacao == 'rascunho'
+        && next.situacao == 'rascunho' && next.operacao == 'editada'
+        && next.anteriorId == resource.data.rascunhoId
+        && next.versao == previous.versao
+        && next.revisao == previous.revisao + 1;
+    }
+
+    function canPublishLegalDraft(tipo, data) {
+      let previous = get(legalRevisionPath(tipo, resource.data.rascunhoId)).data;
+      let next = getAfter(legalRevisionPath(tipo, data.publicadaId)).data;
+      return resource.data.rascunhoId != ''
+        && data.rascunhoId == ''
+        && data.publicadaId != resource.data.publicadaId
+        && data.sequencia == resource.data.sequencia
+        && data.ultimaAcao == 'publicada'
+        && previous.situacao == 'rascunho'
+        && next.situacao == 'publicada' && next.operacao == 'publicada'
+        && next.anteriorId == resource.data.rascunhoId
+        && next.conteudo == previous.conteudo
+        && next.versao == previous.versao && next.revisao == previous.revisao + 1;
+    }
+
+    match /documentosLegais/{tipo} {
+      allow get: if tipo in ['terms', 'privacy'];
+      allow list, delete: if false;
+      allow create: if tipo in ['terms', 'privacy']
+        && isActiveAdmin()
+        && validLegalState(request.resource.data)
+        && request.resource.data.publicadaId == ''
+        && request.resource.data.rascunhoId != ''
+        && request.resource.data.sequencia == 1
+        && request.resource.data.ultimaAcao == 'criada'
+        && getAfter(legalRevisionPath(tipo, request.resource.data.rascunhoId)).data.versao == 1
+        && getAfter(legalRevisionPath(tipo, request.resource.data.rascunhoId)).data.revisao == 0
+        && getAfter(legalRevisionPath(tipo, request.resource.data.rascunhoId)).data.situacao == 'rascunho';
+      allow update: if tipo in ['terms', 'privacy']
+        && isActiveAdmin()
+        && validLegalState(request.resource.data)
+        && (canCreateLegalVersion(tipo, request.resource.data)
+          || canEditLegalDraft(tipo, request.resource.data)
+          || canPublishLegalDraft(tipo, request.resource.data));
+
+      match /revisoes/{revisionId} {
+        allow get: if isActiveAdmin() || (
+          resource.data.situacao == 'publicada'
+          && get(legalStatePath(tipo)).data.publicadaId == revisionId
+        );
+        allow list: if isActiveAdmin();
+        allow create: if tipo in ['terms', 'privacy']
+          && isActiveAdmin()
+          && validLegalSnapshot(request.resource.data, tipo)
+          && (request.resource.data.situacao == 'publicada'
+            ? (request.resource.data.operacao == 'publicada'
+              && getAfter(legalStatePath(tipo)).data.publicadaId == revisionId)
+            : (request.resource.data.operacao in ['criada', 'editada']
+              && getAfter(legalStatePath(tipo)).data.rascunhoId == revisionId))
+          && (request.resource.data.operacao != 'criada'
+            || request.resource.data.revisao == 0);
+        allow update, delete: if false;
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
