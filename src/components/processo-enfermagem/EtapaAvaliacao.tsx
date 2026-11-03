@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine, Search } from 'lucide-react';
+import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine, Search, History, Clock3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
@@ -506,26 +506,62 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
 
   return (
     <div className="h-full">
-      {cuidadosAnteriores.length > 0 && <Card className="mb-4"><CardHeader><CardTitle>Acompanhamento de Cuidados Anteriores</CardTitle></CardHeader>
-        <CardContent><Accordion type="single" collapsible className="space-y-2">
-          {[...consultasAnteriores.entries()].map(([consultaId, cuidados]) => <AccordionItem key={consultaId} value={consultaId}>
-            <AccordionTrigger>{formatarDataConsulta(cuidados[0].dataOrigem)}</AccordionTrigger>
-            <AccordionContent className="space-y-3">{cuidados.map(cuidado => <details key={cuidado.acompanhamentoId} className="rounded border p-3">
-              <summary className="cursor-pointer font-medium">{cuidado.tituloDiagnostico}</summary>
-              <div className="mt-2 space-y-2"><p><strong>Diagnóstico:</strong> {cuidado.tituloDiagnostico}</p>
-                <p><strong>Resultado esperado:</strong> {cuidado.resultadoEsperado || 'Não registrado'}</p>
-                <p><strong>Intervenções:</strong> {cuidado.intervencoes?.length ? cuidado.intervencoes.join('; ') : 'Não registradas'}</p>
-                <label className="flex items-center gap-2"><Checkbox checked={(processo.avaliacao?.cuidadosAnterioresAbordados || []).some(item => item.acompanhamentoId === cuidado.acompanhamentoId)} onCheckedChange={checked => {
-                  const atuais = processo.avaliacao?.cuidadosAnterioresAbordados || [];
-                  const selecionados = checked === true
-                    ? [...atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), cuidado]
-                    : atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId);
-                  onUpdateAvaliacao({ ...processo.avaliacao, cuidadosAnterioresAbordados: selecionados });
-                }} />Abordei este cuidado na consulta atual.</label>
-              </div>
-            </details>)}</AccordionContent>
-          </AccordionItem>)}
-        </Accordion></CardContent></Card>}
+      {cuidadosAnteriores.length > 0 && <Card className="mb-4 border-border/80 shadow-sm">
+        <CardHeader className="space-y-2 pb-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4 text-primary" />Acompanhamento de Cuidados Anteriores</CardTitle>
+            <Badge variant="secondary">{cuidadosAnteriores.length} acompanhamentos disponíveis</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">Consulte os cuidados registrados em atendimentos anteriores e selecione aqueles abordados na consulta atual.</p>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <Accordion type="single" collapsible className="space-y-1">
+            {[...consultasAnteriores.entries()].map(([consultaId, cuidados]) => {
+              const dataCompleta = formatarDataConsulta(cuidados[0].dataOrigem);
+              const horaConsulta = dataCompleta.includes(',') ? dataCompleta.slice(dataCompleta.indexOf(',') + 1).trim() : '';
+              return <AccordionItem key={consultaId} value={consultaId} className="border-b last:border-b-0">
+                <AccordionTrigger className="rounded-md px-2 py-2.5 text-left hover:bg-muted/50 hover:no-underline">
+                  <span className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/5 text-primary"><Clock3 className="h-4 w-4" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">{formatarDataConsulta(cuidados[0].dataOrigem, false)}</span>
+                      {horaConsulta && <span className="block text-xs font-normal text-muted-foreground">Consulta às {horaConsulta}</span>}
+                    </span>
+                    <Badge variant="outline" className="mr-2 shrink-0">{cuidados.length} {cuidados.length === 1 ? 'cuidado' : 'cuidados'}</Badge>
+                  </span>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-2 px-1 pb-2 pt-1">
+                  {cuidados.map(cuidado => {
+                    const abordado = (processo.avaliacao?.cuidadosAnterioresAbordados || []).some(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+                    const checkboxId = `cuidado-abordado-${cuidado.acompanhamentoId}`;
+                    return <article key={cuidado.acompanhamentoId} className={`rounded-md p-3 transition-colors ${abordado ? 'bg-primary/5 ring-1 ring-inset ring-primary/25' : 'bg-muted/30 hover:bg-muted/50'}`}>
+                      <h3 className="text-sm font-semibold leading-snug">{cuidado.tituloDiagnostico}</h3>
+                      <div className="mt-2 border-l-2 border-primary/30 pl-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Resultado esperado</p>
+                        <p className="mt-0.5 text-sm">{cuidado.resultadoEsperado || 'Não registrado'}</p>
+                      </div>
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">Intervenções anteriores <span>({cuidado.intervencoes?.length || 0})</span></summary>
+                        {cuidado.intervencoes?.length ? <ul className="mt-1.5 list-disc space-y-1 pl-5 text-xs leading-relaxed text-muted-foreground">{cuidado.intervencoes.map((intervencao, index) => <li key={`${index}-${intervencao}`}>{intervencao}</li>)}</ul> : <p className="mt-1.5 text-xs text-muted-foreground">Não registradas</p>}
+                      </details>
+                      <label htmlFor={checkboxId} className="mt-3 flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm font-medium hover:bg-background/70">
+                        <Checkbox id={checkboxId} checked={abordado} onCheckedChange={checked => {
+                          const atuais = processo.avaliacao?.cuidadosAnterioresAbordados || [];
+                          const selecionados = checked === true
+                            ? [...atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), cuidado]
+                            : atuais.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId);
+                          onUpdateAvaliacao({ ...processo.avaliacao, cuidadosAnterioresAbordados: selecionados });
+                        }} />
+                        <span>Abordei este cuidado na consulta atual.</span>
+                      </label>
+                    </article>;
+                  })}
+                </AccordionContent>
+              </AccordionItem>;
+            })}
+          </Accordion>
+        </CardContent>
+      </Card>}
       <Tabs defaultValue="coleta-dados" className="w-full h-full flex flex-col">
         <TabsList className="grid w-full grid-cols-2 shrink-0">
           <TabsTrigger value="coleta-dados">Coleta de Dados</TabsTrigger>

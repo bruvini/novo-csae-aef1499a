@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { 
   Accordion, 
   AccordionContent, 
@@ -33,7 +35,11 @@ import {
   X,
   CheckCircle,
   Info,
-  Search
+  Search,
+  History,
+  Clock3,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { ProcessoEnfermagem, DiagnosticoEnfermagem, PlanejamentoEnfermagem, ImplementacaoEnfermagem } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
@@ -42,6 +48,8 @@ import { buscarSubconjuntos, SubconjuntoEnfermagem } from '@/services/bancodados
 import { cn } from '@/lib/utils';
 import { diagnosticosAnterioresDisponiveis, formatarDataConsulta } from '@/utils/continuidadeCuidado';
 import { DecisaoReavaliacaoDiagnostico } from '@/types/processoEnfermagem';
+import { atualizarBuscaPorAcompanhamento, buscarDiagnosticosSubstitutos, normalizarTermoDiagnostico } from '@/utils/buscaDiagnosticoSubstituto';
+import { atualizarSelecaoAposReavaliacao } from '@/utils/reavaliacaoDiagnostica';
 
 interface EtapaDiagnosticoProps {
   processo: ProcessoEnfermagem;
@@ -69,7 +77,9 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   const [diagnosticosPorNHB, setDiagnosticosPorNHB] = useState<DiagnosticoPorSubconjunto>({});
   const [diagnosticosPorProtocolo, setDiagnosticosPorProtocolo] = useState<DiagnosticoPorSubconjunto>({});
   const [loading, setLoading] = useState(true);
-  const [termoBusca, setTermoBusca] = useState('');
+  const [termoBuscaDiagnostico, setTermoBuscaDiagnostico] = useState('');
+  const [buscasSubstituto, setBuscasSubstituto] = useState<Record<string, string>>({});
+  const [substitutoAberto, setSubstitutoAberto] = useState<string | null>(null);
 
   // Verificar se há dados da avaliação - uso seguro com fallback
   const hasAvaliacaoData = ((processo.avaliacao?.coletaDeDadosSubjetivos ?? '').trim() !== '');
@@ -126,18 +136,17 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
 
   // Função para filtrar diagnósticos com base no termo de busca
   const filtrarDiagnosticos = (diagnosticosLista: Diagnostico[]): Diagnostico[] => {
-    if (!termoBusca.trim()) return diagnosticosLista;
-    
-    const termo = termoBusca.toLowerCase();
-    return diagnosticosLista.filter(diagnostico => 
-      diagnostico.tituloDiagnostico.toLowerCase().includes(termo) ||
-      diagnostico.descricaoDiagnostico.toLowerCase().includes(termo)
+    const termo = normalizarTermoDiagnostico(termoBuscaDiagnostico);
+    if (!termo) return diagnosticosLista;
+    return diagnosticosLista.filter(diagnostico =>
+      normalizarTermoDiagnostico(diagnostico.tituloDiagnostico || '').includes(termo)
+      || normalizarTermoDiagnostico(diagnostico.descricaoDiagnostico || '').includes(termo)
     );
   };
 
   // Função para filtrar subconjuntos com base nos diagnósticos filtrados
   const filtrarSubconjuntos = (diagnosticosPorSubconjunto: DiagnosticoPorSubconjunto): DiagnosticoPorSubconjunto => {
-    if (!termoBusca.trim()) return diagnosticosPorSubconjunto;
+    if (!termoBuscaDiagnostico.trim()) return diagnosticosPorSubconjunto;
     
     const subconjuntosFiltrados: DiagnosticoPorSubconjunto = {};
     
@@ -245,10 +254,10 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
 
   return (
     <div className="space-y-6">
-      {cuidadosAbordados.length > 0 && <Card className="border-amber-300"><CardHeader><CardTitle>Reavaliação de Diagnósticos Anteriores</CardTitle></CardHeader><CardContent className="space-y-4">
+      {cuidadosAbordados.length > 0 && <Card className="border-border/80 shadow-sm"><CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base"><History className="h-4 w-4 text-primary" />Reavaliação de Diagnósticos Anteriores</CardTitle><p className="text-sm text-muted-foreground">Revise cada diagnóstico abordado e registre a decisão clínica para este acompanhamento.</p></CardHeader><CardContent className="space-y-4">
         {cuidadosAbordados.map(cuidado => {
-          const decisoes = processo.diagnostico.reavaliacoesAnteriores || [];
-          const atual = decisoes.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+          const reavaliacoesRegistradas = processo.diagnostico.reavaliacoesAnteriores || [];
+          const atual = reavaliacoesRegistradas.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
           const decidir = (decisao: DecisaoReavaliacaoDiagnostico['decisao'], novo?: Diagnostico) => {
             const revisao: DecisaoReavaliacaoDiagnostico = {
               acompanhamentoId: cuidado.acompanhamentoId,
@@ -258,49 +267,138 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
               ...(decisao === 'substituir' && novo ? { novoDiagnosticoId: novo.id, novoTituloDiagnostico: novo.tituloDiagnostico } : {}),
             };
             const destinoId = decisao === 'manter' ? cuidado.diagnosticoOrigemId : decisao === 'substituir' ? novo?.id : undefined;
-            const diagnosticoAnterior = processo.diagnostico.diagnosticosSelecionados.find(item =>
-              item.acompanhamentoId === cuidado.acompanhamentoId || item.id === cuidado.diagnosticoOrigemId
-            );
-            const idsOrigem = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id]);
-            const selecionados = (processo.diagnostico.diagnosticosSelecionados || []).filter(item =>
-              item.acompanhamentoId !== cuidado.acompanhamentoId
-              && !idsOrigem.has(item.id)
-              && item.id !== destinoId
-            );
-            if (destinoId) {
-              const detalhe = diagnosticos.find(item => item.id === destinoId);
-              selecionados.push({ id: destinoId, tituloDiagnostico: decisao === 'manter' ? cuidado.tituloDiagnostico : novo!.tituloDiagnostico, acompanhamentoId: cuidado.acompanhamentoId, ...(detalhe?.naturezaDiagnostico ? { naturezaDiagnostico: detalhe.naturezaDiagnostico } : {}) });
-            }
+            const destino = decisao === 'manter'
+              ? { id: cuidado.diagnosticoOrigemId, tituloDiagnostico: cuidado.tituloDiagnostico, ...(cuidado.naturezaDiagnostico ? { naturezaDiagnostico: cuidado.naturezaDiagnostico } : {}) }
+              : decisao === 'substituir' && novo
+                ? { id: novo.id, tituloDiagnostico: novo.tituloDiagnostico, ...(novo.naturezaDiagnostico ? { naturezaDiagnostico: novo.naturezaDiagnostico } : {}) }
+                : undefined;
+            const selecionadosAnteriores = processo.diagnostico.diagnosticosSelecionados || [];
+            const diagnosticoVinculadoAnterior = selecionadosAnteriores.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+            const selecionados = atualizarSelecaoAposReavaliacao(selecionadosAnteriores, cuidado.acompanhamentoId, decisao, destino);
             onUpdateDiagnostico({
               ...processo.diagnostico,
               diagnosticosSelecionados: selecionados,
-              reavaliacoesAnteriores: [...decisoes.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), revisao],
+              reavaliacoesAnteriores: [...reavaliacoesRegistradas.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId), revisao],
             });
             if (decisao === 'encerrar') {
-              const idsRemovidos = new Set([cuidado.diagnosticoOrigemId, diagnosticoAnterior?.id].filter((id): id is string => Boolean(id)));
+              const planos = processo.planejamento.diagnosticosPlanejados || [];
+              const planosRemovidos = planos.filter(item => item.acompanhamentoId === cuidado.acompanhamentoId);
+              const planosRestantes = planos.filter(item => item.acompanhamentoId !== cuidado.acompanhamentoId);
+              onUpdatePlanejamento({ diagnosticosPlanejados: planosRestantes });
               const titulosRemovidos = new Set([
-                cuidado.tituloDiagnostico,
-                diagnosticoAnterior?.tituloDiagnostico,
-                ...processo.planejamento.diagnosticosPlanejados.filter(item => idsRemovidos.has(item.diagnosticoId)).map(item => item.tituloDiagnostico),
+                diagnosticoVinculadoAnterior?.tituloDiagnostico,
+                ...planosRemovidos.map(item => item.tituloDiagnostico),
               ].filter((titulo): titulo is string => Boolean(titulo)));
-              onUpdatePlanejamento({ diagnosticosPlanejados: processo.planejamento.diagnosticosPlanejados.filter(item =>
-                !idsRemovidos.has(item.diagnosticoId) && item.acompanhamentoId !== cuidado.acompanhamentoId
-              ) });
+              const titulosAindaUtilizados = new Set([
+                ...selecionados.map(item => item.tituloDiagnostico),
+                ...planosRestantes.map(item => item.tituloDiagnostico),
+              ]);
               const implementacaoAtualizada = { ...processo.implementacao };
-              titulosRemovidos.forEach(titulo => { delete implementacaoAtualizada[titulo]; });
+              titulosRemovidos.forEach(titulo => { if (!titulosAindaUtilizados.has(titulo)) delete implementacaoAtualizada[titulo]; });
               onUpdateImplementacao(implementacaoAtualizada);
             }
           };
-          return <div key={cuidado.acompanhamentoId} className="rounded border p-3 space-y-2">
-            <p className="font-medium">{cuidado.tituloDiagnostico} · {formatarDataConsulta(cuidado.dataOrigem)}</p>
-            <p className="text-sm text-muted-foreground">Resultado anterior: {cuidado.resultadoEsperado || 'Não registrado'}</p>
-            <details><summary className="cursor-pointer text-sm">Intervenções anteriores</summary><p>{cuidado.intervencoes?.join('; ') || 'Não registradas'}</p></details>
-            <div className="flex flex-wrap gap-2">{(['manter', 'substituir', 'encerrar'] as const).map(value => <Button key={value} size="sm" variant={atual?.decisao === value ? 'default' : 'outline'} onClick={() => decidir(value)}>{value === 'manter' ? 'Manter diagnóstico' : value === 'substituir' ? 'Substituir diagnóstico' : 'Encerrar acompanhamento'}</Button>)}</div>
-            {atual?.decisao === 'substituir' && <div className="space-y-2"><Input aria-label="Pesquisar diagnóstico substituto" placeholder="Pesquisar diagnóstico substituto" value={termoBusca} onChange={event => setTermoBusca(event.target.value)} />
-              <select aria-label="Diagnóstico substituto" className="w-full rounded border p-2" value={atual.novoDiagnosticoId || ''} onChange={event => decidir('substituir', diagnosticos.find(item => item.id === event.target.value))}>
-                <option value="">Selecione no Rol de Enfermagem</option>{diagnosticos.filter(item => item.id !== cuidado.diagnosticoOrigemId && item.tituloDiagnostico.toLowerCase().includes(termoBusca.toLowerCase())).map(item => <option key={item.id} value={item.id}>{item.tituloDiagnostico}</option>)}
-              </select></div>}
-          </div>;
+          const id = cuidado.acompanhamentoId;
+          const buscaSubstituto = buscasSubstituto[id] || '';
+          const resultadosSubstituto = buscarDiagnosticosSubstitutos(diagnosticos, buscaSubstituto)
+            .filter(item => item.id !== cuidado.diagnosticoOrigemId);
+          const diagnosticoEscolhido = atual?.novoDiagnosticoId
+            ? diagnosticos.find(item => item.id === atual.novoDiagnosticoId)
+            : undefined;
+          const resumoDecisao = atual?.decisao === 'manter' ? 'Diagnóstico anterior mantido.'
+            : atual?.decisao === 'encerrar' ? 'Acompanhamento encerrado nesta consulta.'
+              : atual?.decisao === 'substituir' && atual.novoDiagnosticoId
+                ? `Substituído por ${diagnosticoEscolhido?.tituloDiagnostico || atual.novoTituloDiagnostico || 'diagnóstico do Rol'}.`
+                : atual?.decisao === 'substituir' ? 'Escolha um diagnóstico do Rol para concluir a substituição.' : '';
+          const decisoes = [
+            { value: 'manter' as const, label: 'Manter diagnóstico' },
+            { value: 'substituir' as const, label: 'Substituir diagnóstico' },
+            { value: 'encerrar' as const, label: 'Encerrar acompanhamento' },
+          ];
+          return <Card key={id} className="border-border/80 shadow-sm">
+            <CardContent className="space-y-4 p-4 sm:p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <h3 className="text-base font-semibold leading-snug">{cuidado.tituloDiagnostico}</h3>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Clock3 className="h-3.5 w-3.5" />Consulta de origem · {formatarDataConsulta(cuidado.dataOrigem)}</p>
+                </div>
+                {atual && <Badge variant="outline" className="shrink-0 border-primary/30 text-primary">Decisão registrada</Badge>}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-md bg-muted/50 px-3 py-2.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Resultado esperado anterior</p>
+                  <p className="mt-1 text-sm">{cuidado.resultadoEsperado || 'Não registrado'}</p>
+                </div>
+                <details className="rounded-md bg-muted/50 px-3 py-2.5">
+                  <summary className="cursor-pointer text-sm font-medium">Intervenções anteriores <span className="text-xs text-muted-foreground">({cuidado.intervencoes?.length || 0})</span></summary>
+                  {cuidado.intervencoes?.length ? <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">{cuidado.intervencoes.map((intervencao, index) => <li key={`${index}-${intervencao}`}>{intervencao}</li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Não registradas</p>}
+                </details>
+              </div>
+              <section className="space-y-2.5 border-t pt-3" aria-label={`Decisão para ${cuidado.tituloDiagnostico}`}>
+                <p className="text-sm font-semibold">Decisão clínica</p>
+                <div role="group" aria-label={`Escolha uma decisão para ${cuidado.tituloDiagnostico}`} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {decisoes.map(opcao => <Button
+                    key={opcao.value}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    aria-pressed={atual?.decisao === opcao.value}
+                    onClick={() => decidir(opcao.value)}
+                    className={cn('h-auto min-h-10 justify-start whitespace-normal px-3 py-2 text-left transition-colors', atual?.decisao === opcao.value && 'border-primary bg-primary/5 text-foreground ring-1 ring-primary/30 hover:bg-primary/10')}
+                  >{opcao.label}{atual?.decisao === opcao.value && <Check className="ml-auto h-4 w-4 shrink-0 text-primary" />}</Button>)}
+                </div>
+                {resumoDecisao && <p role="status" className="rounded-md bg-muted/50 px-3 py-2 text-xs text-muted-foreground">{resumoDecisao}</p>}
+                {atual?.decisao === 'substituir' && <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor={`substituto-${id}`}>Pesquisar diagnóstico substituto</label>
+                  <Popover open={substitutoAberto === id} onOpenChange={aberto => {
+                    setSubstitutoAberto(aberto ? id : null);
+                    if (aberto) setBuscasSubstituto(atuais => atualizarBuscaPorAcompanhamento(atuais, id, ''));
+                  }}>
+                    <PopoverTrigger asChild>
+                      <Button id={`substituto-${id}`} type="button" variant="outline" role="combobox" aria-expanded={substitutoAberto === id} aria-label={diagnosticoEscolhido ? `Diagnóstico substituto: ${diagnosticoEscolhido.tituloDiagnostico}. Pesquisar outro diagnóstico` : 'Pesquisar diagnóstico substituto'} className="h-auto min-h-11 w-full justify-between gap-3 whitespace-normal text-left">
+                        <span className="flex min-w-0 items-start gap-2"><Search className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /><span className="min-w-0">{diagnosticoEscolhido ? <><span className="block font-medium">{diagnosticoEscolhido.tituloDiagnostico}</span>{diagnosticoEscolhido.descricaoDiagnostico && <span className="mt-0.5 line-clamp-2 block text-xs font-normal text-muted-foreground">{diagnosticoEscolhido.descricaoDiagnostico}</span>}</> : <span className="font-normal text-muted-foreground">Pesquisar diagnóstico substituto</span>}</span></span>
+                        <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" align="start" sideOffset={4} collisionPadding={12} className="z-[70] w-[min(38rem,calc(100vw-2rem))] p-0">
+                      <Command shouldFilter={false} loop>
+                        <CommandInput
+                          aria-label={`Pesquisar por nome ou descrição para ${cuidado.tituloDiagnostico}`}
+                          placeholder="Digite o nome ou a descrição do diagnóstico"
+                          value={buscaSubstituto}
+                          onValueChange={termo => setBuscasSubstituto(atuais => atualizarBuscaPorAcompanhamento(atuais, id, termo))}
+                        />
+                        <CommandList className="max-h-[min(55vh,34rem)] overscroll-contain">
+                          {!buscaSubstituto.trim() ? <p role="status" className="px-4 py-5 text-center text-sm text-muted-foreground">Digite para pesquisar em todo o Rol de Enfermagem.</p>
+                            : resultadosSubstituto.length === 0 ? <CommandEmpty>Nenhum diagnóstico encontrado.</CommandEmpty>
+                              : resultadosSubstituto.map(item => <CommandItem
+                                key={item.id}
+                                value={item.id}
+                                onSelect={() => {
+                                  decidir('substituir', item);
+                                  setSubstitutoAberto(null);
+                                  setBuscasSubstituto(atuais => atualizarBuscaPorAcompanhamento(atuais, id, ''));
+                                }}
+                                className="items-start gap-2 px-3 py-2.5"
+                              >
+                                <Check className={cn('mt-0.5 h-4 w-4 shrink-0', atual.novoDiagnosticoId === item.id ? 'opacity-100 text-primary' : 'opacity-0')} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block font-medium leading-snug">{item.tituloDiagnostico}</span>
+                                  {item.descricaoDiagnostico && <span className="mt-1 block whitespace-normal text-xs leading-relaxed text-muted-foreground">{item.descricaoDiagnostico}</span>}
+                                  <span className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+                                    {item.naturezaDiagnostico && <span>Natureza: {item.naturezaDiagnostico === 'promocao_saude' ? 'promoção da saúde' : item.naturezaDiagnostico}</span>}
+                                    {(item.subconjuntos || []).slice(0, 2).map(subconjunto => <span key={`${subconjunto.tipoSubconjunto}-${subconjunto.tituloSubconjunto}`}>{subconjunto.tituloSubconjunto}</span>)}
+                                  </span>
+                                </span>
+                              </CommandItem>)}
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>}
+              </section>
+            </CardContent>
+          </Card>;
         })}
       </CardContent></Card>}
       {/* Bloco Introdutório */}
@@ -478,8 +576,8 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Buscar diagnóstico..."
-              value={termoBusca}
-              onChange={(e) => setTermoBusca(e.target.value)}
+              value={termoBuscaDiagnostico}
+              onChange={(e) => setTermoBuscaDiagnostico(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -565,7 +663,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
             <CardContent>
               {Object.keys(protocolosFiltrados).length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  {termoBusca.trim() 
+                  {termoBuscaDiagnostico.trim()
                     ? "Nenhum protocolo encontrado para o termo buscado."
                     : "Nenhum protocolo de enfermagem encontrado. Verifique se há diagnósticos cadastrados com subconjuntos do tipo 'Protocolo_Enfermagem'."
                   }

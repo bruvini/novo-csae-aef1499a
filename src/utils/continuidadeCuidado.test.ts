@@ -50,6 +50,11 @@ test('05a manter exige que o diagnóstico original continue selecionado', () => 
   atual.avaliacao.cuidadosAnterioresAbordados = [abordado('linha1', 'origem', 'd1')];
   assert.equal(continuidadeDoProcesso(atual).completa, false);
 });
+test('05b substituir sem diagnóstico do Rol não conclui a continuidade', () => {
+  const atual = comReavaliacao(processo('p2', 'em_andamento'), [decisao('linha1', 'd1', 'substituir')]);
+  atual.avaliacao.cuidadosAnterioresAbordados = [abordado('linha1', 'origem', 'd1')];
+  assert.equal(continuidadeDoProcesso(atual).completa, false);
+});
 test('06 manter conserva o diagnóstico e a linha no retorno seguinte', () => {
   const atual = comReavaliacao(processo('p2', 'concluido', [diagnostico('d1', 'Dor', 'linha1')]), [decisao('linha1', 'd1', 'manter')]);
   const itens = diagnosticosAnterioresDisponiveis([atual], 'current');
