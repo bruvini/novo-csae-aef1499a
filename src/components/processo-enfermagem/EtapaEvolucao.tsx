@@ -7,6 +7,7 @@ import type { ProcessoEnfermagem, EvolucaoEnfermagem } from '@/types/processoEnf
 import type { Paciente } from '@/types/paciente';
 import { materiaisComEntrega } from '@/utils/materiaisApoioProcesso';
 import { obterIntervencoesDaConsulta, referenciaResultado } from '@/utils/evolucaoProcesso';
+import { continuidadeDoProcesso } from '@/utils/processoUtils';
 import MateriaisApoioLeitura from './MateriaisApoioLeitura';
 
 interface EtapaEvolucaoProps {
@@ -33,6 +34,7 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({ processo, onUpdateEvoluca
   const [novaObservacao, setNovaObservacao] = useState('');
   const [novosVinculos, setNovosVinculos] = useState<string[]>([]);
   const evolucao = processo.evolucao || { resumoGerado: '' };
+  const somenteEncerramento = continuidadeDoProcesso(processo).somenteEncerramento;
   const intervencoes = obterIntervencoesDaConsulta(processo);
   const executadas = intervencoes.filter((item) => item.executada);
   const atualizar = (mudanca: Partial<EvolucaoEnfermagem>) => onUpdateEvolucao({ ...evolucao, ...mudanca, resumoGerado: '' });
@@ -117,8 +119,8 @@ const EtapaEvolucao: React.FC<EtapaEvolucaoProps> = ({ processo, onUpdateEvoluca
       })}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>Julgamento Clínico e Avaliação dos Resultados</CardTitle></CardHeader><CardContent className="space-y-2">
-      <p className="text-sm text-muted-foreground">Registre sua avaliação clínica sobre os cuidados realizados, as respostas observadas na pessoa atendida, os resultados alcançados e as decisões de continuidade ou revisão do planejamento. Considere dúvidas, dificuldades, compreensão demonstrada, mudanças no estado de saúde e necessidades de acompanhamento.</p>
-      <Textarea aria-label="Julgamento Clínico e Avaliação dos Resultados" value={evolucao.julgamentoClinico || ''} onChange={(event) => atualizar({ julgamentoClinico: event.target.value })} rows={5} placeholder="Síntese clínica da consulta (opcional)" />
+      <p className="text-sm text-muted-foreground">{somenteEncerramento ? 'Registre a síntese clínica obrigatória da reavaliação e do encerramento do acompanhamento.' : 'Registre sua avaliação clínica sobre os cuidados realizados, as respostas observadas na pessoa atendida, os resultados alcançados e as decisões de continuidade ou revisão do planejamento. Considere dúvidas, dificuldades, compreensão demonstrada, mudanças no estado de saúde e necessidades de acompanhamento.'}</p>
+      <Textarea aria-label={somenteEncerramento ? 'Síntese clínica obrigatória da reavaliação' : 'Julgamento Clínico e Avaliação dos Resultados'} required={somenteEncerramento} value={evolucao.julgamentoClinico || ''} onChange={(event) => atualizar({ julgamentoClinico: event.target.value })} rows={5} placeholder={somenteEncerramento ? 'Síntese clínica obrigatória' : 'Síntese clínica da consulta (opcional)'} />
     </CardContent></Card>
   </div>;
 };

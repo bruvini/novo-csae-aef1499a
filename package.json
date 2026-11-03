@@ -9,7 +9,7 @@
     "build:dev": "vite build --mode development",
     "import:clinical": "tsx scripts/import-clinical-parameters.ts",
     "lint": "eslint .",
-    "test": "tsx --test tests/registrationData.test.ts tests/registrationFlow.test.ts src/utils/processoUtils.test.ts src/utils/processoUtilsPositive.test.ts src/utils/evolucaoProcesso.test.ts src/utils/accessMetrics.test.ts src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/catalogoClinicoExport.test.ts src/utils/sugestoesIntervencoes.test.ts src/utils/indicadoresIntervencoes.test.ts src/utils/materiaisApoioProcesso.test.tsx src/utils/formatarSinaisVitais.test.ts src/utils/resultadoExameUtils.test.ts",
+    "test": "tsx --test tests/registrationData.test.ts tests/registrationFlow.test.ts src/utils/processoUtils.test.ts src/utils/processoUtilsPositive.test.ts src/utils/evolucaoProcesso.test.ts src/utils/accessMetrics.test.ts src/utils/painelEstatistico.test.ts src/utils/painelEstatisticoCache.test.ts src/utils/catalogoClinicoExport.test.ts src/utils/sugestoesIntervencoes.test.ts src/utils/indicadoresIntervencoes.test.ts src/utils/materiaisApoioProcesso.test.tsx src/utils/formatarSinaisVitais.test.ts src/utils/resultadoExameUtils.test.ts src/utils/continuidadeCuidado.test.ts",
     "test:rules": "npx --yes firebase-tools emulators:exec --project demo-csaefloripa --only firestore,storage \"tsx --test tests/firebaseRules.test.ts\"",
     "preview": "vite preview"
   },

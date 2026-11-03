@@ -54,15 +54,21 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     // removidos, inclusive após reabrir o processo.
     const selecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
     const salvos = processo.planejamento?.diagnosticosPlanejados ?? [];
-    const alinhados = alinharDiagnosticosPlanejados(selecionados, salvos);
+    const alinhados = alinharDiagnosticosPlanejados(selecionados, salvos).map(plano => {
+      const diagnostico = selecionados.find(item => item.id === plano.diagnosticoId);
+      const decisao = processo.diagnostico?.reavaliacoesAnteriores?.find(item => item.acompanhamentoId === diagnostico?.acompanhamentoId);
+      if (!diagnostico?.acompanhamentoId || !decisao) return plano;
+      return { ...plano, acompanhamentoId: diagnostico.acompanhamentoId, origemReavaliacao: decisao.decisao === 'manter' ? 'mantido' as const : 'substituido' as const };
+    });
     setDiagnosticosPrivorizados(alinhados);
     if (
       alinhados.length !== salvos.length
       || alinhados.some((diag, index) => diag.diagnosticoId !== salvos[index]?.diagnosticoId)
+      || alinhados.some((diag, index) => diag.acompanhamentoId !== salvos[index]?.acompanhamentoId || diag.origemReavaliacao !== salvos[index]?.origemReavaliacao)
     ) {
       onUpdatePlanejamento({ diagnosticosPlanejados: alinhados });
     }
-  }, [processo.diagnostico?.diagnosticosSelecionados, processo.planejamento?.diagnosticosPlanejados]);
+  }, [processo.diagnostico?.diagnosticosSelecionados, processo.diagnostico?.reavaliacoesAnteriores, processo.planejamento?.diagnosticosPlanejados]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -175,6 +181,8 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
   };
 
   if (processo.diagnostico.diagnosticosSelecionados.length === 0) {
+    const somenteEncerramento = (processo.avaliacao?.cuidadosAnterioresAbordados || []).length > 0
+      && (processo.avaliacao?.cuidadosAnterioresAbordados || []).every(cuidado => processo.diagnostico.reavaliacoesAnteriores?.find(item => item.acompanhamentoId === cuidado.acompanhamentoId)?.decisao === 'encerrar');
     return (
       <Card className="h-full">
         <CardHeader>
@@ -186,7 +194,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
         <CardContent>
           <Alert>
             <AlertDescription>
-              Para acessar a etapa de Planejamento, é necessário selecionar ao menos um diagnóstico na etapa anterior.
+              {somenteEncerramento ? 'As reavaliações foram encerradas sem identificar novos diagnósticos. Não há novos resultados esperados ou intervenções a planejar nesta consulta.' : 'Para acessar a etapa de Planejamento, é necessário selecionar ao menos um diagnóstico na etapa anterior.'}
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -335,6 +343,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                             {diagnostico.ordemPrioridade}º
                           </span>
                           {diagnostico.tituloDiagnostico}
+                          {diagnostico.origemReavaliacao && <span className="text-xs text-muted-foreground">{diagnostico.origemReavaliacao === 'mantido' ? 'Diagnóstico mantido após reavaliação.' : 'Diagnóstico atualizado a partir de consulta anterior.'}</span>}
                           {isIncompleto && (
                             <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] uppercase font-bold rounded-full">
                               Incompleto (Falta Resultado)
@@ -410,6 +419,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                             {diagnostico.ordemPrioridade}º
                           </span>
                           {diagnostico.tituloDiagnostico}
+                          {diagnostico.origemReavaliacao && <span className="text-xs text-muted-foreground">{diagnostico.origemReavaliacao === 'mantido' ? 'Diagnóstico mantido após reavaliação.' : 'Diagnóstico atualizado a partir de consulta anterior.'}</span>}
                           {isIncompleto && (
                             <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 text-[10px] uppercase font-bold rounded-full">
                               Incompleto ({isPositivo ? 'Justifique ausência de intervenção' : semResultado ? 'Falta Resultado' : 'Falta Intervenção'})

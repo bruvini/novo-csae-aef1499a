@@ -27,6 +27,16 @@ export interface AvaliacaoEnfermagem {
   /** Contexto selecionado pelo enfermeiro por parâmetro, sem presumir gestação ou DM. */
   contextosParametros?: Record<string, string>;
   nhbsAfetadas: { parametro: string; nhb: string }[];
+  cuidadosAnterioresAbordados?: Array<{ processoOrigemId: string; diagnosticoOrigemId: string; acompanhamentoId: string; dataOrigem?: unknown; tituloDiagnostico: string; resultadoEsperado?: string; intervencoes?: string[] }>;
+}
+
+export interface DecisaoReavaliacaoDiagnostico {
+  acompanhamentoId: string;
+  processoOrigemId: string;
+  diagnosticoOrigemId: string;
+  decisao: 'manter' | 'substituir' | 'encerrar';
+  novoDiagnosticoId?: string;
+  novoTituloDiagnostico?: string;
 }
 
 export type NaturezaDiagnostico = 'problema' | 'risco' | 'promocao_saude';
@@ -35,10 +45,12 @@ interface DiagnosticoSelecionado {
   id: string; // ID do documento do diagnóstico em 'rolEnfermagem'
   tituloDiagnostico: string;
   naturezaDiagnostico?: NaturezaDiagnostico;
+  acompanhamentoId?: string;
 }
 
 export interface DiagnosticoEnfermagem {
   diagnosticosSelecionados: DiagnosticoSelecionado[];
+  reavaliacoesAnteriores?: DecisaoReavaliacaoDiagnostico[];
 }
 
 // NOVOS TIPOS para a Etapa de Planejamento
@@ -71,6 +83,8 @@ export interface DiagnosticoPlanejado {
   /** Compatibilidade com processos legados; novos fluxos usam naturezaDiagnostico. */
   isPositivo?: boolean;
   justificativaSemIntervencao?: string;
+  origemReavaliacao?: 'mantido' | 'substituido';
+  acompanhamentoId?: string;
 }
 
 export interface PlanejamentoEnfermagem {
@@ -119,6 +133,8 @@ export interface ProcessoEnfermagem {
   planejamento: PlanejamentoEnfermagem;
   implementacao: ImplementacaoEnfermagem;
   evolucao: EvolucaoEnfermagem; // NOVO CAMPO
+  /** Revisões só passam a orientar retornos após a conclusão deste processo. */
+  continuidadeConfirmada?: boolean;
 }
 
 export interface EtapaProcesso {

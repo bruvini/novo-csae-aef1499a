@@ -251,6 +251,13 @@ export async function seedChangelogCompleto(): Promise<void> {
     if (foi) inseridos.push(entry.titulo);
   }
 
+  const continuidadeInserida = await publicarChangelogPorId(
+    'continuidade-cuidado-entre-consultas',
+    'Continuidade do Cuidado Entre Consultas',
+    'Agora ficou mais fácil acompanhar os cuidados realizados em consultas anteriores! Na Avaliação de Enfermagem, você pode consultar diagnósticos e intervenções já registrados, selecionar os cuidados abordados no atendimento atual e reavaliar os diagnósticos nas etapas seguintes, preservando todo o histórico do paciente.'
+  );
+  if (continuidadeInserida) inseridos.push('Continuidade do Cuidado Entre Consultas');
+
   if (inseridos.length > 0) {
     console.log(`[Changelog] ${inseridos.length} registro(s) inserido(s):`, inseridos);
   } else {

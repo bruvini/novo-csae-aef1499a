@@ -244,7 +244,32 @@ const ProcessoEnfermagemModal: React.FC<ProcessoEnfermagemModalProps> = ({
   };
 
   const handleUpdateAvaliacao = (avaliacao: AvaliacaoEnfermagem) => {
-    const atualizado = { ...processoAtualRef.current, avaliacao };
+    const atual = processoAtualRef.current;
+    const retirados = (atual.avaliacao?.cuidadosAnterioresAbordados || []).filter(cuidado =>
+      !(avaliacao.cuidadosAnterioresAbordados || []).some(item => item.acompanhamentoId === cuidado.acompanhamentoId)
+    );
+    const decisoesRemovidas = (atual.diagnostico?.reavaliacoesAnteriores || []).filter(decisao => retirados.some(cuidado => cuidado.acompanhamentoId === decisao.acompanhamentoId));
+    if (decisoesRemovidas.length && !window.confirm('Desmarcar este cuidado também removerá a decisão diagnóstica e o planejamento dependente desta consulta. Deseja continuar?')) return;
+    const acompanhamentosRemovidos = new Set(decisoesRemovidas.map(decisao => decisao.acompanhamentoId));
+    const idsDiagnosticosRemovidos = new Set((atual.diagnostico?.diagnosticosSelecionados || [])
+      .filter(item => item.acompanhamentoId && acompanhamentosRemovidos.has(item.acompanhamentoId)).map(item => item.id));
+    const diagnostico = decisoesRemovidas.length ? {
+      ...atual.diagnostico,
+      diagnosticosSelecionados: atual.diagnostico.diagnosticosSelecionados.filter(item => !idsDiagnosticosRemovidos.has(item.id)),
+      reavaliacoesAnteriores: (atual.diagnostico.reavaliacoesAnteriores || []).filter(item => !acompanhamentosRemovidos.has(item.acompanhamentoId)),
+    } : atual.diagnostico;
+    const planejamento = decisoesRemovidas.length ? {
+      ...atual.planejamento,
+      diagnosticosPlanejados: atual.planejamento.diagnosticosPlanejados.filter(item => !idsDiagnosticosRemovidos.has(item.diagnosticoId)),
+    } : atual.planejamento;
+    const base = {
+      ...atual,
+      avaliacao,
+      diagnostico,
+      planejamento,
+      ...(decisoesRemovidas.length ? { implementacao: conciliarImplementacao(planejamento.diagnosticosPlanejados, atual.implementacao || {}) } : {}),
+    };
+    const atualizado = decisoesRemovidas.length ? { ...base, evolucao: { ...conciliarEvolucao(base), resumoGerado: '' } } : base;
     processoAtualRef.current = atualizado;
     setProcesso(atualizado);
   };
