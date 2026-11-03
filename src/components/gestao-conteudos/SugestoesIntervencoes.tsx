@@ -5,14 +5,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { type Diagnostico } from '@/services/bancodados/rolEnfermagemDB';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import {
-  categoriasRejeicao, decidirSugestao, desmembrarSugestao, listarDecisoes, listarSugestoes, obterSugestao, salvarAvaliacaoQualidade,
+  categoriasRejeicao, decidirSugestao, decidirSugestoesEmGrupo, desmembrarSugestao, listarDecisoes, listarSugestoes, obterSugestao, salvarAvaliacaoQualidade,
   type AvaliacaoQualidadeIntervencao, type CategoriaRejeicao, type DestinoIntervencao, type IntervencaoAutoral, type PreparacaoAprovacao,
+  type ModoDisponibilidadeIntervencao,
   type SituacaoSugestao,
 } from '@/services/bancodados/intervencoesAutoraisDB';
 import { agruparSugestoes, contagensSugestoes, filtrarSugestoes, indiceSemelhantes } from '@/utils/sugestoesIntervencoes';
@@ -20,7 +24,7 @@ import { normalizarAcao } from '@/utils/intervencoesAutorais';
 import { sinalizarIntervencoesMultiplas } from '@/utils/individualizacaoIntervencoes';
 import { useSearchParams } from 'react-router-dom';
 
-const vazio: PreparacaoAprovacao = { acaoPrescrita: '', acaoEnfermeiro: '', destinos: [] };
+const vazio: PreparacaoAprovacao = { acaoPrescrita: '', acaoEnfermeiro: '', destinos: [], modoDisponibilidade: 'resultados_especificos', materiaisDeApoio: [] };
 const rotulos: Record<SituacaoSugestao, string> = { aguardando: 'Aguardando Análise', aprovada: 'Aprovadas', rejeitada: 'Rejeitadas' };
 const formatoData = (valor?: { toDate?: () => Date }) => valor?.toDate?.().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) || 'Data indisponível';
 const TAMANHO_PAGINA = 25;
@@ -57,7 +61,13 @@ export default function SugestoesIntervencoes() {
   const [classificacaoFiltro, setClassificacaoFiltro] = useState(() => parametros.get('classificacao') || '');
   const [ordem, setOrdem] = useState<'recentes' | 'antigas'>('recentes');
   const [selecionada, setSelecionada] = useState<IntervencaoAutoral | null>(null);
-  const [modo, setModo] = useState<'detalhes' | 'rejeitar' | 'aprovar' | 'desmembrar'>('detalhes');
+  const [modo, setModo] = useState<'detalhes' | 'rejeitar' | 'aprovar' | 'desmembrar' | 'grupo'>('detalhes');
+  const [modoDisponibilidade, setModoDisponibilidade] = useState<ModoDisponibilidadeIntervencao>('resultados_especificos');
+  const [diagnosticoAberto, setDiagnosticoAberto] = useState(false);
+  const [grupoOcorrencias, setGrupoOcorrencias] = useState<IntervencaoAutoral[]>([]);
+  const [idsGrupo, setIdsGrupo] = useState<string[]>([]);
+  const [contextosConfirmados, setContextosConfirmados] = useState<string[]>([]);
+  const [progressoGrupo, setProgressoGrupo] = useState<{ concluidas: number; total: number } | null>(null);
   const [textosDerivados, setTextosDerivados] = useState<string[]>([]);
   const [avaliacao, setAvaliacao] = useState<AvaliacaoQualidadeIntervencao>({});
   const [categoria, setCategoria] = useState<CategoriaRejeicao | ''>('');
@@ -91,20 +101,35 @@ export default function SugestoesIntervencoes() {
   const gruposFiltrados = useMemo(() => grupos.filter(grupo => normalizarAcao(grupo.chave).includes(normalizarAcao(buscaGrupo))), [grupos, buscaGrupo]);
   const paginaAtual = Math.min(pagina, Math.max(1, Math.ceil(filtrados.length / TAMANHO_PAGINA)));
   const visiveis = useMemo(() => filtrados.slice((paginaAtual - 1) * TAMANHO_PAGINA, paginaAtual * TAMANHO_PAGINA), [filtrados, paginaAtual]);
-  const diagnosticosFiltrados = useMemo(() => catalogo.filter(d => normalizarAcao(d.tituloDiagnostico).includes(normalizarAcao(buscaDiagnostico))).slice(0, 40), [catalogo, buscaDiagnostico]);
+  const diagnosticosFiltrados = useMemo(() => catalogo.filter(d => normalizarAcao(d.tituloDiagnostico).includes(normalizarAcao(buscaDiagnostico))), [catalogo, buscaDiagnostico]);
   const diagnosticoDestino = catalogo.find(d => d.id === diagnosticoDestinoId);
   const destinosDisponiveis = useMemo(() => {
     if (!diagnosticoDestino) return [];
-    const titulos = diagnosticoDestino.resultadosEsperados.map(r => r.tituloResultado);
-    return diagnosticoDestino.resultadosEsperados.filter(r => titulos.filter(t => t === r.tituloResultado).length === 1)
-      .filter(r => normalizarAcao(r.tituloResultado).includes(normalizarAcao(buscaDestino)))
-      .map(r => ({ diagnosticoId: diagnosticoDestino.id, tituloDiagnostico: diagnosticoDestino.tituloDiagnostico, tituloResultado: r.tituloResultado }));
+    return diagnosticoDestino.resultadosEsperados
+      .map((r, resultadoIndice) => ({ r, resultadoIndice }))
+      .filter(({ r }) => normalizarAcao(r.tituloResultado).includes(normalizarAcao(buscaDestino)))
+      .map(({ r, resultadoIndice }) => ({ diagnosticoId: diagnosticoDestino.id, tituloDiagnostico: diagnosticoDestino.tituloDiagnostico, tituloResultado: r.tituloResultado, resultadoIndice }));
   }, [diagnosticoDestino, buscaDestino]);
+  const ocorrenciasEscolhidas = grupoOcorrencias.filter(item => idsGrupo.includes(item.id || ''));
+  const contextosGrupo = new Set(ocorrenciasEscolhidas.map(item => `${item.diagnosticoOrigemId || ''}|${item.tituloDiagnosticoOrigem || ''}|${item.tituloResultadoOrigem || item.tituloResultadoVinculado || ''}`));
+  const grupoTemContextosDistintos = contextosGrupo.size > 1;
+  const destinosGrupo = [...new Map(ocorrenciasEscolhidas.flatMap(item => {
+    const diagnosticoOrigem = catalogo.find(catalogoItem => catalogoItem.id === item.diagnosticoOrigemId);
+    if (!diagnosticoOrigem) return [];
+    const titulo = item.tituloResultadoOrigem || item.tituloResultadoVinculado;
+    const indices = diagnosticoOrigem.resultadosEsperados.flatMap((resultado, resultadoIndice) => resultado.tituloResultado === titulo ? [resultadoIndice] : []);
+    return indices.length === 1 ? [{ diagnosticoId: diagnosticoOrigem.id, tituloDiagnostico: diagnosticoOrigem.tituloDiagnostico, tituloResultado: titulo, resultadoIndice: indices[0] }] : [];
+  }).map(destino => [`${destino.diagnosticoId}|${destino.resultadoIndice}`, destino] as const)).values()];
+  const origensGrupoAmbiguas = modoDisponibilidade === 'resultados_especificos' && ocorrenciasEscolhidas.some(item => {
+    const diagnosticoOrigem = catalogo.find(catalogoItem => catalogoItem.id === item.diagnosticoOrigemId);
+    const titulo = item.tituloResultadoOrigem || item.tituloResultadoVinculado;
+    return !diagnosticoOrigem || diagnosticoOrigem.resultadosEsperados.filter(resultadoItem => resultadoItem.tituloResultado === titulo).length !== 1;
+  });
 
   useEffect(() => { setPagina(1); }, [status, texto, autor, diagnostico, resultado, ordem, categoriaFiltro, tipoFiltro, dimensaoFiltro, classificacaoFiltro]);
 
   useEffect(() => {
-    if (modo !== 'aprovar' || !selecionada || catalogo.length) return;
+    if (!['aprovar', 'grupo'].includes(modo) || !selecionada || catalogo.length) return;
     setCatalogoCarregando(true);
     setCatalogoErro('');
     let ativo = true;
@@ -118,6 +143,7 @@ export default function SugestoesIntervencoes() {
   function abrir(item: IntervencaoAutoral, novoModo: typeof modo) {
     setSelecionada(item); setModo(novoModo); setErro(''); setCategoria(''); setJustificativa('');
     setPreparacao(item.preparacao ? { ...item.preparacao } : { ...vazio, destinos: [] });
+    setModoDisponibilidade(item.preparacao?.modoDisponibilidade || 'resultados_especificos');
     setDiagnosticoDestinoId(item.diagnosticoOrigemId || '');
     setBuscaDestino('');
     setAvaliacao(item.avaliacaoQualidade || {});
@@ -125,6 +151,18 @@ export default function SugestoesIntervencoes() {
       const candidatas = sinalizarIntervencoesMultiplas(item.textoIntervencao).candidatas;
       setTextosDerivados(candidatas.length >= 2 ? candidatas : [item.textoIntervencao, '']);
     }
+  }
+  function abrirGrupo(ocorrencias: IntervencaoAutoral[]) {
+    const pendentes = ocorrencias.filter(item => (item.status || 'aguardando') === 'aguardando' && !item.divisao);
+    setGrupoOcorrencias(ocorrencias);
+    setIdsGrupo([]);
+    setContextosConfirmados([]);
+    setProgressoGrupo(null);
+    setSelecionada(pendentes[0] || ocorrencias[0] || null);
+    setModo('grupo');
+    setModoDisponibilidade('resultados_especificos');
+    setPreparacao({ ...vazio, acaoPrescrita: '', acaoEnfermeiro: '' });
+    setErro(''); setCategoria(''); setJustificativa('');
   }
   function reutilizarRedacao(item: IntervencaoAutoral, textoBase: string) {
     abrir(item, 'aprovar');
@@ -158,22 +196,24 @@ export default function SugestoesIntervencoes() {
   }
   function alternarDestino(destino: DestinoIntervencao) {
     setPreparacao(atual => {
-      const existe = atual.destinos.some(d => d.diagnosticoId === destino.diagnosticoId && d.tituloResultado === destino.tituloResultado);
-      return { ...atual, destinos: existe ? atual.destinos.filter(d => !(d.diagnosticoId === destino.diagnosticoId && d.tituloResultado === destino.tituloResultado)) : [...atual.destinos, destino] };
+      const identidade = (item: DestinoIntervencao) => `${item.diagnosticoId}|${item.resultadoIndice ?? item.tituloResultado}`;
+      const existe = atual.destinos.some(d => identidade(d) === identidade(destino));
+      return { ...atual, destinos: existe ? atual.destinos.filter(d => identidade(d) !== identidade(destino)) : [...atual.destinos, destino] };
     });
   }
   async function confirmar(decisao: 'preparar' | 'rejeitar' | 'publicar') {
     if (!selecionada?.id || !user?.uid) return;
     setOcupado(true); setErro('');
     try {
+      const preparacaoFinal = { ...preparacao, modoDisponibilidade, destinos: modoDisponibilidade === 'transversal' ? [] : preparacao.destinos };
       await decidirSugestao(selecionada.id, decisao, user.uid, sessionData?.nomeCompleto || user.displayName || user.uid,
-        decisao === 'rejeitar' ? { categoria: categoria || undefined, justificativa } : { preparacao });
+        decisao === 'rejeitar' ? { categoria: categoria || undefined, justificativa } : { preparacao: preparacaoFinal });
       let atualizado: IntervencaoAutoral | null = null;
       try { atualizado = await obterSugestao(selecionada.id); }
       catch { toast.warning('Decisão salva; atualize a aba para confirmar os detalhes.'); }
       const idDecidido = selecionada.id;
       setItems(anteriores => anteriores.map(item => item.id === idDecidido
-        ? atualizado || { ...item, status: decisao === 'publicar' ? 'aprovada' : decisao === 'rejeitar' ? 'rejeitada' : 'aguardando', preparacao: decisao === 'rejeitar' ? item.preparacao : preparacao }
+        ? atualizado || { ...item, status: decisao === 'publicar' ? 'aprovada' : decisao === 'rejeitar' ? 'rejeitada' : 'aguardando', preparacao: decisao === 'rejeitar' ? item.preparacao : preparacaoFinal }
         : item));
       setSelecionada(null);
       window.dispatchEvent(new Event('csae-sugestao-decidida'));
@@ -181,9 +221,31 @@ export default function SugestoesIntervencoes() {
     } catch (e) { setErro(e instanceof Error ? e.message : 'Não foi possível salvar a decisão'); }
     finally { setOcupado(false); }
   }
+  async function confirmarGrupo(decisao: 'publicar' | 'rejeitar') {
+    if (!user?.uid || idsGrupo.length < 2) return;
+    if (decisao === 'publicar' && grupoTemContextosDistintos && idsGrupo.some(id => !contextosConfirmados.includes(id))) {
+      setErro('Revise e confirme a pertinência clínica de cada ocorrência selecionada.'); return;
+    }
+    if (decisao === 'publicar' && modoDisponibilidade === 'resultados_especificos' && origensGrupoAmbiguas) {
+      setErro('Há origem clínica ausente ou ambígua. Escolha o modo transversal ou trate essas sugestões individualmente.'); return;
+    }
+    setOcupado(true); setErro(''); setProgressoGrupo({ concluidas: 0, total: idsGrupo.length });
+    try {
+      const preparacaoFinal = { ...preparacao, modoDisponibilidade, destinos: modoDisponibilidade === 'transversal' ? [] : destinosGrupo };
+      await decidirSugestoesEmGrupo(idsGrupo, decisao, user.uid, sessionData?.nomeCompleto || user.displayName || user.uid,
+        decisao === 'publicar' ? { preparacao: preparacaoFinal } : { categoria: categoria || undefined, justificativa },
+        (concluidas, total) => setProgressoGrupo({ concluidas, total }));
+      const atualizadas = await Promise.all(idsGrupo.map(obterSugestao));
+      setItems(anteriores => [...anteriores.filter(item => !idsGrupo.includes(item.id || '')), ...atualizadas.filter((item): item is IntervencaoAutoral => item !== null)]);
+      window.dispatchEvent(new Event('csae-sugestao-decidida'));
+      toast.success(decisao === 'publicar' ? `${idsGrupo.length} contribuições aprovadas em uma publicação canônica.` : `${idsGrupo.length} sugestões rejeitadas com auditoria individual.`);
+      setSelecionada(null);
+    } catch (e) { setErro(e instanceof Error ? e.message : 'A operação em grupo ficou incompleta. Retome a operação para concluir.'); }
+    finally { setOcupado(false); }
+  }
 
   return <div className="space-y-5">
-    <p className="text-sm text-muted-foreground">Sugestões autorais exigem análise técnica. A publicação no catálogo requer homologação institucional registrada.</p>
+    <p className="text-sm text-muted-foreground">Revise a contribuição e registre a decisão administrativa de publicação. A autorização decorre do perfil de gestão do Portal e não representa homologação documental da CSAE.</p>
     <Button variant="outline" aria-pressed={agrupar} onClick={() => setAgrupar(valor => !valor)}>{agrupar ? 'Exibir sugestões individuais' : 'Agrupar sugestões semelhantes'}</Button>
     {agrupar && <div className="space-y-3">
       <p className="text-sm text-muted-foreground">Agrupamento textual automático para triagem. Textos iguais em contextos clínicos diferentes exigem análise individual.</p>
@@ -194,7 +256,7 @@ export default function SugestoesIntervencoes() {
         {grupoAberto === grupo.chave && <div className="space-y-2">{grupo.ocorrencias.map(item => <div key={item.id} className="rounded bg-muted p-2 text-sm">
           <p>{nomeAutor(item)} · {origem(item)} · {item.tituloResultadoOrigem || item.tituloResultadoVinculado} · {rotulos[item.status || 'aguardando']}</p>
           <div className="flex gap-2"><Button size="sm" variant="outline" onClick={() => abrir(item, 'detalhes')}>Detalhes</Button>{item.status !== 'aprovada' && item.status !== 'rejeitada' && <Button size="sm" variant="outline" onClick={() => reutilizarRedacao(item, grupo.ocorrencias[0].textoIntervencao)}>Reutilizar redação como rascunho</Button>}</div>
-        </div>)}</div>}
+        </div>)}{grupo.ocorrencias.filter(item => (item.status || 'aguardando') === 'aguardando' && !item.divisao).length > 1 && <Button onClick={() => abrirGrupo(grupo.ocorrencias)}>Analisar grupo</Button>}</div>}
       </section>)}
       {gruposFiltrados.length > 25 && <nav aria-label="Páginas dos grupos" className="flex items-center gap-2 text-sm"><Button variant="outline" disabled={paginaGrupos === 1} onClick={() => setPaginaGrupos(n => n - 1)}>Anterior</Button><span>Página {paginaGrupos} de {Math.ceil(gruposFiltrados.length / 25)}</span><Button variant="outline" disabled={paginaGrupos * 25 >= gruposFiltrados.length} onClick={() => setPaginaGrupos(n => n + 1)}>Próxima</Button></nav>}
       {!gruposFiltrados.length && !carregando && <p className="text-sm text-muted-foreground">Nenhum grupo textual encontrado.</p>}
@@ -220,7 +282,7 @@ export default function SugestoesIntervencoes() {
         <div className="flex flex-wrap justify-between gap-2"><p className="font-semibold whitespace-pre-wrap">{item.textoIntervencao}</p><span className="text-sm text-muted-foreground">{formatoData(item.dataCriacao)}</span></div>
         <p className="text-sm">Autor: {nomeAutor(item)} · Diagnóstico de origem: {origem(item)} · Resultado de origem: {item.tituloResultadoOrigem || item.tituloResultadoVinculado || 'Indisponível'}</p>
         <p className="text-sm text-muted-foreground">Situação: {item.preparacao && status === 'aguardando' ? 'Aprovação preparada' : rotulos[status]}{(semelhantes.get(normalizarAcao(item.textoIntervencao)) || 0) > 1 ? ` · ${(semelhantes.get(normalizarAcao(item.textoIntervencao)) || 1) - 1} sugestão(ões) com texto igual` : ''}</p>
-        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => abrir(item, 'detalhes')}>Visualizar</Button>{status === 'aguardando' && <><Button onClick={() => abrir(item, 'aprovar')}>Aprovar</Button><Button variant="destructive" onClick={() => abrir(item, 'rejeitar')}>Rejeitar</Button>{!item.derivacao && <Button variant="outline" onClick={() => abrir(item, 'desmembrar')}>Desmembrar sugestão</Button>}</>}</div>
+        <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => abrir(item, 'detalhes')}>Visualizar</Button>{status === 'aguardando' && <><Button onClick={() => abrir(item, 'aprovar')}>Aprovar</Button><Button variant="destructive" onClick={() => abrir(item, 'rejeitar')}>Rejeitar</Button>{!item.derivacao && sinalizarIntervencoesMultiplas(item.textoIntervencao).nivel !== 'nenhuma' && <Button variant="outline" onClick={() => abrir(item, 'desmembrar')}>Desmembrar sugestão</Button>}</>}</div>
       </article>)}
       {!carregando && !filtrados.length && !erro && <p className="text-sm text-muted-foreground">Nenhuma sugestão encontrada.</p>}
       {!carregando && filtrados.length > TAMANHO_PAGINA && <nav aria-label="Páginas das sugestões" className="flex items-center justify-center gap-3 py-3"><Button variant="outline" disabled={paginaAtual === 1} onClick={() => setPagina(paginaAtual - 1)}>Anterior</Button><span className="text-sm">Página {paginaAtual} de {Math.ceil(filtrados.length / TAMANHO_PAGINA)} · {filtrados.length} sugestões</span><Button variant="outline" disabled={paginaAtual * TAMANHO_PAGINA >= filtrados.length} onClick={() => setPagina(paginaAtual + 1)}>Próxima</Button></nav>}
@@ -228,7 +290,7 @@ export default function SugestoesIntervencoes() {
     </>}
     <Dialog open={!!selecionada} onOpenChange={aberto => { if (!aberto && !ocupado) setSelecionada(null); }}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{modo === 'aprovar' ? 'Analisar e publicar intervenção' : modo === 'rejeitar' ? 'Rejeitar sugestão' : modo === 'desmembrar' ? 'Desmembrar sugestão' : 'Detalhes da sugestão'}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{modo === 'aprovar' ? 'Analisar e publicar intervenção' : modo === 'grupo' ? 'Analisar sugestões equivalentes em grupo' : modo === 'rejeitar' ? 'Rejeitar sugestão' : modo === 'desmembrar' ? 'Desmembrar sugestão' : 'Detalhes da sugestão'}</DialogTitle></DialogHeader>
         {selecionada && <div className="space-y-4 text-sm">
           <div className="rounded-md bg-muted p-3"><strong>Texto original</strong><p className="whitespace-pre-wrap">{selecionada.textoIntervencao}</p></div>
           {(sinalizarIntervencoesMultiplas(selecionada.textoIntervencao).nivel !== 'nenhuma' || selecionada.textoIntervencao.trim().length < 20 || (semelhantes.get(normalizarAcao(selecionada.textoIntervencao)) || 0) > 1) && <p className="rounded bg-amber-50 p-2 text-amber-900">Sinalização automática — requer avaliação: {[
@@ -240,7 +302,7 @@ export default function SugestoesIntervencoes() {
           <p>Diagnóstico de origem: {origem(selecionada)} · Resultado de origem: {selecionada.tituloResultadoOrigem || selecionada.tituloResultadoVinculado || 'Indisponível'}</p>
           {selecionada.derivacao && <p className="rounded bg-amber-50 p-2">Proposta derivada da submissão original. {items.find(item => item.id === selecionada.derivacao?.originalId)?.textoIntervencao && <span>Texto original preservado: {items.find(item => item.id === selecionada.derivacao?.originalId)?.textoIntervencao}</span>}</p>}
           {modo === 'desmembrar' && <><p>Revise cada ação antes de criar propostas administrativas independentes. Nenhuma delas será aprovada automaticamente.</p>{textosDerivados.map((texto, index) => <div key={index} className="flex gap-2"><Textarea aria-label={`Proposta derivada ${index + 1}`} value={texto} onChange={e => setTextosDerivados(atuais => atuais.map((item, i) => i === index ? e.target.value : item))} /><Button variant="outline" onClick={() => setTextosDerivados(atuais => atuais.filter((_, i) => i !== index))} aria-label={`Remover proposta ${index + 1}`}>Remover</Button></div>)}<Button variant="outline" disabled={textosDerivados.length >= 5} onClick={() => setTextosDerivados(atuais => [...atuais, ''])}>Adicionar intervenção</Button><p className="text-muted-foreground">Pré-visualização: {textosDerivados.filter(Boolean).length} proposta(s) aguardando análise.</p></>}
-          {modo !== 'desmembrar' && <details className="rounded border p-3"><summary className="cursor-pointer font-semibold">Avaliação da Qualidade da Intervenção</summary><p className="my-2 text-muted-foreground">Avaliação técnica humana. Sinalizações textuais automáticas não substituem o julgamento da CSAE.</p><div className="grid gap-3 sm:grid-cols-2">{([
+          {modo === 'detalhes' && <details className="rounded border p-3"><summary className="cursor-pointer font-semibold">Avaliação da Qualidade da Intervenção</summary><p className="my-2 text-muted-foreground">Avaliação técnica humana. Sinalizações textuais automáticas não substituem o julgamento da CSAE.</p><div className="grid gap-3 sm:grid-cols-2">{([
             ['atomicidadeStatus', 'Atomicidade', [['unica', 'Ação única'], ['multiplas_relacionadas', 'Múltiplas relacionadas'], ['multiplas_independentes', 'Múltiplas independentes'], ['indeterminada', 'Indeterminada']]],
             ['especificidadeNivel', 'Especificidade', [['adequada', 'Adequada'], ['parcial', 'Parcial'], ['insuficiente', 'Insuficiente']]],
             ['pertinenciaClinica', 'Pertinência clínica', [['pertinente', 'Pertinente'], ['condicionada', 'Condicionada'], ['incompativel', 'Incompatível'], ['indeterminada', 'Contexto insuficiente']]],
@@ -249,24 +311,76 @@ export default function SugestoesIntervencoes() {
             ['intensidadeRevisao', 'Transformação editorial', [['sem_alteracoes', 'Sem alterações'], ['ajuste_textual', 'Ajuste textual'], ['reformulacao_tecnica', 'Reformulação técnica'], ['desmembramento', 'Desmembramento']]],
           ] as const).map(([campo, titulo, opcoes]) => <label key={campo}>{titulo}<select className="mt-1 w-full rounded border p-2" value={String(avaliacao[campo] || '')} onChange={e => setAvaliacao(atual => ({ ...atual, [campo]: e.target.value || undefined }))}><option value="">Não avaliado</option>{opcoes.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}</select></label>)}</div><p className="mt-3">Alertas de segurança confirmados na avaliação técnica</p><div className="flex flex-wrap gap-3">{(['medicamentos', 'procedimentos', 'contencao', 'atribuicoes', 'protocolos', 'outros'] as const).map(alerta => <label key={alerta} className="flex items-center gap-1"><input type="checkbox" checked={avaliacao.alertasSeguranca?.includes(alerta) || false} onChange={e => setAvaliacao(atual => ({ ...atual, alertasSeguranca: e.target.checked ? [...(atual.alertasSeguranca || []), alerta] : (atual.alertasSeguranca || []).filter(item => item !== alerta) }))} />{alerta}</label>)}</div><label className="block mt-3">Observação técnica<Textarea value={avaliacao.observacaoTecnica || ''} onChange={e => setAvaliacao(atual => ({ ...atual, observacaoTecnica: e.target.value }))} /></label><Button className="mt-3" disabled={ocupado} onClick={() => void confirmarAvaliacao()}>Salvar avaliação parcial</Button></details>}
           {modo === 'rejeitar' && <><label className="block">Categoria<select className="mt-1 w-full rounded-md border p-2" value={categoria} onChange={e => setCategoria(e.target.value as CategoriaRejeicao)}><option value="">Selecione</option>{categoriasRejeicao.map(c => <option key={c}>{c}</option>)}</select></label><label className="block">Justificativa<Textarea value={justificativa} onChange={e => setJustificativa(e.target.value)} /></label></>}
-          {modo === 'aprovar' && <>
-            <label className="block">Ação Prescrita — verbo no infinitivo<Input value={preparacao.acaoPrescrita} onChange={e => setPreparacao(p => ({ ...p, acaoPrescrita: e.target.value }))} /></label>
-            <label className="block">Ação do Enfermeiro — primeira pessoa do presente<Input value={preparacao.acaoEnfermeiro} onChange={e => setPreparacao(p => ({ ...p, acaoEnfermeiro: e.target.value }))} /></label>
-            <div><strong>Destinos selecionados ({preparacao.destinos.length}/5)</strong><div className="flex flex-wrap gap-2 mt-2">{preparacao.destinos.map(d => <Button key={`${d.diagnosticoId}|${d.tituloResultado}`} variant="outline" size="sm" onClick={() => alternarDestino(d)}>{d.tituloDiagnostico} → {d.tituloResultado} ×</Button>)}</div>{preparacao.destinos.length > 0 && <Button variant="link" onClick={() => { if (window.confirm('Limpar todos os destinos selecionados?')) setPreparacao(p => ({ ...p, destinos: [] })); }}>Limpar seleção</Button>}</div>
-            {catalogoCarregando && <Skeleton className="h-24 w-full" />}
-            {catalogoErro && <p role="alert" className="text-red-700">{catalogoErro}</p>}
-            {!catalogoCarregando && <><Input aria-label="Pesquisar diagnóstico de destino" placeholder="Pesquisar diagnóstico" value={buscaDiagnostico} onChange={e => setBuscaDiagnostico(e.target.value)} />
-            <label className="block">Diagnóstico de Enfermagem<select aria-label="Diagnóstico de destino" className="mt-1 w-full rounded-md border p-2" value={diagnosticoDestinoId} onChange={e => { setDiagnosticoDestinoId(e.target.value); setBuscaDestino(''); }}><option value="">Selecione um diagnóstico</option>{diagnosticosFiltrados.map(d => <option key={d.id} value={d.id}>{d.tituloDiagnostico}</option>)}{diagnosticoDestino && !diagnosticosFiltrados.some(d => d.id === diagnosticoDestino.id) && <option value={diagnosticoDestino.id}>{diagnosticoDestino.tituloDiagnostico}</option>}</select></label>
-            {diagnosticoDestino && <><p>{diagnosticoDestino.tituloDiagnostico} · {diagnosticoDestino.resultadosEsperados.length} resultado(s) esperado(s)</p><Input aria-label="Pesquisar resultados esperados" placeholder="Pesquisar resultado esperado" value={buscaDestino} onChange={e => setBuscaDestino(e.target.value)} /><div className="max-h-48 overflow-auto rounded-md border p-2 space-y-1">{destinosDisponiveis.map(d => <label key={`${d.diagnosticoId}|${d.tituloResultado}`} className="flex items-center gap-2"><input type="checkbox" checked={preparacao.destinos.some(s => s.diagnosticoId === d.diagnosticoId && s.tituloResultado === d.tituloResultado)} disabled={preparacao.destinos.length >= 5 && !preparacao.destinos.some(s => s.diagnosticoId === d.diagnosticoId && s.tituloResultado === d.tituloResultado)} onChange={() => alternarDestino(d)} />{d.tituloResultado}</label>)}{!destinosDisponiveis.length && <p>Nenhum resultado disponível neste diagnóstico.</p>}</div></>}
-            </>}
-            <p className="text-muted-foreground">Resultados com título repetido no mesmo diagnóstico não podem ser selecionados até correção do catálogo.</p>
-            {([['referenciaDeliberacao', 'Referência da deliberação'], ['dataDeliberacao', 'Data da deliberação'], ['documentoHomologacao', 'Documento, ata ou protocolo'], ['responsavelValidacao', 'Responsável pela validação']] as const).map(([campo, label]) => <label key={campo} className="block">{label}<Input type={campo === 'dataDeliberacao' ? 'date' : 'text'} value={preparacao[campo] || ''} onChange={e => setPreparacao(p => ({ ...p, [campo]: e.target.value }))} /></label>)}
-            <p className="text-muted-foreground">A referência é uma declaração administrativa, não uma verificação independente do documento.</p>
+          {modo === 'grupo' && <section className="space-y-2 rounded-lg border p-3"><h3 className="font-semibold">Rejeição em grupo</h3><p>A categoria e a justificativa serão registradas em cada sugestão selecionada.</p><label className="block">Categoria<select className="mt-1 w-full rounded-md border p-2" value={categoria} onChange={event => setCategoria(event.target.value as CategoriaRejeicao)}><option value="">Selecione</option>{categoriasRejeicao.map(item => <option key={item}>{item}</option>)}</select></label><label className="block">Justificativa<Textarea value={justificativa} onChange={event => setJustificativa(event.target.value)} /></label></section>}
+          {(modo === 'aprovar' || modo === 'grupo') && <>
+            {modo === 'grupo' && <section className="space-y-2 rounded-lg border p-3">
+              <h3 className="font-semibold">1. Confirmar ocorrências equivalentes</h3>
+              <p>A semelhança textual é uma sugestão de triagem. Marque apenas as contribuições que você confirmou como equivalentes.</p>
+              {grupoOcorrencias.map(item => {
+                const id = item.id || '';
+                const pendente = (item.status || 'aguardando') === 'aguardando' && !item.divisao;
+                const origemItem = origem(item) + ' → ' + (item.tituloResultadoOrigem || item.tituloResultadoVinculado || 'Resultado não identificado');
+                return <label key={id} className="block rounded border p-2">
+                  <span className="flex gap-2"><input type="checkbox" disabled={!pendente || ocupado} checked={idsGrupo.includes(id)} onChange={event => setIdsGrupo(atual => event.target.checked ? [...atual, id] : atual.filter(valor => valor !== id))} />
+                    <span><strong>{nomeAutor(item)}</strong> · {origemItem} · {rotulos[item.status || 'aguardando']}<br /><span className="whitespace-pre-wrap">{item.textoIntervencao}</span></span>
+                  </span>
+                  {grupoTemContextosDistintos && idsGrupo.includes(id) && <span className="ml-6 mt-2 flex items-start gap-2 text-amber-900"><input type="checkbox" checked={contextosConfirmados.includes(id)} onChange={event => setContextosConfirmados(atual => event.target.checked ? [...atual, id] : atual.filter(valor => valor !== id))} />Confirmei a pertinência clínica da redação aprovada neste contexto.</span>}
+                </label>;
+              })}
+              <p className="font-medium">{idsGrupo.length} ocorrência(s) selecionada(s) de {grupoOcorrencias.filter(item => (item.status || 'aguardando') === 'aguardando' && !item.divisao).length} pendente(s).</p>
+            </section>}
+            <section className="space-y-3 rounded-lg border p-3">
+              <h3 className="font-semibold">{modo === 'grupo' ? '2.' : '1.'} Revisar intervenção</h3>
+              <p>Texto original preservado: <span className="whitespace-pre-wrap">{modo === 'grupo' ? (grupoOcorrencias.find(item => idsGrupo.includes(item.id || ''))?.textoIntervencao || selecionada.textoIntervencao) : selecionada.textoIntervencao}</span></p>
+              <p>Autor: {modo === 'grupo' ? new Set(ocorrenciasEscolhidas.map(nomeAutor)).size + ' autor(es) distintos' : nomeAutor(selecionada)} · Origem: {modo === 'grupo' ? contextosGrupo.size + ' contexto(s) clínico(s)' : origem(selecionada) + ' → ' + (selecionada.tituloResultadoOrigem || selecionada.tituloResultadoVinculado || 'Origem não identificada')}</p>
+              <label className="block">Ação Prescrita — verbo no infinitivo<Input value={preparacao.acaoPrescrita} onChange={event => setPreparacao(atual => ({ ...atual, acaoPrescrita: event.target.value }))} /></label>
+              <label className="block">Ação do Enfermeiro — primeira pessoa do presente<Input value={preparacao.acaoEnfermeiro} onChange={event => setPreparacao(atual => ({ ...atual, acaoEnfermeiro: event.target.value }))} /></label>
+            </section>
+            <section className="space-y-3 rounded-lg border p-3">
+              <h3 className="font-semibold">{modo === 'grupo' ? '3.' : '2.'} Definir disponibilidade</h3>
+              <label className="flex items-start gap-2"><input type="radio" name="modo-disponibilidade" checked={modoDisponibilidade === 'resultados_especificos'} onChange={() => setModoDisponibilidade('resultados_especificos')} /><span><strong>Vincular a resultados específicos</strong><br /><span className="text-muted-foreground">Visível no Planejamento somente nos vínculos clínicos selecionados.</span></span></label>
+              <label className="flex items-start gap-2"><input type="radio" name="modo-disponibilidade" checked={modoDisponibilidade === 'transversal'} onChange={() => { setModoDisponibilidade('transversal'); setPreparacao(atual => ({ ...atual, destinos: [] })); }} /><span><strong>Disponibilizar como intervenção transversal</strong><br /><span className="text-muted-foreground">Biblioteca reutilizável; o profissional confirma pertinência para cada consulta. Nada é prescrito automaticamente.</span></span></label>
+              {modoDisponibilidade === 'resultados_especificos' && modo === 'aprovar' && <>
+                <div className="flex items-center justify-between gap-2"><p className="font-medium">Diagnósticos carregados: {catalogo.length}</p>
+                  <Popover open={diagnosticoAberto} onOpenChange={setDiagnosticoAberto}><PopoverTrigger asChild><Button type="button" variant="outline" role="combobox" aria-expanded={diagnosticoAberto} className="min-w-64 justify-between">{diagnosticoDestino?.tituloDiagnostico || 'Buscar diagnóstico'}<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" /></Button></PopoverTrigger>
+                    <PopoverContent className="w-[min(34rem,90vw)] p-0" align="end"><Command shouldFilter={false}><CommandInput aria-label="Buscar em todo o catálogo de diagnósticos" placeholder="Digite parte do diagnóstico" value={buscaDiagnostico} onValueChange={setBuscaDiagnostico} /><CommandList>{catalogoCarregando ? <div className="p-4 text-sm">Carregando catálogo…</div> : diagnosticosFiltrados.length ? diagnosticosFiltrados.slice(0, 100).map(item => <CommandItem key={item.id} value={item.id} onSelect={() => { setDiagnosticoDestinoId(item.id); setBuscaDiagnostico(''); setBuscaDestino(''); setDiagnosticoAberto(false); }}><Check className={'mr-2 h-4 w-4 ' + (diagnosticoDestinoId === item.id ? 'opacity-100' : 'opacity-0')} />{item.tituloDiagnostico}</CommandItem>) : <CommandEmpty>Nenhum diagnóstico correspondente.</CommandEmpty>}</CommandList><p className="border-t p-2 text-xs text-muted-foreground">Exibindo até 100 resultados visualmente; a busca consulta o catálogo completo.</p></Command></PopoverContent>
+                  </Popover>
+                </div>
+                {diagnosticoDestino && <>
+                  <div className="flex items-center justify-between gap-2"><p>{diagnosticoDestino.tituloDiagnostico} · {diagnosticoDestino.resultadosEsperados.length} resultados</p><Input className="max-w-xs" aria-label="Pesquisar resultados esperados deste diagnóstico" placeholder="Filtrar resultados" value={buscaDestino} onChange={event => setBuscaDestino(event.target.value)} /></div>
+                  <div className="max-h-56 space-y-1 overflow-auto rounded border p-2">{destinosDisponiveis.map(destino => {
+                    const identidade = destino.diagnosticoId + '|' + destino.resultadoIndice;
+                    const marcado = preparacao.destinos.some(item => item.diagnosticoId + '|' + (item.resultadoIndice ?? item.tituloResultado) === identidade);
+                    return <label key={identidade} className="flex items-start gap-2 rounded p-1 hover:bg-muted"><input type="checkbox" checked={marcado} onChange={() => alternarDestino(destino)} /><span>{destino.tituloResultado} <span className="text-xs text-muted-foreground">#{destino.resultadoIndice! + 1}</span></span></label>;
+                  })}{!destinosDisponiveis.length && <p className="p-2 text-muted-foreground">Nenhum resultado corresponde a esta busca.</p>}</div>
+                  {destinosDisponiveis.length > 0 && <Button type="button" variant="outline" onClick={() => {
+                    if (destinosDisponiveis.length > 20 && !window.confirm('Selecionar ' + destinosDisponiveis.length + ' resultados visíveis?')) return;
+                    setPreparacao(atual => {
+                      const porChave = new Map(atual.destinos.map(item => [item.diagnosticoId + '|' + (item.resultadoIndice ?? item.tituloResultado), item]));
+                      destinosDisponiveis.forEach(item => porChave.set(item.diagnosticoId + '|' + item.resultadoIndice, item));
+                      return { ...atual, destinos: [...porChave.values()] };
+                    });
+                  }}>Selecionar todos os resultados filtrados ({destinosDisponiveis.length})</Button>}
+                </>}
+              </>}
+              {modoDisponibilidade === 'resultados_especificos' && modo === 'grupo' && <>
+                {origensGrupoAmbiguas ? <p role="alert" className="text-amber-800">Origem clínica ausente ou ambígua. Escolha disponibilidade transversal ou analise essas sugestões individualmente.</p> : <div className="max-h-48 space-y-1 overflow-auto rounded border p-2">{[...new Map(destinosGrupo.map(item => [item.diagnosticoId + '|' + item.resultadoIndice, item])).values()].map(item => <p key={item.diagnosticoId + '|' + item.resultadoIndice}>{item.tituloDiagnostico} → {item.tituloResultado}</p>)}</div>}
+              </>}
+              {(modo === 'aprovar' ? preparacao.destinos : modoDisponibilidade === 'transversal' ? [] : destinosGrupo).length > 0 && <div className="space-y-2"><p className="font-medium">Vínculos selecionados: {(modo === 'aprovar' ? preparacao.destinos : modoDisponibilidade === 'transversal' ? [] : destinosGrupo).length}</p><div className="flex flex-wrap gap-2">{(modo === 'aprovar' ? preparacao.destinos : modoDisponibilidade === 'transversal' ? [] : destinosGrupo).map(destino => <Button key={destino.diagnosticoId + '|' + (destino.resultadoIndice ?? destino.tituloResultado)} type="button" variant="outline" size="sm" onClick={() => modo === 'aprovar' && alternarDestino(destino)}>{destino.tituloDiagnostico} → {destino.tituloResultado}{modo === 'aprovar' ? ' ×' : ''}</Button>)}</div>{modo === 'aprovar' && <Button type="button" variant="link" onClick={() => { if (window.confirm('Limpar todos os destinos selecionados?')) setPreparacao(atual => ({ ...atual, destinos: [] })); }}>Limpar seleção</Button>}</div>}
+            </section>
+            <section className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <h3 className="font-semibold">{modo === 'grupo' ? '4.' : '3.'} Confirmar decisão</h3>
+              <p><strong>Redação aprovada:</strong> {preparacao.acaoPrescrita || 'Ação prescrita pendente'} · {preparacao.acaoEnfermeiro || 'Ação do enfermeiro pendente'}</p>
+              <p><strong>Disponibilidade:</strong> {modoDisponibilidade === 'transversal' ? 'Biblioteca transversal' : (modo === 'grupo' ? destinosGrupo.length : preparacao.destinos.length) + ' vínculo(s) específico(s)'}</p>
+              {modo === 'grupo' && <p><strong>Contribuições afetadas:</strong> {idsGrupo.length} de {grupoOcorrencias.length}</p>}
+              <p className="text-muted-foreground">O Portal registrará UID e nome do gestor autenticado, horário do servidor, decisão e IDs afetados. Aprovação administrativa não comprova homologação documental da CSAE.</p>
+              {modo === 'aprovar' && <div className="space-y-2"><p>Materiais de apoio opcionais</p>{(preparacao.materiaisDeApoio || []).map((material, index) => <div key={index} className="grid gap-2 sm:grid-cols-2"><Input aria-label={'Título do material ' + (index + 1)} placeholder="Título do material" value={material.tituloMaterialApoio} onChange={event => setPreparacao(atual => ({ ...atual, materiaisDeApoio: atual.materiaisDeApoio?.map((item, i) => i === index ? { ...item, tituloMaterialApoio: event.target.value } : item) }))} /><Input aria-label={'URL do material ' + (index + 1)} placeholder="https://…" value={material.urlMaterialApoio} onChange={event => setPreparacao(atual => ({ ...atual, materiaisDeApoio: atual.materiaisDeApoio?.map((item, i) => i === index ? { ...item, urlMaterialApoio: event.target.value } : item) }))} /></div>)}<Button type="button" variant="outline" onClick={() => setPreparacao(atual => ({ ...atual, materiaisDeApoio: [...(atual.materiaisDeApoio || []), { tituloMaterialApoio: '', urlMaterialApoio: '' }] }))}>Adicionar material de apoio</Button></div>}
+            </section>
           </>}
-          {modo === 'detalhes' && <><p>Status: {rotulos[selecionada.status || 'aguardando']}</p>{selecionada.preparacao && <div><p>Ação Prescrita: {selecionada.preparacao.acaoPrescrita}</p><p>Ação do Enfermeiro: {selecionada.preparacao.acaoEnfermeiro}</p><p>Destinos: {selecionada.preparacao.destinos.map(d => `${d.tituloDiagnostico} → ${d.tituloResultado}`).join('; ')}</p><p>Homologação: {selecionada.preparacao.referenciaDeliberacao || 'Pendente'}</p></div>}{selecionada.categoriaRejeicao && <p>Rejeição: {selecionada.categoriaRejeicao} — {selecionada.justificativaRejeicao}</p>}<div><strong>Histórico administrativo</strong>{historico.map(h => <div key={h.id} className="border-b py-1"><p>{h.tipo} · {formatoData(h.dataHora)} · {h.avaliadorId}</p>{h.avaliacaoQualidade && <p className="text-xs text-muted-foreground">Avaliação registrada: {Object.entries(h.avaliacaoQualidade).filter(([campo]) => !['avaliadorId', 'avaliadoEm', 'versaoCriterios'].includes(campo)).map(([campo, valor]) => `${campo}: ${Array.isArray(valor) ? valor.join(', ') : valor}`).join('; ') || 'parcial sem dimensões classificadas'}</p>}</div>)}{!historico.length && <p>Sem decisões registradas.</p>}</div></>}
+          {modo === 'detalhes' && <><p>Status: {rotulos[selecionada.status || 'aguardando']}</p>{selecionada.preparacao && <div><p>Ação Prescrita: {selecionada.preparacao.acaoPrescrita}</p><p>Ação do Enfermeiro: {selecionada.preparacao.acaoEnfermeiro}</p><p>Disponibilidade: {selecionada.preparacao.modoDisponibilidade === 'transversal' ? 'Transversal' : 'Resultados específicos'}</p><p>Destinos: {selecionada.preparacao.destinos.map(d => d.tituloDiagnostico + ' → ' + d.tituloResultado).join('; ') || 'Biblioteca transversal'}</p></div>}{selecionada.categoriaRejeicao && <p>Rejeição: {selecionada.categoriaRejeicao} — {selecionada.justificativaRejeicao}</p>}{(selecionada.status || 'aguardando') === 'aguardando' && !selecionada.derivacao && sinalizarIntervencoesMultiplas(selecionada.textoIntervencao).nivel === 'nenhuma' && <Button variant="outline" size="sm" onClick={() => abrir(selecionada, 'desmembrar')}>Ação avançada: revisar desmembramento manual</Button>}<div><strong>Histórico administrativo</strong>{historico.map(h => <div key={h.id} className="border-b py-1"><p>{h.tipo} · {formatoData(h.dataHora)} · {h.avaliadorId}</p>{h.avaliacaoQualidade && <p className="text-xs text-muted-foreground">Avaliação técnica registrada: {Object.entries(h.avaliacaoQualidade).filter(([campo]) => !['avaliadorId', 'avaliadoEm', 'versaoCriterios'].includes(campo)).map(([campo, valor]) => campo + ': ' + (Array.isArray(valor) ? valor.join(', ') : valor)).join('; ') || 'parcial sem dimensões classificadas'}</p>}</div>)}{!historico.length && <p>Sem decisões registradas.</p>}</div></>}
           {erro && <p role="alert" className="text-red-700">{erro}</p>}
         </div>}
-        <DialogFooter>{modo === 'desmembrar' && <Button disabled={ocupado} onClick={() => void confirmarDesmembramento()}>Confirmar desmembramento</Button>}{modo === 'rejeitar' && <Button disabled={ocupado || !categoria || !justificativa.trim()} variant="destructive" onClick={() => void confirmar('rejeitar')}>Confirmar rejeição</Button>}{modo === 'aprovar' && <><Button variant="outline" disabled={ocupado} onClick={() => void confirmar('preparar')}>Salvar preparação</Button><Button disabled={ocupado} onClick={() => void confirmar('publicar')}>Confirmar homologação e publicar</Button></>}</DialogFooter>
+        <DialogFooter>{modo === 'desmembrar' && <Button disabled={ocupado} onClick={() => void confirmarDesmembramento()}>Confirmar desmembramento</Button>}{modo === 'rejeitar' && <Button disabled={ocupado || !categoria || !justificativa.trim()} variant="destructive" onClick={() => void confirmar('rejeitar')}>Confirmar rejeição</Button>}{modo === 'aprovar' && <><Button variant="outline" disabled={ocupado} onClick={() => void confirmar('preparar')}>Salvar revisão</Button><Button disabled={ocupado || !preparacao.acaoPrescrita.trim() || !preparacao.acaoEnfermeiro.trim() || (modoDisponibilidade === 'resultados_especificos' && !preparacao.destinos.length)} onClick={() => void confirmar('publicar')}>Aprovar e publicar</Button></>}{modo === 'grupo' && <><Button variant="destructive" disabled={ocupado || idsGrupo.length < 2 || !categoria || !justificativa.trim()} onClick={() => void confirmarGrupo('rejeitar')}>Rejeitar {idsGrupo.length} selecionadas</Button><Button disabled={ocupado || idsGrupo.length < 2 || !preparacao.acaoPrescrita.trim() || !preparacao.acaoEnfermeiro.trim() || (modoDisponibilidade === 'resultados_especificos' && (origensGrupoAmbiguas || !destinosGrupo.length)) || (grupoTemContextosDistintos && idsGrupo.some(id => !contextosConfirmados.includes(id)))} onClick={() => void confirmarGrupo('publicar')}>Aprovar grupo e publicar</Button></>}{progressoGrupo && <span role="status" className="self-center text-sm">Progresso da operação: {progressoGrupo.concluidas}/{progressoGrupo.total}</span>}</DialogFooter>
       </DialogContent>
     </Dialog>
   </div>;

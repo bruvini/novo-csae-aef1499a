@@ -1,9 +1,12 @@
-import { collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore';
+import { arrayUnion, collection, doc, getDoc, getDocs, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { Diagnostico } from './rolEnfermagemDB';
-import { encontrarResultado, incorporarIntervencao } from '@/utils/intervencoesAutorais';
+import { encontrarResultado } from '@/utils/intervencoesAutorais';
 import { revisarSeparacao } from '@/utils/individualizacaoIntervencoes';
+import { validarPreparacao, type DestinoIntervencao, type ModoDisponibilidadeIntervencao, type PreparacaoAprovacao } from '@/utils/intervencoesBiblioteca';
 export { identificadorSugestao } from '@/utils/intervencoesAutorais';
+export { validarPreparacao } from '@/utils/intervencoesBiblioteca';
+export type { DestinoIntervencao, ModoDisponibilidadeIntervencao, PreparacaoAprovacao } from '@/utils/intervencoesBiblioteca';
 
 export type SituacaoSugestao = 'aguardando' | 'aprovada' | 'rejeitada';
 export const categoriasRejeicao = [
@@ -13,15 +16,21 @@ export const categoriasRejeicao = [
   'Fora do Processo de Enfermagem', 'Outro motivo',
 ] as const;
 export type CategoriaRejeicao = typeof categoriasRejeicao[number];
-export interface DestinoIntervencao { diagnosticoId: string; tituloDiagnostico: string; tituloResultado: string }
-export interface PreparacaoAprovacao {
+export interface IntervencaoBiblioteca {
+  id: string;
   acaoPrescrita: string;
   acaoEnfermeiro: string;
+  materiaisDeApoio: Array<{ tituloMaterialApoio: string; urlMaterialApoio: string }>;
+  modoDisponibilidade: ModoDisponibilidadeIntervencao;
   destinos: DestinoIntervencao[];
-  referenciaDeliberacao?: string;
-  dataDeliberacao?: string;
-  documentoHomologacao?: string;
-  responsavelValidacao?: string;
+  status: 'preparando' | 'disponivel';
+  versao: number;
+  sugestoesOrigemIds: string[];
+  grupoOperacaoId?: string;
+  criadoPorUid: string;
+  criadoPorNome: string;
+  criadoEm: Timestamp;
+  publicadoEm?: Timestamp;
 }
 export interface AvaliacaoQualidadeIntervencao {
   atomicidadeStatus?: 'unica' | 'multiplas_relacionadas' | 'multiplas_independentes' | 'indeterminada';
@@ -61,6 +70,8 @@ export interface IntervencaoAutoral {
   derivacao?: { originalId: string; grupoId: string; ordem: number; revisorId: string; dataHora: Timestamp };
   tipoRegistro?: 'derivada';
   avaliacaoQualidade?: AvaliacaoQualidadeIntervencao;
+  intervencaoBibliotecaId?: string;
+  grupoOperacaoId?: string;
 }
 
 export const situacaoSugestao = (item: IntervencaoAutoral): SituacaoSugestao => item.status || 'aguardando';
@@ -183,56 +194,172 @@ export async function obterSugestao(id: string): Promise<IntervencaoAutoral | nu
   return item;
 }
 
-function validarPreparacao(preparacao: PreparacaoAprovacao | undefined, homologada: boolean) {
-  if (!preparacao?.acaoPrescrita.trim() || !preparacao.acaoEnfermeiro.trim() || !preparacao.destinos.length) {
-    throw new Error('Preencha as duas ações e selecione ao menos um resultado esperado.');
-  }
-  if (preparacao.destinos.length > 5 || new Set(preparacao.destinos.map(d => `${d.diagnosticoId}|${d.tituloResultado}`)).size !== preparacao.destinos.length) {
-    throw new Error('Destinos repetidos ou acima do limite de cinco.');
-  }
-  if (homologada && (!preparacao.referenciaDeliberacao?.trim() || !preparacao.dataDeliberacao || !preparacao.documentoHomologacao?.trim() || !preparacao.responsavelValidacao?.trim())) {
-    throw new Error('Informe todos os dados da homologação institucional.');
+const modoDaPreparacao = (preparacao: PreparacaoAprovacao): ModoDisponibilidadeIntervencao => preparacao.modoDisponibilidade || 'resultados_especificos';
+
+function conferirDestinosNoCatalogo(destinos: DestinoIntervencao[], catalogos: Map<string, Diagnostico>) {
+  for (const destino of destinos) {
+    const diagnostico = catalogos.get(destino.diagnosticoId);
+    if (!diagnostico) throw new Error('Diagnóstico de destino inexistente. Atualize o catálogo e tente novamente.');
+    if (diagnostico.tituloDiagnostico !== destino.tituloDiagnostico) throw new Error('O diagnóstico mudou desde a seleção. Revise os destinos.');
+    const resultado = destino.resultadoIndice === undefined
+      ? encontrarResultado(diagnostico, destino.tituloResultado)
+      : diagnostico.resultadosEsperados[destino.resultadoIndice];
+    if (!resultado || resultado.tituloResultado !== destino.tituloResultado) throw new Error('Um resultado esperado mudou desde a seleção. Revise os destinos.');
   }
 }
 
-/** Todas as leituras precedem as escritas; a transação detecta alterações concorrentes. */
+function criarPublicacao(destinos: DestinoIntervencao[], preparacao: PreparacaoAprovacao, idsOrigem: string[], uid: string, nome: string, grupoOperacaoId?: string) {
+  return {
+    acaoPrescrita: preparacao.acaoPrescrita.trim(),
+    acaoEnfermeiro: preparacao.acaoEnfermeiro.trim(),
+    materiaisDeApoio: (preparacao.materiaisDeApoio || []).map(item => ({ tituloMaterialApoio: item.tituloMaterialApoio.trim(), urlMaterialApoio: item.urlMaterialApoio.trim() })),
+    modoDisponibilidade: modoDaPreparacao(preparacao),
+    destinos,
+    status: 'disponivel' as const,
+    versao: 1,
+    sugestoesOrigemIds: idsOrigem,
+    ...(grupoOperacaoId ? { grupoOperacaoId } : {}),
+    criadoPorUid: uid,
+    criadoPorNome: nome,
+    criadoEm: serverTimestamp(),
+    publicadoEm: serverTimestamp(),
+  };
+}
+
+/** As sugestões novas apontam para uma publicação canônica; o catálogo clínico não recebe cópias em massa. */
+export async function listarIntervencoesBiblioteca(): Promise<IntervencaoBiblioteca[]> {
+  const snapshot = await getDocs(query(collection(db, 'intervencoesBiblioteca'), where('status', '==', 'disponivel')));
+  return snapshot.docs.map(item => ({ id: item.id, ...item.data() }) as IntervencaoBiblioteca);
+}
+
+/** A transação publica a referência canônica, decisão e auditoria em conjunto. */
 export async function decidirSugestao(
   id: string, decisao: 'preparar' | 'rejeitar' | 'publicar', avaliadorId: string, avaliadorNome: string,
   dados: { preparacao?: PreparacaoAprovacao; categoria?: CategoriaRejeicao; justificativa?: string },
 ) {
-  if (!avaliadorId || !avaliadorNome) throw new Error('Avaliador não identificado');
+  if (!avaliadorId || !avaliadorNome.trim()) throw new Error('Avaliador não identificado.');
   if (decisao === 'rejeitar' && (!dados.categoria || !dados.justificativa?.trim())) throw new Error('Categoria e justificativa são obrigatórias.');
-  if (decisao !== 'rejeitar') validarPreparacao(dados.preparacao, decisao === 'publicar');
+  if (decisao !== 'rejeitar') validarPreparacao(dados.preparacao);
   const sugestaoRef = doc(db, 'intervencoesAutorais', id);
   const auditRef = doc(collection(db, 'decisoesIntervencoes'));
-  const destinos = decisao === 'publicar' ? dados.preparacao!.destinos : [];
-  const refs = [...new Set(destinos.map(destino => destino.diagnosticoId))].map(diagnosticoId => doc(db, 'rolEnfermagem', diagnosticoId));
+  const bibliotecaId = `sugestao-${id}`;
+  const bibliotecaRef = doc(db, 'intervencoesBiblioteca', bibliotecaId);
+  const destinos = decisao === 'publicar' && modoDaPreparacao(dados.preparacao!) === 'resultados_especificos' ? dados.preparacao!.destinos : [];
+  const catalogoRefs = [...new Set(destinos.map(destino => destino.diagnosticoId))].map(diagnosticoId => doc(db, 'rolEnfermagem', diagnosticoId));
   await runTransaction(db, async tx => {
     const sugestaoSnap = await tx.get(sugestaoRef);
-    if (!sugestaoSnap.exists()) throw new Error('Sugestão não encontrada');
+    if (!sugestaoSnap.exists()) throw new Error('Sugestão não encontrada.');
     const sugestao = sugestaoSnap.data() as IntervencaoAutoral;
-    if (situacaoSugestao(sugestao) !== 'aguardando' || sugestao.divisao) throw new Error('Sugestão já foi analisada ou desmembrada');
-    const catalogoSnaps = [];
-    for (const ref of refs) catalogoSnaps.push(await tx.get(ref));
-    const statusNovo: SituacaoSugestao = decisao === 'publicar' ? 'aprovada' : decisao === 'rejeitar' ? 'rejeitada' : 'aguardando';
-    if (decisao === 'publicar') {
-      for (const snap of catalogoSnaps) {
-        if (!snap.exists()) throw new Error('Diagnóstico de destino inexistente');
-        const diagnostico = { id: snap.id, ...snap.data() } as Diagnostico;
-        const resultadosEsperados = incorporarIntervencao(diagnostico, destinos.filter(d => d.diagnosticoId === snap.id).map(d => d.tituloResultado), dados.preparacao!.acaoPrescrita.trim(), dados.preparacao!.acaoEnfermeiro.trim(), id);
-        for (const destino of destinos.filter(d => d.diagnosticoId === snap.id)) {
-          if (destino.tituloDiagnostico !== diagnostico.tituloDiagnostico) throw new Error('Diagnóstico alterado desde a seleção');
-          encontrarResultado(diagnostico, destino.tituloResultado);
-        }
-        tx.update(snap.ref, { resultadosEsperados, ultimaSugestaoPublicada: id });
-      }
+    if (situacaoSugestao(sugestao) !== 'aguardando' || sugestao.divisao || sugestao.derivacao && sugestao.grupoOperacaoId) throw new Error('Sugestão já foi analisada ou está vinculada a outra operação.');
+    const catalogos = new Map<string, Diagnostico>();
+    for (const ref of catalogoRefs) {
+      const snap = await tx.get(ref);
+      if (snap.exists()) catalogos.set(snap.id, { id: snap.id, ...snap.data() } as Diagnostico);
     }
-    const base = { status: statusNovo, avaliadorId, avaliadorNome, dataDecisao: serverTimestamp(), ultimaDecisaoId: auditRef.id };
+    if (decisao === 'publicar') {
+      const existente = await tx.get(bibliotecaRef);
+      if (existente.exists()) throw new Error('Já existe uma publicação canônica para esta sugestão. Atualize a lista e confira o estado da decisão.');
+      conferirDestinosNoCatalogo(destinos, catalogos);
+      tx.set(bibliotecaRef, criarPublicacao(destinos, dados.preparacao!, [id], avaliadorId, avaliadorNome));
+    }
+    const statusNovo: SituacaoSugestao = decisao === 'publicar' ? 'aprovada' : decisao === 'rejeitar' ? 'rejeitada' : 'aguardando';
+    const base = { status: statusNovo, avaliadorId, avaliadorNome: avaliadorNome.trim(), dataDecisao: serverTimestamp(), ultimaDecisaoId: auditRef.id };
     tx.update(sugestaoRef, decisao === 'rejeitar'
       ? { ...base, categoriaRejeicao: dados.categoria, justificativaRejeicao: dados.justificativa!.trim() }
-      : { ...base, preparacao: dados.preparacao });
-    tx.set(auditRef, { sugestaoId: id, statusAnterior: 'aguardando', statusNovo, tipo: decisao, avaliadorId, destinos, justificativa: dados.justificativa?.trim() || '', dataHora: serverTimestamp() });
+      : decisao === 'preparar' ? { ...base, preparacao: dados.preparacao }
+        : { ...base, preparacao: dados.preparacao, intervencaoBibliotecaId: bibliotecaId });
+    tx.set(auditRef, { sugestaoId: id, statusAnterior: 'aguardando', statusNovo, tipo: decisao, avaliadorId, destinos, ...(decisao === 'publicar' ? { intervencaoBibliotecaId: bibliotecaId } : {}), justificativa: dados.justificativa?.trim() || '', dataHora: serverTimestamp() });
   });
+}
+
+function sha256(value: string): Promise<string> {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)).then(hash => Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join(''));
+}
+
+export async function decidirSugestoesEmGrupo(
+  idsEntrada: string[], decisao: 'publicar' | 'rejeitar', avaliadorId: string, avaliadorNome: string,
+  dados: { preparacao?: PreparacaoAprovacao; categoria?: CategoriaRejeicao; justificativa?: string },
+  progresso: (concluidas: number, total: number) => void = () => undefined,
+) {
+  const ids = [...new Set(idsEntrada)].sort();
+  if (ids.length < 2 || ids.length > 100) throw new Error('Selecione de 2 a 100 sugestões pendentes para uma operação em grupo.');
+  if (!avaliadorId || !avaliadorNome.trim()) throw new Error('Avaliador não identificado.');
+  if (decisao === 'rejeitar' && (!dados.categoria || !dados.justificativa?.trim())) throw new Error('Categoria e justificativa são obrigatórias.');
+  if (decisao === 'publicar') validarPreparacao(dados.preparacao);
+  const operacaoId = `grupo-${(await sha256(JSON.stringify([ids, decisao, decisao === 'publicar' ? dados.preparacao : [dados.categoria, dados.justificativa]]))).slice(0, 48)}`;
+  const operacaoRef = doc(db, 'operacoesDecisoesIntervencoes', operacaoId);
+  const bibliotecaId = `operacao-${operacaoId}`;
+  const bibliotecaRef = doc(db, 'intervencoesBiblioteca', bibliotecaId);
+  const destinos = decisao === 'publicar' && modoDaPreparacao(dados.preparacao!) === 'resultados_especificos' ? dados.preparacao!.destinos : [];
+  const catalogoRefs = [...new Set(destinos.map(destino => destino.diagnosticoId))].map(diagnosticoId => doc(db, 'rolEnfermagem', diagnosticoId));
+  await runTransaction(db, async tx => {
+    const [operacaoSnap, ...sugestoes] = await Promise.all([tx.get(operacaoRef), ...ids.map(id => tx.get(doc(db, 'intervencoesAutorais', id)))]);
+    if (sugestoes.some(item => !item.exists())) throw new Error('Uma sugestão do grupo não existe. Atualize a fila.');
+    const dadosSugestoes = sugestoes.map(item => item.data() as IntervencaoAutoral);
+    if (operacaoSnap.exists()) {
+      const existente = operacaoSnap.data();
+      if (JSON.stringify(existente.sugestaoIds) !== JSON.stringify(ids) || existente.tipo !== decisao) throw new Error('O identificador da operação já está associado a outro conjunto.');
+      if (existente.status === 'concluida') return;
+      if (dadosSugestoes.some(item => situacaoSugestao(item) !== 'aguardando' && item.grupoOperacaoId !== operacaoId)) throw new Error('Uma sugestão já recebeu decisão concorrente; o grupo não foi alterado.');
+      return;
+    }
+    if (dadosSugestoes.some(item => situacaoSugestao(item) !== 'aguardando' || item.divisao)) throw new Error('O grupo contém sugestões que já não estão pendentes. Atualize a fila.');
+    const catalogos = new Map<string, Diagnostico>();
+    for (const ref of catalogoRefs) {
+      const snap = await tx.get(ref);
+      if (snap.exists()) catalogos.set(snap.id, { id: snap.id, ...snap.data() } as Diagnostico);
+    }
+    if (decisao === 'publicar') {
+      conferirDestinosNoCatalogo(destinos, catalogos);
+      tx.set(bibliotecaRef, { ...criarPublicacao(destinos, dados.preparacao!, ids, avaliadorId, avaliadorNome, operacaoId), status: 'preparando', publicadoEm: null });
+    }
+    tx.set(operacaoRef, { tipo: decisao, status: 'preparando', sugestaoIds: ids, concluidasIds: [], ...(decisao === 'publicar' ? { intervencaoBibliotecaId: bibliotecaId } : { categoria: dados.categoria, justificativa: dados.justificativa!.trim() }), criadoPorUid: avaliadorId, criadoPorNome: avaliadorNome.trim(), criadoEm: serverTimestamp() });
+  });
+  const operacaoInicial = await getDoc(operacaoRef);
+  if (!operacaoInicial.exists()) return { operacaoId, bibliotecaId, concluida: true, total: ids.length };
+  if (operacaoInicial.data().status === 'concluida') return { operacaoId, bibliotecaId: decisao === 'publicar' ? bibliotecaId : undefined, concluida: true, total: ids.length };
+  let concluidas = (operacaoInicial.data().concluidasIds || []) as string[];
+  progresso(concluidas.length, ids.length);
+  for (const id of ids) {
+    if (concluidas.includes(id)) continue;
+    const sugestaoRef = doc(db, 'intervencoesAutorais', id);
+    const auditRef = doc(collection(db, 'decisoesIntervencoes'));
+    await runTransaction(db, async tx => {
+      const [operacaoSnap, sugestaoSnap] = await Promise.all([tx.get(operacaoRef), tx.get(sugestaoRef)]);
+      if (!operacaoSnap.exists() || !sugestaoSnap.exists()) throw new Error('Operação ou sugestão não encontrada; execute novamente para retomar com segurança.');
+      const operacao = operacaoSnap.data();
+      const sugestao = sugestaoSnap.data() as IntervencaoAutoral;
+      if (operacao.status !== 'preparando' || !operacao.sugestaoIds.includes(id)) throw new Error('A operação em grupo não corresponde à sugestão.');
+      if (situacaoSugestao(sugestao) !== 'aguardando') {
+        if (sugestao.grupoOperacaoId !== operacaoId || sugestao.status !== (decisao === 'publicar' ? 'aprovada' : 'rejeitada')) throw new Error('A sugestão foi decidida por outra operação. As demais permanecem sem alteração.');
+        tx.update(operacaoRef, { concluidasIds: arrayUnion(id) });
+        return;
+      }
+      const statusNovo: SituacaoSugestao = decisao === 'publicar' ? 'aprovada' : 'rejeitada';
+      tx.update(sugestaoRef, decisao === 'publicar'
+        ? { status: statusNovo, avaliadorId, avaliadorNome: avaliadorNome.trim(), dataDecisao: serverTimestamp(), ultimaDecisaoId: auditRef.id, preparacao: dados.preparacao, intervencaoBibliotecaId: bibliotecaId, grupoOperacaoId: operacaoId }
+        : { status: statusNovo, avaliadorId, avaliadorNome: avaliadorNome.trim(), dataDecisao: serverTimestamp(), ultimaDecisaoId: auditRef.id, categoriaRejeicao: dados.categoria, justificativaRejeicao: dados.justificativa!.trim(), grupoOperacaoId: operacaoId });
+      tx.set(auditRef, { sugestaoId: id, statusAnterior: 'aguardando', statusNovo, tipo: decisao === 'publicar' ? 'publicar_grupo' : 'rejeitar_grupo', avaliadorId, destinos, justificativa: dados.justificativa?.trim() || '', grupoOperacaoId: operacaoId, idsAfetados: ids, ...(decisao === 'publicar' ? { intervencaoBibliotecaId: bibliotecaId } : {}), dataHora: serverTimestamp() });
+      tx.update(operacaoRef, { concluidasIds: arrayUnion(id) });
+    });
+    concluidas = [...new Set([...concluidas, id])];
+    progresso(concluidas.length, ids.length);
+  }
+  const sugestaoFinais = await Promise.all(ids.map(obterSugestao));
+  if (sugestaoFinais.some(item => !item || item.grupoOperacaoId !== operacaoId || item.status !== (decisao === 'publicar' ? 'aprovada' : 'rejeitada'))) {
+    throw new Error('A operação ficou parcial. Nenhuma publicação compartilhada foi ativada; tente novamente para retomar.');
+  }
+  await runTransaction(db, async tx => {
+    const operacaoSnap = await tx.get(operacaoRef);
+    if (!operacaoSnap.exists() || ids.some(id => !operacaoSnap.data().concluidasIds?.includes(id))) throw new Error('Não foi possível confirmar todas as decisões do grupo.');
+    if (decisao === 'publicar') {
+      const bibliotecaSnap = await tx.get(bibliotecaRef);
+      if (!bibliotecaSnap.exists()) throw new Error('Publicação do grupo não encontrada.');
+      tx.update(bibliotecaRef, { status: 'disponivel', publicadoEm: serverTimestamp() });
+    }
+    tx.update(operacaoRef, { status: 'concluida', concluidaEm: serverTimestamp() });
+  });
+  return { operacaoId, bibliotecaId: decisao === 'publicar' ? bibliotecaId : undefined, concluida: true, total: ids.length };
 }
 
 export async function listarDecisoes(sugestaoId: string) {

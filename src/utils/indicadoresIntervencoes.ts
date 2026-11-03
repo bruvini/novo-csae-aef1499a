@@ -139,6 +139,6 @@ export function calcularGovernanca(items: IntervencaoAutoral[], granularidade: '
     grupos, duplicadas: new Set(grupos.flatMap(grupo => grupo.ocorrencias.map(item => item.id))).size,
     revisoes: [...revisoes].map(([nome, valor]) => ({ nome, valor })), distribuicaoAutores,
     matriz: [...matriz.values()].sort((a, b) => b.total - a.total),
-    publicadas: aprovadas.filter(item => !!item.preparacao?.referenciaDeliberacao).length,
+    publicadas: aprovadas.filter(item => !!item.intervencaoBibliotecaId || !!item.preparacao?.referenciaDeliberacao).length,
   };
 }

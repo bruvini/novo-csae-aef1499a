@@ -66,7 +66,11 @@ export interface IntervencaoSelecionada {
   origemCatalogoChave?: string;
   acaoPrescrita: string;
   acaoEnfermeiro?: string;
-  tipo: 'padrao' | 'autoral'; // 'padrao' para as do sistema, 'autoral' para as customizadas
+  tipo: 'padrao' | 'autoral' | 'transversal';
+  origemBibliotecaId?: string;
+  versaoBiblioteca?: number;
+  sugestoesOrigemIds?: string[];
+  resultadoVinculadoId?: string;
   justificativaIntervencaoUnica?: string;
   /** Cópia dos materiais disponíveis no momento da seleção, sem atualização retroativa. */
   materiaisDeApoio?: MaterialApoioConsulta[];
@@ -77,6 +81,7 @@ export interface DiagnosticoPlanejado {
   tituloDiagnostico: string;
   ordemPrioridade: number;
   resultadoEsperadoSelecionado?: string; // Armazena o título do resultado escolhido
+  resultadoIndiceSelecionado?: number;
   resultadoPlanejadoId?: string; // Identidade estável desta escolha na consulta
   intervencoesSelecionadas: IntervencaoSelecionada[];
   naturezaDiagnostico?: NaturezaDiagnostico;
