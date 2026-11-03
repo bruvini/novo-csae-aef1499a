@@ -45,6 +45,11 @@ test('05 cuidado abordado é validado pela decisão associada ao ID da linha', (
   atual.avaliacao.cuidadosAnterioresAbordados = [abordado('linha1', 'origem', 'd1')];
   assert.equal(continuidadeDoProcesso(atual).completa, false);
 });
+test('05a manter exige que o diagnóstico original continue selecionado', () => {
+  const atual = comReavaliacao(processo('p2', 'em_andamento', [diagnostico('outro', 'Outro diagnóstico')]), [decisao('linha1', 'd1', 'manter')]);
+  atual.avaliacao.cuidadosAnterioresAbordados = [abordado('linha1', 'origem', 'd1')];
+  assert.equal(continuidadeDoProcesso(atual).completa, false);
+});
 test('06 manter conserva o diagnóstico e a linha no retorno seguinte', () => {
   const atual = comReavaliacao(processo('p2', 'concluido', [diagnostico('d1', 'Dor', 'linha1')]), [decisao('linha1', 'd1', 'manter')]);
   const itens = diagnosticosAnterioresDisponiveis([atual], 'current');

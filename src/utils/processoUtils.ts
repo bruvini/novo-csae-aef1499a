@@ -195,8 +195,12 @@ export function continuidadeDoProcesso(processo: ProcessoEnfermagem): { completa
   const completa = abordados.every(cuidado => {
     const decisao = decisoes.find(item => item.acompanhamentoId === cuidado.acompanhamentoId);
     if (!decisao) return false;
-    return decisao.decisao !== 'substituir' || Boolean(decisao.novoDiagnosticoId
-      && processo.diagnostico?.diagnosticosSelecionados.some(item => item.id === decisao.novoDiagnosticoId));
+    if (decisao.decisao === 'encerrar') return true;
+    const diagnosticoNecessarioId = decisao.decisao === 'substituir'
+      ? decisao.novoDiagnosticoId
+      : decisao.diagnosticoOrigemId;
+    return Boolean(diagnosticoNecessarioId
+      && processo.diagnostico?.diagnosticosSelecionados.some(item => item.id === diagnosticoNecessarioId));
   });
   const somenteEncerramento = abordados.length > 0
     && completa
