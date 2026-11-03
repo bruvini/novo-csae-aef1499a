@@ -1,0 +1,65 @@
+name: Publicar Portal CSAE (Firebase)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: csae-firebase-producao
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Validar e publicar regras e Hosting
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://csae.com.br/
+    timeout-minutes: 35
+    steps:
+      - name: Obter código da main
+        uses: actions/checkout@v4
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Configurar Java para testes do Firebase Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependências
+        run: npm ci --legacy-peer-deps
+      - name: Testar regras Firebase em emulador
+        run: npm run test:rules
+      - name: Rodar testes da aplicação
+        run: npm test
+      - name: Testar documentos legais
+        run: npx tsx --test tests/legalDocuments.test.ts
+      - name: Checar TypeScript
+        run: npx tsc -b
+      - name: Compilar portal
+        run: npm run build
+      - name: Autenticar no projeto csaefloripa
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_CSAE }}'
+          project_id: csaefloripa
+          create_credentials_file: true
+      - name: Publicar regras do Firestore (sem alterar dados)
+        run: npx --yes firebase-tools@14 deploy --project csaefloripa --only firestore:rules --non-interactive
+      - name: Publicar Firebase Hosting (sem Storage ou Auth)
+        run: npx --yes firebase-tools@14 deploy --project csaefloripa --only hosting --non-interactive
+      - name: Confirmar conteúdo publicado nos domínios
+        run: python3 scripts/release/verificar_hosting.py
+      - name: Orientar registro obrigatório do changelog
+        if: success()
+        run: |
+          echo '### Deploy realizado' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Projeto: **csaefloripa** · commit: `${{ github.sha }}`' >> "$GITHUB_STEP_SUMMARY"
+          echo 'O changelog em Firestore deve ser registrado pela equipe conforme GOVERNANCE.md.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Use `scripts/release/registrar_changelog_documentos_legais.py` no Cloud Shell autenticado (não conceder acesso aos pacientes à conta de deploy).' >> "$GITHUB_STEP_SUMMARY"
