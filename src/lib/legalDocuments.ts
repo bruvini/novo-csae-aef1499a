@@ -38,7 +38,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKind, LegalDocument> = {
         title: "2. Responsabilidade profissional e documentação clínica",
         paragraphs: [
           "A ferramenta oferece recursos para avaliação, diagnóstico, planejamento, implementação e evolução de enfermagem, conforme a Resolução Cofen nº 736/2024. O conteúdo apresentado não substitui a avaliação individualizada, o julgamento clínico, os protocolos aplicáveis nem as responsabilidades legais do profissional.",
-          "Os registros devem observar os fluxos institucionais e as normas de documentação assistencial. A utilização do portal não dispensa outros registros exigidos pelo serviço de saúde."
+          "A ferramenta gera uma evolução para cópia à área de transferência e inserção manual no prontuário institucional. O usuário deve revisar integralmente o texto e confirmar seu registro no sistema oficial. O Portal CSAE não substitui o prontuário adotado pela Secretaria Municipal de Saúde nem envia automaticamente a evolução ao prontuário."
         ]
       },
       {
@@ -81,21 +81,21 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKind, LegalDocument> = {
       {
         title: "1. Quem responde pelo tratamento",
         paragraphs: [
-          "A identificação formal do controlador, de eventuais operadores, do encarregado pelo tratamento de dados e do canal oficial para exercício de direitos está pendente de validação institucional. Essa informação deve constar expressamente na versão aprovada."
+          "A responsável técnico-assistencial indicada pela equipe é Elizimara Ferreira Siqueira, Enfermeira Responsável Técnica da Secretaria Municipal de Saúde de Florianópolis e coordenadora da Comissão Permanente de Sistematização da Assistência de Enfermagem. Essa função não equivale automaticamente à condição de controladora de dados na LGPD. A identificação formal do controlador institucional, de eventuais operadores, do encarregado e do canal oficial para exercício de direitos está pendente de validação pela instituição e deve constar expressamente na versão aprovada."
         ]
       },
       {
         title: "2. Informações coletadas",
         paragraphs: [
           "O cadastro solicita identificação e contato, incluindo nome, CPF, RG, endereço e e-mail, além de informações profissionais, vínculo institucional, formação, registro no COREN e dados da residência quando aplicável. A autenticação é realizada com Firebase Authentication.",
-          "A aplicação armazena dados dos pacientes cadastrados pelos profissionais, como identificação, nascimento, sexo e informações clínicas e assistenciais inseridas durante as etapas do Processo de Enfermagem. Dados de saúde são dados pessoais sensíveis.",
+          "O cadastro do paciente solicita nome completo, data de nascimento e sexo; não solicita CPF, CNS nem número do prontuário nesse formulário. A aplicação armazena também as informações clínicas e assistenciais registradas nas etapas do Processo de Enfermagem, que podem conter outros dados identificáveis inseridos livremente pelo profissional. Dados de saúde são dados pessoais sensíveis.",
           "Também são tratados registros de acesso e autorizações, solicitações de suporte, sugestões de melhoria ou intervenções, respostas de avaliações de uso e informações técnicas de funcionamento. A aplicação inicializa Firebase Analytics; é necessário auditar seus eventos e configurações antes de descrever integralmente o monitoramento."
         ]
       },
       {
         title: "3. Para que os dados são utilizados",
         paragraphs: [
-          "Os dados cadastrais e profissionais apoiam a verificação de elegibilidade, a autorização de acesso e a administração da conta. Os dados clínicos são utilizados para a execução e documentação das atividades assistenciais autorizadas.",
+          "Os dados cadastrais e profissionais apoiam a verificação de elegibilidade, a autorização de acesso e a administração da conta. Os dados clínicos são utilizados para elaborar o Processo de Enfermagem e gerar um texto que o profissional revisa e copia manualmente ao prontuário institucional; os registros também permanecem associados à sua conta para consulta e continuidade na plataforma.",
           "Registros de utilização e suporte podem apoiar segurança, auditoria, atendimento às solicitações, manutenção, melhoria da ferramenta e indicadores internos, observados os limites de acesso e as finalidades institucionais."
         ]
       },
@@ -110,13 +110,13 @@ export const LEGAL_DOCUMENTS: Record<LegalDocumentKind, LegalDocument> = {
         title: "5. Infraestrutura, acesso e compartilhamentos",
         paragraphs: [
           "O código utiliza serviços Google Firebase, incluindo Authentication, Cloud Firestore, Storage, Hosting e Analytics. É necessário confirmar a região de armazenamento, os contratos aplicáveis, as transferências internacionais e os demais destinatários efetivos antes da versão final.",
-          "O projeto contém regras de acesso por autenticação e perfis de autorização. A existência dessas regras não representa garantia de segurança absoluta. A política definitiva deverá explicar quem, na instituição, pode consultar dados clínicos e relatórios administrativos."
+          "Na interface, os registros assistenciais ficam associados ao enfermeiro que cadastrou o paciente; os administradores consultam dados de cadastro e autorização dos profissionais. A ausência de pesquisa administrativa de pacientes na interface não impede, por si só, acesso técnico de pessoas autorizadas ao console do Firebase. O código também prevê leitura ampliada para rotinas de BI autorizadas. Regras e permissões não representam garantia absoluta e precisam de auditoria institucional."
         ]
       },
       {
         title: "6. Retenção, exclusão e direitos dos titulares",
         paragraphs: [
-          "Os prazos de conservação e as regras de eliminação ou anonimização de dados de cadastro, registros assistenciais, auditoria e cópias de segurança ainda precisam ser definidos conforme as obrigações legais e administrativas aplicáveis.",
+          "No cadastro, o portal registra o aceite do Termo de Responsabilidade e Sigilo e a data, mas não armazena uma cópia do PDF gerado para o usuário. Os prazos de conservação e as regras de eliminação ou anonimização de cadastros, registros assistenciais, auditoria, PDFs e backups ainda precisam ser definidos conforme as obrigações legais e administrativas aplicáveis.",
           "Os titulares poderão exercer os direitos previstos na LGPD por canal oficial que deverá constar na versão aprovada. Solicitações de eliminação serão avaliadas considerando as hipóteses de conservação legalmente permitidas."
         ]
       },
