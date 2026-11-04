@@ -517,14 +517,14 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
-      // Caminho independente e restrito para registrar um login. Evita passar
-      // por validações administrativas e cadastrais que não se aplicam ao
-      // incremento de telemetria, inclusive em perfis legados extensos.
-      allow update: if signedIn() && request.auth.uid == uid
+      // Caminho rápido e restrito de telemetria, avaliado apenas quando
+      // ambos os campos modificados são estatísticos. Operações cadastrais
+      // não avaliam a regra de login e preservam seu limite de expressões.
+      allow update: if (signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['totalAcessos', 'ultimoAcesso'])
-        && ownerLoginUpdateIsSafe();
-      allow update: if (isActiveAdmin() && (
+        && ownerLoginUpdateIsSafe())
+        || (isActiveAdmin() && (
         (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
           && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
         || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
