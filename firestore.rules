@@ -523,8 +523,9 @@ service cloud.firestore {
         || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
           && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
       ))
-        || (signedIn() && (ownerLoginUpdateIsSafe() || ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
-          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
+        || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
+          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()
+          || ownerLoginUpdateIsSafe()));
       allow delete: if false;
     }
 
