@@ -71,7 +71,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
   onUpdateImplementacao,
 }) => {
   const [showNHBs, setShowNHBs] = useState(true);
-  const [showProtocolos, setShowProtocolos] = useState(false);
+  const [showProtocolos, setShowProtocolos] = useState(true);
   const [diagnosticos, setDiagnosticos] = useState<Diagnostico[]>([]);
   const [subconjuntos, setSubconjuntos] = useState<SubconjuntoEnfermagem[]>([]);
   const [diagnosticosPorNHB, setDiagnosticosPorNHB] = useState<DiagnosticoPorSubconjunto>({});
@@ -585,9 +585,7 @@ const EtapaDiagnostico: React.FC<EtapaDiagnosticoProps> = ({
       </Card>
 
       {/* Colunas de Diagnósticos */}
-      <div className="grid gap-6" style={{ 
-        gridTemplateColumns: `${showNHBs && showProtocolos ? '1fr 1fr' : '1fr'}` 
-      }}>
+      <div className={`grid gap-6 ${showNHBs && showProtocolos ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         {/* Coluna NHBs */}
         {showNHBs && (
           <Card>

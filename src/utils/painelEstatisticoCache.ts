@@ -1,7 +1,7 @@
 import type { RegistroProducao } from './painelEstatistico';
 import { cacheTemporalAindaValido } from './accessMetrics';
 
-export const CACHE_PROCESSOS_SCHEMA_VERSION = 10;
+export const CACHE_PROCESSOS_SCHEMA_VERSION = 11;
 export const CACHE_CHUNK_LIMITE_BYTES = 350_000;
 export const CACHE_VALIDADE_MS = 12 * 60 * 60 * 1000;
 

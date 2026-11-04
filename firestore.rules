@@ -180,6 +180,25 @@ service cloud.firestore {
         && (!('revogadoPorUid' in request.resource.data) || request.resource.data.revogadoPorUid == request.auth.uid || request.resource.data.revogadoPorUid == resource.data.revogadoPorUid);
     }
 
+    // Atualização exclusiva de telemetria: não revalida campos cadastrais
+    // legados imutáveis. Exige evento associado no MESMO commit, evitando
+    // incrementar o contador isoladamente por esta permissão específica.
+    function ownerLoginUpdateIsSafe() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let anterior = ('totalAcessos' in resource.data) ? resource.data.totalAcessos : 0;
+      let numero = anterior + 1;
+      let eventoId = request.auth.uid + '_' + string(numero);
+      return isApproved()
+        && resource.data.uid == request.auth.uid
+        && changed.hasOnly(['totalAcessos', 'ultimoAcesso'])
+        && changed.hasAll(['totalAcessos', 'ultimoAcesso'])
+        && anterior is int && anterior >= 0
+        && request.resource.data.totalAcessos == numero
+        && request.resource.data.ultimoAcesso == request.time
+        && getAfter(/databases/$(database)/documents/eventosAcesso/$(eventoId)).data.numero == numero
+        && getAfter(/databases/$(database)/documents/eventosAcesso/$(eventoId)).data.uid == request.auth.uid;
+    }
+
     function ownerProfileUpdateIsSafe() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       return isApproved()
@@ -505,7 +524,8 @@ service cloud.firestore {
           && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
       ))
         || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
-          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
+          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()
+          || ownerLoginUpdateIsSafe()));
       allow delete: if false;
     }
 

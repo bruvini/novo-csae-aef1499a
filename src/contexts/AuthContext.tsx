@@ -9,6 +9,7 @@ import { verificarElegibilidadeNPS } from '@/services/bancodados/suporteDB';
 import { chaveDataSaoPaulo, deveContabilizarLogin, planejarRegistroLogin, tentarRegistrarLogin } from '@/utils/accessMetrics';
 
 const NPS_PENDENTE_KEY = 'csae_nps_pendente';
+const ERRO_LOGIN_ESTATISTICA_KEY = 'csae_erro_ultimo_registro_login';
 
 interface SessionData {
   nomeCompleto: string;
@@ -399,6 +400,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Só o login explícito registra acesso. Restauração por onAuthStateChanged
       // e recarregamentos não geram outro evento.
       const updateRef = doc(db, 'usuarios', userDoc.id);
+      let falhaContabilizacao: string | null = null;
       const novoTotalAcessos = await tentarRegistrarLogin(async () => {
         if (!deveContabilizarLogin('login_explicito')) return null;
         return runTransaction(db, async (transaction) => {
@@ -427,15 +429,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return totalAtual + 1;
         });
       }, (error) => {
+        const codigo = typeof error === 'object' && error !== null && 'code' in error
+          ? String(error.code) : 'erro-desconhecido';
+        falhaContabilizacao = codigo;
+        // Somente metadados técnicos locais, sem UID, CPF ou conteúdo clínico.
+        sessionStorage.setItem(ERRO_LOGIN_ESTATISTICA_KEY, JSON.stringify({
+          codigo, data: new Date().toISOString(),
+        }));
         console.error('[Auth] O login foi concluído, mas o acesso não foi contabilizado:', error);
-        toast({
-          title: 'Login realizado com ressalva',
-          description: 'Não foi possível registrar este login nas estatísticas. O acesso ao Portal continua disponível.',
-          variant: 'default',
-        });
       });
       if (novoTotalAcessos !== null) {
-        console.log(`[Auth] Acesso registrado para UID: ${user.uid}`);
+        sessionStorage.removeItem(ERRO_LOGIN_ESTATISTICA_KEY);
+        console.log('[Auth] Evento estatístico de login confirmado.');
       }
 
       // ── Verificar gatilho de NPS obrigatório (a cada 10 acessos) ──
@@ -478,10 +483,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSessionData(session);
 
       toast({
-        title: "Login realizado com sucesso!",
-        description: `Bem-vindo(a), ${userDoc.dadosPessoais.nomeCompleto}!`,
-        variant: "default",
-        className: "bg-green-50 border-green-200",
+        title: novoTotalAcessos === null ? 'Acesso autorizado, registro estatístico pendente' : 'Login realizado com sucesso!',
+        description: novoTotalAcessos === null
+          ? 'Sua autenticação funcionou, mas o acesso não entrou nas estatísticas (código: '
+            + (falhaContabilizacao || 'erro-desconhecido') + '). Informe o código ao suporte.'
+          : `Bem-vindo(a), ${userDoc.dadosPessoais.nomeCompleto}!`,
+        variant: novoTotalAcessos === null ? 'destructive' : 'default',
+        ...(novoTotalAcessos === null ? {} : { className: 'bg-green-50 border-green-200' }),
       });
 
       navigate('/dashboard');

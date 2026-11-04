@@ -1,5 +1,8 @@
 import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { differenceInYears } from 'date-fns';
+import type { ProcessoEnfermagem } from '@/types/processoEnfermagem';
+import { materiaisDoProcesso } from '@/utils/materiaisApoioProcesso';
+import { reconstruirContinuidadePorConsulta, vinculosDoCatalogo, SEM_RETORNO } from '@/utils/indicadoresClinicosAvancados';
 import { db } from '@/services/firebase';
 import { agregarRegistrosProducao, type EstatisticasProducao, type RegistroProducao } from '@/utils/painelEstatistico';
 import {
@@ -90,17 +93,26 @@ interface ProcessoEnfermagemDoc {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     exameFisico?: Record<string, any>;
     nhbsAfetadas?: Array<{ parametro: string; nhb: string }>;
+    cuidadosAnterioresAbordados?: Array<{ acompanhamentoId: string }>;
   };
-  diagnostico?: { diagnosticosSelecionados?: Array<{ id: string; tituloDiagnostico: string }> };
+  diagnostico?: {
+    diagnosticosSelecionados?: Array<{ id: string; tituloDiagnostico: string; acompanhamentoId?: string }>;
+    reavaliacoesAnteriores?: Array<{ acompanhamentoId: string; processoOrigemId: string; diagnosticoOrigemId: string; decisao: 'manter' | 'substituir' | 'encerrar'; novoDiagnosticoId?: string }>;
+  };
   planejamento?: { diagnosticosPlanejados?: Array<{
+    diagnosticoId: string;
     tituloDiagnostico: string;
+    acompanhamentoId?: string;
     resultadoEsperadoSelecionado?: string;
-    intervencoesSelecionadas?: Array<{ acaoPrescrita: string; tipo: string }>;
+    intervencoesSelecionadas?: Array<{
+      acaoPrescrita: string; tipo: string; intervencaoId?: string;
+      materiaisDeApoio?: Array<{ id: string; tituloMaterialApoio: string; urlMaterialApoio: string }>;
+    }>;
     isPositivo: boolean;
   }> };
   implementacao?: Record<string, { intervencoes?: Array<{
-    acaoPrescrita: string;
-    implementadoNestaConsulta: boolean;
+    acaoPrescrita: string; intervencaoId?: string; tipo: string;
+    implementadoNestaConsulta: boolean; materiaisEntreguesIds?: string[];
     quemExecuta?: string[] | string;
   }> }>;
   evolucao?: { intervencoesExecutadas?: Record<string, string[]> };
@@ -156,12 +168,14 @@ export async function obterEstatisticasProcessoEnfermagem(options: { forcarAtual
     usuariosMap[usuarioDoc.id] = usuario;
     if (data.uid && data.uid !== usuarioDoc.id) usuariosMap[data.uid] = usuario;
   });
-  const subconjuntoPorDiagnostico: Record<string, string> = {};
+  const catalogoPorId = new Map<string, { nhbs: string[]; protocolos: string[] }>();
+  const catalogoPorTitulo = new Map<string, Array<{ nhbs: string[]; protocolos: string[] }>>();
   rolSnapshot.forEach((rolDoc) => {
     const data = rolDoc.data();
-    if (data.tituloDiagnostico && data.subconjuntos?.[0]?.tipoSubconjunto) {
-      subconjuntoPorDiagnostico[data.tituloDiagnostico] = data.subconjuntos[0].tipoSubconjunto;
-    }
+    const vinculos = vinculosDoCatalogo(data.subconjuntos);
+    catalogoPorId.set(rolDoc.id, vinculos);
+    const titulo = String(data.tituloDiagnostico || '').trim();
+    if (titulo) catalogoPorTitulo.set(titulo, [...(catalogoPorTitulo.get(titulo) || []), vinculos]);
   });
 
   const registrosProducao: RegistroProducao[] = [];
@@ -173,6 +187,8 @@ export async function obterEstatisticasProcessoEnfermagem(options: { forcarAtual
     const pacienteChave = `p${pacienteSequencia}`;
     const nascimento = paciente.dataNascimento?.toDate?.();
     const processos = Array.isArray(paciente.processosEnfermagem) ? paciente.processosEnfermagem as ProcessoEnfermagemDoc[] : [];
+    // Consulta anterior pode estar fora do período filtrado; apenas o retorno entra no indicador.
+    const retornos = reconstruirContinuidadePorConsulta(processos);
     processos.forEach((processo) => {
       try {
       const dataInicio = processo.dataInicio?.toDate?.();
@@ -184,7 +200,18 @@ export async function obterEstatisticasProcessoEnfermagem(options: { forcarAtual
       const nhbs = nhbsAfetadas.map((item) => item?.nhb).filter(Boolean);
       const diagnosticosSelecionados = Array.isArray(processo.diagnostico?.diagnosticosSelecionados) ? processo.diagnostico.diagnosticosSelecionados : [];
       const diagnosticos = diagnosticosSelecionados.map((item) => item?.tituloDiagnostico).filter(Boolean);
+      const diagnosticosDetalhados = diagnosticosSelecionados.filter(item => item?.id && item?.tituloDiagnostico).map(item => {
+        // Histórico sem identidade de catálogo inequívoca não recebe associação presumida.
+        const candidatos = catalogoPorTitulo.get(item.tituloDiagnostico) || [];
+        const vinculos = catalogoPorId.get(item.id) || (candidatos.length === 1 ? candidatos[0] : null);
+        return { id: item.id, titulo: item.tituloDiagnostico, nhbs: vinculos?.nhbs || [], protocolos: vinculos?.protocolos || [] };
+      });
       const planejados = Array.isArray(processo.planejamento?.diagnosticosPlanejados) ? processo.planejamento.diagnosticosPlanejados : [];
+      const idsPlanejados = new Set(planejados.map(item => item.diagnosticoId).filter(Boolean));
+      const nhbsPlano = [...new Set(diagnosticosDetalhados.filter(item => idsPlanejados.has(item.id)).flatMap(item => item.nhbs))];
+      const continuidade = retornos.get(processo.idProcesso) || SEM_RETORNO;
+      const materiaisEntregues = materiaisDoProcesso(processo as unknown as ProcessoEnfermagem)
+        .filter(material => material.entregue).map(material => material.tituloMaterialApoio.trim()).filter(Boolean);
       const resultados = planejados.map((item) => item.resultadoEsperadoSelecionado).filter((item): item is string => Boolean(item));
       const intervencoesPrescritas = planejados.flatMap((item) => (item.intervencoesSelecionadas || [])
         .map((intervencao) => intervencao.acaoPrescrita).filter(Boolean));
@@ -212,7 +239,11 @@ export async function obterEstatisticasProcessoEnfermagem(options: { forcarAtual
         exameFisico: Object.keys(processo.avaliacao?.exameFisico || {}),
         nhbs,
         diagnosticos,
-        subconjuntos: diagnosticos.map((item) => subconjuntoPorDiagnostico[item]).filter(Boolean),
+        diagnosticosDetalhados,
+        nhbsPlano,
+        continuidade,
+        materiaisEntregues,
+        subconjuntos: diagnosticosDetalhados.flatMap(item => [...item.nhbs, ...item.protocolos]),
         resultados,
         intervencoesPrescritas,
         intervencoesAplicadas,

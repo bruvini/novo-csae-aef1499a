@@ -123,7 +123,7 @@ test('workbook possui 11 abas, metadados filtrados e valores numéricos sem dado
   }
   const reaberto = new ExcelJS.Workbook();
   await reaberto.xlsx.load(buffer);
-  assert.deepEqual(reaberto.worksheets.map((sheet) => sheet.name), ['Resumo', 'Usuários', 'Evolução Usuários', 'Produção', 'Evolução Clínica', 'Avaliação', 'Diagnósticos', 'Planejamento', 'Implementação', 'Evolução Enfermagem', 'Produtividade']);
+  assert.deepEqual(reaberto.worksheets.map((sheet) => sheet.name), ['Resumo', 'Usuários', 'Evolução Usuários', 'Produção', 'Evolução Clínica', 'Avaliação', 'Diagnósticos', 'Planejamento', 'Implementação', 'Evolução Enfermagem', 'NHBs - Convergência', 'Continuidade', 'Produtividade']);
   assert.equal(reaberto.getWorksheet('Resumo')?.getCell('B7').value, 'CS CENTRO');
   assert.equal(typeof reaberto.getWorksheet('Produção')?.getCell('A6').value, 'number');
   const conteudo = reaberto.worksheets.flatMap((sheet) => sheet.getSheetValues()).join(' ').toLowerCase();
@@ -155,4 +155,45 @@ test('datas dos processos respeitam fuso America/Sao_Paulo', () => {
     registro({ id: 'a', dataReferencia: '2026-11-04T00:30:00.000Z' }),
   ]);
   assert.deepEqual(stats.temporalAvancado.diario.map(item => item.name), ['03/11/2026']);
+});
+
+
+test('BI contabiliza diagnósticos por ID, múltiplos vínculos e lacunas de NHB sem multiplicar processos', () => {
+  const total = agregarRegistrosProducao([
+    registro({
+      id: 'pa', diagnosticos: ['Diagnóstico A'],
+      diagnosticosDetalhados: [{ id: 'id-1', titulo: 'Diagnóstico A',
+        nhbs: ['Oxigenação', 'Nutrição'], protocolos: ['Protocolo Mulher', 'Protocolo Adulto'] }],
+      nhbs: ['Nutrição', 'Nutrição', 'Segurança'], nhbsPlano: ['Nutrição', 'Oxigenação'],
+      continuidade: { oportunidades: 2, abordados: 1, mantidos: 1, substituidos: 0, encerrados: 0, abordadosSemDecisao: 0 },
+      materiaisEntregues: ['Orientação A', 'Orientação B'],
+    }),
+    registro({
+      id: 'pb', pacienteChave: 'p2', status: 'concluido',
+      diagnosticosDetalhados: [{ id: 'id-1', titulo: 'Diagnóstico A',
+        nhbs: ['Oxigenação', 'Nutrição'], protocolos: ['Protocolo Mulher', 'Protocolo Adulto'] }],
+      nhbs: ['Nutrição'], nhbsPlano: [], materiaisEntregues: ['Orientação A'],
+      continuidade: { oportunidades: 1, abordados: 1, mantidos: 0, substituidos: 1, encerrados: 0, abordadosSemDecisao: 0 },
+    }),
+  ]);
+  assert.equal(total.totalProcessos, 2);
+  assert.equal(total.etapasPE.diagnostico.top[0].value, 2);
+  assert.equal(total.etapasPE.diagnostico.protocolos[0].value, 2);
+  assert.equal(total.etapasPE.diagnostico.vinculacoes.find(i => i.name === 'Com ambos')?.value, 2);
+  assert.equal(total.etapasPE.diagnostico.nhbsVinculadas.reduce((sum, i) => sum + i.value, 0), 4);
+  const nutricao = total.etapasPE.diagnostico.comparacaoNHBs.find(i => i.name === 'Nutrição');
+  assert.equal(nutricao?.avaliacao, 2);
+  assert.equal(total.etapasPE.avaliacao.nhbs.find(i => i.name === 'Nutrição')?.value, 2);
+  assert.equal(nutricao?.planejamento, 1);
+  assert.equal(nutricao?.avaliacaoSemPlano, 1);
+  assert.deepEqual(total.continuidadeCuidado, {
+    oportunidades: 3, abordados: 2, taxaAbordagem: 66.7, retornos: 2, abordadosSemDecisao: 0,
+    decisoes: [{ name: 'Mantidos', value: 1 }, { name: 'Substituídos', value: 1 }, { name: 'Encerrados', value: 0 }],
+  });
+  assert.equal(total.etapasPE.implementacao.materiaisEntregues.find(i => i.name === 'Orientação A')?.value, 2);
+  const apenasPrimeiro = agregarRegistrosProducao(filtrarRegistrosProducao([
+    registro({ id: 'pa', lotacao: 'CS CENTRO', continuidade: { oportunidades: 2, abordados: 1, mantidos: 1, substituidos: 0, encerrados: 0, abordadosSemDecisao: 0 } }),
+    registro({ id: 'pb', lotacao: 'CS SUL', continuidade: { oportunidades: 4, abordados: 4, mantidos: 1, substituidos: 1, encerrados: 1, abordadosSemDecisao: 1 } }),
+  ], { lotacao: 'CS CENTRO' }));
+  assert.equal(apenasPrimeiro.continuidadeCuidado.oportunidades, 2);
 });
