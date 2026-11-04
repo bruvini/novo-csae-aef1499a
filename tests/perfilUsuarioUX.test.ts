@@ -46,7 +46,7 @@ test("dados profissionais: administrador também solicita, mas perde acesso até
 test("documentos: termo original não é forjado e PDFs diferenciam os modelos", () => {
   assert.match(pdf, /baixarSegundaViaResponsabilidade/);
   assert.match(pdf, /baixarTermosUsoPublicado/);
-  assert.match(pdf, /não é uma cópia autenticada/i);
+  assert.match(pdf, /nem uma cópia autenticada/i);
   assert.match(pdf, /termoResponsabilidadeData/);
   assert.match(pdf, /documentosLegais/);
   assert.match(pdf, /html2pdf/);
