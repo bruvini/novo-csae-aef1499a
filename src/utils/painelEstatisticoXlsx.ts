@@ -15,6 +15,7 @@ export interface OpcoesExportacaoPainel {
   geradoEm?: Date;
   ultimaAtualizacao?: unknown;
   filtroProducao: string;
+  detalhesFiltros?: string;
   visaoCadastros: string;
   visaoAcessos: string;
   visaoProducao: string;
@@ -140,6 +141,7 @@ export function criarWorkbookPainelEstatistico(opcoes: OpcoesExportacaoPainel): 
     ['Data e hora da exportação', geradoEm],
     ['Última atualização do BI', atualizadoEm || 'Não informada'],
     ['Filtro de produção', opcoes.filtroProducao],
+    ['Filtros clínicos aplicados', opcoes.detalhesFiltros || opcoes.filtroProducao],
     ['Visão temporal de cadastros', opcoes.visaoCadastros],
     ['Visão temporal de acessos', opcoes.visaoAcessos],
     ['Visão temporal de produção clínica', opcoes.visaoProducao],
@@ -213,9 +215,17 @@ export function criarWorkbookPainelEstatistico(opcoes: OpcoesExportacaoPainel): 
 
   const abasRanking: Array<[string, Array<[string, string[], ItemRanking[]]>]> = [
     ['Avaliação', [['Itens de exame físico mais registrados', ['Posição', 'Item', 'Quantidade'], producao.etapasPE.avaliacao.physical], ['NHBs afetadas', ['Posição', 'NHB', 'Quantidade'], producao.etapasPE.avaliacao.nhbs]]],
-    ['Diagnósticos', [['Diagnósticos mais frequentes', ['Posição', 'Diagnóstico', 'Quantidade'], producao.etapasPE.diagnostico.top], ['Subconjuntos', ['Posição', 'Subconjunto', 'Quantidade'], producao.etapasPE.diagnostico.subset]]],
+    ['Diagnósticos', [
+      ['Diagnósticos mais frequentes (identidade do catálogo)', ['Posição', 'Diagnóstico', 'Quantidade'], producao.etapasPE.diagnostico.top],
+      ['Cobertura de vínculos (categorias sobrepostas)', ['Posição', 'Categoria', 'Diagnósticos'], producao.etapasPE.diagnostico.vinculacoes],
+      ['Protocolos vinculados', ['Posição', 'Protocolo', 'Vínculos'], producao.etapasPE.diagnostico.protocolos],
+      ['NHBs vinculadas a diagnósticos', ['Posição', 'NHB', 'Vínculos'], producao.etapasPE.diagnostico.nhbsVinculadas],
+    ]],
     ['Planejamento', [['Resultados esperados', ['Posição', 'Resultado esperado', 'Quantidade'], producao.etapasPE.planejamento.results], ['Intervenções prescritas', ['Posição', 'Intervenção', 'Quantidade'], producao.etapasPE.planejamento.prescribed]]],
-    ['Implementação', [['Intervenções aplicadas', ['Posição', 'Intervenção', 'Quantidade'], producao.etapasPE.implementacao.applied]]],
+    ['Implementação', [
+      ['Intervenções aplicadas', ['Posição', 'Intervenção', 'Quantidade'], producao.etapasPE.implementacao.applied],
+      ['Materiais de apoio entregues', ['Posição', 'Material', 'Entregas marcadas'], producao.etapasPE.implementacao.materiaisEntregues],
+    ]],
     ['Evolução Enfermagem', [['Ações exclusivas do enfermeiro', ['Posição', 'Ação', 'Quantidade'], producao.etapasPE.evolucao.nurseApplied]]],
   ];
   abasRanking.forEach(([nomeAba, blocos], abaIndex) => {
@@ -232,6 +242,37 @@ export function criarWorkbookPainelEstatistico(opcoes: OpcoesExportacaoPainel): 
     }
     finalizarAba(sheet, 6);
   });
+
+  // Categorias se sobrepõem. Um vínculo não corresponde a um processo único.
+  const convergencia = workbook.addWorksheet('NHBs - Convergência');
+  prepararAba(convergencia, 'Avaliação e Planejamento por NHB');
+  let rowConvergencia = adicionarTabela(convergencia, 5, 'ComparacaoNHBs',
+    ['NHB', 'Processos com NHB na avaliação', 'Processos com NHB no plano',
+      'Em avaliação e plano', 'Avaliação sem NHB no plano', 'Plano sem NHB na avaliação'],
+    producao.etapasPE.diagnostico.comparacaoNHBs.map(item =>
+      [item.name, item.avaliacao, item.planejamento, item.emAmbos, item.avaliacaoSemPlano, item.planoSemAvaliacao]));
+  convergencia.getCell('A' + (rowConvergencia + 1)).value =
+    'Contagens por NHB distinta em cada processo. A coleta subjetiva pode justificar NHBs planejadas sem marcação automática no exame.';
+  convergencia.getCell('A' + (rowConvergencia + 2)).value =
+    'Vínculos extraídos do catálogo atual: alterações posteriores de classificação podem modificar retrospectivamente este BI.';
+  finalizarAba(convergencia, 5);
+
+  const continuidade = workbook.addWorksheet('Continuidade');
+  prepararAba(continuidade, 'Continuidade Documentada em Retornos Concluídos');
+  let rowContinuidade = adicionarTabela(continuidade, 5, 'MetricasContinuidade', ['Indicador', 'Quantidade / percentual'], [
+    ['Retornos com diagnósticos disponíveis', producao.continuidadeCuidado.retornos],
+    ['Oportunidades de reavaliação', producao.continuidadeCuidado.oportunidades],
+    ['Diagnósticos abordados', producao.continuidadeCuidado.abordados],
+    ['Taxa de abordagem (%)', producao.continuidadeCuidado.taxaAbordagem],
+    ['Abordagens sem decisão diagnóstica explícita', producao.continuidadeCuidado.abordadosSemDecisao],
+  ]);
+  rowContinuidade = adicionarTabela(continuidade, rowContinuidade, 'DecisoesContinuidade',
+    ['Decisão', 'Quantidade'], producao.continuidadeCuidado.decisoes.map(item => [item.name, item.value]));
+  continuidade.getCell('A' + (rowContinuidade + 1)).value =
+    'Denominador: diagnósticos ativos disponíveis por consulta posterior concluída. Cada retorno gera nova oportunidade.';
+  continuidade.getCell('A' + (rowContinuidade + 2)).value =
+    'Retornos são filtrados pela data de referência do processo; origens anteriores permanecem no histórico do mesmo paciente.';
+  finalizarAba(continuidade, 5);
 
   const produtividade = workbook.addWorksheet('Produtividade');
   prepararAba(produtividade, 'Produtividade');
