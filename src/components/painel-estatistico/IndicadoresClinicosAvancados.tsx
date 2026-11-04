@@ -42,7 +42,7 @@ export function ComparacaoNHBsCard({ dados }: {
       <CardContent className="h-[390px]">
         {dados.length ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dados} layout="vertical" margin={{ left: 8, right: 28, top: 5, bottom: 5 }}>
+            <BarChart data={dados.slice(0, 10)} layout="vertical" margin={{ left: 8, right: 28, top: 5, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
               <XAxis type="number" allowDecimals={false} />
               <YAxis dataKey="name" type="category" width={190} tick={{ fontSize: 10 }} tickFormatter={name => String(name).length > 28 ? String(name).slice(0, 27) + '…' : String(name)} />
