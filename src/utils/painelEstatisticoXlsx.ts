@@ -208,7 +208,7 @@ export function criarWorkbookPainelEstatistico(opcoes: OpcoesExportacaoPainel): 
 
   const evolucaoClinica = workbook.addWorksheet('Evolução Clínica');
   prepararAba(evolucaoClinica, `Evolução Clínica — ${opcoes.visaoProducao}`);
-  adicionarTabela(evolucaoClinica, 5, 'EvolucaoClinicaTabela', ['Período', 'Processos concluídos', 'Acumulado', 'Variação em relação ao anterior'], opcoes.serieProducao.map((item) => [item.name, item.value, item.acumulado ?? null, item.variacaoTipo === 'percentual' ? (item.variacaoPercentual || 0) / 100 : formatarVariacao(item)]));
+  adicionarTabela(evolucaoClinica, 5, 'EvolucaoClinicaTabela', ['Período', 'Todos os processos', 'Concluídos', 'Acumulado total', 'Acumulado concluídos', 'Variação do total'], opcoes.serieProducao.map((item) => [item.name, item.value, item.concluidos ?? 0, item.acumulado ?? null, item.acumuladoConcluidos ?? null, item.variacaoTipo === 'percentual' ? (item.variacaoPercentual || 0) / 100 : formatarVariacao(item)]));
   finalizarAba(evolucaoClinica, 5);
 
   const abasRanking: Array<[string, Array<[string, string[], ItemRanking[]]>]> = [

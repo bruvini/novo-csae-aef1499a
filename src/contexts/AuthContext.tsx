@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, onAuthStateChanged, signInWithEmailAndPassword, signOut, reload, getIdToken, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, runTransaction, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, increment, collection, query, where, getDocs, runTransaction, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/services/firebase';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -418,10 +418,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const eventoRef = doc(db, 'eventosAcesso', `${user.uid}_${totalAtual + 1}`);
           const dia = chaveDataSaoPaulo(new Date());
           const diarioRef = doc(db, 'acessosDiarios', dia);
-          const diario = await transaction.get(diarioRef);
+          // Os dados diários só podem ser lidos por administradores de BI.
+          // Incrementar atomicamente sem leitura evita falha por permissão
+          // para profissionais comuns e é seguro sob logins concorrentes.
           transaction.update(updateRef, atualizacao);
           transaction.set(eventoRef, { uid: user.uid, numero: totalAtual + 1, dia, dataHora: serverTimestamp() });
-          transaction.set(diarioRef, { dia, total: (diario.exists() ? diario.data().total : 0) + 1, ultimoEvento: eventoRef.id }, { merge: true });
+          transaction.set(diarioRef, { dia, total: increment(1), ultimoEvento: eventoRef.id }, { merge: true });
           return totalAtual + 1;
         });
       }, (error) => {

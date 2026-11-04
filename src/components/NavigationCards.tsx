@@ -2,23 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Database, Users, BarChart, Clock, LifeBuoy, Headphones } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { buscarUsuariosGestao } from '@/services/bancodados';
-import { residentesParaRevisao } from '@/utils/revisaoCadastral';
+import { buscarUsuariosAguardando } from '@/services/bancodados';
 import { useSupportNotifications } from '@/contexts/SupportNotificationsContext';
 
 const NavigationCards = () => {
   const { sessionData } = useAuth();
   const { respostasNaoVisualizadas, itensNovosSuporte } = useSupportNotifications();
   const [usuariosAguardandoCount, setUsuariosAguardandoCount] = useState<number | null>(null);
-  const [residentesPendentes, setResidentesPendentes] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCount = async () => {
       if (sessionData?.ehAdmin) {
         try {
-          const usuarios = await buscarUsuariosGestao();
-          setUsuariosAguardandoCount(usuarios.aguardando.length);
-          setResidentesPendentes(residentesParaRevisao(usuarios.aprovados).length);
+          const usuarios = await buscarUsuariosAguardando();
+          setUsuariosAguardandoCount(usuarios.length);
         } catch (error) {
           console.error("Erro ao buscar contagem de usuários:", error);
         }
@@ -105,14 +102,7 @@ const NavigationCards = () => {
         <p className="mt-1 text-sm text-gray-500">
           Acesse os módulos do sistema
         </p>
-        {sessionData?.ehAdmin === true && residentesPendentes !== null && (
-          <Link to="/gestao-usuarios?aba=residentes"
-            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 hover:bg-amber-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500">
-            <Clock className="h-4 w-4" aria-hidden="true" />
-            <strong>{residentesPendentes}</strong>
-            {residentesPendentes === 1 ? "residente aguarda revisão" : "residentes aguardam revisão"}
-          </Link>
-        )}
+
       </div>
 
       {/* Grades de aplicativos: duas colunas em telas estreitas, três quando há espaço. */}
@@ -128,23 +118,13 @@ const NavigationCards = () => {
                   : 'border-gray-100 bg-white shadow-sm group-hover:-translate-y-0.5 group-hover:border-csae-green-200 group-hover:shadow-lg group-focus-visible:border-csae-green-500'
               }`}
             >
-              {/* Indicadores não alteram as permissões de acesso do módulo. */}
-              {(item.badge || Boolean(item.notificationCount)) && (
-                <div className="absolute right-2 top-2 flex max-w-[calc(100%-1rem)] flex-wrap justify-end gap-1">
-                  {item.badge && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[9px] font-bold leading-none text-amber-900">
-                      <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                      {item.badge.text}
-                    </span>
-                  )}
-                  {Boolean(item.notificationCount) && (
-                    <span
-                      className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white"
-                      aria-label={`${item.notificationCount} notificações não visualizadas`}
-                    >
-                      {item.notificationCount > 99 ? '99+' : item.notificationCount}
-                    </span>
-                  )}
+              {/* Somente notificações urgentes ficam sobrepostas ao card. */}
+              {Boolean(item.notificationCount) && (
+                <div className="absolute right-2 top-2">
+                  <span className="inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white"
+                    aria-label={`${item.notificationCount} notificações não visualizadas`}>
+                    {item.notificationCount > 99 ? '99+' : item.notificationCount}
+                  </span>
                 </div>
               )}
               <div
@@ -162,6 +142,11 @@ const NavigationCards = () => {
               <p className="mt-2 line-clamp-3 text-[11px] leading-relaxed text-gray-500 sm:text-xs">
                 {item.description}
               </p>
+              {item.badge && (
+                <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-800">
+                  <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />{item.badge.text}
+                </span>
+              )}
             </div>
           );
 

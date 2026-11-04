@@ -74,8 +74,9 @@ test('séries diária, mensal e semanal são exatas e a semana respeita Dom a S�
   ]);
   assert.deepEqual(stats.temporalAvancado.diaSemana.map((item) => item.name), ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']);
   assert.ok(stats.temporalAvancado.diario.length >= 2);
-  assert.ok(stats.temporalAvancado.diario.some((item) => item.value === 0));
+  assert.ok(stats.temporalAvancado.diario.every((item) => item.value > 0));
   assert.equal(stats.temporalAvancado.diario.at(-1)?.acumulado, 2);
+  assert.equal(stats.temporalAvancado.diario.reduce((acc, item) => acc + (item.concluidos ?? 0), 0), 2);
   assert.equal(stats.temporalAvancado.mensal[0].value, 2);
   assert.equal(stats.temporalAvancado.hora.length, 24);
 });
@@ -128,4 +129,30 @@ test('workbook possui 11 abas, metadados filtrados e valores numéricos sem dado
   const conteudo = reaberto.worksheets.flatMap((sheet) => sheet.getSheetValues()).join(' ').toLowerCase();
   assert.equal(conteudo.includes('cpf'), false);
   assert.equal(conteudo.includes('@'), false);
+});
+
+
+test('produção: barra total inclui andamento e concluídos no mesmo período sem inventar dias', () => {
+  const stats = agregarRegistrosProducao([
+    registro({ id: 'a', pacienteChave: '1', status: 'concluido', dataReferencia: '2026-11-01T10:00:00.000Z' }),
+    registro({ id: 'b', pacienteChave: '2', status: 'em_andamento', dataReferencia: '2026-11-01T15:00:00.000Z' }),
+    registro({ id: 'c', pacienteChave: '3', status: 'concluido', dataReferencia: '2026-11-03T10:00:00.000Z' }),
+    registro({ id: 'd', pacienteChave: '4', status: 'concluido', dataReferencia: '2026-11-03T11:00:00.000Z' }),
+  ]);
+  const diaria = stats.temporalAvancado.diario;
+  assert.deepEqual(diaria.map(item => item.name), ['01/11/2026', '03/11/2026']);
+  assert.deepEqual(diaria.map(item => item.value), [2, 2]);
+  assert.deepEqual(diaria.map(item => item.concluidos), [1, 2]);
+  assert.equal(diaria[0].acumulado, 2);
+  assert.equal(diaria[1].acumulado, 4);
+  assert.equal(diaria[1].acumuladoConcluidos, 3);
+  assert.equal(stats.taxaConclusao, 75);
+  assert.equal(stats.totalProcessosConcluidos, 3);
+});
+
+test('datas dos processos respeitam fuso America/Sao_Paulo', () => {
+  const stats = agregarRegistrosProducao([
+    registro({ id: 'a', dataReferencia: '2026-11-04T00:30:00.000Z' }),
+  ]);
+  assert.deepEqual(stats.temporalAvancado.diario.map(item => item.name), ['03/11/2026']);
 });
