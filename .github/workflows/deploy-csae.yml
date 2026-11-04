@@ -2,12 +2,6 @@ name: Publicar Portal CSAE (Firebase)
 
 on:
   workflow_dispatch:
-  # Gatilho de publicação excepcional para o PR #74. Reverter após a execução.
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/deploy-csae.yml'
 
 permissions:
   contents: read
