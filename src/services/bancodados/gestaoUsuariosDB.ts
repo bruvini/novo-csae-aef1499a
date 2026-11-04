@@ -76,13 +76,18 @@ export async function buscarUsuariosRecusados(): Promise<Usuario[]> {
 export async function aprovarUsuario(
   userId: string, 
   isAdmin: boolean, 
-  paginasPermitidas: string[] = []
+  paginasPermitidas: string[] = [],
+  aprovador?: { uid: string; nomeCompleto: string }
 ): Promise<void> {
   try {
     const userRef = doc(db, 'usuarios', userId);
     const updateData: Record<string, unknown> = {
       statusAcesso: 'Liberado',
       dataAprovacao: serverTimestamp(),
+      ...(aprovador ? {
+        aprovadoPorUid: aprovador.uid,
+        aprovadoPorNome: aprovador.nomeCompleto,
+      } : {}),
       ehAdmin: isAdmin,
       tipoUsuario: isAdmin ? 'Administrador' : 'Comum',
       paginasPermitidas: isAdmin ? [] : paginasPermitidas,

@@ -78,6 +78,8 @@ jobs:
         run: npx tsx --test tests/legalDocuments.test.ts
       - name: Validar layout responsivo do Dashboard
         run: npx tsx --test tests/dashboardLayout.test.ts
+      - name: Testar nova experiência do perfil e segurança da conta
+        run: npx tsx --test tests/perfilUsuarioUX.test.ts
       - name: Verificar script do changelog desta publicação
         run: python3 -m py_compile scripts/release/registrar_changelog_documentos_legais.py
       - name: Testar verificador do Firebase Hosting
