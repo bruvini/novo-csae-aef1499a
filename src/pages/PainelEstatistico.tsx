@@ -371,6 +371,10 @@ const PainelEstatistico = () => {
         producao: dadosFiltrados,
         ultimaAtualizacao: dataProcessos.ultimaAtualizacao || data.ultimaAtualizacao,
         filtroProducao: filtro,
+        detalhesFiltros: 'Unidade: ' + filtro
+          + ' | Profissional: ' + (filtroUsuario === '__todos__' ? 'Todos' : usuariosDisponiveis.find(item => item.id === filtroUsuario)?.nome || 'Não localizado')
+          + ' | Início: ' + (periodoInicial || 'Sem limite')
+          + ' | Fim: ' + (periodoFinal || 'Sem limite'),
         visaoCadastros: VIEW_LABELS[viewMode],
         visaoAcessos: VIEW_LABELS[viewModeAcessos],
         visaoProducao: { hora: 'Hora', diario: 'Dia', diaSemana: 'Dia da Semana', mensal: 'Mês', anual: 'Ano' }[temporalView],
