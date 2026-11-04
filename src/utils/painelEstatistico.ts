@@ -1,4 +1,5 @@
 import { chaveDataSaoPaulo, diaSemanaSaoPaulo } from './accessMetrics';
+import { unicosNomes, type VinculosDiagnostico, type IndicadoresRetorno } from './indicadoresClinicosAvancados';
 
 export interface ItemRanking {
   name: string;
@@ -51,6 +52,12 @@ export interface RegistroProducao {
   exameFisico: string[];
   nhbs: string[];
   diagnosticos: string[];
+  /** Vínculos do catálogo vigente, relacionados por ID do diagnóstico. */
+  diagnosticosDetalhados?: VinculosDiagnostico[];
+  /** NHBs com diagnóstico efetivamente incorporado ao planejamento. */
+  nhbsPlano?: string[];
+  materiaisEntregues?: string[];
+  continuidade?: IndicadoresRetorno;
   subconjuntos: string[];
   resultados: string[];
   intervencoesPrescritas: string[];
@@ -81,10 +88,28 @@ export interface EstatisticasProducao {
   rankingLotacoes: ItemRanking[];
   etapasPE: {
     avaliacao: { physical: ItemRanking[]; nhbs: ItemRanking[] };
-    diagnostico: { top: ItemRanking[]; subset: ItemRanking[] };
+    diagnostico: {
+      top: ItemRanking[];
+      subset: ItemRanking[];
+      vinculacoes: ItemRanking[];
+      protocolos: ItemRanking[];
+      nhbsVinculadas: ItemRanking[];
+      comparacaoNHBs: Array<{
+        name: string; avaliacao: number; planejamento: number; emAmbos: number;
+        avaliacaoSemPlano: number; planoSemAvaliacao: number;
+      }>;
+    };
     planejamento: { results: ItemRanking[]; prescribed: ItemRanking[] };
-    implementacao: { applied: ItemRanking[]; executors: ItemRanking[] };
+    implementacao: { applied: ItemRanking[]; executors: ItemRanking[]; materiaisEntregues: ItemRanking[] };
     evolucao: { nurseApplied: ItemRanking[] };
+  };
+  continuidadeCuidado: {
+    oportunidades: number;
+    abordados: number;
+    taxaAbordagem: number;
+    retornos: number;
+    abordadosSemDecisao: number;
+    decisoes: ItemRanking[];
   };
   temporalAvancado: {
     hora: ItemTemporal[];
@@ -253,6 +278,76 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
   const diagnosticos = registros.flatMap((registro) => registro.diagnosticos);
   const intervencoes = registros.flatMap((registro) => registro.intervencoesPrescritas);
   const nhbs = registros.flatMap((registro) => registro.nhbs);
+  const detalhados = registros.flatMap((registro) => registro.diagnosticosDetalhados || []);
+  const mapaDiagnosticos = new Map<string, { titulo: string; total: number }>();
+  for (const item of detalhados) {
+    const atual = mapaDiagnosticos.get(item.id) || { titulo: item.titulo, total: 0 };
+    atual.total += 1;
+    mapaDiagnosticos.set(item.id, atual);
+  }
+  const titulosRepetidos = new Map<string, number>();
+  for (const item of mapaDiagnosticos.values()) {
+    titulosRepetidos.set(item.titulo, (titulosRepetidos.get(item.titulo) || 0) + 1);
+  }
+  const rankingDiagnosticos = [...mapaDiagnosticos.entries()]
+    .map(([id, item]) => ({
+      name: (titulosRepetidos.get(item.titulo) || 0) > 1 ? item.titulo + ' (' + id.slice(0, 6) + ')' : item.titulo,
+      value: item.total,
+    }))
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, 'pt-BR')).slice(0, 10);
+  // Registros legados sem identidade recuperável continuam no indicador histórico por título.
+  const topDiagnosticos = detalhados.length ? rankingDiagnosticos : rankingDeValores(diagnosticos);
+  const nhbsVinculadas = detalhados.flatMap(item => item.nhbs);
+  const protocolosVinculados = detalhados.flatMap(item => item.protocolos);
+  const vinculacoes: ItemRanking[] = [
+    { name: 'Com NHB', value: detalhados.filter(item => item.nhbs.length > 0).length },
+    { name: 'Com protocolo', value: detalhados.filter(item => item.protocolos.length > 0).length },
+    { name: 'Com ambos', value: detalhados.filter(item => item.nhbs.length > 0 && item.protocolos.length > 0).length },
+    { name: 'Sem vínculo localizado', value: detalhados.filter(item => item.nhbs.length === 0 && item.protocolos.length === 0).length },
+  ];
+  // Unidade de comparação: presença única de cada NHB em cada processo, não número de exames.
+  const comparacao = new Map<string, {
+    name: string; avaliacao: number; planejamento: number; emAmbos: number;
+    avaliacaoSemPlano: number; planoSemAvaliacao: number;
+  }>();
+  for (const registro of registros) {
+    const avaliacao = new Set(unicosNomes(registro.nhbs).map(nome => nome.toLocaleLowerCase('pt-BR')));
+    const planejadas = new Set(unicosNomes(registro.nhbsPlano || []).map(nome => nome.toLocaleLowerCase('pt-BR')));
+    const nomes = new Map<string, string>();
+    for (const nome of unicosNomes([...registro.nhbs, ...(registro.nhbsPlano || [])])) {
+      nomes.set(nome.toLocaleLowerCase('pt-BR'), nome);
+    }
+    for (const [chave, nome] of nomes) {
+      const item = comparacao.get(chave) || {
+        name: nome, avaliacao: 0, planejamento: 0, emAmbos: 0, avaliacaoSemPlano: 0, planoSemAvaliacao: 0,
+      };
+      const foiAvaliada = avaliacao.has(chave), foiPlanejada = planejadas.has(chave);
+      if (foiAvaliada) item.avaliacao += 1;
+      if (foiPlanejada) item.planejamento += 1;
+      if (foiAvaliada && foiPlanejada) item.emAmbos += 1;
+      else if (foiAvaliada) item.avaliacaoSemPlano += 1;
+      else if (foiPlanejada) item.planoSemAvaliacao += 1;
+      comparacao.set(chave, item);
+    }
+  }
+  const comparacaoNHBs = [...comparacao.values()]
+    .sort((a, b) => b.avaliacao - a.avaliacao || b.planejamento - a.planejamento || a.name.localeCompare(b.name, 'pt-BR'))
+    .slice(0, 10);
+  const evidencias = concluidos.map(item => item.continuidade).filter((item): item is IndicadoresRetorno => Boolean(item));
+  const somarEvidencias = (campo: keyof IndicadoresRetorno) => evidencias.reduce((sum, item) => sum + item[campo], 0);
+  const oportunidades = somarEvidencias('oportunidades');
+  const abordados = somarEvidencias('abordados');
+  const continuidadeCuidado = {
+    oportunidades, abordados,
+    taxaAbordagem: oportunidades ? Number((abordados / oportunidades * 100).toFixed(1)) : 0,
+    retornos: evidencias.filter(item => item.oportunidades > 0).length,
+    abordadosSemDecisao: somarEvidencias('abordadosSemDecisao'),
+    decisoes: [
+      { name: 'Mantidos', value: somarEvidencias('mantidos') },
+      { name: 'Substituídos', value: somarEvidencias('substituidos') },
+      { name: 'Encerrados', value: somarEvidencias('encerrados') },
+    ],
+  };
   const sexos = [...pacientes.values()].map((registro) => registro.pacienteSexo || 'Não informado');
   const faixas = [...pacientes.values()].map((registro) => registro.pacienteFaixaEtaria).filter((value): value is string => Boolean(value));
 
@@ -267,7 +362,7 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
     totalNhbsUnicas: new Set(nhbs).size,
     mediaDiagnosticosPorProcesso: registros.length ? Number((diagnosticos.length / registros.length).toFixed(1)) : 0,
     tempoMedioProcessoHoras: duracoes.length ? Number((duracoes.reduce((a, b) => a + b, 0) / duracoes.length).toFixed(1)) : 0,
-    diagnosticosTop: rankingDeValores(diagnosticos),
+    diagnosticosTop: topDiagnosticos,
     intervencoesTop: rankingDeValores(intervencoes),
     resultadosTop: rankingDeValores(registros.flatMap((registro) => registro.resultados)),
     nhbsTop: rankingDeValores(nhbs),
@@ -288,8 +383,12 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
         nhbs: rankingDeValores(nhbs),
       },
       diagnostico: {
-        top: rankingDeValores(diagnosticos),
+        top: topDiagnosticos,
         subset: rankingDeValores(registros.flatMap((registro) => registro.subconjuntos)),
+        vinculacoes,
+        protocolos: rankingDeValores(protocolosVinculados),
+        nhbsVinculadas: rankingDeValores(nhbsVinculadas),
+        comparacaoNHBs,
       },
       planejamento: {
         results: rankingDeValores(registros.flatMap((registro) => registro.resultados)),
@@ -298,9 +397,11 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
       implementacao: {
         applied: rankingDeValores(registros.flatMap((registro) => registro.intervencoesAplicadas)),
         executors: rankingDeValores(registros.flatMap((registro) => registro.executores)),
+        materiaisEntregues: rankingDeValores(registros.flatMap((registro) => registro.materiaisEntregues || [])),
       },
       evolucao: { nurseApplied: rankingDeValores(registros.flatMap((registro) => registro.acoesEnfermeiro)) },
     },
+    continuidadeCuidado,
     temporalAvancado: temporalDeRegistros(registros),
   };
 }
