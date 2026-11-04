@@ -1058,11 +1058,11 @@ test('login de profissional não precisa ler agregado diário restrito ao BI', a
   }
   await assertSucceeds(registrarLogin());
   await assertSucceeds(registrarLogin());
-  const adminProfile = await environment.withSecurityRulesDisabled(async ctx =>
-    getDoc(doc(ctx.firestore(), 'usuarios', 'login-comum')));
-  const diaSemRegras = await environment.withSecurityRulesDisabled(async ctx =>
-    getDoc(doc(ctx.firestore(), 'acessosDiarios', '2026-11-04')));
-  assert.equal(adminProfile.data()?.totalAcessos, 2);
-  assert.equal(diaSemRegras.data()?.total, 2);
+  await environment.withSecurityRulesDisabled(async ctx => {
+    const adminProfile = await getDoc(doc(ctx.firestore(), 'usuarios', 'login-comum'));
+    const diaSemRegras = await getDoc(doc(ctx.firestore(), 'acessosDiarios', '2026-11-04'));
+    assert.equal(adminProfile.data()?.totalAcessos, 2);
+    assert.equal(diaSemRegras.data()?.total, 2);
+  });
   await assertFails(getDoc(diario));
 });
