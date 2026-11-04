@@ -268,7 +268,7 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
         processosConcluidos: concluidas.length,
         tempoMedioHoras: tempos.length ? Number((tempos.reduce((a, b) => a + b, 0) / tempos.length).toFixed(1)) : 0,
         topDiagnosticos: rankingDeValores(producoes.flatMap((registro) => registro.diagnosticos), 5).map((item) => item.name),
-        topNHBs: rankingDeValores(producoes.flatMap((registro) => registro.nhbs), 5).map((item) => item.name),
+        topNHBs: rankingDeValores(producoes.flatMap((registro) => unicosNomes(registro.nhbs)), 5).map((item) => item.name),
         topIntervencoes: rankingDeValores(producoes.flatMap((registro) => registro.intervencoesPrescritas), 5).map((item) => item.name),
         executorMaisFrequente: rankingDeValores(producoes.flatMap((registro) => registro.executores), 1)[0]?.name || 'N/A',
       },
@@ -277,7 +277,7 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
 
   const diagnosticos = registros.flatMap((registro) => registro.diagnosticos);
   const intervencoes = registros.flatMap((registro) => registro.intervencoesPrescritas);
-  const nhbs = registros.flatMap((registro) => registro.nhbs);
+  const nhbs = registros.flatMap((registro) => unicosNomes(registro.nhbs));
   const detalhados = registros.flatMap((registro) => registro.diagnosticosDetalhados || []);
   const mapaDiagnosticos = new Map<string, { titulo: string; total: number }>();
   for (const item of detalhados) {
@@ -331,8 +331,7 @@ export function agregarRegistrosProducao(registros: RegistroProducao[]): Estatis
     }
   }
   const comparacaoNHBs = [...comparacao.values()]
-    .sort((a, b) => b.avaliacao - a.avaliacao || b.planejamento - a.planejamento || a.name.localeCompare(b.name, 'pt-BR'))
-    .slice(0, 10);
+    .sort((a, b) => b.avaliacao - a.avaliacao || b.planejamento - a.planejamento || a.name.localeCompare(b.name, 'pt-BR'));
   const evidencias = concluidos.map(item => item.continuidade).filter((item): item is IndicadoresRetorno => Boolean(item));
   const somarEvidencias = (campo: keyof IndicadoresRetorno) => evidencias.reduce((sum, item) => sum + item[campo], 0);
   const oportunidades = somarEvidencias('oportunidades');
