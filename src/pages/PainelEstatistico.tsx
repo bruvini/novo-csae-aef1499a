@@ -81,6 +81,7 @@ import {
 } from "@/components/ui/table";
 import { Eye } from 'lucide-react';
 import QualidadeIntervencoes from '@/components/painel-estatistico/QualidadeIntervencoes';
+import { RankingAvancadoCard, ComparacaoNHBsCard, ContinuidadeCuidadoCard } from '@/components/painel-estatistico/IndicadoresClinicosAvancados';
 
 // ── Paleta de Cores ──────────────────────────────────────────────────────────
 const COLORS = ['#059669', '#10b981', '#34d399', '#0f766e', '#14b8a6', '#5eead4', '#0d9488'];
@@ -1173,19 +1174,24 @@ const PainelEstatistico = () => {
                       </ResponsiveContainer>
                     </CardContent>
                   </Card>
-                  <Card className="border-none shadow-xl h-[450px]">
-                    <CardHeader><CardTitle className="text-sm font-bold">Distribuição por Subconjunto</CardTitle></CardHeader>
-                    <CardContent className="h-[350px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dadosFiltrados?.etapasPE.diagnostico.subset ?? []} layout="vertical">
-                          <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" width={160} tick={{ fontSize: 10, fontWeight: 600 }} />
-                          <Bar dataKey="value" fill="#fb7185" radius={[0, 4, 4, 0]} />
-                          <RechartsTooltip />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </CardContent>
-                  </Card>
+                  <RankingAvancadoCard
+                    titulo="Cobertura dos vínculos dos diagnósticos"
+                    dados={dadosFiltrados?.etapasPE.diagnostico.vinculacoes ?? []}
+                    nota="Cada diagnóstico selecionado pode contar em NHB, protocolo e ambos. As categorias se sobrepõem e os totais não equivalem ao número de processos. Os vínculos são recuperados do catálogo atual."
+                  />
+                  <RankingAvancadoCard
+                    titulo="Top 10 Protocolos de Enfermagem associados aos diagnósticos"
+                    dados={dadosFiltrados?.etapasPE.diagnostico.protocolos ?? []}
+                    nota="Contagem de vínculos por ocorrência de diagnóstico selecionado. Um mesmo diagnóstico pode contribuir para vários protocolos; não mede a navegação do enfermeiro."
+                    cor="#f43f5e"
+                  />
+                  <RankingAvancadoCard
+                    titulo="Top 10 NHBs vinculadas aos diagnósticos selecionados"
+                    dados={dadosFiltrados?.etapasPE.diagnostico.nhbsVinculadas ?? []}
+                    nota="Contagem por vínculo a diagnósticos selecionados, distinta das NHBs sinalizadas pelo exame físico na etapa de avaliação."
+                    cor="#a855f7"
+                  />
+                  <ComparacaoNHBsCard dados={dadosFiltrados?.etapasPE.diagnostico.comparacaoNHBs ?? []} />
                 </div>
               </div>
 
@@ -1263,6 +1269,18 @@ const PainelEstatistico = () => {
               </div>
 
               <div className="space-y-4">
+                <div className="flex items-center gap-2 text-cyan-700">
+                  <div className="bg-cyan-100 p-2 rounded-lg font-black text-xs">04</div>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Materiais de apoio entregues</h3>
+                </div>
+                <RankingAvancadoCard
+                  titulo="Top 10 materiais de apoio entregues"
+                  dados={dadosFiltrados?.etapasPE.implementacao.materiaisEntregues ?? []}
+                  nota="Somente materiais assinalados como entregues ao paciente na implementação. Cada entrega registrada conta uma ocorrência; abrir um documento não é considerado entrega."
+                  cor="#0891b2"
+                />
+              </div>
+              <div className="space-y-4">
                 <div className="flex items-center gap-2 text-blue-700">
                   <div className="bg-blue-100 p-2 rounded-lg font-black text-xs">05</div>
                   <h3 className="font-black uppercase tracking-widest text-xs">Evolução de Enfermagem</h3>
@@ -1286,6 +1304,13 @@ const PainelEstatistico = () => {
                 </Card>
               </div>
 
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <div className="bg-emerald-100 p-2 rounded-lg font-black text-xs">06</div>
+                  <h3 className="font-black uppercase tracking-widest text-xs">Continuidade do cuidado</h3>
+                </div>
+                {dadosFiltrados && <ContinuidadeCuidadoCard dados={dadosFiltrados.continuidadeCuidado} />}
+              </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="lg:col-span-2 border-none shadow-2xl bg-white overflow-hidden">
                   <CardHeader className="bg-indigo-900 text-white">
