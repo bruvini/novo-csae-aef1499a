@@ -992,3 +992,44 @@ test('revisão de residente: revogação exige motivo padrão e histórico de au
   }));
   assert.equal((await getDoc(ref)).data()?.statusAcesso, 'Revogado');
 });
+
+
+test('aprovação identifica o administrador responsável e impede nome ou UID forjados', async () => {
+  await seedProfile('gestor', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('recem-cadastrado', 'Aguardando');
+  const dbAdmin = environment.authenticatedContext('gestor').firestore();
+  const refAlvo = doc(dbAdmin, 'usuarios', 'recem-cadastrado');
+  await assertFails(updateDoc(refAlvo, {
+    statusAcesso: 'Liberado', dataAprovacao: serverTimestamp(),
+    aprovadoPorUid: 'outro-administrador', aprovadoPorNome: 'Nome forjado',
+  }));
+  await assertFails(updateDoc(refAlvo, {
+    statusAcesso: 'Liberado', dataAprovacao: serverTimestamp(),
+    aprovadoPorUid: 'gestor', aprovadoPorNome: 'Pessoa não verificada',
+  }));
+  await assertSucceeds(updateDoc(refAlvo, {
+    statusAcesso: 'Liberado', dataAprovacao: serverTimestamp(),
+    aprovadoPorUid: 'gestor', aprovadoPorNome: 'Profissional de Teste',
+  }));
+  assert.equal((await getDoc(refAlvo)).data()?.aprovadoPorUid, 'gestor');
+});
+
+test('administrador pode solicitar alteração profissional, perde acesso e não pode decidir sozinho', async () => {
+  await seedProfile('admin-a', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  await seedProfile('admin-b', 'Liberado', { ehAdmin: true, tipoUsuario: 'Administrador' });
+  const conta = environment.authenticatedContext('admin-a').firestore();
+  const outroAdmin = environment.authenticatedContext('admin-b').firestore();
+  const ref = doc(conta, 'usuarios', 'admin-a');
+
+  await assertSucceeds(updateDoc(ref, {
+    dadosProfissionaisPropostos: { formacao: 'Enfermeiro', atuaSMS: false },
+    statusAcesso: 'AguardandoRevisaoCadastro',
+    alteracaoCadastralPendente: true,
+    dataAlteracaoCadastral: serverTimestamp(),
+  }));
+  await assertFails(updateDoc(ref, { statusAcesso: 'Liberado' }));
+  await assertFails(getDocs(collection(conta, 'usuarios')));
+  await assertSucceeds(getDocs(collection(outroAdmin, 'usuarios')));
+  const item = (await getDoc(doc(outroAdmin, 'usuarios', 'admin-a'))).data();
+  assert.equal(item?.statusAcesso, 'AguardandoRevisaoCadastro');
+});

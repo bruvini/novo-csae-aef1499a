@@ -59,6 +59,17 @@ ENTRIES = (
         "sem eliminar históricos clínicos. O Dashboard passou a sinalizar as revisões "
         "pendentes, inclusive após novas prorrogações.",
     ),
+    (
+        "perfil-cadastral-seguranca-termos-20261104",
+        "Meu perfil redesenhado com acesso a documentos e segurança ampliada",
+        "O Portal CSAE passou a reunir os dados cadastrais em um perfil amplo, sem abas, "
+        "com identificação, dados profissionais, endereço, histórico de aprovação e "
+        "edição de informações. A troca de e-mail é sincronizada após a confirmação "
+        "pelo Firebase, a senha ganhou confirmação e recuperação pelo e-mail, e "
+        "os profissionais podem solicitar revisão do vínculo com suspensão de acesso. "
+        "Foram disponibilizadas a segunda via informativa do Termo de Responsabilidade "
+        "e a exportação da versão publicada dos Termos de Uso em PDF.",
+    ),
 )
 
 def main() -> None:

@@ -144,7 +144,7 @@ const GestaoUsuarios = () => {
   const confirmarAprovacao = async (isAdmin: boolean, paginasPermitidas: string[]) => {
     if (!usuarioSelecionado?.id) return;
     try {
-      await aprovarUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas);
+      await aprovarUsuario(usuarioSelecionado.id, isAdmin, paginasPermitidas, sessionData?.uid && sessionData?.nomeCompleto ? { uid: sessionData.uid, nomeCompleto: sessionData.nomeCompleto } : undefined);
       toast({ title: 'Usuário aprovado!', description: `${usuarioSelecionado.dadosPessoais?.nomeCompleto} foi aprovado.` });
       setModalAprovacaoAberto(false);
       setUsuarioSelecionado(null);

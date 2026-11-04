@@ -1,5 +1,5 @@
 import {
-  doc, runTransaction, serverTimestamp, Timestamp, updateDoc,
+  collection, doc, getDocs, getDoc, runTransaction, serverTimestamp, Timestamp,
 } from "firebase/firestore";
 import { db } from "@/services/firebase";
 import type { DadosProfissionais, Usuario } from "@/types/usuario";
@@ -25,7 +25,7 @@ export function validarDadosProfissionais(dados: DadosProfissionais): string[] {
   const problemas: string[] = [];
   if (!dados.formacao || dados.formacao.length > 120) problemas.push("Informe a formação.");
   if (dados.formacao === "Residente de Enfermagem" &&
-    (!dados.dataInicioResidencia || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dados.dataInicioResidencia))) {
+    (!dados.dataInicioResidencia || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(dados.dataInicioResidencia))) {
     problemas.push("Informe a data de início da residência.");
   }
   if (dados.atuaSMS && (!dados.lotacao || !dados.matricula)) problemas.push("Informe lotação e matrícula.");
@@ -38,6 +38,21 @@ export async function solicitarRevisaoProfissional(uid: string, dados: DadosProf
   const proposta = normalizarProfissional(dados);
   const erros = validarDadosProfissionais(proposta);
   if (erros.length) throw new Error(erros.join(" "));
+  // Administradores também podem enviar uma solicitação; precisam ter
+  // outro administrador ativo para analisar e liberar a conta depois.
+  const proprio = await getDoc(doc(db, "usuarios", uid));
+  if (!proprio.exists()) throw new Error("Cadastro não encontrado.");
+  if ((proprio.data() as Usuario).ehAdmin) {
+    const perfis = await getDocs(collection(db, "usuarios"));
+    const outroAdminAtivo = perfis.docs.some(snap => {
+      const dado = snap.data() as Usuario;
+      return snap.id !== uid && dado.ehAdmin === true &&
+        ["Liberado", "Aprovado"].includes(dado.statusAcesso);
+    });
+    if (!outroAdminAtivo) throw new Error(
+      "A conta administrativa não pode ficar sem revisor. É necessário outro administrador ativo antes de solicitar a alteração."
+    );
+  }
   await runTransaction(db, async (tx) => {
     const ref = doc(db, "usuarios", uid);
     const snap = await tx.get(ref);
@@ -45,7 +60,8 @@ export async function solicitarRevisaoProfissional(uid: string, dados: DadosProf
     const perfil = snap.data() as Usuario;
     if (!["Liberado", "Aprovado"].includes(perfil.statusAcesso))
       throw new Error("Seu perfil precisa estar aprovado para solicitar alteração.");
-    if (perfil.ehAdmin) throw new Error("Alterações no perfil de administrador exigem revisão assistida.");
+    // A mudança do status suspende imediatamente TODOS os acessos, inclusive de administradores.
+    // A aprovação continua exigindo outro administrador, conforme as regras do Firestore.
     if (perfil.alteracaoCadastralPendente) throw new Error("Já existe uma revisão profissional pendente.");
     if (dadosProfissionaisIguais(perfil.dadosProfissionais, proposta))
       throw new Error("Nenhum dado profissional foi alterado.");

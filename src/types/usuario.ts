@@ -66,6 +66,11 @@ export interface Usuario {
   dataRevogacao?: Timestamp;
   revogadoPorUid?: string;
   dataAprovacao?: Timestamp;
+  // Aprovações novas guardam quem tomou a decisão; perfis antigos podem não ter metadados.
+  aprovadoPorUid?: string;
+  aprovadoPorNome?: string;
+  analisadoPorUid?: string;
+  analisadoPor?: string;
   dataRestauracao?: Timestamp;
   dataRecusaAcesso?: Timestamp;
   dataLiberacaoAcesso?: Timestamp;
