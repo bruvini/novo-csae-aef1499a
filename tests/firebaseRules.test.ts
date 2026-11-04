@@ -1045,6 +1045,9 @@ test('telemetria de login aceita cadastro legado sem permitir alterar os campos 
     dadosProfissionais: { formacao: 'Enfermeiro', atuaSMS: true, matricula: '000000', registroLegado: '2025' },
     ehAdmin: true,
     tipoUsuario: 'Administrador',
+    paginasPermitidas: ['Dashboard', 'ProcessoEnfermagem', 'CentralAjuda',
+      'GestaoConteudos', 'GestaoUsuarios', 'PainelEstatistico', 'GestaoSuporte'],
+    versaoPermissoes: 2,
   });
   const userDb = environment.authenticatedContext('legado-clinico').firestore();
   const usuarioRef = doc(userDb, 'usuarios', 'legado-clinico');
