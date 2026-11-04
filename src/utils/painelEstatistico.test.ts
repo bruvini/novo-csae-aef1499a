@@ -164,7 +164,7 @@ test('BI contabiliza diagnósticos por ID, múltiplos vínculos e lacunas de NHB
       id: 'pa', diagnosticos: ['Diagnóstico A'],
       diagnosticosDetalhados: [{ id: 'id-1', titulo: 'Diagnóstico A',
         nhbs: ['Oxigenação', 'Nutrição'], protocolos: ['Protocolo Mulher', 'Protocolo Adulto'] }],
-      nhbs: ['Nutrição', 'Segurança'], nhbsPlano: ['Nutrição', 'Oxigenação'],
+      nhbs: ['Nutrição', 'Nutrição', 'Segurança'], nhbsPlano: ['Nutrição', 'Oxigenação'],
       continuidade: { oportunidades: 2, abordados: 1, mantidos: 1, substituidos: 0, encerrados: 0, abordadosSemDecisao: 0 },
       materiaisEntregues: ['Orientação A', 'Orientação B'],
     }),
@@ -183,6 +183,7 @@ test('BI contabiliza diagnósticos por ID, múltiplos vínculos e lacunas de NHB
   assert.equal(total.etapasPE.diagnostico.nhbsVinculadas.reduce((sum, i) => sum + i.value, 0), 4);
   const nutricao = total.etapasPE.diagnostico.comparacaoNHBs.find(i => i.name === 'Nutrição');
   assert.equal(nutricao?.avaliacao, 2);
+  assert.equal(total.etapasPE.avaliacao.nhbs.find(i => i.name === 'Nutrição')?.value, 2);
   assert.equal(nutricao?.planejamento, 1);
   assert.equal(nutricao?.avaliacaoSemPlano, 1);
   assert.deepEqual(total.continuidadeCuidado, {
