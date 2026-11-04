@@ -517,21 +517,24 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
-      // Caminho rápido e restrito de telemetria, avaliado apenas quando
-      // ambos os campos modificados são estatísticos. Operações cadastrais
-      // não avaliam a regra de login e preservam seu limite de expressões.
-      allow update: if (signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['totalAcessos', 'ultimoAcesso'])
-        && ownerLoginUpdateIsSafe())
-        || (isActiveAdmin() && (
-        (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
-          && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
-        || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
-          && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+      // Avalia primeiro alterações do próprio titular: estatística de login
+      // não percorre regras administrativas extensas. Para edições comuns,
+      // a autorização existente do titular também evita avaliações extras.
+      // Gestão de outros perfis mantém as regras administrativas originais.
+      allow update: if (signedIn() && resource.data.uid == request.auth.uid && (
+        (request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['totalAcessos', 'ultimoAcesso'])
+          && ownerLoginUpdateIsSafe())
+        || ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
+        || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()
       ))
-        || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
-          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
+        || (isActiveAdmin() && (
+          (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+            && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
+          || (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
+            && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
+        ));
       allow delete: if false;
     }
 
