@@ -517,6 +517,13 @@ service cloud.firestore {
       allow get: if signedIn() && (request.auth.uid == uid || isActiveAdmin());
       allow list: if isActiveAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if isPendingSelfRegistration(uid);
+      // Caminho independente e restrito para registrar um login. Evita passar
+      // por validações administrativas e cadastrais que não se aplicam ao
+      // incremento de telemetria, inclusive em perfis legados extensos.
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['totalAcessos', 'ultimoAcesso'])
+        && ownerLoginUpdateIsSafe();
       allow update: if (isActiveAdmin() && (
         (request.resource.data.diff(resource.data).affectedKeys().hasAny(['historicoRevisoesResidencia'])
           && (adminExtendResident() || adminRevokeResident() || adminConvertResident()))
@@ -524,8 +531,7 @@ service cloud.firestore {
           && (adminProfileUpdateIsSafe() || adminProfessionalReviewIsSafe()))
       ))
         || (signedIn() && (ownerProfileUpdateIsSafe() || ownerIdentityUpdateIsSafe()
-          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()
-          || ownerLoginUpdateIsSafe()));
+          || ownerVerifiedEmailSyncIsSafe() || ownerProfessionalRequestIsSafe()));
       allow delete: if false;
     }
 
