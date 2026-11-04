@@ -29,7 +29,11 @@ const Footer = () => {
             <LegalDocumentLinks className="contents" linkClassName={link} />
             <a href="https://www.instagram.com/portalcsaefloripa/" target="_blank" rel="noopener noreferrer"
               className={link + ' inline-flex items-center gap-1.5'} aria-label="Instagram do Portal CSAE (abre em nova aba)">
-              <Instagram className="h-3.5 w-3.5" aria-hidden="true" /> Instagram
+              <Instagram className="h-3.5 w-3.5" aria-hidden="true" /> @portalcsaefloripa
+            </a>
+            <a href="https://www.instagram.com/enfermagemfloripa/" target="_blank" rel="noopener noreferrer"
+              className={link + ' inline-flex items-center gap-1.5'} aria-label="Instagram da Enfermagem Floripa (abre em nova aba)">
+              <Instagram className="h-3.5 w-3.5" aria-hidden="true" /> @enfermagemfloripa
             </a>
           </nav>
         </div>
