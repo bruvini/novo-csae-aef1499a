@@ -1035,6 +1035,40 @@ test('administrador pode solicitar alteração profissional, perde acesso e não
 });
 
 
+test('telemetria de login aceita cadastro legado sem permitir alterar os campos antigos', async () => {
+  await seedProfile('legado-clinico', 'Liberado', {
+    totalAcessos: 79,
+    historicoAcesso: Array.from({ length: 79 }, () => ({ dataHora: new Date('2026-10-11T17:07:51Z'), ip: 'N/A' })),
+    // Campo desconhecido à versão atual; não deve impedir incremento dos
+    // campos estatísticos quando o cadastro original permanece inalterado.
+    campoHistoricoLegado: 'não normalizado',
+    dadosProfissionais: { formacao: 'Enfermeiro', atuaSMS: true, matricula: '000000', registroLegado: '2025' },
+    ehAdmin: true,
+    tipoUsuario: 'Administrador',
+  });
+  const userDb = environment.authenticatedContext('legado-clinico').firestore();
+  const usuarioRef = doc(userDb, 'usuarios', 'legado-clinico');
+  const diaRef = doc(userDb, 'acessosDiarios', '2026-11-04');
+  const registrar = async () => runTransaction(userDb, async tx => {
+    const snapshot = await tx.get(usuarioRef);
+    const numero = Number(snapshot.data()?.totalAcessos || 0) + 1;
+    const eventoId = 'legado-clinico_' + numero;
+    tx.update(usuarioRef, { totalAcessos: numero, ultimoAcesso: serverTimestamp() });
+    tx.set(doc(userDb, 'eventosAcesso', eventoId), {
+      uid: 'legado-clinico', numero, dia: '2026-11-04', dataHora: serverTimestamp(),
+    });
+    tx.set(diaRef, { dia: '2026-11-04', total: increment(1), ultimoEvento: eventoId }, { merge: true });
+  });
+  await assertSucceeds(registrar());
+  await assertSucceeds(registrar());
+  const estado = await getDoc(usuarioRef);
+  assert.equal(estado.data()?.totalAcessos, 81);
+  assert.equal(estado.data()?.campoHistoricoLegado, 'não normalizado');
+  assert.equal(estado.data()?.historicoAcesso?.length, 79);
+  await assertFails(updateDoc(usuarioRef, { totalAcessos: 82, ultimoAcesso: serverTimestamp() }));
+  await assertFails(updateDoc(usuarioRef, { statusAcesso: 'Revogado', totalAcessos: 82 }));
+});
+
 test('login de profissional não precisa ler agregado diário restrito ao BI', async () => {
   await seedProfile('login-comum', 'Liberado', { totalAcessos: 0 });
   const userDb = environment.authenticatedContext('login-comum').firestore();
