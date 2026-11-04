@@ -15,7 +15,7 @@ import {
 } from '@/utils/accessMetrics';
 
 // Incrementar sempre que o schema dos dados mudar
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 
 export interface EvolucaoEntry {

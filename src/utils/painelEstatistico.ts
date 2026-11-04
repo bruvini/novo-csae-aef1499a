@@ -1,4 +1,4 @@
-import { chaveDataSaoPaulo, diaSemanaSaoPaulo, preencherDias } from './accessMetrics';
+import { chaveDataSaoPaulo, diaSemanaSaoPaulo } from './accessMetrics';
 
 export interface ItemRanking {
   name: string;
@@ -11,6 +11,9 @@ export interface ItemTemporal {
   name: string;
   value: number;
   acumulado?: number;
+  /** Quantidade de processos concluídos entre os registros desse mesmo período. */
+  concluidos?: number;
+  acumuladoConcluidos?: number;
   variacaoPercentual?: number | null;
   variacaoTipo: VariacaoTipo;
 }
@@ -142,52 +145,75 @@ export function rankingDeValores(values: string[], limit = 10): ItemRanking[] {
 }
 
 function temporalDeRegistros(registros: RegistroProducao[]): EstatisticasProducao['temporalAvancado'] {
-  const concluidos = registros.filter((registro) => registro.status === 'concluido');
-  const datas = concluidos
-    .map((registro) => new Date(registro.dataConclusaoReferencia || registro.dataReferencia))
-    .filter((date) => !Number.isNaN(date.getTime()));
-  const pad = (value: number) => String(value).padStart(2, '0');
-  const contagem = (key: (date: Date) => string) => datas.reduce<Record<string, number>>((acc, date) => {
-    const chave = key(date);
-    acc[chave] = (acc[chave] || 0) + 1;
-    return acc;
-  }, {});
-  const construir = (map: Record<string, number>, nomes: (key: string) => string, limite?: number, preencherAteHoje = false) => {
-    const entries = Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
-    const todos = preencherAteHoje && entries.length > 0
-      ? preencherDias(map, entries[0][0], chaveDataSaoPaulo(new Date())).map(({ key, novos }) => [key, novos] as [string, number])
-      : entries;
-    const visiveis = limite ? todos.slice(-limite) : todos;
-    let acumulado = limite && todos.length > limite
-      ? todos.slice(0, -limite).reduce((total, [, value]) => total + value, 0)
-      : 0;
-    return aplicarVariacoesTemporais(visiveis.map(([key, value]) => ({
-      name: nomes(key),
-      value,
-      acumulado: (acumulado += value),
+  // Cada processo pertence a UM período: sua data de conclusão, quando
+  // concluído, ou de início, quando ainda está em andamento. Duas barras
+  // comparam o mesmo conjunto: todos e, dentre eles, os concluídos.
+  const itens = registros
+    .map(registro => ({
+      data: new Date(registro.dataReferencia),
+      concluido: registro.status === 'concluido',
+    }))
+    .filter(item => !Number.isNaN(item.data.getTime()));
+
+  type Contagem = { total: number; concluidos: number };
+  const acumular = (map: Record<string, Contagem>, key: string, concluido: boolean) => {
+    const atual = map[key] ?? (map[key] = { total: 0, concluidos: 0 });
+    atual.total++;
+    if (concluido) atual.concluidos++;
+  };
+  const porDia: Record<string, Contagem> = {};
+  const porMes: Record<string, Contagem> = {};
+  const porAno: Record<string, Contagem> = {};
+  const porHora = Array.from({ length: 24 }, (): Contagem => ({ total: 0, concluidos: 0 }));
+  const porSemana = Array.from({ length: 7 }, (): Contagem => ({ total: 0, concluidos: 0 }));
+  const dias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const doisDigitos = (n: number) => String(n).padStart(2, '0');
+
+  itens.forEach(({ data, concluido }) => {
+    const isoDia = chaveDataSaoPaulo(data);
+    acumular(porDia, isoDia, concluido);
+    acumular(porMes, isoDia.slice(0, 7), concluido);
+    acumular(porAno, isoDia.slice(0, 4), concluido);
+    const hora = Number(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
+    }).format(data));
+    if (hora >= 0 && hora < 24) {
+      porHora[hora].total++;
+      if (concluido) porHora[hora].concluidos++;
+    }
+    const diaSemana = diaSemanaSaoPaulo(data);
+    porSemana[diaSemana].total++;
+    if (concluido) porSemana[diaSemana].concluidos++;
+  });
+
+  const construir = (map: Record<string, Contagem>, rotulo: (key: string) => string, limite?: number) => {
+    const todos = Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
+    // Sem datas artificiais de atividade; dias sem registro não entram na série.
+    const corte = limite ? Math.max(0, todos.length - limite) : 0;
+    let acumulado = todos.slice(0, corte).reduce((v, [, item]) => v + item.total, 0);
+    let acumuladoConcluidos = todos.slice(0, corte).reduce((v, [, item]) => v + item.concluidos, 0);
+    return aplicarVariacoesTemporais(todos.slice(corte).map(([key, item]) => ({
+      name: rotulo(key),
+      value: item.total,
+      concluidos: item.concluidos,
+      acumulado: (acumulado += item.total),
+      acumuladoConcluidos: (acumuladoConcluidos += item.concluidos),
     })));
   };
 
-  const porHora = Array.from({ length: 24 }, () => 0);
-  const porSemana = Array.from({ length: 7 }, () => 0);
-  datas.forEach((date) => {
-    const hora = Number(new Intl.DateTimeFormat('en-US', {
-      timeZone: 'America/Sao_Paulo', hour: '2-digit', hourCycle: 'h23',
-    }).format(date));
-    porHora[hora] += 1;
-    porSemana[diaSemanaSaoPaulo(date)] += 1;
-  });
-  const hora = aplicarVariacoesTemporais(porHora.map((value, index) => ({
-    name: `${pad(index)}h`, value,
+  const hora = aplicarVariacoesTemporais(porHora.map((item, index) => ({
+    name: doisDigitos(index) + 'h',
+    value: item.total,
+    concluidos: item.concluidos,
   })));
-  const diaSemana = aplicarVariacoesTemporais(porSemana.map((value, index) => ({
-    name: DIAS_SEMANA[index], value,
+  const diaSemana = aplicarVariacoesTemporais(porSemana.map((item, index) => ({
+    name: dias[index],
+    value: item.total,
+    concluidos: item.concluidos,
   })));
-  const diario = construir(contagem(chaveDataSaoPaulo),
-    (key) => `${key.slice(8, 10)}/${key.slice(5, 7)}/${key.slice(0, 4)}`, 30, true);
-  const mensal = construir(contagem((date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`),
-    (key) => `${key.slice(5, 7)}/${key.slice(0, 4)}`, 12);
-  const anual = construir(contagem((date) => String(date.getFullYear())), (key) => key, 12);
+  const diario = construir(porDia, key => key.slice(8, 10) + '/' + key.slice(5, 7) + '/' + key.slice(0, 4), 30);
+  const mensal = construir(porMes, key => key.slice(5, 7) + '/' + key.slice(0, 4), 12);
+  const anual = construir(porAno, key => key, 12);
   return { hora, diario, diaSemana, mensal, anual };
 }
 

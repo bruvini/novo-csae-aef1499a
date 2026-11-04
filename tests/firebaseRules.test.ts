@@ -1033,3 +1033,36 @@ test('administrador pode solicitar alteração profissional, perde acesso e não
   const item = (await getDoc(doc(outroAdmin, 'usuarios', 'admin-a'))).data();
   assert.equal(item?.statusAcesso, 'AguardandoRevisaoCadastro');
 });
+
+
+test('login de profissional não precisa ler agregado diário restrito ao BI', async () => {
+  await seedProfile('login-comum', 'Liberado', { totalAcessos: 0 });
+  const userDb = environment.authenticatedContext('login-comum').firestore();
+  const perfil = doc(userDb, 'usuarios', 'login-comum');
+  const diario = doc(userDb, 'acessosDiarios', '2026-11-04');
+  await assertFails(getDoc(diario));
+  async function registrarLogin() {
+    return runTransaction(userDb, async transaction => {
+      const estado = await transaction.get(perfil);
+      const novoTotal = (estado.data()?.totalAcessos ?? 0) + 1;
+      const eventoId = 'login-comum_' + novoTotal;
+      transaction.update(perfil, { totalAcessos: novoTotal, ultimoAcesso: serverTimestamp() });
+      transaction.set(doc(userDb, 'eventosAcesso', eventoId), {
+        uid: 'login-comum', numero: novoTotal, dia: '2026-11-04', dataHora: serverTimestamp(),
+      });
+      // Sem transaction.get(diario): a leitura só é permitida ao administrador.
+      transaction.set(diario, {
+        dia: '2026-11-04', total: increment(1), ultimoEvento: eventoId,
+      }, { merge: true });
+    });
+  }
+  await assertSucceeds(registrarLogin());
+  await assertSucceeds(registrarLogin());
+  const adminProfile = await environment.withSecurityRulesDisabled(async ctx =>
+    getDoc(doc(ctx.firestore(), 'usuarios', 'login-comum')));
+  const diaSemRegras = await environment.withSecurityRulesDisabled(async ctx =>
+    getDoc(doc(ctx.firestore(), 'acessosDiarios', '2026-11-04')));
+  assert.equal(adminProfile.data()?.totalAcessos, 2);
+  assert.equal(diaSemRegras.data()?.total, 2);
+  await assertFails(getDoc(diario));
+});

@@ -174,6 +174,24 @@ const ProducaoTooltip = ({
   );
 };
 
+// Tooltip exclusivo da produção: a barra total inclui concluídos e em andamento.
+const ProducaoClinicaTooltip = ({ active, payload, label }: {
+  active?: boolean; payload?: Array<{ payload: ItemTemporal }>; label?: string;
+}) => {
+  if (!active || !payload?.length) return null;
+  const item = payload[0].payload;
+  const total = item.value ?? 0;
+  const concluidos = item.concluidos ?? 0;
+  return <div className="min-w-[220px] rounded-xl border border-indigo-100 bg-white p-3 text-sm shadow-xl">
+    <p className="mb-2 font-bold text-indigo-900">{label}</p>
+    <p className="font-semibold text-indigo-700">Todos os processos: {total}</p>
+    <p className="font-semibold text-emerald-700">Concluídos: {concluidos}</p>
+    <p className="text-slate-600">Em andamento: {Math.max(0, total - concluidos)}</p>
+    {item.acumulado !== undefined && <p className="mt-1 border-t pt-1 text-slate-700">Total acumulado: {item.acumulado}</p>}
+    <p className="mt-1 text-xs text-slate-500">Conclusão no período: {total ? (100 * concluidos / total).toFixed(1) : '0,0'}%</p>
+  </div>;
+};
+
 // ── Tipos de Filtro Temporal ───────────────────────────────────────────────
 type ViewMode = 'diario' | 'semanal' | 'mensal' | 'anual';
 
@@ -798,7 +816,7 @@ const PainelEstatistico = () => {
                 <div>
                   <CardTitle className="text-lg font-bold">Evolução de Acessos</CardTitle>
                     <CardDescription>
-                    Eventos de login com data ainda disponível no histórico (limite de 200 por conta) — vista: <strong>{VIEW_LABELS[viewModeAcessos]}</strong>
+                    Eventos de login registrados, incluindo agregados diários recentes — vista: <strong>{VIEW_LABELS[viewModeAcessos]}</strong>
                   </CardDescription>
                 </div>
                 {/* Filtros de período */}
@@ -860,8 +878,8 @@ const PainelEstatistico = () => {
               </ResponsiveContainer>
               {data && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Total global: {data.totalAcessosPlataforma.toLocaleString('pt-BR')} logins registrados. O gráfico soma {data.historicoAcessosConsiderados.toLocaleString('pt-BR')} eventos datados disponíveis;
-                  {' '}{data.usuariosComHistoricoLimitado} conta(s) atingiram o limite de 200 eventos, então a série temporal pode estar incompleta.
+                  Total contabilizado: {data.totalAcessosPlataforma.toLocaleString('pt-BR')} logins. O gráfico utiliza {data.historicoAcessosConsiderados.toLocaleString('pt-BR')} eventos com data disponível;
+                  {' '}{data.usuariosComHistoricoLimitado} conta(s) atingiram o limite do histórico legado. Logins que não foram gravados não podem ser reconstruídos automaticamente.
                 </p>
               )}
             </CardContent>
@@ -961,7 +979,7 @@ const PainelEstatistico = () => {
 
               {/* ── Bloco 0: KPIs e Gráfico Temporal Unificado ── */}
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
                   <Card className="bg-indigo-600 text-white border-none shadow-xl">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
@@ -980,17 +998,22 @@ const PainelEstatistico = () => {
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <CardDescription className="text-emerald-600 text-[10px] font-bold uppercase tracking-wider">Concluídos</CardDescription>
-                        <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[9px] font-black">ESTÁVEL</div>
+                        <div className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-[9px] font-black">REGISTRADOS</div>
                       </div>
                       <CardTitle className="text-3xl font-black text-gray-900">{dadosFiltrados?.totalProcessosConcluidos ?? 0}</CardTitle>
                     </CardHeader>
+                    <CardContent className="text-[10px] text-gray-500">Processos com data de conclusão</CardContent>
+                  </Card>
+                  <Card className="bg-white border-none shadow-lg">
+                    <CardHeader className="pb-2">
+                      <CardDescription className="text-teal-700 text-[10px] font-bold uppercase tracking-wider">Taxa de Conclusão</CardDescription>
+                      <CardTitle className="text-3xl font-black text-gray-900">{dadosFiltrados?.taxaConclusao ?? 0}%</CardTitle>
+                    </CardHeader>
                     <CardContent>
-                       <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-emerald-100 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-emerald-500 h-full" style={{ width: `${dadosFiltrados?.taxaConclusao ?? 0}%` }} />
-                          </div>
-                          <span className="text-[10px] font-bold text-emerald-600">{dadosFiltrados?.taxaConclusao ?? 0}%</span>
-                       </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-teal-100">
+                        <div className="h-full bg-teal-600" style={{ width: `${dadosFiltrados?.taxaConclusao ?? 0}%` }} />
+                      </div>
+                      <p className="mt-2 text-[10px] text-gray-500">Concluídos ÷ total de processos</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-white border-none shadow-lg">
@@ -1015,7 +1038,7 @@ const PainelEstatistico = () => {
                       <CardTitle className="text-lg font-black text-indigo-900 flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" /> Evolução de Produção Clínica
                       </CardTitle>
-                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">Processos concluídos pela data de conclusão, no fuso de São Paulo</CardDescription>
+                      <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-indigo-500">Processos por data de referência: conclusão se concluído, início se em andamento · fuso de São Paulo · apenas dias com registro</CardDescription>
                     </div>
                     <Tabs value={temporalView} onValueChange={(v) => setTemporalView(v as typeof temporalView)} className="w-full md:w-auto">
                       <TabsList className="bg-indigo-100/50 p-1 w-full md:w-auto">
@@ -1034,10 +1057,13 @@ const PainelEstatistico = () => {
                         <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                         <YAxis yAxisId="acumulado" allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                         {['diario', 'mensal', 'anual'].includes(temporalView) && <YAxis yAxisId="periodo" orientation="right" allowDecimals={false} tick={{ fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />}
-                        <RechartsTooltip content={<ProducaoTooltip />} />
-                        <Bar yAxisId={['diario', 'mensal', 'anual'].includes(temporalView) ? 'periodo' : 'acumulado'} dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={temporalView === 'diario' ? 12 : 30} name="Processos" />
+                        <RechartsTooltip content={<ProducaoClinicaTooltip />} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                        <Bar yAxisId={['diario', 'mensal', 'anual'].includes(temporalView) ? 'periodo' : 'acumulado'} dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={temporalView === 'diario' ? 12 : 24} name="Todos os processos" />
+                        <Bar yAxisId={['diario', 'mensal', 'anual'].includes(temporalView) ? 'periodo' : 'acumulado'}
+                          dataKey="concluidos" fill="#10b981" radius={[4, 4, 0, 0]} barSize={temporalView === 'diario' ? 12 : 24} name="Concluídos" />
                         {['diario', 'mensal', 'anual'].includes(temporalView) && (
-                          <Area yAxisId="acumulado" type="monotone" dataKey="acumulado" fill="#6366f1" fillOpacity={0.05} stroke="#818cf8" strokeWidth={2} name="Acumulado" />
+                          <Area yAxisId="acumulado" type="monotone" dataKey="acumulado" fill="#6366f1" fillOpacity={0.05} stroke="#818cf8" strokeWidth={2} name="Processos acumulados" />
                         )}
                       </ComposedChart>
                     </ResponsiveContainer>

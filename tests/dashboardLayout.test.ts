@@ -34,10 +34,11 @@ test('Módulos restritos, solicitações aguardando e notificações são preser
   assert.match(navigation, /notificationCount/);
 });
 
-test('Dashboard exibe contador administrativo e link direto de residentes para revisão', () => {
-  assert.match(navigation, /residentesParaRevisao\(usuarios\.aprovados\)\.length/);
-  assert.match(navigation, /residentesPendentes/);
-  assert.match(navigation, /gestao-usuarios\?aba=residentes/);
+test('Dashboard não exibe aviso de residentes e mantém badge de solicitações no próprio card', () => {
+  assert.doesNotMatch(navigation, /residentesPendentes/);
+  assert.doesNotMatch(navigation, /residentesParaRevisao/);
+  assert.match(navigation, /item\.badge && \(/);
+  assert.match(navigation, /\{item\.description\}/);
 });
 
 test('Gestão de Usuários preserva abas existentes e oferece fluxo de revisão de residentes', () => {

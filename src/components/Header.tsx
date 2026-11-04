@@ -14,12 +14,12 @@ const Header = () => {
 
   const navigationItems = [
     { title: 'Dashboard', url: '/dashboard', icon: Home },
-    { title: 'Nossa História', url: '/timeline', icon: BookOpen },
     { title: 'Processo de Enfermagem', url: '/processo-enfermagem', icon: Heart },
+    { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy, notificationCount: respostasNaoVisualizadas },
+    { title: 'Nossa História', url: '/timeline', icon: BookOpen },
     { title: 'Gestão de Conteúdos', url: '/gestao-conteudos', icon: Database, allowedPageId: 'GestaoConteudos' },
     { title: 'Gestão de Usuários', url: '/gestao-usuarios', icon: Users, allowedPageId: 'GestaoUsuarios' },
     { title: 'Painel Estatístico', url: '/painel-estatistico', icon: BarChartIcon, allowedPageId: 'PainelEstatistico' },
-    { title: 'Central de Ajuda', url: '/ajuda', icon: LifeBuoy, notificationCount: respostasNaoVisualizadas },
     { title: 'Gestão de Suporte', url: '/gestao-suporte', icon: Headphones, allowedPageId: 'GestaoSuporte', notificationCount: itensNovosSuporte },
   ];
 
