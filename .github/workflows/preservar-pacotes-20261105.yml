@@ -1,0 +1,40 @@
+name: Preservar pacotes de 05-11-2026
+on:
+  push:
+    branches: ['manutencao/armazenamento-actions-20261105']
+    paths: ['.github/workflows/preservar-pacotes-20261105.yml']
+permissions:
+  contents: write
+  actions: read
+jobs:
+  preservar:
+    if: github.event.deleted == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Conferir arquivos e guardar na release em rascunho
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          tag=reserva-actions-20261105
+          cat > inventario.tsv <<'DADOS'
+          4	41658976692	13240254172	sha256:50b7e61eb016a624eb9e479bab0caa4f5f2883d45eb60edb7cdba808f34072ea	6a4cdadb0e1231c9e19cd4cdc787190c677a47ae	3332
+          5	41660546579	13242605945	sha256:de1b3d0ad9cf5f261ddbdea10a68582210c9067cc83f0d999e879b668588b153	a1f3ff8eb94f8cbfecda3e8e7264500dbc6ef5aa	5780
+          DADOS
+          while read -r numero run id hash commit tamanho; do
+            arquivo="run-$numero-artefato-$id.zip"
+            gh api "repos/$GH_REPO/actions/artifacts/$id/zip" > "$arquivo"
+            echo "${hash#sha256:}  $arquivo" | sha256sum -c -
+            test "$(stat -c %s "$arquivo")" -eq "$tamanho"
+            unzip -tq "$arquivo" >/dev/null
+          done < inventario.tsv
+          gh release create "$tag" --draft --target '6a4cdadb0e1231c9e19cd4cdc787190c677a47ae' --title 'Reserva de auditoria clínica · 05/11/2026' --notes 'Cópia de preservação. Manter como rascunho de acesso restrito. O inventário informa execução, artefato, SHA-256 do ZIP, commit e tamanho em bytes.' inventario.tsv run-*.zip
+          release_id=$(gh release view "$tag" --json databaseId --jq '.databaseId')
+          gh api "repos/$GH_REPO/releases/$release_id" --jq '.draft == true' | grep -qx true
+          gh api "repos/$GH_REPO/releases/$release_id/assets" > assets.json
+          while read -r numero run id hash commit tamanho; do
+            jq -e --arg nome "run-$numero-artefato-$id.zip" --arg hash "$hash" --argjson tamanho "$tamanho" 'any(.[]; .name == $nome and .digest == $hash and .size == $tamanho and .state == "uploaded")' assets.json >/dev/null
+          done < inventario.tsv
