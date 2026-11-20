@@ -490,11 +490,12 @@ service cloud.firestore {
           && data.exames is list && data.exames.size() <= 100)
         || (catalog == 'rolEnfermagem'
           && data.keys().hasAll(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados'])
-          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados', 'dataCadastro', 'ultimaSugestaoPublicada'])
+          && data.keys().hasOnly(['tituloDiagnostico', 'descricaoDiagnostico', 'subconjuntos', 'resultadosEsperados', 'naturezaDiagnostico', 'dataCadastro', 'ultimaSugestaoPublicada'])
           && boundedString(data.tituloDiagnostico, 300)
           && boundedString(data.descricaoDiagnostico, 5000)
           && data.subconjuntos is list && data.subconjuntos.size() <= 100
           && data.resultadosEsperados is list && data.resultadosEsperados.size() <= 100
+          && (!('naturezaDiagnostico' in data) || data.naturezaDiagnostico in ['problema', 'risco', 'promocao_saude'])
           && (!('ultimaSugestaoPublicada' in data) || boundedString(data.ultimaSugestaoPublicada, 128)))
         || (catalog == 'diagnosticosEnfermagem'
           && data.keys().hasAll(['tituloDiagnostico', 'subconjuntosVinculados', 'resultadosEsperados'])

@@ -74,7 +74,10 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
     // Alinhar cada diagnóstico escolhido à sua linha de planejamento.
     // Preserva as seleções antigas, adiciona os novos e ignora diagnósticos
     // removidos, inclusive após reabrir o processo.
-    const selecionados = processo.diagnostico?.diagnosticosSelecionados ?? [];
+    const selecionados = (processo.diagnostico?.diagnosticosSelecionados ?? []).map(item => {
+      const naturezaAtual = diagnosticosDetalhados.find(catalogo => catalogo.id === item.id)?.naturezaDiagnostico;
+      return naturezaAtual ? { ...item, naturezaDiagnostico: naturezaAtual } : item;
+    });
     const salvos = processo.planejamento?.diagnosticosPlanejados ?? [];
     const alinhados = alinharDiagnosticosPlanejados(selecionados, salvos).map(plano => {
       const diagnostico = selecionados.find(item => item.id === plano.diagnosticoId);
@@ -87,10 +90,11 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
       alinhados.length !== salvos.length
       || alinhados.some((diag, index) => diag.diagnosticoId !== salvos[index]?.diagnosticoId)
       || alinhados.some((diag, index) => diag.acompanhamentoId !== salvos[index]?.acompanhamentoId || diag.origemReavaliacao !== salvos[index]?.origemReavaliacao)
+      || alinhados.some((diag, index) => diag.naturezaDiagnostico !== salvos[index]?.naturezaDiagnostico)
     ) {
       onUpdatePlanejamento({ diagnosticosPlanejados: alinhados });
     }
-  }, [processo.diagnostico?.diagnosticosSelecionados, processo.diagnostico?.reavaliacoesAnteriores, processo.planejamento?.diagnosticosPlanejados]);
+  }, [processo.diagnostico?.diagnosticosSelecionados, processo.diagnostico?.reavaliacoesAnteriores, processo.planejamento?.diagnosticosPlanejados, diagnosticosDetalhados]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -368,13 +372,16 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
           <AccordionContent>
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Selecione um resultado esperado para cada diagnóstico priorizado.
+                Selecione resultados esperados quando disponíveis e exigidos pela natureza do diagnóstico. Diagnósticos de promoção da saúde podem seguir sem resultado cadastrado, sem criar metas artificiais.
               </p>
 
               <Accordion type="multiple" className="w-full">
                 {diagnosticosPriorizados.map((diagnostico) => {
                   const resolucao = resolverDiagnosticoPlanejamento(diagnostico.diagnosticoId, diagnosticosDetalhados, estadoCatalogoDiagnosticos);
-                  const isPositivo = isDiagnosticoPositivo(diagnostico.naturezaDiagnostico, diagnostico.isPositivo);
+                  const naturezaAtual = resolucao.estado === 'com_resultados' || resolucao.estado === 'sem_resultados'
+                    ? resolucao.diagnostico.naturezaDiagnostico || diagnostico.naturezaDiagnostico
+                    : diagnostico.naturezaDiagnostico;
+                  const isPositivo = isDiagnosticoPositivo(naturezaAtual, diagnostico.isPositivo);
                   const isIncompleto = isPositivo ? false : !diagnostico.resultadoEsperadoSelecionado;
                   
                   return (
@@ -424,7 +431,7 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         ) : resolucao.estado === 'nao_encontrado' ? (
                           <p role="status" className="text-sm text-muted-foreground">Este diagnóstico não foi encontrado no catálogo. Verifique se a seleção foi atualizada e tente novamente.</p>
                         ) : resolucao.estado === 'sem_resultados' ? (
-                          <p role="status" className="text-sm text-muted-foreground">Este diagnóstico não possui resultados esperados cadastrados.</p>
+                          <p role="status" className="text-sm text-muted-foreground">{isPositivo ? 'Este diagnóstico está classificado como promoção da saúde e não exige resultado esperado para avançar. Registre intervenções pertinentes ou justifique clinicamente sua ausência na Fase III.' : 'Este diagnóstico não possui resultados esperados cadastrados. A natureza não é inferida pela ausência; a classificação homologada ainda exige revisão.'}</p>
                         ) : isPositivo ? (
                           <p className="text-sm text-muted-foreground">Não há resultados esperados homologados para este diagnóstico. A ausência no catálogo não define sua natureza clínica.</p>
                         ) : (
@@ -490,6 +497,9 @@ const EtapaPlanejamento: React.FC<EtapaPlanejamentoProps> = ({
                         </span>
                       </AccordionTrigger>
                       <AccordionContent className="px-1 pb-4">
+                          {isPositivo && semResultado && (
+                            <Alert className="mb-3"><Info className="h-4 w-4" /><AlertDescription>Diagnóstico de promoção da saúde sem resultado esperado cadastrado. Selecione uma intervenção pertinente ou registre a justificativa clínica para não prescrever nesta consulta.</AlertDescription></Alert>
+                          )}
                           <div className="space-y-4">
                             {diagnostico.resultadoEsperadoSelecionado ? (
                               <div className="p-3 bg-muted rounded-lg">

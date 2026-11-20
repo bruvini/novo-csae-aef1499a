@@ -56,6 +56,7 @@ import {
   Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
+import type { NaturezaDiagnostico } from '@/types/processoEnfermagem';
 import { Skeleton } from '@/components/ui/skeleton';
 import ModalVisualizarDiagnostico from './ModalVisualizarDiagnostico';
 
@@ -78,6 +79,7 @@ const TabelaDiagnosticos = () => {
   const [descricaoDiagnostico, setDescricaoDiagnostico] = useState('');
   const [subconjuntos, setSubconjuntos] = useState<Subconjunto[]>([]);
   const [resultadosEsperados, setResultadosEsperados] = useState<ResultadoEsperado[]>([]);
+  const [naturezaDiagnostico, setNaturezaDiagnostico] = useState<NaturezaDiagnostico | ''>('');
   
   // Estados para adicionar novos subconjuntos
   const [novoSubconjuntoTipo, setNovoSubconjuntoTipo] = useState('');
@@ -101,6 +103,7 @@ const TabelaDiagnosticos = () => {
     setDescricaoDiagnostico('');
     setSubconjuntos([]);
     setResultadosEsperados([]);
+    setNaturezaDiagnostico('');
     setNovoSubconjuntoTipo('');
     setNovoSubconjuntoTitulo('');
     setEditandoDiagnostico(null);
@@ -116,6 +119,7 @@ const TabelaDiagnosticos = () => {
     setDescricaoDiagnostico(diagnostico.descricaoDiagnostico);
     setSubconjuntos([...diagnostico.subconjuntos]);
     setResultadosEsperados([...diagnostico.resultadosEsperados]);
+    setNaturezaDiagnostico(diagnostico.naturezaDiagnostico || '');
     setEditandoDiagnostico(diagnostico);
     setSheetOpen(true);
   };
@@ -155,7 +159,7 @@ const TabelaDiagnosticos = () => {
     setResultadosEsperados(resultadosEsperados.filter((_, i) => i !== index));
   };
 
-  const atualizarResultado = (index: number, campo: keyof ResultadoEsperado, valor: any) => {
+  const atualizarResultado = <K extends keyof ResultadoEsperado>(index: number, campo: K, valor: ResultadoEsperado[K]) => {
     const novosResultados = [...resultadosEsperados];
     novosResultados[index] = { ...novosResultados[index], [campo]: valor };
     setResultadosEsperados(novosResultados);
@@ -178,7 +182,7 @@ const TabelaDiagnosticos = () => {
     setResultadosEsperados(novosResultados);
   };
 
-  const atualizarIntervencao = (resultadoIndex: number, intervencaoIndex: number, campo: keyof Intervencao, valor: any) => {
+  const atualizarIntervencao = <K extends keyof Intervencao>(resultadoIndex: number, intervencaoIndex: number, campo: K, valor: Intervencao[K]) => {
     const novosResultados = [...resultadosEsperados];
     novosResultados[resultadoIndex].intervencoes[intervencaoIndex] = {
       ...novosResultados[resultadoIndex].intervencoes[intervencaoIndex],
@@ -217,21 +221,27 @@ const TabelaDiagnosticos = () => {
       toast.error('O título do diagnóstico é obrigatório');
       return;
     }
+    if (naturezaDiagnostico && !['problema', 'risco', 'promocao_saude'].includes(naturezaDiagnostico)) {
+      toast.error('Selecione uma natureza diagnóstica válida');
+      return;
+    }
 
     setSalvandoDiagnostico(true);
     try {
-      const dados = {
+      const dados: Omit<Diagnostico, 'id' | 'dataCadastro'> & { naturezaDiagnostico?: NaturezaDiagnostico | null } = {
         tituloDiagnostico: tituloDiagnostico.trim(),
         descricaoDiagnostico: descricaoDiagnostico.trim(),
         subconjuntos,
-        resultadosEsperados
+        resultadosEsperados,
+        naturezaDiagnostico: naturezaDiagnostico || null,
       };
 
       if (editandoDiagnostico) {
-        await updateDiagnostico(editandoDiagnostico.id, dados);
+        await updateDiagnostico(editandoDiagnostico.id, dados as Partial<Diagnostico>);
         toast.success('Diagnóstico atualizado com sucesso!');
       } else {
-        await addDiagnostico(dados);
+        const { naturezaDiagnostico: natureza, ...resto } = dados;
+        await addDiagnostico({ ...resto, ...(natureza ? { naturezaDiagnostico: natureza } : {}) });
         toast.success('Diagnóstico criado com sucesso!');
       }
 
@@ -303,6 +313,16 @@ const TabelaDiagnosticos = () => {
               {/* Dados básicos */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Dados do Diagnóstico</h3>
+                <div>
+                  <label htmlFor="natureza-diagnostico" className="block text-sm font-medium mb-2">Natureza do Diagnóstico</label>
+                  <select id="natureza-diagnostico" value={naturezaDiagnostico} onChange={(e) => setNaturezaDiagnostico(e.target.value as NaturezaDiagnostico | '')} className="w-full rounded-md border bg-background px-3 py-2 text-sm">
+                    <option value="">Não classificado</option>
+                    <option value="problema">Problema</option>
+                    <option value="risco">Risco</option>
+                    <option value="promocao_saude">Promoção da saúde</option>
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">A classificação é explícita e não é inferida pela ausência de resultados esperados.</p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">
                     Título do Diagnóstico *

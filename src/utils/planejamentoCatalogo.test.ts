@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { combinarIntervencoesPlanejamento, removerProcessoPorId, resolverDiagnosticoPlanejamento } from './planejamentoCatalogo';
 import type { Diagnostico, Intervencao } from '@/services/bancodados/rolEnfermagemDB';
 import type { IntervencaoBiblioteca } from '@/services/bancodados/intervencoesAutoraisDB';
+import { isDiagnosticoPositivo, obterPendenciasPlanejamento } from './processoUtils';
 
 const diagnostico = (id: string, resultadosEsperados: Diagnostico['resultadosEsperados'] = []) => ({
   id, tituloDiagnostico: 'Diagnóstico teste', descricaoDiagnostico: '', subconjuntos: [], resultadosEsperados,
@@ -16,6 +17,16 @@ test('resolução do diagnóstico apresenta estados distintos do catálogo e con
   assert.deepEqual(resolverDiagnosticoPlanejamento('inexistente', [item], 'carregado'), { estado: 'nao_encontrado' });
   assert.equal(resolverDiagnosticoPlanejamento(item.id, [diagnostico(item.id)], 'carregado').estado, 'sem_resultados');
   assert.deepEqual(resolverDiagnosticoPlanejamento(item.id, [item], 'carregado'), { estado: 'com_resultados', diagnostico: item });
+});
+
+test('diagnóstico sem resultados só fica isento quando sua natureza positiva está explicitamente homologada', () => {
+  const positivo = { ...diagnostico('positivo'), naturezaDiagnostico: 'promocao_saude' as const };
+  const naoClassificado = diagnostico('nao-classificado');
+  assert.equal(isDiagnosticoPositivo(positivo.naturezaDiagnostico, undefined), true);
+  assert.equal(isDiagnosticoPositivo(naoClassificado.naturezaDiagnostico, undefined), false);
+  const selecao = [{ id: positivo.id, tituloDiagnostico: positivo.tituloDiagnostico, naturezaDiagnostico: positivo.naturezaDiagnostico }];
+  assert.deepEqual(obterPendenciasPlanejamento({ diagnosticosSelecionados: selecao }, [{ diagnosticoId: positivo.id, tituloDiagnostico: positivo.tituloDiagnostico, ordemPrioridade: 1, naturezaDiagnostico: positivo.naturezaDiagnostico, intervencoesSelecionadas: [], justificativaSemIntervencao: 'Sem intervenção indicada nesta consulta.' }]), []);
+  assert.match(obterPendenciasPlanejamento({ diagnosticosSelecionados: [{ id: naoClassificado.id, tituloDiagnostico: naoClassificado.tituloDiagnostico }] }, [{ diagnosticoId: naoClassificado.id, tituloDiagnostico: naoClassificado.tituloDiagnostico, ordemPrioridade: 1, intervencoesSelecionadas: [] }])[0], /resultado esperado/);
 });
 
 test('combina intervenções nativas e aprovadas na mesma lista sem duplicar ações', () => {

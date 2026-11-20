@@ -218,8 +218,11 @@ const EtapaResumo: React.FC<EtapaResumoProps> = ({
         .filter((registro) => registro.tipo === 'achado')
         .forEach((registro) => {
           if (!achadosPorExame.has(registro.exame)) achadosPorExame.set(registro.exame, []);
+          const rotulo = registro.achado
+            ? `${registro.sistema ? `${registro.sistema} — ` : ''}${registro.achado}: ${registro.valor}`
+            : String(registro.valor);
           achadosPorExame.get(registro.exame)!.push(
-            registro.descricao ? `${registro.valor}: ${registro.descricao}` : String(registro.valor)
+            registro.descricao ? `${rotulo} (${registro.descricao})` : rotulo
           );
         });
       const rsEncontrados = [...achadosPorExame.entries()]
