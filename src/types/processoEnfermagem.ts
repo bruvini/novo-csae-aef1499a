@@ -18,6 +18,10 @@ export interface AvaliacaoEnfermagem {
   exameFisicoDescricoes?: {
     [achadoKey: string]: string;
   };
+  /** Seleções estruturadas por identidade de sistema/exame/achado/opção. Legados permanecem nos campos acima. */
+  exameFisicoSelecoes?: Record<string, ExameFisicoSelecao>;
+  /** Marca que um rótulo legado ambíguo foi revisado nesta consulta; os valores originais ficam preservados. */
+  exameFisicoSelecoesLegadasRevisadas?: Record<string, true>;
   examesValoresTexto?: {
     [componente: string]: {
       resultadoClassificatorio: string;
@@ -28,6 +32,21 @@ export interface AvaliacaoEnfermagem {
   contextosParametros?: Record<string, string>;
   nhbsAfetadas: { parametro: string; nhb: string }[];
   cuidadosAnterioresAbordados?: Array<{ processoOrigemId: string; diagnosticoOrigemId: string; acompanhamentoId: string; dataOrigem?: unknown; tituloDiagnostico: string; resultadoEsperado?: string; intervencoes?: string[] }>;
+}
+
+export interface ExameFisicoSelecao {
+  identidade: string;
+  sistemaId: string;
+  sistema: string;
+  exame: string;
+  achado: string;
+  opcao?: string;
+  grupoAchado: string;
+  tipo: 'simples' | 'opcao';
+  alterado: boolean;
+  nhb?: string;
+  exigeDescricao?: boolean;
+  descricao?: string;
 }
 
 export interface DecisaoReavaliacaoDiagnostico {

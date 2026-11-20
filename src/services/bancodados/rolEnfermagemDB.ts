@@ -8,7 +8,8 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  Timestamp
+  Timestamp,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import type { NaturezaDiagnostico } from '@/types/processoEnfermagem';
@@ -74,6 +75,7 @@ export const addDiagnostico = async (data: Omit<Diagnostico, 'id' | 'dataCadastr
   try {
     await addDoc(collection(db, 'rolEnfermagem'), {
       ...data,
+      ...(data.naturezaDiagnostico ? { naturezaDiagnostico: data.naturezaDiagnostico } : {}),
       dataCadastro: Timestamp.now()
     });
   } catch (error) {
@@ -85,7 +87,10 @@ export const addDiagnostico = async (data: Omit<Diagnostico, 'id' | 'dataCadastr
 export const updateDiagnostico = async (id: string, data: Partial<Diagnostico>): Promise<void> => {
   try {
     const docRef = doc(db, 'rolEnfermagem', id);
-    const { dataCadastro, ...dadosParaAtualizar } = data;
+    const { dataCadastro, naturezaDiagnostico, ...dadosParaAtualizar } = data;
+    if (Object.prototype.hasOwnProperty.call(data, 'naturezaDiagnostico')) {
+      (dadosParaAtualizar as Record<string, unknown>).naturezaDiagnostico = naturezaDiagnostico || deleteField();
+    }
     await updateDoc(docRef, dadosParaAtualizar);
   } catch (error) {
     console.error('Erro ao atualizar diagnóstico:', error);

@@ -12,6 +12,7 @@ import {
   CatalogoAchadosAprovados,
   RequisitoDescricaoAvaliacao,
 } from './processoUtils';
+import { chaveSelecaoLegada } from './identidadeAchadosExameFisico';
 
 const requisitosDescricao: RequisitoDescricaoAvaliacao[] = [
   { exame: 'Abdome', achado: 'Dor à palpação' },
@@ -210,6 +211,27 @@ test('dados multi-select e descrições permanecem disponíveis para reabertura 
     },
   ]);
   assert.equal(processo.avaliacao.nhbsAfetadas[0]?.nhb, 'Eliminações');
+});
+
+test('seleções estruturadas preservam achados repetidos no prontuário e suas descrições', () => {
+  const a = { identidade: 'id-a', grupoAchado: 'g-a', sistemaId: 's1', sistema: 'Pele', exame: 'Lesões', achado: 'Integridade', opcao: 'Presente', tipo: 'opcao' as const, alterado: true, nhb: 'Segurança', exigeDescricao: true, descricao: 'Lesão em braço.' };
+  const b = { ...a, identidade: 'id-b', grupoAchado: 'g-b', achado: 'Exsudato', descricao: 'Exsudato observado.' };
+  const processo = criarProcesso({ exameFisicoSelecoes: { [a.identidade]: a, [b.identidade]: b } });
+  assert.equal(obterRegistrosExameFisico(processo.avaliacao).length, 2);
+  assert.deepEqual(obterRegistrosExameFisico(processo.avaliacao).map(item => item.descricao), ['Lesão em braço.', 'Exsudato observado.']);
+  assert.equal(JSON.parse(JSON.stringify(processo.avaliacao.exameFisicoSelecoes || '{}'))['id-b'].opcao, 'Presente');
+});
+
+test('revisar seleção ambígua preserva dados legados e usa apenas escolhas explícitas no prontuário', () => {
+  const processo = criarProcesso({
+    exameFisicoMulti: { Pele: ['Presente', 'Ausente'] },
+    exameFisicoSelecoesLegadasRevisadas: { [chaveSelecaoLegada('Pele', 'Presente')]: true },
+    exameFisicoSelecoes: {
+      'id-achado': { identidade: 'id-achado', grupoAchado: 'grupo', sistemaId: 's1', sistema: 'Tegumentar', exame: 'Pele', achado: 'Morfologia', opcao: 'Presente', tipo: 'opcao', alterado: true, nhb: 'Segurança' },
+    },
+  });
+  assert.deepEqual(processo.avaliacao.exameFisicoMulti?.Pele, ['Presente', 'Ausente']);
+  assert.deepEqual(obterRegistrosExameFisico(processo.avaliacao).map(item => item.valor), ['Ausente', 'Presente']);
 });
 
 

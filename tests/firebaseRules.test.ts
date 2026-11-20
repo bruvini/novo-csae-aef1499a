@@ -78,6 +78,16 @@ test('visitante não lê coleções privadas e não envia arquivos', async () =>
   await assertFails(uploadBytes(ref(storage, 'protocolos/publico.png'), new Uint8Array([1]), { contentType: 'image/png' }));
 });
 
+test('regras do catálogo aceitam natureza diagnóstica homologada e rejeitam valores inventados', async () => {
+  await seedProfile('gestor-catalogo', 'Liberado', { gestorConteudos: true, paginasPermitidas: ['GestaoConteudos'] });
+  const db = environment.authenticatedContext('gestor-catalogo').firestore();
+  const base = { tituloDiagnostico: 'Adesão ao regime medicamentoso, contraceptivo', descricaoDiagnostico: '', subconjuntos: [], resultadosEsperados: [] };
+  await assertSucceeds(setDoc(doc(db, 'rolEnfermagem', 'diag-promocao'), { ...base, naturezaDiagnostico: 'promocao_saude' }));
+  await assertSucceeds(updateDoc(doc(db, 'rolEnfermagem', 'diag-promocao'), { naturezaDiagnostico: 'risco' }));
+  await assertFails(updateDoc(doc(db, 'rolEnfermagem', 'diag-promocao'), { naturezaDiagnostico: 'positivo' }));
+  await assertFails(setDoc(doc(db, 'rolEnfermagem', 'diag-invalido'), { ...base, naturezaDiagnostico: 'positivo' }));
+});
+
 test('sugestões legadas e novas preservam autoria e isolamento', async () => {
   await seedProfile('autor');
   await seedProfile('outro');

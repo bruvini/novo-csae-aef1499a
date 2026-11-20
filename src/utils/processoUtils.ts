@@ -1,8 +1,10 @@
 import { ProcessoEnfermagem, AvaliacaoEnfermagem, DiagnosticoPlanejado, DiagnosticoEnfermagem } from '@/types/processoEnfermagem';
+import { chaveSelecaoLegada } from './identidadeAchadosExameFisico';
 
 export interface RequisitoDescricaoAvaliacao {
   exame: string;
   achado: string;
+  identidade?: string;
 }
 
 export interface RegistroExameFisico {
@@ -10,6 +12,8 @@ export interface RegistroExameFisico {
   valor: string | number;
   tipo: 'parametro' | 'achado';
   descricao?: string;
+  achado?: string;
+  sistema?: string;
 }
 
 export interface ValidacaoAvaliacao {
@@ -97,13 +101,14 @@ export function obterRegistrosExameFisico(avaliacao?: AvaliacaoEnfermagem): Regi
   const parametros = avaliacao.exameFisico || {};
   const selecoes = avaliacao.exameFisicoMulti || {};
   const descricoes = avaliacao.exameFisicoDescricoes || {};
+  const legadosRevisados = avaliacao.exameFisicoSelecoesLegadasRevisadas || {};
   const registros: RegistroExameFisico[] = [];
 
   Object.entries(parametros).forEach(([exame, valor]) => {
     if (!isValorAvaliacaoValido(valor)) return;
 
     const selecoesDoExame = selecoes[exame];
-    if (typeof valor === 'string' && Array.isArray(selecoesDoExame) && selecoesDoExame.includes(valor)) return;
+    if (typeof valor === 'string' && (legadosRevisados[chaveSelecaoLegada(exame, valor)] || (Array.isArray(selecoesDoExame) && selecoesDoExame.includes(valor)))) return;
     registros.push({ exame, valor, tipo: 'parametro' });
   });
 
@@ -111,6 +116,7 @@ export function obterRegistrosExameFisico(avaliacao?: AvaliacaoEnfermagem): Regi
     if (!Array.isArray(valores)) return;
     valores.forEach((valor) => {
       if (!isValorAvaliacaoValido(valor)) return;
+      if (legadosRevisados[chaveSelecaoLegada(exame, valor)]) return;
       const descricao = descricoes[`${exame}|||${valor}`];
       registros.push({
         exame,
@@ -118,6 +124,18 @@ export function obterRegistrosExameFisico(avaliacao?: AvaliacaoEnfermagem): Regi
         tipo: 'achado',
         ...(isValorAvaliacaoValido(descricao) ? { descricao } : {}),
       });
+    });
+  });
+
+  Object.values(avaliacao.exameFisicoSelecoes || {}).forEach(selecao => {
+    const valor = selecao.opcao || selecao.achado;
+    registros.push({
+      exame: selecao.exame,
+      valor,
+      tipo: 'achado',
+      ...(isValorAvaliacaoValido(selecao.descricao) ? { descricao: selecao.descricao } : {}),
+      achado: selecao.achado,
+      sistema: selecao.sistema,
     });
   });
 
@@ -133,7 +151,9 @@ export function validarAvaliacao(
     && avaliacao.coletaDeDadosSubjetivos.trim().length > 0;
   const exameFisicoValido = obterRegistrosExameFisico(avaliacao).length > 0;
   const descricoesObrigatoriasPendentes = requisitosDescricao
-    .filter(({ exame, achado }) => {
+    .filter(({ exame, achado, identidade }) => {
+      const estruturada = identidade ? avaliacao?.exameFisicoSelecoes?.[identidade] : undefined;
+      if (estruturada) return !isValorAvaliacaoValido(estruturada.descricao);
       const selecaoAtual = avaliacao?.exameFisicoMulti?.[exame];
       const valorLegado = avaliacao?.exameFisico?.[exame];
       const selecionado = (Array.isArray(selecaoAtual) && selecaoAtual.includes(achado)) || valorLegado === achado;

@@ -13,15 +13,16 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BookOpen, Activity, FileText, Stethoscope, AlertTriangle, Info, PenLine, Search, History, Clock3 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ProcessoEnfermagem, AvaliacaoEnfermagem } from '@/types/processoEnfermagem';
+import { ProcessoEnfermagem, AvaliacaoEnfermagem, ExameFisicoSelecao } from '@/types/processoEnfermagem';
 import { Paciente } from '@/types/paciente';
 import { getSinaisVitais, SinalVital, ValorReferenciaVital } from '@/services/bancodados/sinaisVitaisDB';
 import { getExames, Exame, ComponenteExame, ResultadoExame, componenteEhClassificatorio } from '@/services/bancodados/examesDB';
 import { getSistemas, SistemaCorporal, ExamePropedeutico, Achado, OpcaoAchado } from '@/services/bancodados/revisaoSistemasDB';
 import { ExameResultadoInput } from './ExameResultadoInput';
-import { isAchadoDoCatalogoAprovado, RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
+import { RequisitoDescricaoAvaliacao } from '@/utils/processoUtils';
 import { classificarReferenciaNumerica, classificarReferenciaQualitativa, contextosAplicaveisAoPaciente, CONTEXTOS_CLINICOS, idadeCompativel, interpretarRegra, familiaPressaoArterial, sexoCompativel } from '@/utils/referenciasClinicas';
 import { diagnosticosAnterioresDisponiveis, formatarDataConsulta } from '@/utils/continuidadeCuidado';
+import { alternarSelecaoAchado, chaveSelecaoLegada, criarIdentidadeAchadoExameFisico } from '@/utils/identidadeAchadosExameFisico';
 
 // Tipos auxiliares de validação
 interface ValidationStatus {
@@ -85,16 +86,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
         setSinaisVitais(sinaisData);
         setExames(examesData);
         setSistemas(sistemasData);
-        const requisitosDescricao = sistemasData.flatMap((sistema) =>
-          sistema.exames.flatMap((exame) =>
-            exame.achados.flatMap((achado) => [
-              ...(achado.exigeDescricao ? [{ exame: exame.nomeExame, achado: achado.descricaoAchado }] : []),
-              ...(achado.opcoes || [])
-                .filter((opcao) => opcao.exigeDescricao)
-                .map((opcao) => ({ exame: exame.nomeExame, achado: opcao.textoOpcao })),
-            ])
-          )
-        );
+        const requisitosDescricao = sistemasData.flatMap(sistema => sistema.exames.flatMap(exame => exame.achados.flatMap((achado, ai) => [
+          ...(achado.exigeDescricao ? [{ exame: exame.nomeExame, achado: achado.descricaoAchado, identidade: criarIdentidadeAchadoExameFisico({ sistemaId: sistema.id, exame: exame.nomeExame, indiceAchado: ai, achado: achado.descricaoAchado }) }] : []),
+          ...(achado.opcoes || []).flatMap((opcao, oi) => opcao.exigeDescricao ? [{ exame: exame.nomeExame, achado: opcao.textoOpcao, identidade: criarIdentidadeAchadoExameFisico({ sistemaId: sistema.id, exame: exame.nomeExame, indiceAchado: ai, achado: achado.descricaoAchado, indiceOpcao: oi, opcao: opcao.textoOpcao }) }] : []),
+        ])));
         onUpdateRequisitosDescricao(requisitosDescricao);
       } catch (error) {
         console.error('Erro ao carregar dados da avaliação:', error);
@@ -172,6 +167,8 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     tempExameFisico: Record<string, string | number>,
     tempExameFisicoMulti: Record<string, string[]> = {},
     contextos: Record<string, string> = processo.avaliacao?.contextosParametros || {},
+    tempSelecoes: Record<string, ExameFisicoSelecao> = processo.avaliacao?.exameFisicoSelecoes || {},
+    legadosRevisados: Record<string, true> = processo.avaliacao?.exameFisicoSelecoesLegadasRevisadas || {},
   ) => {
     const novaLista: { parametro: string; nhb: string }[] = [];
 
@@ -197,19 +194,28 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
       });
     });
 
-    // Revisão de Sistemas — lê multi-select, com fallback para valor único legado
-    sistemas.forEach(sist => {
-      sist.exames.forEach(ex => {
-        const multiVals = tempExameFisicoMulti[ex.nomeExame] || [];
-        const legacyVal = tempExameFisico[ex.nomeExame];
-        const values = multiVals.length > 0 ? multiVals : (legacyVal ? [String(legacyVal)] : []);
-        values.forEach(val => {
-          const v = getSistemaValidationForValue(ex, val);
-          if (v.status === 'alterado' && v.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: v.nhb });
-        });
-      });
+    // Registros estruturados não colidem quando o catálogo repete o mesmo rótulo.
+    Object.values(tempSelecoes).forEach(selecao => {
+      if (selecao.alterado && selecao.nhb) novaLista.push({ parametro: selecao.exame, nhb: selecao.nhb });
     });
 
+    // Legados só são interpretados se o texto apontar para uma única opção no catálogo.
+    sistemas.forEach(sist => sist.exames.forEach(ex => {
+      const multiValores = tempExameFisicoMulti[ex.nomeExame] || [];
+      const valores = multiValores.length > 0 ? multiValores : (tempExameFisico[ex.nomeExame] ? [String(tempExameFisico[ex.nomeExame])] : []);
+      valores.forEach(valor => {
+        if (legadosRevisados[chaveSelecaoLegada(ex.nomeExame, valor)]) return;
+        const matches = sistemas.flatMap(sistema => sistema.exames.flatMap(exame => exame.achados.flatMap(achado => {
+          const rows = (!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === valor
+            ? [{ exame: exame.nomeExame, texto: valor }]
+            : (achado.opcoes || []).filter(opcao => opcao.textoOpcao === valor).map(opcao => ({ exame: exame.nomeExame, texto: opcao.textoOpcao }));
+          return rows.map(row => ({ ...row, sistemaId: sistema.id }));
+        })));
+        if (matches.length !== 1 || matches[0].sistemaId !== sist.id || matches[0].exame !== ex.nomeExame) return;
+        const validation = getSistemaValidationForValue(ex, valor);
+        if (validation.status === 'alterado' && validation.nhb) novaLista.push({ parametro: ex.nomeExame, nhb: validation.nhb });
+      });
+    }));
     return novaLista;
   };
 
@@ -264,54 +270,43 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
     });
   };
 
-  // ATUALIZAÇÃO MULTI-SELECT: Para revisão de sistemas (checkboxes)
-  const updateSistemaMulti = (
-    nomeExame: string,
-    newSelectedValues: string[],
-    newDescricoes?: Record<string, string>
-  ) => {
-    const novoMulti = { ...(processo.avaliacao?.exameFisicoMulti || {}), [nomeExame]: newSelectedValues };
-    const exameAtual = processo.avaliacao?.exameFisico || {};
-    const novaListaNhbs = calculateAllNhbs(exameAtual, novoMulti);
+  const criarSelecao = (sistema: SistemaCorporal, exame: ExamePropedeutico, indiceAchado: number, achado: Achado, indiceOpcao?: number, opcao?: OpcaoAchado): ExameFisicoSelecao => {
+    const identidade = criarIdentidadeAchadoExameFisico({ sistemaId: sistema.id, exame: exame.nomeExame, indiceAchado, achado: achado.descricaoAchado, indiceOpcao, opcao: opcao?.textoOpcao });
+    const grupoAchado = criarIdentidadeAchadoExameFisico({ sistemaId: sistema.id, exame: exame.nomeExame, indiceAchado, achado: achado.descricaoAchado });
+    const valor = opcao;
+    const alterado = valor ? !!valor.ehAlteracao : (achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado);
+    const nhb = valor?.subconjuntoNHBVinculado || achado.subconjuntoNHBVinculado;
+    return { identidade, grupoAchado, sistemaId: sistema.id, sistema: sistema.nomeSistema, exame: exame.nomeExame, achado: achado.descricaoAchado, ...(opcao ? { opcao: opcao.textoOpcao } : {}), tipo: opcao ? 'opcao' : 'simples', alterado, ...(nhb ? { nhb } : {}), ...(opcao?.exigeDescricao || achado.exigeDescricao ? { exigeDescricao: true } : {}) };
+  };
 
+  const legadoSemAmbiguidade = (sistemaId: string, nomeExame: string, texto: string) => {
+    const correspondencias: Array<{ sistemaId: string; exame: string }> = [];
+    sistemas.forEach(sistema => sistema.exames.forEach(exame => exame.achados.forEach(achado => {
+      if ((!achado.tipoAchado || achado.tipoAchado === 'simples') && achado.descricaoAchado === texto) correspondencias.push({ sistemaId: sistema.id, exame: exame.nomeExame });
+      (achado.opcoes || []).filter(opcao => opcao.textoOpcao === texto).forEach(() => correspondencias.push({ sistemaId: sistema.id, exame: exame.nomeExame }));
+    })));
+    return correspondencias.length === 1 && correspondencias[0].sistemaId === sistemaId && correspondencias[0].exame === nomeExame;
+  };
+
+  const toggleAchadoRS = (selecao: ExameFisicoSelecao, checked: boolean) => {
+    const atual = processo.avaliacao?.exameFisicoSelecoes || {};
+    const novasSelecoes = alternarSelecaoAchado(atual, selecao, checked);
+    // Registros antigos continuam intactos; revisão explícita impede sua atribuição automática.
+    const legadosRevisados = { ...(processo.avaliacao?.exameFisicoSelecoesLegadasRevisadas || {}) };
+    legadosRevisados[chaveSelecaoLegada(selecao.exame, selecao.opcao || selecao.achado)] = true;
+    const descricoes = Object.fromEntries(Object.entries(novasSelecoes).map(([id, item]) => [id, item.descricao || '']));
+    const legado = processo.avaliacao?.exameFisicoMulti || {};
+    const novaListaNhbs = calculateAllNhbs(processo.avaliacao?.exameFisico || {}, legado, undefined, novasSelecoes, legadosRevisados);
     setNhbsAfetadas(novaListaNhbs);
-
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      exameFisicoMulti: novoMulti,
-      ...(newDescricoes !== undefined ? { exameFisicoDescricoes: newDescricoes } : {}),
-      nhbsAfetadas: novaListaNhbs,
-    });
+    onUpdateAvaliacao({ ...processo.avaliacao, exameFisicoSelecoes: novasSelecoes, exameFisicoSelecoesLegadasRevisadas: legadosRevisados, exameFisicoDescricoes: { ...(processo.avaliacao?.exameFisicoDescricoes || {}), ...descricoes }, nhbsAfetadas: novaListaNhbs });
   };
 
-  const toggleAchadoRS = (nomeExame: string, valor: string, checked: boolean) => {
-    if (checked && !isAchadoDoCatalogoAprovado(sistemas, nomeExame, valor)) return;
-
-    const current = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
-    const updated = checked
-      ? current.includes(valor) ? current : [...current, valor]
-      : current.filter((v) => v !== valor);
-
-    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}) };
-    if (!checked) delete descricoes[`${nomeExame}|||${valor}`];
-
-    updateSistemaMulti(nomeExame, updated, descricoes);
+  const updateDescricaoRS = (identidade: string, texto: string) => {
+    const novasSelecoes = { ...(processo.avaliacao?.exameFisicoSelecoes || {}) };
+    if (!novasSelecoes[identidade]) return;
+    novasSelecoes[identidade] = { ...novasSelecoes[identidade], descricao: texto };
+    onUpdateAvaliacao({ ...processo.avaliacao, exameFisicoSelecoes: novasSelecoes });
   };
-
-  const updateDescricaoRS = (nomeExame: string, descricaoAchado: string, texto: string) => {
-    const key = `${nomeExame}|||${descricaoAchado}`;
-    const descricoes = { ...(processo.avaliacao?.exameFisicoDescricoes || {}), [key]: texto };
-    const multiAtual = processo.avaliacao?.exameFisicoMulti || {};
-    const exameAtual = processo.avaliacao?.exameFisico || {};
-    const novaListaNhbs = calculateAllNhbs(exameAtual, multiAtual);
-
-    onUpdateAvaliacao({
-      ...processo.avaliacao,
-      exameFisicoDescricoes: descricoes,
-      nhbsAfetadas: novaListaNhbs,
-    });
-  };
-
   // Referências são avaliadas por idade real, sexo e contexto de observação.
   // Conflitos produzem um estado neutro em vez de um alerta incorreto.
   const getNumericValidation = (
@@ -1044,10 +1039,10 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
                           {sistema.exames.map((exame, idx) => {
                             const nomeExame = exame.nomeExame;
-                            const selectedValues = processo.avaliacao?.exameFisicoMulti?.[nomeExame]
-                              || (processo.avaliacao?.exameFisico?.[nomeExame]
-                                ? [String(processo.avaliacao.exameFisico[nomeExame])]
-                                : []);
+                            const valoresMulti = processo.avaliacao?.exameFisicoMulti?.[nomeExame] || [];
+                            const selectedValues = valoresMulti.length > 0 ? valoresMulti : (processo.avaliacao?.exameFisico?.[nomeExame]
+                              ? [String(processo.avaliacao.exameFisico[nomeExame])]
+                              : []);
                             const descricoes = processo.avaliacao?.exameFisicoDescricoes || {};
 
                             const aplicavel = (a: Achado) =>
@@ -1067,26 +1062,33 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                   {exame.nomeExame}
                                   <span className="font-normal opacity-60 italic ml-1">— {exame.propedeutica}</span>
                                 </p>
+                                {selectedValues.some(valor => !processo.avaliacao?.exameFisicoSelecoesLegadasRevisadas?.[chaveSelecaoLegada(nomeExame, valor)] && !legadoSemAmbiguidade(sistema.id, nomeExame, valor)) && (
+                                  <p role="status" className="rounded bg-amber-50 px-2 py-1 text-[10px] text-amber-800">
+                                    Há seleções antigas com rótulos repetidos que não podem ser atribuídas automaticamente. Revise os achados abaixo; ao marcar ou desmarcar um achado, a alteração será salva individualmente.
+                                  </p>
+                                )}
 
                                 {/* Achados simples como checkboxes */}
                                 {simpleAchados.map((achado, ai) => {
-                                  const isChecked = selectedValues.includes(achado.descricaoAchado);
+                                  const indiceAchado = exame.achados.indexOf(achado);
+                                  const selecao = criarSelecao(sistema, exame, indiceAchado, achado);
+                                  const isChecked = !!processo.avaliacao?.exameFisicoSelecoes?.[selecao.identidade]
+                                    || (selectedValues.includes(achado.descricaoAchado) && !processo.avaliacao?.exameFisicoSelecoesLegadasRevisadas?.[chaveSelecaoLegada(nomeExame, achado.descricaoAchado)] && legadoSemAmbiguidade(sistema.id, nomeExame, achado.descricaoAchado));
                                   const isAlteracao = achado.ehAlteracao ?? !!achado.subconjuntoNHBVinculado;
-                                  const descKey = `${nomeExame}|||${achado.descricaoAchado}`;
-                                  const descAtual = descricoes[descKey] || '';
+                                  const descAtual = processo.avaliacao?.exameFisicoSelecoes?.[selecao.identidade]?.descricao || descricoes[`${nomeExame}|||${achado.descricaoAchado}`] || '';
 
                                   return (
                                     <div key={ai}>
                                       <div className="flex items-start gap-2">
                                         <Checkbox
-                                          id={`${nomeExame}-${ai}`}
+                                          id={`${sistema.id}-${nomeExame}-${indiceAchado}`}
                                           checked={isChecked}
-                                          onCheckedChange={(checked) => toggleAchadoRS(nomeExame, achado.descricaoAchado, !!checked)}
+                                          onCheckedChange={(checked) => toggleAchadoRS(selecao, !!checked)}
                                           className="mt-0.5 shrink-0"
                                         />
                                         <div className="flex-1 min-w-0">
                                           <label
-                                            htmlFor={`${nomeExame}-${ai}`}
+                                            htmlFor={`${sistema.id}-${nomeExame}-${indiceAchado}`}
                                             className={`text-xs leading-snug cursor-pointer ${isAlteracao && isChecked ? 'text-red-700 font-medium' : 'text-gray-700'}`}
                                           >
                                             {achado.descricaoAchado}
@@ -1123,7 +1125,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                         <div className="ml-6 mt-1.5">
                                           <Textarea
                                             value={descAtual}
-                                            onChange={(e) => updateDescricaoRS(nomeExame, achado.descricaoAchado, e.target.value)}
+                                            onChange={(e) => updateDescricaoRS(selecao.identidade, e.target.value)}
                                             placeholder={achado.dicaAchado || 'Descreva o achado encontrado…'}
                                             className="text-xs resize-none min-h-[56px]"
                                             rows={2}
@@ -1163,23 +1165,26 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                       )}
                                     </div>
                                     {(achado.opcoes || []).map((opcao, oi) => {
-                                      const isChecked = selectedValues.includes(opcao.textoOpcao);
+                                      const indiceAchado = exame.achados.indexOf(achado);
+                                      const indiceOpcao = (achado.opcoes || []).indexOf(opcao);
+                                      const selecao = criarSelecao(sistema, exame, indiceAchado, achado, indiceOpcao, opcao);
+                                      const isChecked = !!processo.avaliacao?.exameFisicoSelecoes?.[selecao.identidade]
+                                        || (selectedValues.includes(opcao.textoOpcao) && !processo.avaliacao?.exameFisicoSelecoesLegadasRevisadas?.[chaveSelecaoLegada(nomeExame, opcao.textoOpcao)] && legadoSemAmbiguidade(sistema.id, nomeExame, opcao.textoOpcao));
                                       const isAlt = opcao.ehAlteracao;
-                                      const descKey = `${nomeExame}|||${opcao.textoOpcao}`;
-                                      const descAtual = descricoes[descKey] || '';
+                                      const descAtual = processo.avaliacao?.exameFisicoSelecoes?.[selecao.identidade]?.descricao || descricoes[`${nomeExame}|||${opcao.textoOpcao}`] || '';
 
                                       return (
                                         <div key={oi}>
                                           <div className="flex items-start gap-2">
                                             <Checkbox
-                                              id={`${nomeExame}-opc-${ai}-${oi}`}
+                                              id={`${sistema.id}-${nomeExame}-opc-${indiceAchado}-${indiceOpcao}`}
                                               checked={isChecked}
-                                              onCheckedChange={(checked) => toggleAchadoRS(nomeExame, opcao.textoOpcao, !!checked)}
+                                              onCheckedChange={(checked) => toggleAchadoRS(selecao, !!checked)}
                                               className="mt-0.5 shrink-0"
                                             />
                                             <div className="flex-1 min-w-0">
                                               <label
-                                                htmlFor={`${nomeExame}-opc-${ai}-${oi}`}
+                                                htmlFor={`${sistema.id}-${nomeExame}-opc-${indiceAchado}-${indiceOpcao}`}
                                                 className={`text-xs leading-snug cursor-pointer ${isAlt && isChecked ? 'text-red-700 font-medium' : 'text-gray-700'}`}
                                               >
                                                 {opcao.textoOpcao}
@@ -1199,7 +1204,7 @@ const EtapaAvaliacao: React.FC<EtapaAvaliacaoProps> = ({
                                             <div className="ml-6 mt-1">
                                               <Textarea
                                                 value={descAtual}
-                                                onChange={(e) => updateDescricaoRS(nomeExame, opcao.textoOpcao, e.target.value)}
+                                                onChange={(e) => updateDescricaoRS(selecao.identidade, e.target.value)}
                                                 placeholder="Descreva este achado…"
                                                 className="text-xs resize-none min-h-[48px]"
                                                 rows={2}
